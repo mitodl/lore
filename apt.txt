@@ -1,0 +1,3 @@
+libpq-dev
+python-pip
+python-dev

@@ -1,0 +1,7 @@
+Django==1.8.1
+wsgiref==0.1.2
+PyYAML==3.11
+dj-database-url==0.3.0
+dj-static==0.0.6
+uwsgi==2.0.10
+psycopg2==2.6
