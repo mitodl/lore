@@ -14,14 +14,14 @@ Getting Started
 ===============
 
 You can either run this locally with a default sqlite database after
-installing the requirements.txt file, or if you have docker and
+installing the requirements.txt file, or if you have Docker and
 prefer a cleaner environment, install docker-compose with ``pip
-install docker-compose`` and run ``docker-compose up``. This will setup
-a near production ready containerized development environment that
+install docker-compose`` and run ``docker-compose up``. This will set up
+a near production-ready containerized development environment that
 runs migrations, with the django development server running on
 port 8070.
 
-To run one off commands, like shell, you can run
+To run one-off commands, like shell, you can run
 ``docker-compose run web python manage.py shell`` or to create root
 user, etc.
 
@@ -36,7 +36,7 @@ overrides.
 Testing
 =======
 
-The project is setup with
+The project is set up with
 `tox<https://tox.readthedocs.org/en/latest/>`_ and
 `py.test<http://pytest.org/latest/>`_. It will run pylint, pep8, and
 py.test tests with coverage. It will also generate an HTML coverage
