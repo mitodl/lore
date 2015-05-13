@@ -71,3 +71,6 @@ codekit-config.json
 # Docker
 .bash_history
 .pylint.d
+
+# Temp location for test data.
+importer/tests/testdata/
