@@ -8,7 +8,7 @@ class Vocabulary(models.Model):
     name = models.TextField()
     description = models.TextField()
     required = models.BooleanField()
-    type = models.CharField(max_length=1, choices=(
+    vocabulary_type = models.CharField(max_length=1, choices=(
         ("m", "managed"),
         ("f", "free tagging")
     ))
@@ -17,7 +17,7 @@ class Vocabulary(models.Model):
 
 class VocabularyObjectType(models.Model):
     vocabulary = models.ForeignKey("Vocabulary")
-    type = models.ForeignKey("LearningObjectType")
+    learning_object_type = models.ForeignKey("LearningObjectType")
 
 
 class Term(models.Model):
