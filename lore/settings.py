@@ -70,6 +70,7 @@ INSTALLED_APPS = (
     'learningresources',
     'importer',
     'ui',
+    'taxonomy',
 )
 
 MIDDLEWARE_CLASSES = (
