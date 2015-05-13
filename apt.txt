@@ -1,4 +1,7 @@
+git
 libpq-dev
+libxml2-dev
+libxslt1-dev
 python-pip
 python-dev
 python3-dev
