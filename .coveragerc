@@ -1,8 +1,11 @@
 [run]
 
 branch = True
-source = ./lore
-omit = lore/wsgi.py
+source = .
+omit =
+    lore/wsgi.py
+    manage.py
+    ./.tox/*
 
 [report]
 exclude_lines =

@@ -1,9 +1,17 @@
 language: python
 python:
-  - "2.7"
+  - '2.7'
 install:
-  - "pip install -r requirements.txt"
-  - "pip install coveralls"
+  - pip install -r requirements.txt
+  - pip install coveralls
 script: tox
-after_success:
-  "coveralls"
+after_success: coveralls
+deploy:
+  provider: heroku
+  api_key:
+    secure: DsIeqPjhg6gFe+VzgBRo6wwResoIOrrP7nTw2x5XOcL5VzkxQLHHrmu176uX0u95qLTQtVr5DKEm/+ZYMGVRc3aTwiXDig2/CmBHC7HEvfBDU4yDudCClxE0skTiuDuR+jYUo4T1H3UxhrQYJeotU+cZkgrz3TuxSLKoA+j8GSg=
+  app: lore-ci
+  on:
+    repo: mitodl/lore
+    branch: feature/cg/heroku_ci
+  run: "python manage.py migrate --noinput"
