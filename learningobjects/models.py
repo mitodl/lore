@@ -27,7 +27,6 @@ class LearningObject(models.Model):
     xa_histogram_grade = models.FloatField()
 
 class LearningObjectType(models.Model):
-    learning_object = models.ForeignKey(LearningObject)
     name = models.TextField()
     
 class Repository(models.Model):
