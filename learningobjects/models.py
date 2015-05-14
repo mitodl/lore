@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.contrib.auth.models import User
 
 class Course(models.Model):
     repository = models.ForeignKey(Repository)
@@ -7,7 +7,7 @@ class Course(models.Model):
     course_number = models.IntegerField()
     semester = models.TextField()
     import_date = models.DateField()
-    imported_by = models.TextField()
+    imported_by = models.ForeignKey(User)
 
 class LearningObject(models.Model):
     course = models.ForeignKey(Course)
@@ -33,4 +33,4 @@ class Repository(models.Model):
     name = models.TextField()
     description = models.TextField()
     create_date = models.DateField()
-    created_by = models.TextField()
+    created_by = models.ForeignKey(User)
