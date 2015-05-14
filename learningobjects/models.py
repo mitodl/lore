@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 
 class Course(models.Model):
-    repository = models.ForeignKey(Repository)
+    repository = models.ForeignKey('Repository')
     org = models.TextField()
     course_number = models.IntegerField()
     semester = models.TextField()
@@ -13,7 +13,7 @@ class Course(models.Model):
 
 class LearningObject(models.Model):
     course = models.ForeignKey(Course)
-    learning_object_type = models.ForeignKey(LearningObjectType)
+    learning_object_type = models.ForeignKey('LearningObjectType')
     uuid = models.TextField()
     title = models.TextField()
     description = models.TextField()
@@ -21,7 +21,7 @@ class LearningObject(models.Model):
     path_xml = models.TextField()
     mpath = models.TextField()
     url_path = models.TextField()
-    parent_id = models.ForeignKey("self")
+    parent_id = models.ForeignKey('self')
     copyright = models.TextField()
     xa_nr_views = models.TextField()
     xa_nr_attempts = models.IntegerField()
