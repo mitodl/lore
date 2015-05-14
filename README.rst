@@ -1,6 +1,5 @@
 LORE
 ----
-
 .. image:: https://img.shields.io/travis/mitodl/lore.svg
     :target: https://travis-ci.org/mitodl/lore
 .. image:: https://img.shields.io/coveralls/mitodl/lore.svg
