@@ -1,6 +1,9 @@
+"""
+Test api functions.
+"""
+
 from django.test.testcases import TestCase
 
-import django
 from django.contrib.auth.models import User
 
 from learningobjects.models import Course
@@ -41,11 +44,12 @@ class TestCreateCourse(TestCase):
         create_course(**self.kwargs)
         self.assertTrue(course_count() == before + 1)
 
-    def test_create_again(self):
+    def test_create_dupe(self):
         """
-        Create a course.
+        Can't create a duplicate.
         """
         before = course_count()
+        create_course(**self.kwargs)
         create_course(**self.kwargs)
         self.assertTrue(course_count() == before + 1)
 
