@@ -15,7 +15,7 @@ class Vocabulary(models.Model):
     ))
     weight = models.IntegerField()
 
-    learning_object_types = models.ManyToManyField("LearningObjectType")
+    learning_object_types = models.ManyToManyField("LearningObjectType", related_name="vocabularies")
 
 
 class Term(models.Model):
@@ -24,4 +24,4 @@ class Term(models.Model):
     label = models.TextField()
     weight = models.IntegerField()
 
-    learning_objects = models.ManyToManyField("LearningObject")
+    learning_objects = models.ManyToManyField("LearningObject", related_name="terms")
