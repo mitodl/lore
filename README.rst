@@ -36,21 +36,22 @@ overrides.
 Testing
 =======
 
-The project is set up with
-`tox<https://tox.readthedocs.org/en/latest/>`_ and
-`py.test<http://pytest.org/latest/>`_. It will run pylint, pep8, and
+The project is setup with
+`tox <https://tox.readthedocs.org/en/latest/>`_ and
+`py.test <http://pytest.org/latest/>`_. It will run pylint, pep8, and
 py.test tests with coverage. It will also generate an HTML coverage
 report. To run them all inside the docker image, run ``docker-compose
 run web tox``, or if you are running locally, after installing the
 requirements file, just run ``tox``.
 
+
 Continuous Testing
 ~~~~~~~~~~~~~~~~~~
 
-If you want test to run on file changes, the
-``test_requirements.txt`` adds pytest-watcher, which can be started with
-``ptw``. This unfortunately will not work well in the docker environment
-because the file events it uses are fired on the host OS, and not the
-docker OS. I have added an
-`issue<https://github.com/joeyespo/pytest-watch/issues/9>`_ to the
-`pytest-watch repo<https://github.com/joeyespo/pytest-watch>`_
+If you want test to run on file changes, the ``test_requirements.txt``
+adds pytest-watcher, which can be started with:
+``docker-compose run web ptw --poll``
+For additional options like having it say "passed"
+out loud, or sending desktop notifications for failures see the
+`README <https://github.com/joeyespo/pytest-watch/blob/master/README.md>`_.
+Keep in mind, there can be a bit of a lag between saves and the test running.
