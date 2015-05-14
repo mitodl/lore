@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
 class Course(models.Model):
     repository = models.ForeignKey(Repository)
     org = models.TextField()
@@ -8,6 +9,7 @@ class Course(models.Model):
     semester = models.TextField()
     import_date = models.DateField()
     imported_by = models.ForeignKey(User)
+
 
 class LearningObject(models.Model):
     course = models.ForeignKey(Course)
@@ -26,9 +28,11 @@ class LearningObject(models.Model):
     xa_avg_grade = models.FloatField()
     xa_histogram_grade = models.FloatField()
 
+
 class LearningObjectType(models.Model):
     name = models.TextField()
-    
+
+
 class Repository(models.Model):
     name = models.TextField()
     description = models.TextField()
