@@ -33,6 +33,19 @@ its needed settings, include its URLs, and provide any needed template
 overrides.
 
 
+Adding JavaScript or CSS Libraries
+==================================
+
+We have `bower <http://bower.io/>`_ installed and configured in the
+docker image.  This is very handy for documenting and adding
+dependencies like backbone or bootstrap.  To add a new dependency,
+just run ``docker-compose run web bower install jquery --save`` for
+example.  This will download jquery to the
+``lore/static/bower/jquery`` folder and add it to the bower.json file.
+The assets downloaded should be stripped down to as little as needed
+before checking in, but the files should be checked into the repository.
+
+
 Testing
 =======
 

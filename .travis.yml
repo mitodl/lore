@@ -13,5 +13,5 @@ deploy:
   app: lore-ci
   on:
     repo: mitodl/lore
-    branch: feature/cg/heroku_ci
+    branch: master
   run: "python manage.py migrate --noinput"
