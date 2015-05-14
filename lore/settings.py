@@ -28,7 +28,7 @@ def load_fallback():
         if os.path.isfile(config_path):
             config_file_path = config_path
             break
-    if config_file_path:
+    if config_file_path is not None:
         with open(config_file_path) as config_file:
             fallback_config = yaml.safe_load(config_file)
     return fallback_config
