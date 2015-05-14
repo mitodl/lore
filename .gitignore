@@ -67,7 +67,3 @@ codekit-config.json
 .pycharm_helpers/
 
 *.DS_Store
-
-# Docker
-.bash_history
-.pylint.d

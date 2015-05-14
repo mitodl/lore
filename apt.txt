@@ -2,4 +2,6 @@ libpq-dev
 python-pip
 python-dev
 python3-dev
+npm
+nodejs
 git-core

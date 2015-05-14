@@ -1,0 +1,12 @@
+{
+  "name": "lore",
+  "version": "0.0.0",
+  "homepage": "https://github.com/mitodl/lore",
+  "authors": [
+    "ODL Engineering <odl-engineering@mit.edu>"
+  ],
+  "description": "Learning Objects Repository for Education",
+  "license": "AGPLv3",
+  "dependencies": {
+  }
+}

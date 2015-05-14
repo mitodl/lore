@@ -26,6 +26,11 @@ ADD . /src
 WORKDIR /src
 RUN chown -R mitodl:mitodl /src
 
+# Install node packages and add to PATH
+RUN ln -s /usr/bin/nodejs /usr/bin/node
+RUN npm install -g --prefix /node
+ENV PATH /node/lib/node_modules/lore/node_modules/.bin:$PATH
+
 # Set pip cache folder, as it is breaking pip when it is on a shared volume
 ENV XDG_CACHE_HOME /tmp/.cache
 
