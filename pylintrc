@@ -1,3 +1,7 @@
 [BASIC]
 # Allow django's urlpatterns, and our log preference
 const-rgx = (([A-Z_][A-Z0-9_]*)|(__.*__)|log|urlpatterns)$
+
+[TYPECHECK]
+generated-members =
+    status_code
