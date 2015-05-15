@@ -36,22 +36,23 @@ class TestCreateCourse(TestCase):
         kwargs.pop("user_id")
         Course.objects.filter(**kwargs).delete()
 
+
     def test_create(self):
         """
         Create a course.
         """
         before = course_count()
-        create_course(**self.kwargs)
-        self.assertTrue(course_count() == before + 1)
+        course, err = create_course(**self.kwargs)
+        after = course_count()
+        self.assertTrue(after == before + 1)
+        self.assertTrue(err == "")
+        self.assertTrue(course is not None)
 
-    def test_create_dupe(self):
-        """
-        Can't create a duplicate.
-        """
-        before = course_count()
-        create_course(**self.kwargs)
-        create_course(**self.kwargs)
-        self.assertTrue(course_count() == before + 1)
+        # Can't create a duplicate.
+        course, err = create_course(**self.kwargs)
+        self.assertTrue(err == "course already exists")
+        self.assertTrue(course is None)
+        self.assertTrue(course_count() == after)
 
 
 def course_count():
