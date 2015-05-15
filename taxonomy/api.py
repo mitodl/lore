@@ -18,8 +18,8 @@ def get_vocabulary(vocabulary_id):
 
 
 def create_vocabulary(
-        repository_id, name, description, required, vocabulary_type, weight,
-        learning_object_types):
+        repository_id, name, description, required, vocabulary_type, weight
+):
     """
     Create a Vocabulary and save it in database
 
@@ -30,16 +30,11 @@ def create_vocabulary(
         required (bool): Is Vocabulary required?
         vocabulary_type (unicode): Vocabulary type
         weight (int): Weight
-        learning_object_types (list of unicode): Valid learning object types
 
     Returns:
         Vocabulary: The Vocabulary which was just added to the database
 
     """
-
-    learning_object_types_models = LearningObjectType.objects.filter(
-        name__in=learning_object_types
-    )
 
     return Vocabulary.objects.create(
         repository_id=repository_id,
@@ -48,7 +43,6 @@ def create_vocabulary(
         required=required,
         vocabulary_type=vocabulary_type,
         weight=weight,
-        learning_object_types=learning_object_types_models,
     )
 
 
