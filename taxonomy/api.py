@@ -160,7 +160,7 @@ def remove_term_from_learning_object(learning_object_id, term_id):
     term.learning_objects.filter(id=learning_object_id).delete()
 
 
-def get_vocabularies_for_learning_object_type(learning_object_type):
+def get_vocabularies_for_type(learning_object_type):
     """
     Get vocabularies supporting the given learning object type
 
@@ -175,7 +175,7 @@ def get_vocabularies_for_learning_object_type(learning_object_type):
     )
 
 
-def get_learning_object_types_for_vocabulary(vocabulary_id):
+def get_types_for_vocabulary(vocabulary_id):
     """
     Get learning object types supported by a Vocabulary
 
@@ -192,8 +192,8 @@ def get_learning_object_types_for_vocabulary(vocabulary_id):
     return [x.name for x in learning_object_types]
 
 
-def add_learning_object_type_for_vocabulary(learning_object_type,
-                                            vocabulary_id):
+def add_type_for_vocabulary(learning_object_type,
+                            vocabulary_id):
     """
     Add learning object type to an existing Vocabulary
 
@@ -207,8 +207,8 @@ def add_learning_object_type_for_vocabulary(learning_object_type,
     vocabulary.learning_object_types.add(learning_object_type)
 
 
-def remove_learning_object_type_from_vocabulary(learning_object_type,
-                                                vocabulary_id):
+def remove_type_from_vocabulary(learning_object_type,
+                                vocabulary_id):
     """
     Remove learning object type from existing Vocabulary
 
