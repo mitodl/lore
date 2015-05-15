@@ -6,13 +6,12 @@ from django.contrib.auth.models import User
 
 
 class Course(models.Model):
-
     """
     A course on edX platform (MITx or residential).
     """
     repository = models.ForeignKey('Repository')
     org = models.TextField()
-    course_number = models.IntegerField()
+    course_number = models.TextField()
     semester = models.TextField()
     import_date = models.DateField()
     imported_by = models.ForeignKey(User)
