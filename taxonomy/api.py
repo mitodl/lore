@@ -75,7 +75,7 @@ def get_term(term_id):
     return Term.objects.get(id=term_id)
 
 
-def create_term(vocabulary_id, label, weight, learning_object_ids):
+def create_term(vocabulary_id, label, weight):
     """
     Create new Term and save it in database
 
@@ -83,8 +83,6 @@ def create_term(vocabulary_id, label, weight, learning_object_ids):
         vocabulary_id (int): Vocabulary id
         label (unicode): Term label
         weight (int): Weight for term
-        learning_object_ids (list of int): Id numbers for
-            existing learning objects
 
     Returns:
         Term: The newly created Term
@@ -93,8 +91,8 @@ def create_term(vocabulary_id, label, weight, learning_object_ids):
     return Term.objects.create(
         vocabulary_id=vocabulary_id,
         label=label,
-        weight=weight,
-        learning_object_ids=learning_object_ids)
+        weight=weight
+    )
 
 
 def delete_term(term_id):
