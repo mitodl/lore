@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 
 
 class Course(models.Model):
+
     """
     A course on edX platform (MITx or residential).
     """
@@ -18,6 +19,7 @@ class Course(models.Model):
 
 
 class LearningObject(models.Model):
+
     """
     The units that compose an edX course:
     chapter, sequential, vertical, problem, video, html, etc.
@@ -40,6 +42,7 @@ class LearningObject(models.Model):
 
 
 class LearningObjectType(models.Model):
+
     """
     Learning object type:
     chapter, sequential, vertical, problem, video, html, etc.
@@ -48,6 +51,7 @@ class LearningObjectType(models.Model):
 
 
 class Repository(models.Model):
+
     """
     A collection of learning objects
     that come from (usually tightly-related) courses.
