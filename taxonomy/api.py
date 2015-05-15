@@ -7,89 +7,41 @@ from learningobjects.models import LearningObject, LearningObjectType
 def get_vocabulary(vocabulary_id):
     """
     Lookup vocabulary given its id
-    :param vocabulary_id: Vocabulary id
-    :return: Dictionary for vocabulary
+
+    Args:
+        vocabulary_id (int): Vocabulary id
+
+    Returns:
+        Vocabulary: The vocabulary from the database
     """
-    vocabulary = Vocabulary.objects.get(id=vocabulary_id)
-
-    return _get_vocabulary_from_model(vocabulary)
-
-
-def _get_vocabulary_from_model(vocabulary):
-    """
-    Convert vocabulary model to dictionary
-    :param vocabulary: Vocabulary model
-    :return: Dictionary
-    """
-    learning_object_types = [
-        t.name for t in vocabulary.learning_object_types.all()]
-
-    # TODO: double check how Django exposes vocabulary_type
-    return {
-        "repository_id": vocabulary.repository_id,
-        "name": vocabulary.name,
-        "description": vocabulary.description,
-        "required": vocabulary.required,
-        "vocabulary_type": vocabulary.vocabulary_type,
-        "weight": vocabulary.weight,
-        "learning_object_types": learning_object_types,
-    }
+    return Vocabulary.objects.get(id=vocabulary_id)
 
 
 def create_vocabulary(
         repository_id, name, description, required, vocabulary_type, weight,
         learning_object_types):
     """
-    Create a vocabulary and save it in database
-    :param repository_id: An existing repository id
-    :param name: Name of vocabulary
-    :param description: Description of vocabulary
-    :param required: Is vocabulary required?
-    :param vocabulary_type: Type of vocabulary (either "managed" or
-     "free tagging")
-    :param weight: Weight, as integer
-    :param learning_object_types: List of valid learning object types
-    :return:
+    Create a Vocabulary and save it in database
+
+    Args:
+        repository_id (int): Repository id
+        name (unicode): Name of Vocabulary
+        description (unicode): Description of Vocabulary
+        required (bool): Is Vocabulary required?
+        vocabulary_type (unicode): Vocabulary type
+        weight (int): Weight
+        learning_object_types (list of unicode): Valid learning object types
+
+    Returns:
+        Vocabulary: The Vocabulary which was just added to the database
+
     """
 
     learning_object_types_models = LearningObjectType.objects.filter(
-        name__in=learning_object_types)
-
-    vocabulary = Vocabulary.objects.create(
-        repository_id=repository_id,
-        name=name,
-        description=description,
-        required=required,
-        vocabulary_type=vocabulary_type,
-        weight=weight,
-        learning_object_types=learning_object_types_models,
+        name__in=learning_object_types
     )
 
-    return _get_vocabulary_from_model(vocabulary)
-
-
-def update_vocabulary(vocabulary_id,
-                      repository_id, name, description, required,
-                      vocabulary_type, weight,
-                      learning_object_types):
-    """
-    Update an existing vocabulary
-    :param vocabulary_id: An existing vocabulary id
-    :param repository_id: An existing repository id
-    :param name: Name of vocabulary
-    :param description: Description of vocabulary
-    :param required: Is vocabulary required?
-    :param vocabulary_type: Type of vocabulary (either "managed" or
-    "free tagging")
-    :param weight: int
-    :param learning_object_types: List of valid learning object types
-    :return:
-    """
-    learning_object_types_models = LearningObjectType.objects.filter(
-        name__in=learning_object_types)
-
-    Vocabulary.objects.update(
-        id=vocabulary_id,
+    return Vocabulary.objects.create(
         repository_id=repository_id,
         name=name,
         description=description,
@@ -102,108 +54,138 @@ def update_vocabulary(vocabulary_id,
 
 def delete_vocabulary(vocabulary_id):
     """
-    Delete vocabulary with given id
-    :param vocabulary_id:
-    :return:
+    Delete Vocabulary with given id
+
+    Args:
+        vocabulary_id (int): Vocabulary id
     """
     Vocabulary.objects.filter(id=vocabulary_id).delete()
 
 
 def get_term(term_id):
     """
-    Get term given term id
-    :param term_id: Term id
-    :return: Term
-    """
-    return _get_term_from_model(Term.objects.get(id=term_id))
+    Get Term with existing id
 
+    Args:
+        term_id (int): Term id
 
-def _get_term_from_model(term):
+    Returns:
+        Term: The Term with the id
     """
-    Convert Term model to dictionary
-    :param term: Term
-    :type term: Term
-    :return: Dictionary
-    """
-    return {
-        "vocabulary_id": term.vocabulary_id,
-        "label": term.label,
-        "weight": term.weight,
-        "learning_object_ids": [x.id for x in term.learning_objects]
-    }
+    return Term.objects.get(id=term_id)
 
 
 def create_term(vocabulary_id, label, weight, learning_object_ids):
     """
     Create new Term and save it in database
-    :param vocabulary_id: Existing vocabulary id
-    :param label: Label
-    :param weight: Integer weight
-    :param learning_object_ids: List of existing learning object ids
-    :return: The new term
+
+    Args:
+        vocabulary_id (int): Vocabulary id
+        label (unicode): Term label
+        weight (int): Weight for term
+        learning_object_ids (list of int): Id numbers for
+            existing learning objects
+
+    Returns:
+        Term: The newly created Term
+
     """
-    # TODO: can learning_object_ids be passed in like this?
-    term = Term.objects.create(
+    return Term.objects.create(
         vocabulary_id=vocabulary_id,
         label=label,
         weight=weight,
         learning_object_ids=learning_object_ids)
 
-    return _get_term_from_model(term)
-
-
-def update_term(term_id, vocabulary_id, label, weight, learning_object_ids):
-    # TODO: what if user just wants to update a single field?
-    Term.objects.update(
-        term_id=term_id,
-        vocabulary_id=vocabulary_id,
-        label=label,
-        weight=weight,
-        learning_object_ids=learning_object_ids
-    )
-
 
 def delete_term(term_id):
     """
-    Delete term with id term_id
-    :param term_id: Term id
-    :return: None
+    Delete an existing Term
+
+    Args:
+        term_id (int): Term id
     """
     Term.objects.filter(id=term_id).delete()
 
 
 def get_learning_objects_for_term(term_id):
-    learning_objects = Term.objects.get(id=term_id).learning_objects
-    return [_get_learning_object_from_model(learning_object)
-            for learning_object in learning_objects]
+    """
+    Get LearningObjects using a particular Term
+
+    Args:
+        term_id (int): Term id
+
+    Returns:
+        sequence of LearningObject relating to existing Term
+    """
+    return Term.objects.get(id=term_id).learning_objects
 
 
-def get_term_for_learning_object(learning_object_id):
-    terms = LearningObject.objects.get(id=learning_object_id).terms
-    return [_get_term_from_model(term) for term in terms]
+def get_terms_for_learning_object(learning_object_id):
+    """
+    Get Terms using a particular LearningObject
+
+    Args:
+        learning_object_id (int): Learning object id
+
+    Returns:
+        sequence of Term relating to existing LearningObject
+    """
+    return LearningObject.objects.get(id=learning_object_id).terms
 
 
 def add_term_to_learning_object(learning_object_id, term_id):
-    # TODO: a way to do this without the unnecessary get()s?
+    """
+    Add existing Term with id term_id to a particular LearningObject
+    with id learning_object_id
+
+    Args:
+        learning_object_id (int): Id for LearningObject
+        term_id (int): Id for Term
+    """
     learning_object = LearningObject.objects.get(id=learning_object_id)
     term = Term.objects.get(id=term_id)
     learning_object.terms.add(term)
 
 
 def remove_term_from_learning_object(learning_object_id, term_id):
-    # TODO: a way to do this without the unnecessary get()?
+    """
+    Remove existing Term with id term_id from a LearningObject with id
+    learning_object_id
+
+    Args:
+        learning_object_id (int): Id for LearningObject
+        term_id (int): Id for Term
+    """
     term = Term.objects.get(id=term_id)
     term.learning_objects.filter(id=learning_object_id).delete()
 
 
-def get_vocabularies_for_learning_object_type(learning_object_type_name):
-    vocabularies = Vocabulary.objects.filter(
-        learning_object_types__name=learning_object_type_name)
-    return [_get_vocabulary_from_model(vocabulary)
-            for vocabulary in vocabularies]
+def get_vocabularies_for_learning_object_type(learning_object_type):
+    """
+    Get vocabularies supporting the given learning object type
+
+    Args:
+        learning_object_type (unicode): The learning object type
+
+    Returns:
+        sequence of Vocabulary objects supporting the learning object type
+    """
+    return Vocabulary.objects.filter(
+        learning_object_types__name=learning_object_type
+    )
 
 
 def get_learning_object_types_for_vocabulary(vocabulary_id):
+    """
+    Get learning object types supported by a Vocabulary
+
+    Args:
+        vocabulary_id (int): Id for existing Vocabulary
+
+    Returns:
+        list of unicode: sequence of learning object types supported by
+            a LearningObject
+    """
     learning_object_types = LearningObjectType.objects.filter(
         vocabulary__id=vocabulary_id
     )
@@ -212,7 +194,13 @@ def get_learning_object_types_for_vocabulary(vocabulary_id):
 
 def add_learning_object_type_for_vocabulary(learning_object_type,
                                             vocabulary_id):
-    # TODO: extra get probably unnecessary
+    """
+    Add learning object type to an existing Vocabulary
+
+    Args:
+        learning_object_type (unicode): A learning object type
+        vocabulary_id (int): Id for existing Vocabulary
+    """
     vocabulary = Vocabulary.objects.get(id=vocabulary_id)
     learning_object_type = LearningObjectType.objects.get(
         name=learning_object_type)
@@ -221,6 +209,12 @@ def add_learning_object_type_for_vocabulary(learning_object_type,
 
 def remove_learning_object_type_from_vocabulary(learning_object_type,
                                                 vocabulary_id):
-    # TODO: extra get probably unnecessary
+    """
+    Remove learning object type from existing Vocabulary
+
+    Args:
+        learning_object_type (unicode): A learning object type
+        vocabulary_id (int): Id for existing Vocabulary
+    """
     vocabulary = Vocabulary.objects.get(id=vocabulary_id)
     vocabulary.learning_object_types.filter(name=learning_object_type).delete()
