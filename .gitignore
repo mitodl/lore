@@ -71,3 +71,6 @@ codekit-config.json
 # Docker
 .bash_history
 .pylint.d
+
+# Django static
+staticfiles/
