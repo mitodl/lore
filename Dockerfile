@@ -20,11 +20,11 @@ RUN pip install -r test_requirements.txt
 # Add, and run as, non-root user.
 RUN mkdir /src
 RUN adduser --disabled-password --gecos "" --home=/src --no-create-home mitodl
-RUN chown -R mitodl:mitodl /src
 
 # Add project
 ADD . /src
 WORKDIR /src
+RUN chown -R mitodl:mitodl /src
 
 # Set pip cache folder, as it is breaking pip when it is on a shared volume
 ENV XDG_CACHE_HOME /tmp/.cache

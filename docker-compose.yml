@@ -4,7 +4,11 @@ db:
     - "5432"
 web:
   build: .
-  command: "/bin/bash -c 'python manage.py migrate; python manage.py runserver 0.0.0.0:8070'"
+  command: >
+    /bin/bash -c '
+    sleep 5;
+    python manage.py migrate;
+    python manage.py runserver 0.0.0.0:8070'
   volumes:
     - .:/src
   environment:
