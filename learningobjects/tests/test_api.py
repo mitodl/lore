@@ -20,6 +20,7 @@ class TestCreateCourse(TestCase):
         """
         Set some test data
         """
+        super(TestCreateCourse, self).setUp()
         self.user, _ = User.objects.get_or_create(username="test")
         self.kwargs = {
             'org': 'demo org',
@@ -32,6 +33,7 @@ class TestCreateCourse(TestCase):
         """
         Clean up test data.
         """
+        super(TestCreateCourse, self).tearDown()
         kwargs = self.kwargs
         kwargs.pop("user_id")
         Course.objects.filter(**kwargs).delete()
@@ -42,16 +44,14 @@ class TestCreateCourse(TestCase):
         Create a course.
         """
         before = course_count()
-        course, err = create_course(**self.kwargs)
+        course = create_course(**self.kwargs)
         after = course_count()
         self.assertTrue(after == before + 1)
-        self.assertTrue(err == "")
         self.assertTrue(course is not None)
 
         # Can't create a duplicate.
-        course, err = create_course(**self.kwargs)
-        self.assertTrue(err == "course already exists")
-        self.assertTrue(course is None)
+        with self.assertRaises(ValueError):
+            create_course(**self.kwargs)
         self.assertTrue(course_count() == after)
 
 

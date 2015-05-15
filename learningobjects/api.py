@@ -12,6 +12,14 @@ from learningobjects.models import Course, Repository
 def create_course(org, course_number, semester, user_id):
     """
     Add a course to the database.
+    Args:
+        org (unicode): organization
+        course_number (unicode): course number
+        semester (unicode): semester
+        user_id (int): primary key of user creating the course
+    Raises:
+        ValueError: Duplicate course
+    Returns: None
     """
     # TODO: Determine rules for accepting/requiring a repository.
     kwargs = {
@@ -21,9 +29,8 @@ def create_course(org, course_number, semester, user_id):
     }
     courses = Course.objects.filter(**kwargs)
     if courses.count() > 0:
-        return None, "course already exists"
-    return Course.objects.create(**kwargs), ""
-
+        raise ValueError("Duplicate course")
+    return Course.objects.create(**kwargs)
 
 def get_temp_repository(user_id):
     """

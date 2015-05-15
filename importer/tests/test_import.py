@@ -2,15 +2,13 @@
 Tests for LORE imports.
 """
 
-# standard library
 from unittest import TestCase
 from os.path import abspath, dirname, exists, join
 from os import mkdir
 
-# PyPi
 import requests
+from django.contrib.auth.models import User
 
-# local
 from importer.api import import_course_from_file
 
 # TODO: Also test this course:
@@ -40,17 +38,21 @@ def download_file(url, path):
 
 class TestImportDemo(TestCase):
     """
-    Test import functionality.
+    Test import functionality on an actual course. These tests should
+    be expanded as needed to test regressions and handle valid but
+    non-standard courses.
     """
     def setUp(self):
         """
         Make sure we have a local copy of the edX Demo Course
         for testing.
         """
+        super(TestImportDemo, self).setUp()
+        self.user, _ = User.objects.get_or_create(username="test")
         self.course_zip = get_course_zip()
 
-    def test_read(self):
+    def test_import_demo(self):
         """
-        Try opening the path and creating an xbundle.
+        Simplest possible test.
         """
-        print import_course_from_file(self.course_zip)
+        import_course_from_file(self.course_zip, self.user.id)

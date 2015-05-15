@@ -2,26 +2,29 @@
 Import OLX data into LORE.
 """
 
-# stdlib
 from glob import glob
+from datetime import datetime
 from shutil import rmtree
 from tempfile import mkdtemp
 from os.path import join
 import tarfile
 import zipfile
 
-# PyPi
-
 from xbundle import XBundle, DESCRIPTOR_TAGS
 from lxml import etree
 
-# MITODL
-# commented out for now, until it's merged
-# from lore.learningobjects.models import Course, LearningObject
+from learningobjects.api import create_course
 
-def import_course_from_file(filename):
+
+def import_course_from_file(filename, user_id):
     """
     Import OLX from .zip or tar.gz.
+
+    Args:
+        filename (unicode): Path to archive file (zip or .tar.gz)
+    Raises:
+        ValueError: Unable to find single path inside archive file.
+    Returns: None
     """
     tempdir = mkdtemp()
     if filename.endswith(".tar.gz"):
@@ -32,69 +35,53 @@ def import_course_from_file(filename):
         raise ValueError("Unexpected file type (want tarball or zip).")
     course.extractall(tempdir)
     dirs = glob(join(tempdir, "*"))
-    assert len(dirs) == 1
-    import_course_from_path(dirs[0])
+    if len(dirs) != 1:
+        raise ValueError("Unable to get course directory.")
+    import_course_from_path(dirs[0], user_id)
     rmtree(tempdir)
 
-def import_course_from_path(path):
+
+def import_course_from_path(path, user_id):
     """
     Import course from an OLX directory.
     """
     bundle = XBundle()
     bundle.import_from_directory(path)
-    return import_course(bundle)
+    return import_course(bundle, user_id)
 
 
-def import_course(bundle):
+def import_course(bundle, user_id):
     """
     Import a course from an XBundle object.
     """
-    course = Course()
-    course.course_number = bundle.course.attrib.get("course", "MISSING")
-    course.save()
-    import_children(course, bundle.course, None)
-
+    src = bundle.course
+    course = create_course(
+        org=src.attrib["org"],
+        course_number=src.attrib["course"],
+        semester=src.attrib["semester"],
+        user_id=user_id,
+    )
 
 def import_children(course, element, parent):
     """
     Create LearningObject instances for each element
     of an XML tree.
     """
-    lox = LearningObject()
-    lox.course = course
-    lox.display_name = element.attrib.get("display_name", "MISSING")
-    lox.tag = element.tag
-    lox.xml = etree.tostring(element)
-    if parent is not None:
-        lox.parent = parent
-    else:
-        lox.display_name = "/".join([
-            element.attrib.get(x, "MISSING")
-            for x in ("org", "course", "semester")
-        ])
-    lox.save()
-    for child in element.getchildren():
-        if child.tag in DESCRIPTOR_TAGS:
-            import_children(course, child, lox)
 
-# Dummy placeholders.
-
-class FakeModel(object):
-    """
-    Mock
-    """
-    def save(self):
-        return True
-
-class Course(FakeModel):
-    """
-    dummy
-    """
-    pass
-
-class LearningObject(FakeModel):
-    """
-    dummy
-    """
-    pass
-
+    # TODO: make a function in learningobjects.api instead
+    # of doing it here, then consume it here.
+    #lox.course = course
+    #lox.display_name = element.attrib.get("display_name", "MISSING")
+    #lox.tag = element.tag
+    #lox.xml = etree.tostring(element)
+    #if parent is not None:
+    #    lox.parent = parent
+    #else:
+    #    lox.display_name = "/".join([
+    ##        element.attrib.get(x, "MISSING")
+    #        for x in ("org", "course", "semester")
+    #    ])
+    #lox.save()
+    #for child in element.getchildren():
+    #    if child.tag in DESCRIPTOR_TAGS:
+    #        import_children(course, child, lox)

@@ -4,11 +4,8 @@ from __future__ import unicode_literals
 from django.db import models, migrations
 from django.conf import settings
 
-# auto-generated code, so shut up
-# pylint: disable=line-too-long,invalid-name,missing-docstring
 
 class Migration(migrations.Migration):
-
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -20,7 +17,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('org', models.TextField()),
-                ('course_number', models.IntegerField()),
+                ('course_number', models.TextField()),
                 ('semester', models.TextField()),
                 ('import_date', models.DateField()),
                 ('imported_by', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
