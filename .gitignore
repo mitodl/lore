@@ -68,9 +68,5 @@ codekit-config.json
 
 *.DS_Store
 
-# Docker
-.bash_history
-.pylint.d
-
 # Django static
 staticfiles/
