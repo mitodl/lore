@@ -1,5 +1,7 @@
 """APIs for lore taxonomy application"""
 
+from django.db import transaction
+
 from taxonomy.models import (
     Vocabulary,
     Term,
@@ -12,8 +14,6 @@ from learningobjects.models import (
 
 
 # pylint: disable=no-member
-
-
 def get_vocabulary(vocabulary_id):
     """
     Lookup vocabulary given its id
@@ -28,6 +28,7 @@ def get_vocabulary(vocabulary_id):
 
 
 # pylint: disable=too-many-arguments
+@transaction.atomic
 def create_vocabulary(
         repository_id, name, description, required, vocabulary_type, weight
 ):
@@ -46,6 +47,10 @@ def create_vocabulary(
         Vocabulary: The Vocabulary which was just added to the database
 
     """
+
+    if vocabulary_type != "m" and vocabulary_type != "f":
+        raise TaxonomyAPIException("vocabulary_type must be either"
+                                   " 'm' (managed) or 'f' (free tagging)")
 
     repository = Repository.objects.get(id=repository_id)
     if repository is None:
@@ -85,6 +90,7 @@ def get_term(term_id):
     return Term.objects.get(id=term_id)
 
 
+@transaction.atomic
 def create_term(vocabulary_id, label, weight):
     """
     Create new Term and save it in database
@@ -129,7 +135,8 @@ def get_learning_objects_for_term(term_id):
     Returns:
         sequence of LearningObject relating to existing Term
     """
-    return Term.objects.get(id=term_id).learning_objects
+    # TODO: would a list be more appropriate to return?
+    return Term.objects.get(id=term_id).learning_objects.order_by('id')
 
 
 def get_terms_for_learning_object(learning_object_id):
@@ -142,9 +149,12 @@ def get_terms_for_learning_object(learning_object_id):
     Returns:
         sequence of Term relating to existing LearningObject
     """
-    return LearningObject.objects.get(id=learning_object_id).terms
+    # TODO: would a list be more appropriate to return?
+    return (LearningObject.objects.get(id=learning_object_id).terms.
+            order_by('id'))
 
 
+@transaction.atomic
 def add_term_to_learning_object(learning_object_id, term_id):
     """
     Add existing Term with id term_id to a particular LearningObject
@@ -161,6 +171,7 @@ def add_term_to_learning_object(learning_object_id, term_id):
 
 # pylint complains that name has 33 characters when the max is 30
 # pylint: disable=invalid-name
+@transaction.atomic
 def remove_term_from_learning_object(learning_object_id, term_id):
     """
     Remove existing Term with id term_id from a LearningObject with id
@@ -200,12 +211,13 @@ def get_types_for_vocabulary(vocabulary_id):
         list of unicode: sequence of learning object types supported by
             a LearningObject
     """
-    learning_object_types = LearningObjectType.objects.filter(
+    learning_object_types = LearningObjectType.objects.order_by('id').filter(
         vocabulary__id=vocabulary_id
     )
-    return [x.name for x in learning_object_types]
+    return (x.name for x in learning_object_types)
 
 
+@transaction.atomic
 def add_type_for_vocabulary(learning_object_type,
                             vocabulary_id):
     """
@@ -221,6 +233,7 @@ def add_type_for_vocabulary(learning_object_type,
     vocabulary.learning_object_types.add(learning_object_type)
 
 
+@transaction.atomic
 def remove_type_from_vocabulary(learning_object_type,
                                 vocabulary_id):
     """
@@ -232,3 +245,7 @@ def remove_type_from_vocabulary(learning_object_type,
     """
     vocabulary = Vocabulary.objects.get(id=vocabulary_id)
     vocabulary.learning_object_types.filter(name=learning_object_type).delete()
+
+
+class TaxonomyAPIException(Exception):
+    """Validation exception for taxonomy API"""
