@@ -6,4 +6,3 @@ uwsgi==2.0.10
 psycopg2==2.6
 tox==1.9.2
 static3==0.5.1
-django-cas-ng==3.4.2
