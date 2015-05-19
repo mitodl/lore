@@ -80,8 +80,6 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 )
 
-AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
-
 ROOT_URLCONF = 'lore.urls'
 
 TEMPLATES = [
@@ -141,26 +139,3 @@ STATIC_ROOT = 'staticfiles'
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'lore', 'static'),
 )
-
-# e-mail configurable admins
-ADMIN_EMAIL = get_var('LORE_ADMIN_EMAIL', None)
-if ADMIN_EMAIL is not None:
-    ADMINS = (('Admins', ADMIN_EMAIL),)
-
-CAS_ENABLED = False
-
-# Optional CAS Integration
-if get_var('LORE_USE_CAS', None):
-    CAS_ENABLED = True
-    MIDDLEWARE_CLASSES += ('django_cas_ng.middleware.CASMiddleware',)
-    INSTALLED_APPS += ('django_cas_ng',)
-    AUTHENTICATION_BACKENDS += ('django_cas_ng.backends.CASBackend',)
-    LOGIN_URL = '/login/'
-    LOGIN_REDIRECT_URL = '/'
-    CAS_SERVER_URL = get_var(
-        'LORE_CAS_URL', 'https://auth-r.mitx.mit.edu/login'
-    )
-    CAS_EXTRA_LOGIN_PARAMS = {
-        'provider': 'touchstone',
-        'appname': "LORE"
-    }
