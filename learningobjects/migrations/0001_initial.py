@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.TextField()),
                 ('description', models.TextField()),
-                ('create_date', models.DateField()),
+                ('create_date', models.DateField(auto_now_add=True)),
                 ('created_by', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
         ),
