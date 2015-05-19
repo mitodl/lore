@@ -1,20 +1,20 @@
 """
 Learning objects data model
 """
+
 from django.db import models
 from django.contrib.auth.models import User
 
 
 class Course(models.Model):
-
     """
     A course on edX platform (MITx or residential).
     """
     repository = models.ForeignKey('Repository')
     org = models.TextField()
-    course_number = models.IntegerField()
+    course_number = models.TextField()
     semester = models.TextField()
-    import_date = models.DateField()
+    import_date = models.DateField(auto_now_add=True)
     imported_by = models.ForeignKey(User)
 
 
@@ -32,12 +32,12 @@ class LearningObject(models.Model):
     path_xml = models.TextField()
     mpath = models.TextField()
     url_path = models.TextField()
-    parent_id = models.ForeignKey('self')
+    parent = models.ForeignKey('self', null=True, blank=True)
     copyright = models.TextField()
-    xa_nr_views = models.TextField()
-    xa_nr_attempts = models.IntegerField()
-    xa_avg_grade = models.FloatField()
-    xa_histogram_grade = models.FloatField()
+    xa_nr_views = models.IntegerField(default=0)
+    xa_nr_attempts = models.IntegerField(default=0)
+    xa_avg_grade = models.FloatField(default=0)
+    xa_histogram_grade = models.FloatField(default=0)
 
 
 class LearningObjectType(models.Model):
