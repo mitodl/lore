@@ -45,6 +45,47 @@ example.  This will download jquery to the
 The assets downloaded should be stripped down to as little as needed
 before checking in, but the files should be checked into the repository.
 
+Including JavaScript and CSS
+============================
+
+We are using `django-compressor
+<http://django-compressor.readthedocs.org/en/latest/>`_ for static
+asset compression, along with `django-compressor-requirejs
+<https://github.com/bpeschier/django-compressor-requirejs>`_ for
+creating requirejs packages.  What this means to you is that you need
+to do static asset additions in your templates with something like:
+
+.. code-block:: html
+
+  {% load compress %}
+
+  {% compress css %}
+  <link rel="stylesheet"
+    href="{% static "bower/bootstrap/dist/css/bootstrap.css" %}"
+    type="text/css"
+    charset="utf-8"
+  >
+  <style type="text/css">p { border:5px solid green;}</style>
+  {% endcompress %}
+
+  {% compress js %}
+  <script type="text/requirejs"
+    src="{% static "bower/requirejs/require.js" %}">
+  </script>
+  <script type="text/javascript">
+   require.config({
+    baseUrl: '{% static "bower"%}',
+    paths: {
+        jquery: 'jquery/dist/jquery',
+        bootstrap: 'bootstrap/dist/js/boostrap'
+    }
+    requirejs(["jquery"], function($) {
+      .....
+    }
+  </script>
+
+  {% endcompress %}
+
 
 Testing
 =======
