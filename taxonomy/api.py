@@ -1,7 +1,17 @@
 """APIs for lore taxonomy application"""
 
-from taxonomy.models import Vocabulary, Term
-from learningobjects.models import LearningObject, LearningObjectType
+from taxonomy.models import (
+    Vocabulary,
+    Term,
+)
+from learningobjects.models import (
+    LearningObject,
+    LearningObjectType,
+    Repository,
+)
+
+
+# pylint: disable=no-member
 
 
 def get_vocabulary(vocabulary_id):
@@ -17,6 +27,7 @@ def get_vocabulary(vocabulary_id):
     return Vocabulary.objects.get(id=vocabulary_id)
 
 
+# pylint: disable=too-many-arguments
 def create_vocabulary(
         repository_id, name, description, required, vocabulary_type, weight
 ):
@@ -36,8 +47,13 @@ def create_vocabulary(
 
     """
 
+    repository = Repository.objects.get(id=repository_id)
+    if repository is None:
+        raise Repository.DoesNotExist("Repository with id %d not found" %
+                                      repository.id)
+
     return Vocabulary.objects.create(
-        repository_id=repository_id,
+        repository=repository,
         name=name,
         description=description,
         required=required,
@@ -80,10 +96,14 @@ def create_term(vocabulary_id, label, weight):
 
     Returns:
         Term: The newly created Term
-
     """
+    vocabulary = Vocabulary.objects.get(id=vocabulary_id)
+    if vocabulary is None:
+        raise Vocabulary.DoesNotExist("Vocabulary not found for id %d" %
+                                      vocabulary_id)
+
     return Term.objects.create(
-        vocabulary_id=vocabulary_id,
+        vocabulary=vocabulary,
         label=label,
         weight=weight
     )
@@ -139,6 +159,8 @@ def add_term_to_learning_object(learning_object_id, term_id):
     learning_object.terms.add(term)
 
 
+# pylint complains that name has 33 characters when the max is 30
+# pylint: disable=invalid-name
 def remove_term_from_learning_object(learning_object_id, term_id):
     """
     Remove existing Term with id term_id from a LearningObject with id
