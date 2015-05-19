@@ -115,7 +115,6 @@ def get_repos(user):
         repos query set of learningobject.Repository: repositories
     """
 
-    # TODO: Permissions
     # Note: This fails pylint because "user" is not being used,
     # but it can't be used just yet.
     return Repository.objects.all().order_by('name')
