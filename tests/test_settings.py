@@ -41,3 +41,21 @@ class TestSettings(unittest.TestCase):
             'os.environ', {'FOO': 'notbar'}, clear=True
         ):
             self.assertEqual(get_var('FOO', 'lemon'), 'notbar')
+
+        # Verify that types work:
+        with mock.patch.dict(
+            'os.environ',
+            {
+                'FOO': 'False',
+                'BAR': '[1,2,3]',
+            },
+            clear=True
+        ):
+            self.assertFalse(get_var('FOO', True))
+            self.assertEqual(get_var('BAR', []), [1, 2, 3])
+        # Make sure real types still work too (i.e. from yaml load)
+        with mock.patch.dict(
+            'lore.settings.FALLBACK_CONFIG',
+            {'BLAH': True}
+        ):
+            self.assertEqual(get_var('BLAH', False), True)
