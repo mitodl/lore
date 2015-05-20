@@ -65,10 +65,6 @@ class TestApi(TestCase):
             name="Type2",
         )
 
-        self.repository = Repository.objects.create(
-            created_by=self.user,
-        )
-
         self.course = Course.objects.create(
             repository=self.repository,
             imported_by=self.user,
