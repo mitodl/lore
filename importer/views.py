@@ -5,7 +5,7 @@ Views for the importer app.
 from django.shortcuts import render
 from django.contrib.auth.models import User
 
-from learningobjects.models import Repository, Course, LearningObject
+from learningresources.models import Repository, Course, LearningResource
 from .forms import UploadForm
 
 
@@ -16,7 +16,7 @@ def status(request):
     counts = {
         "repos": Repository.objects.count(),
         "courses": Course.objects.count(),
-        "loxes": LearningObject.objects.count(),
+        "loxes": LearningResource.objects.count(),
     }
     return render(
         request,

@@ -18,13 +18,13 @@ class Course(models.Model):
     imported_by = models.ForeignKey(User)
 
 
-class LearningObject(models.Model):
+class LearningResource(models.Model):
     """
     The units that compose an edX course:
     chapter, sequential, vertical, problem, video, html, etc.
     """
     course = models.ForeignKey(Course)
-    learning_object_type = models.ForeignKey('LearningObjectType')
+    learning_object_type = models.ForeignKey('LearningResourceType')
     uuid = models.TextField()
     title = models.TextField()
     description = models.TextField()
@@ -40,7 +40,7 @@ class LearningObject(models.Model):
     xa_histogram_grade = models.FloatField(default=0)
 
 
-class LearningObjectType(models.Model):
+class LearningResourceType(models.Model):
     """
     Learning object type:
     chapter, sequential, vertical, problem, video, html, etc.
