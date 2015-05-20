@@ -47,11 +47,6 @@ class TestImportToy(TestCase):
         handle, self.bad_file = mkstemp()
         os.close(handle)
 
-    def tearDown(self):
-        """clean up"""
-        super(TestImportToy, self).tearDown()
-        os.remove(self.bad_file)
-
     def test_import_toy(self):
         """
         Simplest possible test.
