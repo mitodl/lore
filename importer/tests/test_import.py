@@ -2,9 +2,11 @@
 Tests for LORE imports.
 """
 
-from django.test.testcases import TestCase
+import os
 from os.path import abspath, dirname, join
+from tempfile import mkstemp
 
+from django.test.testcases import TestCase
 from django.contrib.auth.models import User
 
 from importer.api import import_course_from_file
@@ -36,6 +38,13 @@ class TestImportToy(TestCase):
         super(TestImportToy, self).setUp()
         self.user, _ = User.objects.get_or_create(username="test")
         self.course_zip = get_course_zip()
+        handle, self.bad_file = mkstemp()
+        os.close(handle)
+
+    def tearDown(self):
+        """clean up"""
+        super(TestImportToy, self).tearDown()
+        os.remove(self.bad_file)
 
     def test_import_toy(self):
         """
@@ -44,3 +53,10 @@ class TestImportToy(TestCase):
         self.assertTrue(LearningObject.objects.count() == 0)
         import_course_from_file(self.course_zip, self.user.id)
         self.assertTrue(LearningObject.objects.count() == 5)
+
+    def test_bad_file(self):
+        """Invalid zip file"""
+        self.assertTrue(LearningObject.objects.count() == 0)
+        with self.assertRaises(ValueError):
+            import_course_from_file(self.bad_file, self.user.id)
+        self.assertTrue(LearningObject.objects.count() == 0)
