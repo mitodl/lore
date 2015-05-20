@@ -129,7 +129,6 @@ def get_learning_objects_for_term(term_id):
     Returns:
         sequence of LearningObject relating to existing Term
     """
-    # TODO: would a list be more appropriate to return?
     return Term.objects.get(id=term_id).learning_objects.order_by('id')
 
 
@@ -143,7 +142,6 @@ def get_terms_for_learning_object(learning_object_id):
     Returns:
         sequence of Term relating to existing LearningObject
     """
-    # TODO: would a list be more appropriate to return?
     return (LearningObject.objects.get(id=learning_object_id).terms.
             order_by('id'))
 
@@ -176,7 +174,8 @@ def remove_term_from_learning_object(learning_object_id, term_id):
         term_id (int): Id for Term
     """
     term = Term.objects.get(id=term_id)
-    term.learning_objects.filter(id=learning_object_id).delete()
+    learning_object = LearningObject.objects.get(id=learning_object_id)
+    term.learning_objects.remove(learning_object)
 
 
 def get_vocabularies_for_type(learning_object_type):
@@ -189,9 +188,8 @@ def get_vocabularies_for_type(learning_object_type):
     Returns:
         sequence of Vocabulary objects supporting the learning object type
     """
-    return Vocabulary.objects.filter(
-        learning_object_types__name=learning_object_type
-    )
+    return (LearningObjectType.objects.get(name=learning_object_type).
+            vocabularies.order_by('id'))
 
 
 def get_types_for_vocabulary(vocabulary_id):
@@ -205,9 +203,9 @@ def get_types_for_vocabulary(vocabulary_id):
         list of unicode: sequence of learning object types supported by
             a LearningObject
     """
-    learning_object_types = LearningObjectType.objects.order_by('id').filter(
-        vocabulary__id=vocabulary_id
-    )
+    learning_object_types = (Vocabulary.objects.get(id=vocabulary_id).
+                             learning_object_types.order_by('name'))
+
     return (x.name for x in learning_object_types)
 
 
@@ -228,7 +226,7 @@ def add_type_for_vocabulary(learning_object_type,
 
 
 @transaction.atomic
-def remove_type_from_vocabulary(learning_object_type,
+def remove_type_from_vocabulary(learning_object_type_name,
                                 vocabulary_id):
     """
     Remove learning object type from existing Vocabulary
@@ -238,7 +236,9 @@ def remove_type_from_vocabulary(learning_object_type,
         vocabulary_id (int): Id for existing Vocabulary
     """
     vocabulary = Vocabulary.objects.get(id=vocabulary_id)
-    vocabulary.learning_object_types.filter(name=learning_object_type).delete()
+    learning_object_type = LearningObjectType.objects.get(
+        name=learning_object_type_name)
+    vocabulary.learning_object_types.remove(learning_object_type)
 
 
 class TaxonomyAPIException(Exception):
