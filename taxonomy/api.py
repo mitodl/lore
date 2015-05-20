@@ -53,9 +53,6 @@ def create_vocabulary(
                                    " 'm' (managed) or 'f' (free tagging)")
 
     repository = Repository.objects.get(id=repository_id)
-    if repository is None:
-        raise Repository.DoesNotExist("Repository with id %d not found" %
-                                      repository.id)
 
     return Vocabulary.objects.create(
         repository=repository,
@@ -104,9 +101,6 @@ def create_term(vocabulary_id, label, weight):
         Term: The newly created Term
     """
     vocabulary = Vocabulary.objects.get(id=vocabulary_id)
-    if vocabulary is None:
-        raise Vocabulary.DoesNotExist("Vocabulary not found for id %d" %
-                                      vocabulary_id)
 
     return Term.objects.create(
         vocabulary=vocabulary,
