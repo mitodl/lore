@@ -19,7 +19,6 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
-    url(r'^taxonomy/', include('taxonomy.urls')),
 ]
 
 if settings.CAS_ENABLED:
