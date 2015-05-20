@@ -68,7 +68,7 @@ def create_lox(course, parent, lox_type, title, content_xml):
         course (learningresources.Course): course
         parent (learningresources.LearningResource): parent LearningResource
     Returns:
-        lox (learningresources.LearningResource): newly-created LearningResource
+        lox (learningresources.LearningResource): new LearningResource
     """
 
     lox = LearningResource(
