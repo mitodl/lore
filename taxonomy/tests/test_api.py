@@ -5,7 +5,6 @@ Tests for taxonomy app
 # pylint: disable=no-member
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=invalid-name
-from django.db.transaction import rollback
 
 from django.test.testcases import TestCase
 from django.contrib.auth.models import User
@@ -275,9 +274,9 @@ class TestApi(TestCase):
         """
         Test get_types_for_vocabulary
         """
+        self.vocabulary.learning_object_types.add(self.learning_object_type1)
         self.assertEquals([self.learning_object_type1.name],
-                          [t.name for t in
-                           get_types_for_vocabulary(self.vocabulary.id)])
+                          list(get_types_for_vocabulary(self.vocabulary.id)))
         self.assertRaises(Vocabulary.DoesNotExist,
                           lambda: get_types_for_vocabulary(3))
 
@@ -285,6 +284,7 @@ class TestApi(TestCase):
         """
         Test get_vocabularies_for_type
         """
+        self.vocabulary.learning_object_types.add(self.learning_object_type1)
         self.assertEquals([self.vocabulary],
                           list(get_vocabularies_for_type(
                               self.learning_object_type1.name)))
@@ -308,27 +308,32 @@ class TestApi(TestCase):
         """
         Test remove_term_from_learning_object
         """
+        self.learning_object.terms.add(self.term)
         self.assertEquals([self.term],
-                          get_terms_for_learning_object(
-                              self.learning_object.id))
+                          list(get_terms_for_learning_object(
+                              self.learning_object.id)))
         remove_term_from_learning_object(self.term.id, self.learning_object.id)
         self.assertEquals([],
-                          get_terms_for_learning_object(
-                              self.learning_object.id))
+                          list(get_terms_for_learning_object(
+                              self.learning_object.id)))
 
     def test_remove_type_from_vocabulary(self):
         """
         Test remove_type_from_vocabulary
         """
-        self.assertEquals([self.vocabulary.id],
-                          get_vocabularies_for_type(
-                              self.learning_object_type1.name))
+        self.vocabulary.learning_object_types.add(self.learning_object_type1)
+
+        self.assertEquals([self.vocabulary],
+                          list(get_vocabularies_for_type(
+                              self.learning_object_type1.name)))
         remove_type_from_vocabulary(self.learning_object_type1.name,
                                     self.vocabulary.id)
         self.assertEquals([],
-                          get_vocabularies_for_type(
-                              self.learning_object_type1.name))
+                          list(get_vocabularies_for_type(
+                              self.learning_object_type1.name)))
 
         remove_type_from_vocabulary(self.learning_object_type1.name,
                                     self.vocabulary.id)
-        remove_type_from_vocabulary("xyz", self.vocabulary.id)
+        self.assertRaises(LearningObjectType.DoesNotExist,
+                          lambda: remove_type_from_vocabulary(
+                              "xyz", self.vocabulary.id))
