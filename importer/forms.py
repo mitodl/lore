@@ -37,7 +37,7 @@ class UploadForm(Form):
         """
         # Assumes a single file, because we only accept
         # one at a time.
-        uploaded_file = self.files.values()[0]
+        uploaded_file = list(self.files.values())[0]
         _, ext = os.path.splitext(uploaded_file.name)
 
         # Save the uploaded file into a temp file.
