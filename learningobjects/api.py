@@ -11,8 +11,6 @@ from learningobjects.models import (
 
 TYPE_LOOKUP = {}
 
-# pylint: disable=no-member
-
 
 def create_course(org, course_number, semester, user_id):
     """

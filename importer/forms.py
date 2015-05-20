@@ -10,8 +10,6 @@ from django.forms import Form, FileField, ChoiceField
 from learningobjects.models import Repository
 from importer.api import import_course_from_file
 
-# pylint: disable=no-member
-
 
 class UploadForm(Form):
     """

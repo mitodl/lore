@@ -8,8 +8,6 @@ from django.contrib.auth.models import User
 from learningobjects.models import Repository, Course, LearningObject
 from .forms import UploadForm
 
-# pylint: disable=no-member
-
 
 def status(request):
     """

@@ -10,8 +10,6 @@ from django.contrib.auth.models import User
 from importer.api import import_course_from_file
 from learningobjects.models import LearningObject
 
-# pylint: disable=no-member
-
 
 def get_course_zip():
     """

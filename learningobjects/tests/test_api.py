@@ -9,8 +9,6 @@ from django.contrib.auth.models import User
 from learningobjects.models import Course
 from learningobjects.api import create_course
 
-# pylint: disable=no-member
-
 
 class TestCreateCourse(TestCase):
     """

@@ -82,9 +82,6 @@ def import_children(course, element, parent):
         element (lxml.etree): XML element within xbundle
         parent (learningobjects.LearningObject): parent LearningObject
     """
-    # pylint: disable=no-member
-    # for tostring() below.
-
     lox = create_lox(
         course=course, parent=parent, lox_type=element.tag,
         title=element.attrib.get("display_name", "MISSING"),
