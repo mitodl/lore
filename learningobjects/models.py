@@ -55,5 +55,5 @@ class Repository(models.Model):
     """
     name = models.TextField()
     description = models.TextField()
-    create_date = models.DateField()
+    create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)
