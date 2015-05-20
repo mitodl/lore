@@ -7,11 +7,10 @@ from datetime import datetime
 from shutil import rmtree
 from tempfile import mkdtemp
 from os.path import join
-import tarfile
-import zipfile
 
 from xbundle import XBundle, DESCRIPTOR_TAGS
 from lxml import etree
+from archive import extract, ArchiveException
 
 from learningobjects.api import create_course, create_lox
 
@@ -23,20 +22,17 @@ def import_course_from_file(filename, user_id):
     Args:
         filename (unicode): Path to archive file (zip or .tar.gz)
     Raises:
-        ValueError: Unable to find single path inside archive file.
+        ValueError: Unable to extract or read archive contents.
     Returns: None
     """
     tempdir = mkdtemp()
-    if filename.endswith(".tar.gz"):
-        course = tarfile.open(filename, "r")
-    elif filename.endswith(".zip"):
-        course = zipfile.ZipFile(filename, "r")
-    else:
-        raise ValueError("Unexpected file type (want tarball or zip).")
-    course.extractall(tempdir)
+    try:
+        extract(path=filename, to_path=tempdir, method="safe")
+    except ArchiveException:
+        raise ValueError("Invalid OLX archive, unable to extract.")
     dirs = glob(join(tempdir, "*"))
     if len(dirs) != 1:
-        raise ValueError("Unable to get course directory.")
+        raise ValueError("Invalid OLX archive, bad directory structure.")
     import_course_from_path(dirs[0], user_id)
     rmtree(tempdir)
 
