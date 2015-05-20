@@ -20,7 +20,7 @@ def status(request):
     }
     return render(
         request,
-        "importer/status.html",
+        "status.html",
         counts,
     )
 
@@ -38,6 +38,6 @@ def upload(request):
             form.save(request.user)
     return render(
         request,
-        "importer/upload.html",
+        "upload.html",
         {'form': form},
     )
