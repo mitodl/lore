@@ -6,8 +6,8 @@ from django.test.testcases import TestCase
 
 from django.contrib.auth.models import User
 
-from learningobjects.models import Course
-from learningobjects.api import create_course
+from learningresources.models import Course
+from learningresources.api import create_course
 
 
 class TestCreateCourse(TestCase):

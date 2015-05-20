@@ -11,7 +11,7 @@ from django.test.testcases import TestCase
 from django.contrib.auth.models import User
 
 from importer.api import import_course_from_file
-from learningobjects.models import LearningObject
+from learningresources.models import LearningResource
 
 
 def get_course_zip():
@@ -51,13 +51,13 @@ class TestImportToy(TestCase):
         """
         Simplest possible test.
         """
-        self.assertTrue(LearningObject.objects.count() == 0)
+        self.assertTrue(LearningResource.objects.count() == 0)
         import_course_from_file(self.course_zip, self.user.id)
-        self.assertTrue(LearningObject.objects.count() == 5)
+        self.assertTrue(LearningResource.objects.count() == 5)
 
     def test_bad_file(self):
         """Invalid zip file"""
-        self.assertTrue(LearningObject.objects.count() == 0)
+        self.assertTrue(LearningResource.objects.count() == 0)
         with self.assertRaises(ValueError):
             import_course_from_file(self.bad_file, self.user.id)
-        self.assertTrue(LearningObject.objects.count() == 0)
+        self.assertTrue(LearningResource.objects.count() == 0)

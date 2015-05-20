@@ -13,7 +13,7 @@ from xbundle import XBundle, DESCRIPTOR_TAGS
 from lxml import etree
 from archive import extract, ArchiveException
 
-from learningobjects.api import create_course, create_lox
+from learningresources.api import create_course, create_lox
 
 
 def import_course_from_file(filename, user_id):
@@ -75,13 +75,13 @@ def import_course(bundle, user_id):
 
 def import_children(course, element, parent):
     """
-    Create LearningObject instances for each element
+    Create LearningResource instances for each element
     of an XML tree.
 
     Args:
-        course (learningobjects.Course): Course
+        course (learningresources.Course): Course
         element (lxml.etree): XML element within xbundle
-        parent (learningobjects.LearningObject): parent LearningObject
+        parent (learningresources.LearningResource): parent LearningResource
     """
     lox = create_lox(
         course=course, parent=parent, lox_type=element.tag,
