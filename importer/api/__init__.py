@@ -7,6 +7,7 @@ from datetime import datetime
 from shutil import rmtree
 from tempfile import mkdtemp
 from os.path import join
+from os import remove
 
 from xbundle import XBundle, DESCRIPTOR_TAGS
 from lxml import etree
@@ -29,12 +30,16 @@ def import_course_from_file(filename, user_id):
     try:
         extract(path=filename, to_path=tempdir, method="safe")
     except ArchiveException:
+        remove(filename)
         raise ValueError("Invalid OLX archive, unable to extract.")
     dirs = glob(join(tempdir, "*"))
     if len(dirs) != 1:
+        rmtree(tempdir)
+        remove(filename)
         raise ValueError("Invalid OLX archive, bad directory structure.")
     import_course_from_path(dirs[0], user_id)
     rmtree(tempdir)
+    remove(filename)
 
 
 def import_course_from_path(path, user_id):

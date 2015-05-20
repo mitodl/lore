@@ -5,6 +5,7 @@ Tests for LORE imports.
 import os
 from os.path import abspath, dirname, join
 from tempfile import mkstemp
+from shutil import copyfile
 
 from django.test.testcases import TestCase
 from django.contrib.auth.models import User
@@ -15,12 +16,17 @@ from learningobjects.models import LearningObject
 
 def get_course_zip():
     """
-    Get the path to the demo course.
+    Get the path to the demo course. Creates a copy, because the
+    importer deletes the file during cleanup.
+
     Returns:
         path (unicode): absolute path to zip file
     """
     path = join(abspath(dirname(__file__)), "testdata", "courses")
-    return join(path, "two_toys.zip")
+    handle, filename = mkstemp(suffix=".zip")
+    os.close(handle)
+    copyfile(join(path, "two_toys.zip"), filename)
+    return filename
 
 
 class TestImportToy(TestCase):
