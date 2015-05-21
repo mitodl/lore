@@ -1,13 +1,13 @@
 """
-Views for learningobjects app.
+Views for learningresources app.
 """
 
 from django.shortcuts import render, redirect
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 
-from learningobjects.api import get_repos
-from learningobjects.forms import RepositoryForm
+from learningresources.api import get_repos
+from learningresources.forms import RepositoryForm
 
 
 def welcome(request):
@@ -16,7 +16,7 @@ def welcome(request):
     """
     return render(
         request,
-        "learningobjects/welcome.html",
+        "learningresources/welcome.html",
         {"repos": get_repos(request.user)}
     )
 
@@ -34,6 +34,6 @@ def create_repo(request):
             return redirect(reverse("welcome"))
     return render(
         request,
-        "learningobjects/create_repo.html",
+        "learningresources/create_repo.html",
         {"form": form},
     )

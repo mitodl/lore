@@ -115,4 +115,5 @@ def get_repos(user):
 
     # Note: This fails pylint because "user" is not being used,
     # but it can't be used just yet.
+    _ = user
     return Repository.objects.all().order_by('name')
