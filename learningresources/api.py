@@ -5,6 +5,8 @@ apps don't tie functionality to internal implementation.
 
 from datetime import datetime
 
+from django.db import transaction
+
 from learningresources.models import (
     Course, Repository, LearningResource, LearningResourceType
 )
@@ -37,7 +39,8 @@ def create_course(org, course_number, semester, user_id):
         'imported_by_id': user_id,
         "repository_id": get_temp_repository(user_id).id
     }
-    course, _ = Course.objects.get_or_create(**kwargs)
+    with transaction.atomic():
+        course, _ = Course.objects.get_or_create(**kwargs)
     return course
 
 
@@ -53,11 +56,12 @@ def get_temp_repository(user_id):
     repos = Repository.objects.all()
     if repos.count() > 0:
         return repos[0]
-    return Repository.objects.create(
-        name="demo",
-        create_date=datetime.now(),
-        created_by_id=user_id,
-    )
+    with transaction.atomic():
+        return Repository.objects.create(
+            name="demo",
+            create_date=datetime.now(),
+            created_by_id=user_id,
+        )
 
 
 def create_lox(kwargs):
@@ -83,9 +87,8 @@ def create_lox(kwargs):
     }
     if kwargs["parent"] is not None:
         params["parent_id"] = kwargs["parent"].id
-    lox = LearningResource(**params)
-    lox.save()
-    return lox
+    with transaction.atomic():
+        return LearningResource.objects.create(**params)
 
 
 def type_id_by_name(name):
@@ -104,6 +107,7 @@ def type_id_by_name(name):
     """
     if name in TYPE_LOOKUP:
         return TYPE_LOOKUP[name]
-    obj, _ = LearningResourceType.objects.get_or_create(name=name.lower())
+    with transaction.atomic():
+        obj, _ = LearningResourceType.objects.get_or_create(name=name.lower())
     TYPE_LOOKUP[name] = obj.id
     return obj.id
