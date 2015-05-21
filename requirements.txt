@@ -9,3 +9,4 @@ static3==0.5.1
 django-compressor==1.5
 git+https://github.com/bpeschier/django-compressor-requirejs@889d5edc4f2acaa961c170084f1171c700649519#egg=githubdjango-compressor-requirejs-develop
 django-appconf==1.0.1
+git+https://github.com/mingchen/django-cas-ng@69463fe7c23f025be7165c2967f4ceb983d60472#egg=django-cas-ng
