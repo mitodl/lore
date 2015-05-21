@@ -17,8 +17,10 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 import importer.urls as importer_urls
+import taxonomy.urls as taxonomy_urls
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^importer/', include(importer_urls)),
+    url(r'^taxonomy/', include(taxonomy_urls, namespace="taxonomy")),
 ]
