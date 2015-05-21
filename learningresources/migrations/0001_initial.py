@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField()),
                 ('content_xml', models.TextField()),
                 ('path_xml', models.TextField()),
-                ('mpath', models.TextField()),
+                ('materialized_path', models.TextField()),
                 ('url_path', models.TextField()),
                 ('copyright', models.TextField()),
                 ('xa_nr_views', models.IntegerField(default=0)),
