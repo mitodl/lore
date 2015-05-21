@@ -75,7 +75,6 @@ INSTALLED_APPS = (
     'learningresources',
     'importer',
     'ui',
-    'compressor',
 )
 
 MIDDLEWARE_CLASSES = (
