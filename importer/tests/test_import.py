@@ -2,10 +2,13 @@
 Tests for LORE imports.
 """
 
+from __future__ import unicode_literals
+
 import os
 from os.path import abspath, dirname, join
 from tempfile import mkstemp
 from shutil import copyfile
+import zipfile
 
 from django.test.testcases import TestCase
 from django.contrib.auth.models import User
@@ -47,6 +50,13 @@ class TestImportToy(TestCase):
         handle, self.bad_file = mkstemp()
         os.close(handle)
 
+        # Valid zip file, wrong stuff in it.
+        handle, self.incompatible = mkstemp(suffix=".zip")
+        os.close(handle)
+        archive = zipfile.ZipFile(
+            self.incompatible, "w", compression=zipfile.ZIP_DEFLATED)
+        archive.close()
+
     def test_import_toy(self):
         """
         Simplest possible test.
@@ -55,9 +65,16 @@ class TestImportToy(TestCase):
         import_course_from_file(self.course_zip, self.user.id)
         self.assertTrue(LearningResource.objects.count() == 5)
 
-    def test_bad_file(self):
+    def test_invalid_file(self):
         """Invalid zip file"""
         self.assertTrue(LearningResource.objects.count() == 0)
         with self.assertRaises(ValueError):
             import_course_from_file(self.bad_file, self.user.id)
+        self.assertTrue(LearningResource.objects.count() == 0)
+
+    def test_incompatible_file(self):
+        """incompatible zip file (missing course structure)"""
+        self.assertTrue(LearningResource.objects.count() == 0)
+        with self.assertRaises(ValueError):
+            import_course_from_file(self.incompatible, self.user.id)
         self.assertTrue(LearningResource.objects.count() == 0)
