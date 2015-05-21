@@ -63,7 +63,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='learningresource',
-            name='learning_object_type',
+            name='learning_resource_type',
             field=models.ForeignKey(to='learningresources.LearningResourceType'),
         ),
         migrations.AddField(

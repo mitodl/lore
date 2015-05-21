@@ -62,7 +62,7 @@ def get_temp_repository(user_id):
 
 def create_lox(course, parent, lox_type, title, content_xml):
     """
-    Create a learning object.
+    Create a learning resource.
 
     Args:
         course (learningresources.Course): course
@@ -74,7 +74,7 @@ def create_lox(course, parent, lox_type, title, content_xml):
     lox = LearningResource(
         course=course,
         parent_id=parent.id if parent is not None else None,
-        learning_object_type_id=type_id_by_name(lox_type),
+        learning_resource_type_id=type_id_by_name(lox_type),
         title=title,
         content_xml=content_xml,
     )

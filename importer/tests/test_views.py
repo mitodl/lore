@@ -19,7 +19,7 @@ class TestViews(TestCase):
         resp = client.get("/importer/status", follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
-        self.assertTrue("Number of learning objects:" in body)
+        self.assertTrue("Number of learning resources:" in body)
 
     def test_upload_get(self):
         """Status page."""

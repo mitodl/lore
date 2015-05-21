@@ -1,5 +1,5 @@
 """
-Learning objects data model
+Learning resources data model
 """
 
 from django.db import models
@@ -24,7 +24,7 @@ class LearningResource(models.Model):
     chapter, sequential, vertical, problem, video, html, etc.
     """
     course = models.ForeignKey(Course)
-    learning_object_type = models.ForeignKey('LearningResourceType')
+    learning_resource_type = models.ForeignKey('LearningResourceType')
     uuid = models.TextField()
     title = models.TextField()
     description = models.TextField()
@@ -42,7 +42,7 @@ class LearningResource(models.Model):
 
 class LearningResourceType(models.Model):
     """
-    Learning object type:
+    Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
     """
     name = models.TextField()
@@ -50,7 +50,7 @@ class LearningResourceType(models.Model):
 
 class Repository(models.Model):
     """
-    A collection of learning objects
+    A collection of learning resources
     that come from (usually tightly-related) courses.
     """
     name = models.TextField()
