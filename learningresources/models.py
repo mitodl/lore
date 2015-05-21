@@ -1,5 +1,5 @@
 """
-Learning objects data model
+Learning resources data model
 """
 
 from django.db import models
@@ -18,19 +18,19 @@ class Course(models.Model):
     imported_by = models.ForeignKey(User)
 
 
-class LearningObject(models.Model):
+class LearningResource(models.Model):
     """
     The units that compose an edX course:
     chapter, sequential, vertical, problem, video, html, etc.
     """
     course = models.ForeignKey(Course)
-    learning_object_type = models.ForeignKey('LearningObjectType')
+    learning_resource_type = models.ForeignKey('LearningResourceType')
     uuid = models.TextField()
     title = models.TextField()
     description = models.TextField()
     content_xml = models.TextField()
     path_xml = models.TextField()
-    mpath = models.TextField()
+    materialized_path = models.TextField()
     url_path = models.TextField()
     parent = models.ForeignKey('self', null=True, blank=True)
     copyright = models.TextField()
@@ -40,9 +40,9 @@ class LearningObject(models.Model):
     xa_histogram_grade = models.FloatField(default=0)
 
 
-class LearningObjectType(models.Model):
+class LearningResourceType(models.Model):
     """
-    Learning object type:
+    Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
     """
     name = models.TextField()
@@ -50,7 +50,7 @@ class LearningObjectType(models.Model):
 
 class Repository(models.Model):
     """
-    A collection of learning objects
+    A collection of learning resources
     that come from (usually tightly-related) courses.
     """
     name = models.TextField()

@@ -5,10 +5,8 @@ Views for the importer app.
 from django.shortcuts import render
 from django.contrib.auth.models import User
 
-from learningobjects.models import Repository, Course, LearningObject
+from learningresources.models import Repository, Course, LearningResource
 from .forms import UploadForm
-
-# pylint: disable=no-member
 
 
 def status(request):
@@ -18,11 +16,11 @@ def status(request):
     counts = {
         "repos": Repository.objects.count(),
         "courses": Course.objects.count(),
-        "loxes": LearningObject.objects.count(),
+        "loxes": LearningResource.objects.count(),
     }
     return render(
         request,
-        "importer/status.html",
+        "status.html",
         counts,
     )
 
@@ -40,6 +38,6 @@ def upload(request):
             form.save(request.user)
     return render(
         request,
-        "importer/upload.html",
+        "upload.html",
         {'form': form},
     )

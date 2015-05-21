@@ -7,13 +7,13 @@ from datetime import datetime
 from shutil import rmtree
 from tempfile import mkdtemp
 from os.path import join
-import tarfile
-import zipfile
+from os import remove
 
 from xbundle import XBundle, DESCRIPTOR_TAGS
 from lxml import etree
+from archive import extract, ArchiveException
 
-from learningobjects.api import create_course, create_lox
+from learningresources.api import create_course, create_lox
 
 
 def import_course_from_file(filename, user_id):
@@ -23,22 +23,23 @@ def import_course_from_file(filename, user_id):
     Args:
         filename (unicode): Path to archive file (zip or .tar.gz)
     Raises:
-        ValueError: Unable to find single path inside archive file.
+        ValueError: Unable to extract or read archive contents.
     Returns: None
     """
     tempdir = mkdtemp()
-    if filename.endswith(".tar.gz"):
-        course = tarfile.open(filename, "r")
-    elif filename.endswith(".zip"):
-        course = zipfile.ZipFile(filename, "r")
-    else:
-        raise ValueError("Unexpected file type (want tarball or zip).")
-    course.extractall(tempdir)
+    try:
+        extract(path=filename, to_path=tempdir, method="safe")
+    except ArchiveException:
+        remove(filename)
+        raise ValueError("Invalid OLX archive, unable to extract.")
     dirs = glob(join(tempdir, "*"))
     if len(dirs) != 1:
-        raise ValueError("Unable to get course directory.")
+        rmtree(tempdir)
+        remove(filename)
+        raise ValueError("Invalid OLX archive, bad directory structure.")
     import_course_from_path(dirs[0], user_id)
     rmtree(tempdir)
+    remove(filename)
 
 
 def import_course_from_path(path, user_id):
@@ -74,17 +75,14 @@ def import_course(bundle, user_id):
 
 def import_children(course, element, parent):
     """
-    Create LearningObject instances for each element
+    Create LearningResource instances for each element
     of an XML tree.
 
     Args:
-        course (learningobjects.Course): Course
+        course (learningresources.Course): Course
         element (lxml.etree): XML element within xbundle
-        parent (learningobjects.LearningObject): parent LearningObject
+        parent (learningresources.LearningResource): parent LearningResource
     """
-    # pylint: disable=no-member
-    # for tostring() below.
-
     lox = create_lox(
         course=course, parent=parent, lox_type=element.tag,
         title=element.attrib.get("display_name", "MISSING"),

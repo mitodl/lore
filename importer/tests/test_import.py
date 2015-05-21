@@ -2,25 +2,31 @@
 Tests for LORE imports.
 """
 
-from django.test.testcases import TestCase
+import os
 from os.path import abspath, dirname, join
+from tempfile import mkstemp
+from shutil import copyfile
 
+from django.test.testcases import TestCase
 from django.contrib.auth.models import User
 
 from importer.api import import_course_from_file
-from learningobjects.models import LearningObject
-
-# pylint: disable=no-member
+from learningresources.models import LearningResource
 
 
 def get_course_zip():
     """
-    Get the path to the demo course.
+    Get the path to the demo course. Creates a copy, because the
+    importer deletes the file during cleanup.
+
     Returns:
         path (unicode): absolute path to zip file
     """
     path = join(abspath(dirname(__file__)), "testdata", "courses")
-    return join(path, "two_toys.zip")
+    handle, filename = mkstemp(suffix=".zip")
+    os.close(handle)
+    copyfile(join(path, "two_toys.zip"), filename)
+    return filename
 
 
 class TestImportToy(TestCase):
@@ -38,11 +44,20 @@ class TestImportToy(TestCase):
         super(TestImportToy, self).setUp()
         self.user, _ = User.objects.get_or_create(username="test")
         self.course_zip = get_course_zip()
+        handle, self.bad_file = mkstemp()
+        os.close(handle)
 
     def test_import_toy(self):
         """
         Simplest possible test.
         """
-        self.assertTrue(LearningObject.objects.count() == 0)
+        self.assertTrue(LearningResource.objects.count() == 0)
         import_course_from_file(self.course_zip, self.user.id)
-        self.assertTrue(LearningObject.objects.count() == 5)
+        self.assertTrue(LearningResource.objects.count() == 5)
+
+    def test_bad_file(self):
+        """Invalid zip file"""
+        self.assertTrue(LearningResource.objects.count() == 0)
+        with self.assertRaises(ValueError):
+            import_course_from_file(self.bad_file, self.user.id)
+        self.assertTrue(LearningResource.objects.count() == 0)

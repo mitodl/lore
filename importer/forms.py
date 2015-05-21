@@ -7,10 +7,8 @@ from tempfile import mkstemp
 
 from django.forms import Form, FileField, ChoiceField
 
-from learningobjects.models import Repository
+from learningresources.models import Repository
 from importer.api import import_course_from_file
-
-# pylint: disable=no-member
 
 
 class UploadForm(Form):
@@ -39,7 +37,7 @@ class UploadForm(Form):
         """
         # Assumes a single file, because we only accept
         # one at a time.
-        uploaded_file = self.files.values()[0]
+        uploaded_file = list(self.files.values())[0]
         _, ext = os.path.splitext(uploaded_file.name)
 
         # Save the uploaded file into a temp file.

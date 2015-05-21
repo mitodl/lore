@@ -1,5 +1,5 @@
 """
-Forms for LearninObjects
+Forms for LearningResources
 """
 
 from django.forms import ModelForm

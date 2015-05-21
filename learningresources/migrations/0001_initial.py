@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='LearningObject',
+            name='LearningResource',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('uuid', models.TextField()),
@@ -34,18 +34,18 @@ class Migration(migrations.Migration):
                 ('description', models.TextField()),
                 ('content_xml', models.TextField()),
                 ('path_xml', models.TextField()),
-                ('mpath', models.TextField()),
+                ('materialized_path', models.TextField()),
                 ('url_path', models.TextField()),
                 ('copyright', models.TextField()),
                 ('xa_nr_views', models.IntegerField(default=0)),
                 ('xa_nr_attempts', models.IntegerField(default=0)),
                 ('xa_avg_grade', models.FloatField(default=0)),
                 ('xa_histogram_grade', models.FloatField(default=0)),
-                ('course', models.ForeignKey(to='learningobjects.Course')),
+                ('course', models.ForeignKey(to='learningresources.Course')),
             ],
         ),
         migrations.CreateModel(
-            name='LearningObjectType',
+            name='LearningResourceType',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('name', models.TextField()),
@@ -62,18 +62,18 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.AddField(
-            model_name='learningobject',
-            name='learning_object_type',
-            field=models.ForeignKey(to='learningobjects.LearningObjectType'),
+            model_name='learningresource',
+            name='learning_resource_type',
+            field=models.ForeignKey(to='learningresources.LearningResourceType'),
         ),
         migrations.AddField(
-            model_name='learningobject',
+            model_name='learningresource',
             name='parent',
-            field=models.ForeignKey(blank=True, to='learningobjects.LearningObject', null=True),
+            field=models.ForeignKey(blank=True, to='learningresources.LearningResource', null=True),
         ),
         migrations.AddField(
             model_name='course',
             name='repository',
-            field=models.ForeignKey(to='learningobjects.Repository'),
+            field=models.ForeignKey(to='learningresources.Repository'),
         ),
     ]

@@ -5,13 +5,11 @@ apps don't tie functionality to internal implementation.
 
 from datetime import datetime
 
-from learningobjects.models import (
-    Course, Repository, LearningObject, LearningObjectType
+from learningresources.models import (
+    Course, Repository, LearningResource, LearningResourceType
 )
 
 TYPE_LOOKUP = {}
-
-# pylint: disable=no-member
 
 
 def create_course(org, course_number, semester, user_id):
@@ -50,7 +48,7 @@ def get_temp_repository(user_id):
     Args:
         user_id (int): primary key of user creating the course
     Returns:
-        repository (learningobjects.Repository): repository
+        repository (learningresources.Repository): repository
     """
     repos = Repository.objects.all()
     if repos.count() > 0:
@@ -64,19 +62,19 @@ def get_temp_repository(user_id):
 
 def create_lox(course, parent, lox_type, title, content_xml):
     """
-    Create a learning object.
+    Create a learning resource.
 
     Args:
-        course (learningobjects.Course): course
-        parent (learningobjects.LearningObject): parent LearningObject
+        course (learningresources.Course): course
+        parent (learningresources.LearningResource): parent LearningResource
     Returns:
-        lox (learningobjects.LearningObject): newly-created LearningObject
+        lox (learningresources.LearningResource): new LearningResource
     """
 
-    lox = LearningObject(
+    lox = LearningResource(
         course=course,
         parent_id=parent.id if parent is not None else None,
-        learning_object_type_id=type_id_by_name(lox_type),
+        learning_resource_type_id=type_id_by_name(lox_type),
         title=title,
         content_xml=content_xml,
     )
@@ -86,7 +84,7 @@ def create_lox(course, parent, lox_type, title, content_xml):
 
 def type_id_by_name(name):
     """
-    Get or create a LearningObjectType by name.
+    Get or create a LearningResourceType by name.
 
     This would do fewer queries if it did all the lookups up front, but
     this is simpler to read and understand and still prevents most lookups.
@@ -94,13 +92,13 @@ def type_id_by_name(name):
     a single query.
 
     Args:
-        name (unicode): LearningObjectType.name
+        name (unicode): LearningResourceType.name
     Returns:
-        type_id (int): pk of learningobjects.LearningObjectType
+        type_id (int): pk of learningresources.LearningResourceType
     """
     if name in TYPE_LOOKUP:
         return TYPE_LOOKUP[name]
-    obj, _ = LearningObjectType.objects.get_or_create(name=name.lower())
+    obj, _ = LearningResourceType.objects.get_or_create(name=name.lower())
     TYPE_LOOKUP[name] = obj.id
     return obj.id
 

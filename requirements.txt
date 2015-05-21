@@ -6,4 +6,5 @@ uwsgi==2.0.10
 psycopg2==2.6
 tox==1.9.2
 static3==0.5.1
-xbundle==0.2.0
+git+https://github.com/mitodl/xbundle.git@7799a0957c502103fb030fc0b16c64204f551c75#egg=xbundle
+git+https://github.com/gdub/python-archive.git@61b9afde21621a8acce964d3336a7fb5d2d07ca6#egg=python-archive

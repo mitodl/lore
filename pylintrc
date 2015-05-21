@@ -1,4 +1,6 @@
 [BASIC]
 # Allow django's urlpatterns, and our log preference
 const-rgx = (([A-Z_][A-Z0-9_]*)|(__.*__)|log|urlpatterns)$
-ignore=migrations
+
+[MESSAGES CONTROL]
+disable = no-member
