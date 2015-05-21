@@ -13,7 +13,7 @@ from xbundle import XBundle, DESCRIPTOR_TAGS
 from lxml import etree
 from archive import extract, ArchiveException
 
-from learningresources.api import create_course, create_lox
+from learningresources.api import create_course, create_resource
 
 
 def import_course_from_file(filename, user_id):
@@ -84,12 +84,12 @@ def import_children(course, element, parent):
         parent (learningresources.LearningResource): parent LearningResource
     """
     mpath = etree.ElementTree(element).getpath(element)
-    lox = create_lox({
-        "course": course, "parent": parent, "lox_type": element.tag,
+    resource = create_resource({
+        "course": course, "parent": parent, "resource_type": element.tag,
         "title": element.attrib.get("display_name", "MISSING"),
         "content_xml": etree.tostring(element),
         "mpath": mpath,
     })
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
-            import_children(course, child, lox)
+            import_children(course, child, resource)

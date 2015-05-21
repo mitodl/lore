@@ -17,7 +17,7 @@ def status(request):
     counts = {
         "repos": Repository.objects.count(),
         "courses": Course.objects.count(),
-        "loxes": LearningResource.objects.count(),
+        "resources": LearningResource.objects.count(),
     }
     return render(
         request,
