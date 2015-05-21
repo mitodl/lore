@@ -60,24 +60,30 @@ def get_temp_repository(user_id):
     )
 
 
-def create_lox(course, parent, lox_type, title, content_xml):
+def create_lox(kwargs):
     """
     Create a learning resource.
 
     Args:
         course (learningresources.Course): course
         parent (learningresources.LearningResource): parent LearningResource
+        lox_type (unicode): name of LearningResourceType
+        title (unicode): title of resource
+        content_xml (unicode): XML
+        mpath (unicode): materialized path
     Returns:
         lox (learningresources.LearningResource): new LearningResource
     """
-
-    lox = LearningResource(
-        course=course,
-        parent_id=parent.id if parent is not None else None,
-        learning_resource_type_id=type_id_by_name(lox_type),
-        title=title,
-        content_xml=content_xml,
-    )
+    params = {
+        "course": kwargs["course"],
+        "learning_resource_type_id": type_id_by_name(kwargs["lox_type"]),
+        "title": kwargs["title"],
+        "content_xml": kwargs["content_xml"],
+        "materialized_path": kwargs["mpath"],
+    }
+    if kwargs["parent"] is not None:
+        params["parent_id"] = kwargs["parent"].id
+    lox = LearningResource(**params)
     lox.save()
     return lox
 

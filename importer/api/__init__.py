@@ -83,11 +83,13 @@ def import_children(course, element, parent):
         element (lxml.etree): XML element within xbundle
         parent (learningresources.LearningResource): parent LearningResource
     """
-    lox = create_lox(
-        course=course, parent=parent, lox_type=element.tag,
-        title=element.attrib.get("display_name", "MISSING"),
-        content_xml=etree.tostring(element),
-    )
+    mpath = etree.ElementTree(element).getpath(element)
+    lox = create_lox({
+        "course": course, "parent": parent, "lox_type": element.tag,
+        "title": element.attrib.get("display_name", "MISSING"),
+        "content_xml": etree.tostring(element),
+        "mpath": mpath,
+    })
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
             import_children(course, child, lox)
