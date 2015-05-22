@@ -16,6 +16,8 @@ RUN pip install pip --upgrade
 # Install project packages
 RUN pip install -r requirements.txt
 RUN pip install -r test_requirements.txt
+RUN pip3 install -r requirements.txt
+RUN pip3 install -r test_requirements.txt
 
 # Add, and run as, non-root user.
 RUN adduser --disabled-password --gecos "" mitodl

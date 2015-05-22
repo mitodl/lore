@@ -66,6 +66,11 @@ ALLOWED_HOSTS = get_var('ALLOWED_HOSTS', [])
 # Application definition
 
 INSTALLED_APPS = (
+    # CAUTION: the cas app must be loaded first as its settings are
+    # applied on application and it makes changes to other application
+    # settings like django.contrib.admin and django.contrib.auth which
+    # it modifies, and must do so before they are loaded.
+    'cas',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -87,6 +92,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
 )
+
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
 ROOT_URLCONF = 'lore.urls'
 
@@ -156,4 +163,14 @@ STATICFILES_DIRS = (
 )
 COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
+)
+
+# e-mail configurable admins
+ADMIN_EMAIL = get_var('LORE_ADMIN_EMAIL', '')
+if ADMIN_EMAIL is not '':
+    ADMINS = (('Admins', ADMIN_EMAIL),)
+
+CAS_ENABLED = get_var('LORE_USE_CAS', False)
+CAS_SERVER_URL = get_var(
+    'LORE_CAS_URL', 'https://example.com'
 )
