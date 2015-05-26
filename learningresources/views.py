@@ -16,7 +16,7 @@ def welcome(request):
     """
     return render(
         request,
-        "learningresources/welcome.html",
+        "welcome.html",
         {"repos": get_repos(request.user)}
     )
 
@@ -34,6 +34,6 @@ def create_repo(request):
             return redirect(reverse("welcome"))
     return render(
         request,
-        "learningresources/create_repo.html",
+        "create_repo.html",
         {"form": form},
     )
