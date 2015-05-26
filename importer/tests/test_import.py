@@ -40,9 +40,7 @@ class TestImportToy(TestCase):
     """
     def setUp(self):
         """
-        Return location of the local copy of the "two_toys"
-        course for testing.
-        for testing.
+        Return location of the local copy of the "two_toys" course for testing.
         """
         super(TestImportToy, self).setUp()
         self.user, _ = User.objects.get_or_create(username="test")

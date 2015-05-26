@@ -118,7 +118,7 @@ def type_id_by_name(name):
 
 def get_repos(user):
     """
-    Get all repositorys a user may see.
+    Get all repositories a user may see.
 
     Args:
         user (auth.User): request.user
