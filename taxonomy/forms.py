@@ -18,8 +18,8 @@ class VocabularyForm(ModelForm):
     Form for the Vocabulary object.
     """
 
-    # disable: warning=missing-docstring,old-style-class,no-init,
-    # disable: warning=too-few-public-methods
+    # pylint: disable=missing-docstring,old-style-class,no-init
+    # pylint: disable=too-few-public-methods
     class Meta:
         model = Vocabulary
 
