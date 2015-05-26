@@ -1,6 +1,6 @@
 # Core project/common requirements
 
-Django==1.8.1
+Django==1.8.2
 PyYAML==3.11
 dj-database-url==0.3.0
 dj-static==0.0.6
