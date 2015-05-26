@@ -77,7 +77,9 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'compressor',
+    'learningresources',
+    'importer',
+    'ui',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -172,3 +174,5 @@ CAS_ENABLED = get_var('LORE_USE_CAS', False)
 CAS_SERVER_URL = get_var(
     'LORE_CAS_URL', 'https://example.com'
 )
+
+LOGIN_URL = "/admin/"

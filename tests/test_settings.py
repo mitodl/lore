@@ -1,6 +1,7 @@
 """
 Validate that our settings functions work, and we can create yaml files
 """
+
 import imp
 import os
 import sys
