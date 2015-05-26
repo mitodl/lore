@@ -2,6 +2,8 @@
 Learning resources data model
 """
 
+from __future__ import unicode_literals
+
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -29,7 +31,6 @@ class LearningResource(models.Model):
     title = models.TextField()
     description = models.TextField()
     content_xml = models.TextField()
-    path_xml = models.TextField()
     materialized_path = models.TextField()
     url_path = models.TextField()
     parent = models.ForeignKey('self', null=True, blank=True)

@@ -2,6 +2,9 @@
 """
 Standard manage.py command from django starproject
 """
+
+from __future__ import unicode_literals
+
 import os
 import sys
 

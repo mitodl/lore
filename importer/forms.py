@@ -2,6 +2,8 @@
 Forms for importer.
 """
 
+from __future__ import unicode_literals
+
 import os
 from tempfile import mkstemp
 

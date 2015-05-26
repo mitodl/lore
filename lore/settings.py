@@ -7,6 +7,7 @@ https://docs.djangoproject.com/en/1.8/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.8/ref/settings/
 """
+import ast
 import os
 
 import dj_database_url
@@ -38,7 +39,11 @@ FALLBACK_CONFIG = load_fallback()
 
 def get_var(name, default):
     """Return the settings in a precedence way with default"""
-    return os.environ.get(name, FALLBACK_CONFIG.get(name, default))
+    try:
+        value = os.environ.get(name, FALLBACK_CONFIG.get(name, default))
+        return ast.literal_eval(value)
+    except (SyntaxError, ValueError):
+        return value
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -53,7 +58,7 @@ SECRET_KEY = get_var(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = get_var('DEBUG', True)
+DEBUG = get_var('DEBUG', False)
 
 ALLOWED_HOSTS = get_var('ALLOWED_HOSTS', [])
 
@@ -61,6 +66,11 @@ ALLOWED_HOSTS = get_var('ALLOWED_HOSTS', [])
 # Application definition
 
 INSTALLED_APPS = (
+    # CAUTION: the cas app must be loaded first as its settings are
+    # applied on application and it makes changes to other application
+    # settings like django.contrib.admin and django.contrib.auth which
+    # it modifies, and must do so before they are loaded.
+    'cas',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -83,13 +93,15 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 )
 
+AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
+
 ROOT_URLCONF = 'lore.urls'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            BASE_DIR + '/templates/'
+            BASE_DIR + '/lore/templates/'
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -139,6 +151,28 @@ USE_TZ = True
 # Serve static files with dj-static
 STATIC_URL = '/static/'
 STATIC_ROOT = 'staticfiles'
+STATICFILES_FINDERS = (
+    # defaults
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    # custom finders
+    'compressor.finders.CompressorFinder',
+)
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'lore', 'static'),
 )
+COMPRESS_PRECOMPILERS = (
+    ('text/requirejs', 'requirejs.RequireJSCompiler'),
+)
+
+# e-mail configurable admins
+ADMIN_EMAIL = get_var('LORE_ADMIN_EMAIL', '')
+if ADMIN_EMAIL is not '':
+    ADMINS = (('Admins', ADMIN_EMAIL),)
+
+CAS_ENABLED = get_var('LORE_USE_CAS', False)
+CAS_SERVER_URL = get_var(
+    'LORE_CAS_URL', 'https://example.com'
+)
+
+LOGIN_URL = "/admin/"
