@@ -84,12 +84,12 @@ def import_children(course, element, parent):
         parent (learningresources.LearningResource): parent LearningResource
     """
     mpath = etree.ElementTree(element).getpath(element)
-    resource = create_resource({
-        "course": course, "parent": parent, "resource_type": element.tag,
-        "title": element.attrib.get("display_name", "MISSING"),
-        "content_xml": etree.tostring(element),
-        "mpath": mpath,
-    })
+    resource = create_resource(
+        course=course, parent=parent, resource_type=element.tag,
+        title=element.attrib.get("display_name", "MISSING"),
+        content_xml=etree.tostring(element),
+        mpath=mpath,
+    )
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
             import_children(course, child, resource)

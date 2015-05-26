@@ -64,7 +64,8 @@ def get_temp_repository(user_id):
         )
 
 
-def create_resource(kwargs):
+# pylint: disable=too-many-arguments
+def create_resource(course, parent, resource_type, title, content_xml, mpath):
     """
     Create a learning resource.
 
@@ -79,14 +80,14 @@ def create_resource(kwargs):
         resource (learningresources.LearningResource): new LearningResource
     """
     params = {
-        "course": kwargs["course"],
-        "learning_resource_type_id": type_id_by_name(kwargs["resource_type"]),
-        "title": kwargs["title"],
-        "content_xml": kwargs["content_xml"],
-        "materialized_path": kwargs["mpath"],
+        "course": course,
+        "learning_resource_type_id": type_id_by_name(resource_type),
+        "title": title,
+        "content_xml": content_xml,
+        "materialized_path": mpath,
     }
-    if kwargs["parent"] is not None:
-        params["parent_id"] = kwargs["parent"].id
+    if parent is not None:
+        params["parent_id"] = parent.id
     with transaction.atomic():
         return LearningResource.objects.create(**params)
 
