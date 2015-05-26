@@ -29,7 +29,6 @@ class LearningResource(models.Model):
     title = models.TextField()
     description = models.TextField()
     content_xml = models.TextField()
-    path_xml = models.TextField()
     materialized_path = models.TextField()
     url_path = models.TextField()
     parent = models.ForeignKey('self', null=True, blank=True)
