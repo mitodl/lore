@@ -2,6 +2,8 @@
 Import OLX data into LORE.
 """
 
+from __future__ import unicode_literals
+
 from glob import glob
 from datetime import datetime
 from shutil import rmtree
