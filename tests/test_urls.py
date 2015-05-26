@@ -1,6 +1,9 @@
 """
 Testing of project level URLs.
 """
+
+from __future__ import unicode_literals
+
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 from urltools import compare
