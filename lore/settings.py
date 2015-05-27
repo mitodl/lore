@@ -80,6 +80,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'compressor',
     'bootstrap3',
+    'guardian',
     'learningresources',
     'importer',
     'ui',
@@ -97,7 +98,10 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.security.SecurityMiddleware',
 )
 
-AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
+)
 
 ROOT_URLCONF = 'ui.urls'
 
@@ -259,3 +263,7 @@ CELERY_RESULT_BACKEND = get_var(
     "CELERY_RESULT_BACKEND", get_var("REDISCLOUD_URL", None)
 )
 CELERY_ALWAYS_EAGER = get_var("CELERY_ALWAYS_EAGER", True)
+
+# guardian specific settings
+ANONYMOUS_USER_ID = None
+GUARDIAN_RAISE_403 = True

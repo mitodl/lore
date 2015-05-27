@@ -1,5 +1,5 @@
 """
-Views for the taxonomy app
+Views for the all apps
 """
 from __future__ import unicode_literals
 
@@ -13,12 +13,15 @@ from django.shortcuts import (
     redirect,
     get_object_or_404,
 )
+from guardian.decorators import permission_required_or_403
 
 from learningresources.api import (
     get_repos, get_repo_courses, get_runs, get_user_tags,
     get_resources, get_resource
 )
 from learningresources.models import Repository
+from roles.api import assign_user_to_repo_group
+from roles.permissions import GroupTypes
 from taxonomy.models import Vocabulary
 from ui.forms import UploadForm, VocabularyForm, RepositoryForm
 
@@ -157,6 +160,14 @@ def welcome(request):
 
 
 @login_required
+@permission_required_or_403(
+    # pylint: disable=protected-access
+    # the following string is learningresources.add_repo unless model has moved
+    '{}.add_{}'.format(
+        Repository._meta.app_label,
+        Repository._meta.model_name
+    )
+)
 def create_repo(request):
     """
     Create a new repository.
@@ -166,6 +177,11 @@ def create_repo(request):
         form = RepositoryForm(data=request.POST)
         if form.is_valid():
             repo = form.save(request.user)
+            assign_user_to_repo_group(
+                request.user,
+                repo,
+                GroupTypes.repo_administrator
+            )
             return redirect(reverse("listing", args=(repo.slug,)))
     return render(
         request,

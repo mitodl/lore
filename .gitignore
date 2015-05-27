@@ -66,6 +66,9 @@ node_modules/
 codekit-config.json
 .pycharm_helpers/
 
+.project
+.pydevproject
+
 *.DS_Store
 
 # Django static
