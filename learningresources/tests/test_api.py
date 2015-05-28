@@ -4,14 +4,13 @@ Test api functions.
 
 from __future__ import unicode_literals
 
-from django.test.testcases import TestCase
-from django.contrib.auth.models import User
-
 from learningresources.models import Course
 from learningresources.api import create_course
 
+from .test_case import LoreTestCase
 
-class TestCreateCourse(TestCase):
+
+class TestCreateCourse(LoreTestCase):
     """
     Test course creation API.
     """
@@ -20,7 +19,6 @@ class TestCreateCourse(TestCase):
         Set some test data
         """
         super(TestCreateCourse, self).setUp()
-        self.user, _ = User.objects.get_or_create(username="test")
         self.kwargs = {
             'org': 'demo org',
             'course_number': '42',

@@ -3,19 +3,18 @@ Tests for learningresources forms.
 """
 from __future__ import unicode_literals
 
-from django.test.testcases import TestCase
-from django.contrib.auth.models import User
-
 from learningresources.forms import CourseForm
 from learningresources.models import Repository, Course
 
+from .test_case import LoreTestCase
 
-class TestCourseForm(TestCase):
+
+class TestCourseForm(LoreTestCase):
     """Test the Course form."""
 
     def setUp(self):
         """Initialize"""
-        self.user, _ = User.objects.get_or_create(username="tester dude")
+        super(TestCourseForm, self).setUp()
         self.repo, _ = Repository.objects.get_or_create(
             name="tester repo", created_by_id=self.user.id)
 

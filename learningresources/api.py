@@ -114,3 +114,18 @@ def type_id_by_name(name):
         obj, _ = LearningResourceType.objects.get_or_create(name=name.lower())
     TYPE_LOOKUP[name] = obj.id
     return obj.id
+
+
+def get_repos(user):
+    """
+    Get all repositories a user may see.
+
+    Args:
+        user (auth.User): request.user
+    Returns:
+        repos query set of learningobject.Repository: repositories
+    """
+
+    # Note: This fails pylint because "user" is not being used,
+    # but it can't be used just yet.
+    return Repository.objects.filter(created_by__id=user.id).order_by('name')

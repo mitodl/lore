@@ -1,0 +1,13 @@
+<h1>Create repository</h1>
+
+<p>
+<a href="{% url 'welcome' %}">Return to welcome page</a>
+</p>
+
+<form method="post" action="{% url 'create_repo' %}">
+{% csrf_token %}
+{{ form }}
+<input type="submit" value="Create repository" />
+</form>
+
+
