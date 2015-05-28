@@ -47,6 +47,10 @@ def get_var(name, default):
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOGDIR = os.path.join(BASE_DIR, 'logs')
+
+if not os.path.exists(LOGDIR):
+    os.mkdir(LOGDIR)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -185,3 +189,46 @@ CAS_SERVER_URL = get_var(
 )
 
 LOGIN_URL = "/admin/"
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': (
+                '%(asctime)s %(name)s %(levelname)s %(filename)s '
+                '%(funcName)s line: %(lineno)s: %(msg)s'
+            )
+        },
+    },
+    'handlers': {
+        'log_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(LOGDIR, 'lore.log'),
+            'formatter': 'verbose',
+            'backupCount': 50,
+            'maxBytes': 2 ** 24,
+        },
+        'django_log_file': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(LOGDIR, 'lore_django.log'),
+            'formatter': 'verbose',
+            'backupCount': 50,
+            'maxBytes': 2 ** 24,
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['django_log_file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'taxonomy': {
+            'handlers': ['log_file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    }
+}
