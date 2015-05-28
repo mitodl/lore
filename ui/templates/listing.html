@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Listing</h1>
+
+<p>
+<h2>Repository {{ repo }} </h2>
+</p>
+
+<h2>Courses</h2>
+
+<ul>
+{% for course in courses %}
+    <li>
+        {{ course.course_number }}
+    </li>
+
+{% endfor %}
+</ul>
+{% endblock %}

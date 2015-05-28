@@ -126,3 +126,14 @@ def get_repos(user):
         repos query set of learningobject.Repository: repositories
     """
     return Repository.objects.filter(created_by__id=user.id).order_by('name')
+
+
+def get_courses(repo_id):
+    """
+    Get courses for a repository.
+    Args:
+        repository (int): pk of learningobject.Repository
+    Returns:
+        courses (queryset of learningobject.Course): courses
+    """
+    return Course.objects.filter(repository__id=repo_id)

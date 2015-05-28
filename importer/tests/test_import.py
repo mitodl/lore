@@ -12,7 +12,7 @@ import zipfile
 
 from importer.api import import_course_from_file
 from learningresources.models import LearningResource
-from learningresources.tests.base import LoreTestCase
+from learningresources.tests.test_case import LoreTestCase
 
 
 def get_course_zip():
