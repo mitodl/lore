@@ -10,11 +10,9 @@ from tempfile import mkstemp
 from shutil import copyfile
 import zipfile
 
-from django.test.testcases import TestCase
-from django.contrib.auth.models import User
-
 from importer.api import import_course_from_file
 from learningresources.models import LearningResource
+from learningresources.tests.base import LoreTestCase
 
 
 def get_course_zip():
@@ -32,7 +30,7 @@ def get_course_zip():
     return filename
 
 
-class TestImportToy(TestCase):
+class TestImportToy(LoreTestCase):
     """
     Test import functionality on an actual course. These tests should
     be expanded as needed to test regressions and handle valid but
@@ -40,12 +38,9 @@ class TestImportToy(TestCase):
     """
     def setUp(self):
         """
-        Return location of the local copy of the "two_toys"
-        course for testing.
-        for testing.
+        Return location of the local copy of the "two_toys" course for testing.
         """
         super(TestImportToy, self).setUp()
-        self.user, _ = User.objects.get_or_create(username="test")
         self.course_zip = get_course_zip()
         handle, self.bad_file = mkstemp()
         os.close(handle)
