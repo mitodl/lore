@@ -20,10 +20,13 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 import importer.urls as importer_urls
+import learningresources.urls as lore_urls
 import cas.urls as cas_urls
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^$', include(lore_urls)),
+    url(r'^lore/', include(lore_urls)),
     url(r'^importer/', include(importer_urls)),
     url(r'^cas/', include(cas_urls)),
 ]

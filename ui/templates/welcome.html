@@ -1,0 +1,14 @@
+<h1>Welcome</h1>
+
+<p>
+<a href="{% url 'create_repo' %}">Create repository</a>
+</p>
+
+<p>
+<h2>Your repositories</h2>
+<ul>
+{% for repo in repos %}
+    <li>{{repo.name}} ({{repo.description}})</li>
+{% endfor %}
+</ul>
+<p>
