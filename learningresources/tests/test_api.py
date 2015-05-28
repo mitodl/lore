@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 from learningresources.models import Course
 from learningresources.api import create_course
 
-from .test_case import LoreTestCase
+from .base import LoreTestCase
 
 
 class TestCreateCourse(LoreTestCase):

@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 from learningresources.forms import CourseForm
 from learningresources.models import Repository, Course
 
-from .test_case import LoreTestCase
+from .base import LoreTestCase
 
 
 class TestCourseForm(LoreTestCase):
