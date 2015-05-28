@@ -5,7 +5,7 @@ Test the importer views to make sure they work.
 from __future__ import unicode_literals
 
 from learningresources.models import LearningResource
-from learningresources.tests.test_case import LoreTestCase
+from learningresources.tests.base import LoreTestCase
 
 from .test_import import get_course_zip
 

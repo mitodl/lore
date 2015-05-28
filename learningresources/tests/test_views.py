@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 from learningresources.models import Repository
 
-from .test_case import LoreTestCase
+from .base import LoreTestCase
 
 HTTP_OK = 200
 

@@ -8,7 +8,7 @@ from os.path import getsize
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 from importer.forms import UploadForm
-from learningresources.tests.test_case import LoreTestCase
+from learningresources.tests.base import LoreTestCase
 
 from .test_import import get_course_zip
 

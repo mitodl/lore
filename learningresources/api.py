@@ -125,7 +125,4 @@ def get_repos(user):
     Returns:
         repos query set of learningobject.Repository: repositories
     """
-
-    # Note: This fails pylint because "user" is not being used,
-    # but it can't be used just yet.
     return Repository.objects.filter(created_by__id=user.id).order_by('name')
