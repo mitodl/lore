@@ -94,7 +94,7 @@ def type_id_by_name(name):
     return obj.id
 
 
-def get_repos(user):
+def get_repos(user_id):
     """
     Get all repositories a user may see.
 
@@ -103,10 +103,10 @@ def get_repos(user):
     Returns:
         repos query set of learningresource.Repository: repositories
     """
-    return Repository.objects.filter(created_by__id=user.id).order_by('name')
+    return Repository.objects.filter(created_by__id=user_id).order_by('name')
 
 
-def get_courses(repo_id):
+def get_repo_courses(repo_id):
     """
     Get courses for a repository.
     Args:
@@ -132,3 +132,27 @@ def create_repo(name, description, user_id):
             name=name, description=description,
             created_by_id=user_id,
         )
+
+
+def get_user_courses(user_id):
+    """
+    Get all user's courses.
+    Args:
+        user_id (int): primary key of user
+    Returns:
+        Queryset of learningresources.Course: courses
+    """
+    repo_ids = [x.id for x in get_repos(user_id)]
+    return Course.objects.filter(repository_id__in=repo_ids)
+
+
+def get_semesters(user_id):
+    """
+    Get semesters in all user's courses.
+    Args:
+        user_id (int): primary key of user
+    Returns:
+        semesters (list of strings): semester names
+    """
+    courses = get_user_courses(user_id)
+    return sorted(list(set([x.semester for x in courses])))
