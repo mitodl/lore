@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>upload here</h1>
+<h2>{{ message }}</h2>
 <form method="post" action="{% url 'upload' %}" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form }}

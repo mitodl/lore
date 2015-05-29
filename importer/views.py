@@ -37,14 +37,21 @@ def upload(request):
     Upload a OLX archive.
     """
     form = UploadForm()
+    message = ""
     if request.method == "POST":
         form = UploadForm(data=request.POST, files=request.FILES)
         if form.is_valid():
-            form.save(request.user)
+            try:
+                form.save(request.user)
+            except ValueError as ex:
+                log.debug("ex args: %s", ex.args)
+                if "Duplicate course" not in ex.args:
+                    raise ex
+                message = "Duplicate course"
         else:
             log.debug("form errors: %s", form.errors.as_text())
     return render(
         request,
         "upload.html",
-        {'form': form},
+        {'form': form, "message": message},
     )

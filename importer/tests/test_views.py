@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 import logging
 
-from learningresources.models import LearningResource
+from learningresources.models import LearningResource, Course
 from learningresources.tests.base import LoreTestCase
 
 from .test_import import get_course_zip
@@ -45,3 +45,24 @@ class TestViews(LoreTestCase):
             )
         log.debug("%s resources after", LearningResource.objects.count())
         self.assertTrue(LearningResource.objects.count() == 5)
+
+    def test_upload_duplicate(self):
+        """Gracefully inform the user."""
+        self.assertTrue(Course.objects.count() == 0)
+        with open(get_course_zip(), "rb") as post_file:
+            self.client.post(
+                "/importer/upload/",
+                {"course_file": post_file, "repository": self.repo.id},
+                follow=True
+            )
+        self.assertTrue(Course.objects.count() == 1)
+        with open(get_course_zip(), "rb") as post_file:
+            resp = self.client.post(
+                "/importer/upload/",
+                {"course_file": post_file, "repository": self.repo.id},
+                follow=True
+            )
+        self.assertTrue(Course.objects.count() == 1)
+        body = resp.content.decode("utf-8")
+        log.debug(body)
+        self.assertTrue("Duplicate course" in body)
