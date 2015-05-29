@@ -38,13 +38,16 @@ class TestViews(LoreTestCase):
         log.debug("%s resources before", LearningResource.objects.count())
         self.assertTrue(LearningResource.objects.count() == 0)
         with open(get_course_zip(), "rb") as post_file:
-            self.client.post(
+            resp = self.client.post(
                 "/importer/upload/",
                 {"course_file": post_file, "repository": self.repo.id},
                 follow=True
             )
         log.debug("%s resources after", LearningResource.objects.count())
         self.assertTrue(LearningResource.objects.count() == 5)
+        # We should have been redirected to the Listing page.
+        body = resp.content.decode("utf-8")
+        self.assertTrue('<h1>Listing</h1>' in body)
 
     def test_upload_duplicate(self):
         """Gracefully inform the user."""
