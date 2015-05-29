@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 import ast
 import os
-import platform
 
 import dj_database_url
 import yaml
@@ -186,66 +185,3 @@ CAS_SERVER_URL = get_var(
 )
 
 LOGIN_URL = "/admin/"
-
-# Logging configuration
-LOG_LEVEL = get_var('LORE_LOG_LEVEL', 'DEBUG')
-
-# For logging to a remote syslog host
-LOG_HOST = get_var('LORE_LOG_HOST', 'localhost')
-LOG_HOST_PORT = get_var('LORE_LOG_HOST_PORT', 514)
-
-HOSTNAME = platform.node().split('.')[0]
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': True,
-    'filters': {
-        'require_debug_false': {
-            '()': 'django.utils.log.RequireDebugFalse',
-        }
-    },
-    'formatters': {
-        'verbose': {
-            'format': (
-                '[%(asctime)s] %(levelname)s %(process)d [%(name)s] '
-                '%(filename)s:%(lineno)d - '
-                '[{hostname}] - %(message)s'
-            ).format(hostname=HOSTNAME),
-            'datefmt': '%Y-%m-%d %H:%M:%S'
-        }
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose'
-        },
-        'syslog': {
-            'level': LOG_LEVEL,
-            'class': 'logging.handlers.SysLogHandler',
-            'facility': 'local7',
-            'formatter': 'verbose',
-            'address': (LOG_HOST, LOG_HOST_PORT)
-        },
-        'mail_admins': {
-            'level': 'ERROR',
-            'filters': ['require_debug_false'],
-            'class': 'django.utils.log.AdminEmailHandler'
-        },
-    },
-    'loggers': {
-        'root': {
-            'handlers': ['console', 'syslog'],
-            'level': LOG_LEVEL,
-        },
-        'django': {
-            'propogate': True,
-            'level': LOG_LEVEL,
-            'handlers': ['console', 'syslog'],
-        },
-        'django.request': {
-            'handlers': ['mail_admins'],
-            'level': LOG_LEVEL,
-            'propagate': True,
-        },
-    }
-}

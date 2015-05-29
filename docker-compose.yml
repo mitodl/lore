@@ -8,14 +8,13 @@ web:
     /bin/bash -c '
     sleep 5;
     python manage.py migrate;
-    python manage.py runserver 0.0.0.0:$PORT'
+    python manage.py runserver 0.0.0.0:8070'
   volumes:
     - .:/src
   environment:
-    DEBUG: True
-    LORE_LOG_LEVEL: DEBUG
     PORT: 8070
     DATABASE_URL: postgres://postgres@db:5432/postgres
+    DEBUG: True
     ALLOWED_HOSTS:
     LORE_USE_CAS:
     LORE_ADMIN_EMAIL:
