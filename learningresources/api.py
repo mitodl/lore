@@ -19,14 +19,18 @@ TYPE_LOOKUP = {}
 def create_course(org, course_number, semester, user_id):
     """
     Add a course to the database.
+
     Args:
         org (unicode): organization
         course_number (unicode): course number
         semester (unicode): semester
         user_id (int): primary key of user creating the course
+
     Raises:
         ValueError: Duplicate course
+
     Returns: None
+
     """
     # Check on unique values before attempting a get_or_create, because
     # items such as import_date will always make it non-unique.
