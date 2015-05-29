@@ -19,6 +19,10 @@ class Course(models.Model):
     import_date = models.DateField(auto_now_add=True)
     imported_by = models.ForeignKey(User)
 
+    class meta:
+        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        unique_together = ("repository", "org", "course_number", "semester")
+
 
 class LearningResource(models.Model):
     """
@@ -40,13 +44,17 @@ class LearningResource(models.Model):
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
 
+    class meta:
+        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        unique_together = ("course", "uuid")
+
 
 class LearningResourceType(models.Model):
     """
     Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
     """
-    name = models.TextField()
+    name = models.TextField(unique=True)
 
 
 class Repository(models.Model):
@@ -54,7 +62,7 @@ class Repository(models.Model):
     A collection of learning resources
     that come from (usually tightly-related) courses.
     """
-    name = models.TextField()
+    name = models.TextField(unique=True)
     description = models.TextField()
     create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)

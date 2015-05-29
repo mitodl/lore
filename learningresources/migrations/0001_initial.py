@@ -47,14 +47,14 @@ class Migration(migrations.Migration):
             name='LearningResourceType',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.TextField()),
+                ('name', models.TextField(unique=True)),
             ],
         ),
         migrations.CreateModel(
             name='Repository',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.TextField()),
+                ('name', models.TextField(unique=True)),
                 ('description', models.TextField()),
                 ('create_date', models.DateField(auto_now_add=True)),
                 ('created_by', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
