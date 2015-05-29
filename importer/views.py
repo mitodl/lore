@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
 from learningresources.models import Repository, Course, LearningResource
@@ -43,13 +43,13 @@ def upload(request):
         if form.is_valid():
             try:
                 form.save(request.user)
+                return redirect("/lore/listing/{0}".format(
+                    form.cleaned_data["repository"]))
             except ValueError as ex:
                 log.debug("ex args: %s", ex.args)
                 if "Duplicate course" not in ex.args:
                     raise ex
                 message = "Duplicate course"
-        else:
-            log.debug("form errors: %s", form.errors.as_text())
     return render(
         request,
         "upload.html",
