@@ -5,6 +5,8 @@ apps don't tie functionality to internal implementation.
 
 from __future__ import unicode_literals
 
+import logging
+
 from django.db import transaction
 
 from learningresources.models import (
@@ -13,6 +15,7 @@ from learningresources.models import (
 
 TYPE_LOOKUP = {}
 
+log = logging.getLogger(__name__)
 
 def create_course(org, repo_id, course_number, semester, user_id):
     """
@@ -156,3 +159,17 @@ def get_semesters(user_id):
     """
     courses = get_user_courses(user_id)
     return sorted(list(set([x.semester for x in courses])))
+
+
+def get_user_tags(user_id):
+    """
+    Get all tags for a user's courses.
+    """
+    log.debug("in get_user_tags")
+    course_ids = [x.id for x in get_user_courses(user_id)]
+    resources = LearningResource.objects.filter(course__id__in=course_ids)
+    tag_ids = set([x.learning_resource_type_id for x in resources])
+    log.debug("tag ids: %s", tag_ids)
+    stuff = LearningResourceType.objects.filter(id__in=tag_ids).order_by(
+        "name")
+    return stuff
