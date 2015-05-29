@@ -5,8 +5,6 @@ apps don't tie functionality to internal implementation.
 
 from __future__ import unicode_literals
 
-from datetime import datetime
-
 from django.db import transaction
 
 from learningresources.models import (

@@ -33,7 +33,9 @@ class TestCreateCourse(LoreTestCase):
         """
         super(TestCreateCourse, self).tearDown()
         kwargs = self.kwargs
+        kwargs["repository_id"] = kwargs["repo_id"]
         kwargs.pop("user_id")
+        kwargs.pop("repo_id")
         Course.objects.filter(**kwargs).delete()
 
     def test_create(self):

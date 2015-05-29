@@ -4,12 +4,16 @@ Test the importer views to make sure they work.
 
 from __future__ import unicode_literals
 
+import logging
+
 from learningresources.models import LearningResource
 from learningresources.tests.base import LoreTestCase
 
 from .test_import import get_course_zip
 
 HTTP_OK = 200
+
+log = logging.getLogger(__name__)
 
 
 class TestViews(LoreTestCase):
@@ -30,11 +34,14 @@ class TestViews(LoreTestCase):
 
     def test_upload_post(self):
         """POST upload page."""
+        log.debug("in test_upload_post")
+        log.debug("%s resources before", LearningResource.objects.count())
         self.assertTrue(LearningResource.objects.count() == 0)
         with open(get_course_zip(), "rb") as post_file:
             self.client.post(
                 "/importer/upload/",
-                {"course_file": post_file},
+                {"course_file": post_file, "repository": self.repo.id},
                 follow=True
             )
+        log.debug("%s resources after", LearningResource.objects.count())
         self.assertTrue(LearningResource.objects.count() == 5)

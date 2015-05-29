@@ -57,7 +57,7 @@ def import_course_from_path(path, repo_id, user_id):
     return import_course(bundle, repo_id, user_id)
 
 
-def import_course(bundle, user_id):
+def import_course(bundle, repo_id, user_id):
     """
     Import a course from an XBundle object.
 

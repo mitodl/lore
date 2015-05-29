@@ -6,11 +6,14 @@ from __future__ import unicode_literals
 
 import os
 from tempfile import mkstemp
+import logging
 
 from django.forms import Form, FileField, ChoiceField
 
 from learningresources.models import Repository
 from importer.api import import_course_from_file
+
+log = logging.getLogger(__name__)
 
 
 class UploadForm(Form):
@@ -24,11 +27,13 @@ class UploadForm(Form):
         """
         Fill in choice fields.
         """
+        log.debug("in UploadForm __init__")
         repos = Repository.objects.all().values_list('id', 'name')
+        log.debug("repos from db: %s", repos)
         super(UploadForm, self).__init__(*args, **kwargs)
 
         options = (('', '-- SELECT --'),) + tuple(repos)
-        self.fields['repository'].options = options
+        self.fields['repository'].choices = options
 
     def save(self, user):
         """
@@ -50,6 +55,7 @@ class UploadForm(Form):
             for chunk in uploaded_file:
                 temp.write(chunk)
 
+        log.debug("UploadForm cleaned_data: %s", self.cleaned_data)
         import_course_from_file(
-            filename, self.cleaned_data["repository"].id, user.id
+            filename, self.cleaned_data["repository"], user.id
         )
