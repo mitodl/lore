@@ -24,6 +24,7 @@ class TestCreateCourse(LoreTestCase):
             'course_number': '42',
             'semester': 'Febtober',
             'user_id': self.user.id,
+            'repo_id': self.repo.id,
         }
 
     def tearDown(self):

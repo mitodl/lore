@@ -57,19 +57,20 @@ class TestImportToy(LoreTestCase):
         Simplest possible test.
         """
         self.assertTrue(LearningResource.objects.count() == 0)
-        import_course_from_file(self.course_zip, self.user.id)
+        import_course_from_file(self.course_zip, self.repo.id, self.user.id)
         self.assertTrue(LearningResource.objects.count() == 5)
 
     def test_invalid_file(self):
         """Invalid zip file"""
         self.assertTrue(LearningResource.objects.count() == 0)
         with self.assertRaises(ValueError):
-            import_course_from_file(self.bad_file, self.user.id)
+            import_course_from_file(self.bad_file, self.repo.id, self.user.id)
         self.assertTrue(LearningResource.objects.count() == 0)
 
     def test_incompatible_file(self):
         """incompatible zip file (missing course structure)"""
         self.assertTrue(LearningResource.objects.count() == 0)
         with self.assertRaises(ValueError):
-            import_course_from_file(self.incompatible, self.user.id)
+            import_course_from_file(
+                self.incompatible, self.repo.id, self.user.id)
         self.assertTrue(LearningResource.objects.count() == 0)

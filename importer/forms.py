@@ -18,7 +18,7 @@ class UploadForm(Form):
     Form for allowing a user to upload a video.
     """
     course_file = FileField()
-    repository = ChoiceField(required=False)
+    repository = ChoiceField()
 
     def __init__(self, *args, **kwargs):
         """
@@ -50,4 +50,6 @@ class UploadForm(Form):
             for chunk in uploaded_file:
                 temp.write(chunk)
 
-        import_course_from_file(filename, user.id)
+        import_course_from_file(
+            filename, self.cleaned_data["repository"].id, user.id
+        )

@@ -59,10 +59,11 @@ class TestViews(LoreTestCase):
 
     def test_upload_post(self):
         """POST upload page."""
-        self.assertTrue(Repository.objects.count() == 0)
+        # We have the default self.repo in the database...
+        self.assertTrue(Repository.objects.count() == 1)
         self.client.post(
             "/lore/create_repo/",
             {"name": "test name", "description": "test description"},
             follow=True
         )
-        self.assertTrue(Repository.objects.count() == 1)
+        self.assertTrue(Repository.objects.count() == 2)

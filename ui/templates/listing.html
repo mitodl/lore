@@ -7,7 +7,6 @@
 </p>
 
 <h2>Courses</h2>
-
 <ul>
 {% for course in courses %}
     <li>
@@ -16,4 +15,15 @@
 
 {% endfor %}
 </ul>
+
+<h2>Runs</h2>
+<ul>
+{% for run in runs %}
+    <li>
+        {{ run }}
+    </li>
+
+{% endfor %}
+</ul>
+
 {% endblock %}

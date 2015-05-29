@@ -16,7 +16,7 @@ from learningresources.models import (
 TYPE_LOOKUP = {}
 
 
-def create_course(org, course_number, semester, user_id):
+def create_course(org, repo_id, course_number, semester, user_id):
     """
     Add a course to the database.
     Args:
@@ -32,38 +32,18 @@ def create_course(org, course_number, semester, user_id):
     # items such as import_date will always make it non-unique.
     unique = {
         "org": org, "course_number": course_number, "semester": semester,
-        "repository_id": get_temp_repository(user_id).id
+        "repository_id": repo_id,
     }
     if Course.objects.filter(**unique).exists():
         raise ValueError("Duplicate course")
     kwargs = {
         "org": org, "course_number": course_number, "semester": semester,
         'imported_by_id': user_id,
-        "repository_id": get_temp_repository(user_id).id
+        "repository_id": repo_id,
     }
     with transaction.atomic():
         course, _ = Course.objects.get_or_create(**kwargs)
     return course
-
-
-def get_temp_repository(user_id):
-    """
-    Use this for now so we can import *something*.
-
-    Args:
-        user_id (int): primary key of user creating the course
-    Returns:
-        repository (learningresources.Repository): repository
-    """
-    repos = Repository.objects.all()
-    if repos.count() > 0:
-        return repos[0]
-    with transaction.atomic():
-        return Repository.objects.create(
-            name="demo",
-            create_date=datetime.now(),
-            created_by_id=user_id,
-        )
 
 
 # pylint: disable=too-many-arguments
@@ -123,7 +103,7 @@ def get_repos(user):
     Args:
         user (auth.User): request.user
     Returns:
-        repos query set of learningobject.Repository: repositories
+        repos query set of learningresource.Repository: repositories
     """
     return Repository.objects.filter(created_by__id=user.id).order_by('name')
 
@@ -132,8 +112,25 @@ def get_courses(repo_id):
     """
     Get courses for a repository.
     Args:
-        repository (int): pk of learningobject.Repository
+        repository (int): pk of learningresource.Repository
     Returns:
-        courses (queryset of learningobject.Course): courses
+        courses (queryset of learningresource.Course): courses
     """
     return Course.objects.filter(repository__id=repo_id)
+
+
+def create_repo(name, description, user_id):
+    """
+    Create a new repository.
+    Args:
+        name (unicode): repository name
+        description (unicode): repository description
+        user_id (int): user ID of repository creator
+    Returns:
+        repo (learningresources.Repository): newly-created repo
+    """
+    with transaction.atomic():
+        return Repository.objects.create(
+            name=name, description=description,
+            created_by_id=user_id,
+        )

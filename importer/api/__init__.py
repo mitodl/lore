@@ -18,7 +18,7 @@ from archive import extract, ArchiveException
 from learningresources.api import create_course, create_resource
 
 
-def import_course_from_file(filename, user_id):
+def import_course_from_file(filename, repo_id, user_id):
     """
     Import OLX from .zip or tar.gz.
 
@@ -39,12 +39,12 @@ def import_course_from_file(filename, user_id):
         rmtree(tempdir)
         remove(filename)
         raise ValueError("Invalid OLX archive, bad directory structure.")
-    import_course_from_path(dirs[0], user_id)
+    import_course_from_path(dirs[0], repo_id, user_id)
     rmtree(tempdir)
     remove(filename)
 
 
-def import_course_from_path(path, user_id):
+def import_course_from_path(path, repo_id, user_id):
     """
     Import course from an OLX directory.
 
@@ -54,7 +54,7 @@ def import_course_from_path(path, user_id):
     """
     bundle = XBundle()
     bundle.import_from_directory(path)
-    return import_course(bundle, user_id)
+    return import_course(bundle, repo_id, user_id)
 
 
 def import_course(bundle, user_id):
@@ -68,6 +68,7 @@ def import_course(bundle, user_id):
     src = bundle.course
     course = create_course(
         org=src.attrib["org"],
+        repo_id=repo_id,
         course_number=src.attrib["course"],
         semester=src.attrib["semester"],
         user_id=user_id,
