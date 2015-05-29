@@ -17,6 +17,7 @@ TYPE_LOOKUP = {}
 
 log = logging.getLogger(__name__)
 
+
 def create_course(org, repo_id, course_number, semester, user_id):
     """
     Add a course to the database.
