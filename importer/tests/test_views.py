@@ -34,38 +34,27 @@ class TestViews(LoreTestCase):
 
     def test_upload_post(self):
         """POST upload page."""
-        log.debug("in test_upload_post")
-        log.debug("%s resources before", LearningResource.objects.count())
         self.assertTrue(LearningResource.objects.count() == 0)
-        with open(get_course_zip(), "rb") as post_file:
-            resp = self.client.post(
-                "/importer/upload/",
-                {"course_file": post_file, "repository": self.repo.id},
-                follow=True
-            )
-        log.debug("%s resources after", LearningResource.objects.count())
+        body = self.upload_test_file()
         self.assertTrue(LearningResource.objects.count() == 5)
         # We should have been redirected to the Listing page.
-        body = resp.content.decode("utf-8")
         self.assertTrue('<h1>Listing</h1>' in body)
 
     def test_upload_duplicate(self):
         """Gracefully inform the user."""
         self.assertTrue(Course.objects.count() == 0)
-        with open(get_course_zip(), "rb") as post_file:
-            self.client.post(
-                "/importer/upload/",
-                {"course_file": post_file, "repository": self.repo.id},
-                follow=True
-            )
+        self.upload_test_file()
         self.assertTrue(Course.objects.count() == 1)
+        body = self.upload_test_file()
+        self.assertTrue(Course.objects.count() == 1)
+        self.assertTrue("Duplicate course" in body)
+
+    def upload_test_file(self):
+        """Used multiple times in tests"""
         with open(get_course_zip(), "rb") as post_file:
             resp = self.client.post(
                 "/importer/upload/",
                 {"course_file": post_file, "repository": self.repo.id},
                 follow=True
             )
-        self.assertTrue(Course.objects.count() == 1)
-        body = resp.content.decode("utf-8")
-        log.debug(body)
-        self.assertTrue("Duplicate course" in body)
+        return resp.content.decode("utf-8")
