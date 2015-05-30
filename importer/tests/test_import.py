@@ -11,7 +11,7 @@ from shutil import copyfile
 import zipfile
 
 from importer.api import import_course_from_file
-from learningresources.models import LearningResource
+from learningresources.models import LearningResource, Course
 from learningresources.tests.base import LoreTestCase
 
 
@@ -29,6 +29,19 @@ def get_course_zip():
     copyfile(join(path, "two_toys.zip"), filename)
     return filename
 
+def get_course_multiple_zip():
+    """
+    Get the path to the demo course. Creates a copy, because the
+    importer deletes the file during cleanup.
+
+    Returns:
+        path (unicode): absolute path to zip file
+    """
+    path = join(abspath(dirname(__file__)), "testdata", "courses")
+    handle, filename = mkstemp(suffix=".tar.gz")
+    os.close(handle)
+    copyfile(join(path, "test-two-courses.tar.gz"), filename)
+    return filename
 
 class TestImportToy(LoreTestCase):
     """
@@ -57,20 +70,31 @@ class TestImportToy(LoreTestCase):
         Simplest possible test.
         """
         self.assertTrue(LearningResource.objects.count() == 0)
+        self.assertTrue(Course.objects.count() == 0)
         import_course_from_file(self.course_zip, self.repo.id, self.user.id)
         self.assertTrue(LearningResource.objects.count() == 5)
+        self.assertTrue(Course.objects.count() == 1)
+
+    def test_import_multiple(self):
+        """
+        Simplest possible test.
+        """
+        self.assertTrue(Course.objects.count() == 0)
+        import_course_from_file(get_course_multiple_zip(), self.user.id)
+        self.assertTrue(Course.objects.count() == 2)
 
     def test_invalid_file(self):
         """Invalid zip file"""
-        self.assertTrue(LearningResource.objects.count() == 0)
-        with self.assertRaises(ValueError):
-            import_course_from_file(self.bad_file, self.repo.id, self.user.id)
-        self.assertTrue(LearningResource.objects.count() == 0)
+        try:
+            import_course_from_file(self.bad_file, self.user.id)
+        except ValueError as ex:
+            self.assertTrue('Invalid OLX archive, unable to extract' in ex.args)
+        raise ValueError("shouldn't happen")
 
     def test_incompatible_file(self):
         """incompatible zip file (missing course structure)"""
-        self.assertTrue(LearningResource.objects.count() == 0)
-        with self.assertRaises(ValueError):
-            import_course_from_file(
-                self.incompatible, self.repo.id, self.user.id)
-        self.assertTrue(LearningResource.objects.count() == 0)
+        try:
+            import_course_from_file(self.incompatible, self.user.id)
+        except ValueError as ex:
+            self.assertTrue('Invalid OLX archive, no courses found' in ex.args)
+        raise ValueError("shouldn't happen")

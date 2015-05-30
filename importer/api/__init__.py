@@ -4,12 +4,10 @@ Import OLX data into LORE.
 
 from __future__ import unicode_literals
 
-from glob import glob
-from datetime import datetime
 from shutil import rmtree
 from tempfile import mkdtemp
-from os.path import join
-from os import remove
+from os.path import join, exists
+from os import remove, listdir
 
 from xbundle import XBundle, DESCRIPTOR_TAGS
 from lxml import etree
@@ -36,14 +34,19 @@ def import_course_from_file(filename, repo_id, user_id):
     except ArchiveException:
         remove(filename)
         raise ValueError("Invalid OLX archive, unable to extract.")
-    dirs = glob(join(tempdir, "*"))
-    if len(dirs) != 1:
-        rmtree(tempdir)
-        remove(filename)
-        raise ValueError("Invalid OLX archive, bad directory structure.")
-    import_course_from_path(dirs[0], repo_id, user_id)
+    course_imported = False
+    if "course.xml" in listdir(tempdir):
+        import_course_from_path(tempdir, repo_id, user_id)
+        course_imported = True
+    else:
+        for path in listdir(tempdir):
+            if exists(join(tempdir, path, 'course.xml')):
+                import_course_from_path(join(tempdir, path), repo_id, user_id)
+                course_imported = True
     rmtree(tempdir)
     remove(filename)
+    if course_imported is False:
+        raise ValueError("Invalid OLX archive, no courses found.")
 
 
 def import_course_from_path(path, repo_id, user_id):
