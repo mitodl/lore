@@ -212,7 +212,7 @@ def get_types_for_vocabulary(vocabulary_id):
         Vocabulary, id=vocabulary_id
     ).learning_resource_types.order_by('name')
 
-    return (x.name for x in learning_resource_types)
+    return [x.name for x in learning_resource_types]
 
 
 @transaction.atomic

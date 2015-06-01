@@ -166,6 +166,14 @@ COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
 )
 
+# Configure e-mail settings
+EMAIL_HOST = get_var('LORE_EMAIL_HOST', 'localhost')
+EMAIL_PORT = get_var('LORE_EMAIL_PORT', 25)
+EMAIL_HOST_USER = get_var('LORE_EMAIL_USER', '')
+EMAIL_HOST_PASSWORD = get_var('LORE_EMAIL_PASSWORD', '')
+EMAIL_USE_TLS = get_var('LORE_EMAIL_TLS', False)
+DEFAULT_FROM_EMAIL = get_var('LORE_FROM_EMAIL', 'webmaster@localhost')
+
 # e-mail configurable admins
 ADMIN_EMAIL = get_var('LORE_ADMIN_EMAIL', '')
 if ADMIN_EMAIL is not '':

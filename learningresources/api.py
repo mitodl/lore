@@ -19,14 +19,18 @@ TYPE_LOOKUP = {}
 def create_course(org, course_number, semester, user_id):
     """
     Add a course to the database.
+
     Args:
         org (unicode): organization
         course_number (unicode): course number
         semester (unicode): semester
         user_id (int): primary key of user creating the course
+
     Raises:
         ValueError: Duplicate course
+
     Returns: None
+
     """
     # Check on unique values before attempting a get_or_create, because
     # items such as import_date will always make it non-unique.
@@ -114,3 +118,15 @@ def type_id_by_name(name):
         obj, _ = LearningResourceType.objects.get_or_create(name=name.lower())
     TYPE_LOOKUP[name] = obj.id
     return obj.id
+
+
+def get_repos(user):
+    """
+    Get all repositories a user may see.
+
+    Args:
+        user (auth.User): request.user
+    Returns:
+        repos query set of learningobject.Repository: repositories
+    """
+    return Repository.objects.filter(created_by__id=user.id).order_by('name')

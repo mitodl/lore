@@ -236,7 +236,8 @@ class TestApi(TestCase):
         """
         Test get_term
         """
-        self.assertRaises(Http404, lambda: get_term(9))
+        invalid_id = -1
+        self.assertRaises(Http404, lambda: get_term(invalid_id))
         self.assertEquals(self.term, get_term(self.term.id))
 
     def test_get_terms_for_learning_resource(self):
@@ -298,8 +299,8 @@ class TestApi(TestCase):
         self.assertEquals([self.term],
                           list(get_terms_for_learning_resource(
                               self.learning_resource.id)))
-        remove_term_from_learning_resource(self.term.id,
-                                           self.learning_resource.id)
+        remove_term_from_learning_resource(self.learning_resource.id,
+                                           self.term.id)
         self.assertEquals([],
                           list(get_terms_for_learning_resource(
                               self.learning_resource.id)))
