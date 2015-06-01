@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 {% block content %}
+<div id="header">
 <h1>Listing</h1>
+</div>
 
+<div id="nav" style="float: left; height: 100%;">
 <p>
 <h2>Repository {{ repo }} </h2>
 </p>
@@ -18,9 +21,9 @@
 
 <h2>Runs</h2>
 <ul>
-{% for semester in semesters %}
+{% for run in runs %}
     <li>
-        {{ semester }}
+        {{ run }}
     </li>
 
 {% endfor %}
@@ -35,5 +38,18 @@
 
 {% endfor %}
 </ul>
+</div>
+
+<div id="resources">
+<h2>Resource</h2>
+<ul>
+{% for resource in resources %}
+    <li>
+        {{ resources.title }}
+    </li>
+
+{% endfor %}
+</ul>
+</div>
 
 {% endblock %}

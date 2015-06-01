@@ -10,7 +10,8 @@ from django.http.response import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 
 from learningresources.api import (
-    get_repos, get_repo_courses, get_runs, get_user_tags
+    get_repos, get_repo_courses, get_runs, get_user_tags,
+    get_user_resources,
 )
 from learningresources.forms import RepositoryForm
 
@@ -61,6 +62,7 @@ def listing(request, repo_id):
         "courses": get_repo_courses(repo_id),
         "runs": get_runs(request.user.id),
         "tags": get_user_tags(request.user.id),
+        "resources": get_user_resources(request.user.id)
     }
     log.debug("%s tags", context["tags"].count())
     return render(

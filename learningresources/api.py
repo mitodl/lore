@@ -178,3 +178,15 @@ def get_user_tags(user_id):
     stuff = LearningResourceType.objects.filter(id__in=tag_ids).order_by(
         "name")
     return stuff
+
+
+def get_user_resources(user_id):
+    """
+    Get resources from all of the user's courses.
+    Args:
+        user_id (int): primary key of user
+    Returns:
+        list of learningresources.LearningResource: resources
+    """
+    course_ids = get_user_courses(user_id).values_list("id", flat=True)
+    return LearningResource.objects.filter(course__id__in=course_ids)
