@@ -39,8 +39,8 @@ class Vocabulary(models.Model):
         help_text=_("Resource types this vocabulary applies to")
     )
 
-    # pylint: disable=missing-docstring,no-init,too-few-public-methods,
     class Meta:
+        # pylint: disable=missing-docstring
         unique_together = (("repository", "name"),)
 
 
@@ -54,5 +54,5 @@ class Term(models.Model):
                                                 related_name="terms")
 
     class Meta:
-        # pylint: disable=missing-docstring,no-init,too-few-public-methods,
+        # pylint: disable=missing-docstring
         unique_together = (('vocabulary', 'label'),)
