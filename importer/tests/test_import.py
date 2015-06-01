@@ -9,10 +9,13 @@ from os.path import abspath, dirname, join
 from tempfile import mkstemp
 from shutil import copyfile
 import zipfile
+import logging
 
 from importer.api import import_course_from_file
 from learningresources.models import LearningResource, Course
 from learningresources.tests.base import LoreTestCase
+
+log = logging.getLogger(__name__)
 
 
 def get_course_zip():
@@ -80,21 +83,25 @@ class TestImportToy(LoreTestCase):
         Simplest possible test.
         """
         self.assertTrue(Course.objects.count() == 0)
-        import_course_from_file(get_course_multiple_zip(), self.user.id)
+        import_course_from_file(
+            get_course_multiple_zip(), self.repo.id, self.user.id)
         self.assertTrue(Course.objects.count() == 2)
 
     def test_invalid_file(self):
         """Invalid zip file"""
         try:
-            import_course_from_file(self.bad_file, self.user.id)
+            import_course_from_file(self.bad_file, self.repo.id, self.user.id)
         except ValueError as ex:
-            self.assertTrue('Invalid OLX archive, unable to extract' in ex.args)
+            log.debug("test_invalid_file ex args: %s", ex.args)
+            self.assertTrue('Invalid OLX archive, unable to extract.' in ex.args)
         raise ValueError("shouldn't happen")
 
     def test_incompatible_file(self):
         """incompatible zip file (missing course structure)"""
         try:
-            import_course_from_file(self.incompatible, self.user.id)
+            import_course_from_file(
+                self.incompatible, self.repo.id, self.user.id)
         except ValueError as ex:
-            self.assertTrue('Invalid OLX archive, no courses found' in ex.args)
+            log.debug("test_incompatible_file ex args: %s", ex.args)
+            self.assertTrue('Invalid OLX archive, no courses found.' in ex.args)
         raise ValueError("shouldn't happen")
