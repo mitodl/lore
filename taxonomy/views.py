@@ -68,7 +68,7 @@ def edit_vocabulary(request, repository_id, vocabulary_id):
     form.instance.weight = 1000
 
     if request.method == "POST":
-        form = VocabularyForm(request.POST)
+        form = VocabularyForm(request.POST, instance=vocabulary)
 
         form.instance.repository = repository
         form.instance.required = False
