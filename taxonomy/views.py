@@ -14,13 +14,13 @@ from learningresources.models import Repository
 from taxonomy.models import Vocabulary
 
 
-def create_vocabulary(request):
+def create_vocabulary(request, repository_id):
     """
     Show form to create a new vocabulary
     """
     form = VocabularyForm()
 
-    repository = Repository.objects.first()
+    repository = get_object_or_404(Repository, id=repository_id)
 
     if request.method == "POST":
         form = VocabularyForm(request.POST)
@@ -31,7 +31,9 @@ def create_vocabulary(request):
         if form.is_valid():
             form.save()
             return redirect(
-                'taxonomy:edit_vocabulary', vocabulary_id=form.instance.id
+                'taxonomy:edit_vocabulary',
+                vocabulary_id=form.instance.id,
+                repository_id=repository_id,
             )
 
         return render(
@@ -39,6 +41,7 @@ def create_vocabulary(request):
             "vocabulary.html",
             {
                 'form': form,
+                'repository_id': repository_id,
             }
         )
 
@@ -47,19 +50,19 @@ def create_vocabulary(request):
         "vocabulary.html",
         {
             'form': form,
+            'repository_id': repository_id,
         }
     )
 
 
-def edit_vocabulary(request, vocabulary_id):
+def edit_vocabulary(request, repository_id, vocabulary_id):
     """
     Show form to edit an existing vocabulary
     """
     vocabulary = get_object_or_404(Vocabulary, id=vocabulary_id)
     form = VocabularyForm(instance=vocabulary)
 
-    repository = Repository.objects.first()
-
+    repository = get_object_or_404(Repository, id=repository_id)
     form.instance.repository = repository
     form.instance.required = False
     form.instance.weight = 1000
@@ -73,7 +76,9 @@ def edit_vocabulary(request, vocabulary_id):
         if form.is_valid():
             form.save()
             return redirect(
-                'taxonomy:edit_vocabulary', vocabulary_id=form.instance.id
+                'taxonomy:edit_vocabulary',
+                vocabulary_id=form.instance.id,
+                repository_id=repository_id,
             )
 
         return render(
@@ -82,6 +87,7 @@ def edit_vocabulary(request, vocabulary_id):
             {
                 'form': form,
                 'vocabulary_id': vocabulary_id,
+                'repository_id': repository_id,
             }
         )
 
@@ -91,5 +97,6 @@ def edit_vocabulary(request, vocabulary_id):
         {
             'form': form,
             'vocabulary_id': vocabulary_id,
+            'repository_id': repository_id,
         }
     )

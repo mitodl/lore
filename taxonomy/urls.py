@@ -10,7 +10,10 @@ from taxonomy.views import (
 )
 
 urlpatterns = [
-    url(r'^vocabulary/$', create_vocabulary, name="create_vocabulary"),
-    url(r'^vocabulary/(?P<vocabulary_id>[0-9]+)/$', edit_vocabulary,
+    url(r'^(?P<repository_id>[0-9]+)/vocabulary/$',
+        create_vocabulary,
+        name="create_vocabulary"),
+    url(r'^(?P<repository_id>[0-9]+)/vocabulary/(?P<vocabulary_id>[0-9]+)/$',
+        edit_vocabulary,
         name="edit_vocabulary"),
 ]
