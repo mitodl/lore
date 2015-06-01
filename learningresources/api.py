@@ -192,4 +192,4 @@ def get_user_resources(user_id):
     course_ids = get_user_courses(user_id).values_list("id", flat=True)
     return LearningResource.objects.select_related(
         "learning_resource_type").filter(course__id__in=course_ids).order_by(
-        "title")
+            "title")

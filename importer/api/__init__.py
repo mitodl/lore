@@ -95,7 +95,6 @@ def import_children(course, element, parent):
         parent (learningresources.LearningResource): parent LearningResource
     """
     mpath = etree.ElementTree(element).getpath(element)
-    log.debug("sending title %s", element.attrib.get("display_name", "MISSING"))
     resource = create_resource(
         course=course, parent=parent, resource_type=element.tag,
         title=element.attrib.get("display_name", "MISSING"),
