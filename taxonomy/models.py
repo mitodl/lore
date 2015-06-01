@@ -53,6 +53,6 @@ class Term(models.Model):
     learning_resources = models.ManyToManyField(LearningResource,
                                                 related_name="terms")
 
-    # pylint: disable=missing-docstring,no-init,too-few-public-methods,
     class Meta:
+        # pylint: disable=missing-docstring,no-init,too-few-public-methods,
         unique_together = (('vocabulary', 'label'),)
