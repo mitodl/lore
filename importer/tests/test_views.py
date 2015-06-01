@@ -65,3 +65,14 @@ class TestViews(LoreTestCase):
                 follow=True
             )
         return resp.content.decode("utf-8")
+
+    def test_invalid_form(self):
+        """Upload invalid form"""
+        resp = self.client.post(
+            "/importer/upload/{0}".format(self.repo.id),
+            {}, follow=True
+        )
+        self.assertTrue(resp.status_code == HTTP_OK)
+        body = resp.content.decode("utf-8")
+        log.debug(body)
+        self.assertTrue("This field is required." in body)
