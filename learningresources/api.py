@@ -18,14 +18,14 @@ TYPE_LOOKUP = {}
 log = logging.getLogger(__name__)
 
 
-def create_course(org, repo_id, course_number, semester, user_id):
+def create_course(org, repo_id, course_number, run, user_id):
     """
     Add a course to the database.
 
     Args:
         org (unicode): organization
         course_number (unicode): course number
-        semester (unicode): semester
+        run (unicode): run
         user_id (int): primary key of user creating the course
 
     Raises:
@@ -37,13 +37,13 @@ def create_course(org, repo_id, course_number, semester, user_id):
     # Check on unique values before attempting a get_or_create, because
     # items such as import_date will always make it non-unique.
     unique = {
-        "org": org, "course_number": course_number, "semester": semester,
+        "org": org, "course_number": course_number, "run": run,
         "repository_id": repo_id,
     }
     if Course.objects.filter(**unique).exists():
         raise ValueError("Duplicate course")
     kwargs = {
-        "org": org, "course_number": course_number, "semester": semester,
+        "org": org, "course_number": course_number, "run": run,
         'imported_by_id': user_id,
         "repository_id": repo_id,
     }
@@ -154,16 +154,16 @@ def get_user_courses(user_id):
     return Course.objects.filter(repository_id__in=repo_ids)
 
 
-def get_semesters(user_id):
+def get_runs(user_id):
     """
-    Get semesters in all user's courses.
+    Get runs in all user's courses.
     Args:
         user_id (int): primary key of user
     Returns:
-        semesters (list of strings): semester names
+        runs (list of strings): run names
     """
     courses = get_user_courses(user_id)
-    return sorted(list(set([x.semester for x in courses])))
+    return sorted(list(set([x.run for x in courses])))
 
 
 def get_user_tags(user_id):

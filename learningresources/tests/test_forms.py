@@ -23,7 +23,7 @@ class TestCourseForm(LoreTestCase):
         data = {
             "imported_by": self.user.id,
             "repository": self.repo.id,
-            "org": "fake org", "semester": "Febtober",
+            "org": "fake org", "run": "Febtober",
             "course_number": "1234",
         }
         form = CourseForm(data)

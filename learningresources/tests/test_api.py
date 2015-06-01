@@ -22,7 +22,7 @@ class TestCreateCourse(LoreTestCase):
         self.kwargs = {
             'org': 'demo org',
             'course_number': '42',
-            'semester': 'Febtober',
+            'run': 'Febtober',
             'user_id': self.user.id,
             'repo_id': self.repo.id,
         }

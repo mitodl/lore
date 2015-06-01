@@ -75,7 +75,7 @@ def import_course(bundle, repo_id, user_id):
         org=src.attrib["org"],
         repo_id=repo_id,
         course_number=src.attrib["course"],
-        semester=src.attrib["semester"],
+        run=src.attrib["semester"],
         user_id=user_id,
     )
     import_children(course, src, None)

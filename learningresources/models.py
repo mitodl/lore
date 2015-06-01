@@ -15,13 +15,13 @@ class Course(models.Model):
     repository = models.ForeignKey('Repository')
     org = models.TextField()
     course_number = models.TextField()
-    semester = models.TextField()
+    run = models.TextField()
     import_date = models.DateField(auto_now_add=True)
     imported_by = models.ForeignKey(User)
 
     class meta:
         # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
-        unique_together = ("repository", "org", "course_number", "semester")
+        unique_together = ("repository", "org", "course_number", "run")
 
 
 class LearningResource(models.Model):

@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('org', models.TextField()),
                 ('course_number', models.TextField()),
-                ('semester', models.TextField()),
+                ('run', models.TextField()),
                 ('import_date', models.DateField(auto_now_add=True)),
                 ('imported_by', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],

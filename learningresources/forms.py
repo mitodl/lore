@@ -19,7 +19,7 @@ class CourseForm(ModelForm):
     class Meta:
         model = Course
         fields = (
-            "repository", "org", "course_number", "semester", "imported_by"
+            "repository", "org", "course_number", "run", "imported_by"
         )
 
 
