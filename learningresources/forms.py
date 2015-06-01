@@ -4,7 +4,7 @@ Forms for LearningResources
 
 from __future__ import unicode_literals
 
-from django.forms import ModelForm
+from django.forms import ModelForm, TextInput
 
 from .models import Course, Repository
 
@@ -30,6 +30,7 @@ class RepositoryForm(ModelForm):
     class Meta:
         model = Repository
         fields = ("name", "description")
+        widgets = {"name": TextInput}
 
     # pylint: disable=signature-differs
     # The ModelForm.save() accepts "commit" and this doesn't, because
