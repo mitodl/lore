@@ -45,6 +45,20 @@ def get_course_multiple_zip():
     return filename
 
 
+def get_course_single_tarball():
+    """
+    Get the path to a course with course.xml in the root
+    of the archive.
+    Returns:
+        path (unicode): absolute path to tarball.
+    """
+    path = join(abspath(dirname(__file__)), "testdata", "courses")
+    handle, filename = mkstemp(suffix=".tgz")
+    os.close(handle)
+    copyfile(join(path, "single.tgz"), filename)
+    return filename
+
+
 class TestImportToy(LoreTestCase):
     """
     Test import functionality on an actual course. These tests should
@@ -104,3 +118,12 @@ class TestImportToy(LoreTestCase):
         except ValueError as ex:
             self.assertTrue(
                 'Invalid OLX archive, no courses found.' in ex.args)
+
+    def test_import_single(self):
+        """
+        Single course (course.xml in root of archive).
+        """
+        self.assertTrue(Course.objects.count() == 0)
+        import_course_from_file(
+            get_course_single_tarball(), self.repo.id, self.user.id)
+        self.assertTrue(Course.objects.count() == 1)
