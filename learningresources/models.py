@@ -62,7 +62,8 @@ class Repository(models.Model):
     A collection of learning resources
     that come from (usually tightly-related) courses.
     """
-    name = models.TextField(unique=True)
+    name = models.CharField(max_length=256, unique=True)
+    slug = models.CharField(max_length=256, unique=True)
     description = models.TextField()
     create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)
