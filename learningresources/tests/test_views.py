@@ -67,3 +67,23 @@ class TestViews(LoreTestCase):
             follow=True
         )
         self.assertTrue(Repository.objects.count() == 2)
+
+    def test_upload_dupe_slug(self):
+        """slug must be unique"""
+        # We have the default self.repo in the database...
+        slug = "awesome-repo"
+        slug1 = "awesome-repo1"
+        self.assertFalse(Repository.objects.filter(slug=slug).exists())
+        self.assertFalse(Repository.objects.filter(slug=slug1).exists())
+        self.client.post(
+            "/lore/create_repo/",
+            {"name": "awesome repo", "description": "test description"},
+            follow=True
+        )
+        self.assertTrue(Repository.objects.filter(slug=slug).exists())
+        self.client.post(
+            "/lore/create_repo/",
+            {"name": "awesome       repo", "description": "test description"},
+            follow=True
+        )
+        self.assertTrue(Repository.objects.filter(slug=slug1).exists())

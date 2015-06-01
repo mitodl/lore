@@ -12,6 +12,7 @@ from learningresources.tests.base import LoreTestCase
 from .test_import import get_course_zip
 
 HTTP_OK = 200
+UNAUTHORIZED = 403
 
 log = logging.getLogger(__name__)
 
@@ -32,6 +33,11 @@ class TestViews(LoreTestCase):
             self.repo.id), follow=True)
         body = resp.content.decode("utf-8")
         self.assertTrue('enctype="multipart/form-data"' in body)
+
+    def test_upload_get_bad_repo(self):
+        """GET upload page."""
+        resp = self.client.get("/importer/upload/999", follow=True)
+        self.assertTrue(resp.status_code == UNAUTHORIZED)
 
     def test_upload_post(self):
         """POST upload page."""
