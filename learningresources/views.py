@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 
 from learningresources.api import (
     get_repos, get_repo_courses, get_runs, get_user_tags,
-    get_user_resources,
+    get_resources,
 )
 from learningresources.forms import RepositoryForm
 
@@ -64,10 +64,10 @@ def listing(request, repo_id, page=1):
         "repo_id": repo_id,
         "repo": repo,
         "courses": get_repo_courses(repo_id),
-        "runs": get_runs(repo_id, request.user.id),
-        "tags": get_user_tags(repo_id, request.user.id),
+        "runs": get_runs(repo_id),
+        "tags": get_user_tags(repo_id),
         "resources": Paginator(
-            get_user_resources(repo_id, request.user.id), 20).page(page)
+            get_resources(repo_id), 20).page(page)
     }
     log.debug("%s tags", context["tags"].count())
     return render(

@@ -143,37 +143,34 @@ def create_repo(name, description, user_id):
         )
 
 
-def get_user_courses(user_id):
+def get_courses(repo_id):
     """
     Get all user's courses.
     Args:
-        user_id (int): primary key of user
+        repo_id (int): primary key of the repository
     Returns:
         Queryset of learningresources.Course: courses
     """
-    repo_ids = [x.id for x in get_repos(user_id)]
-    return Course.objects.filter(repository_id__in=repo_ids)
+    return Course.objects.filter(repository_id=repo_id)
 
 
-def get_runs(repo_id, user_id):
+def get_runs(repo_id):
     """
     Get runs in all user's courses for the repo.
     Args:
         repo_id (int): primary key of the repository
-        user_id (int): primary key of user
     Returns:
         runs (list of strings): run names
     """
-    courses = get_user_courses(user_id)
-    return sorted(list(set([x.run for x in courses if x.repository_id == repo_id])))
+    courses = get_courses(repo_id)
+    return sorted(list(set([x.run for x in courses])))
 
 
-def get_user_tags(repo_id, user_id):
+def get_user_tags(repo_id):
     """
     Get all tags for a user's courses.
     Args:
         repo_id (int): primary key of the repository
-        user_id (int): primary key of user
     Returns:
         tags (list of strings): tag names
     """
@@ -185,12 +182,11 @@ def get_user_tags(repo_id, user_id):
     return stuff
 
 
-def get_user_resources(repo_id, user_id):
+def get_resources(repo_id):
     """
-    Get resources from all of the user's courses.
+    Get resources from a repository.
     Args:
         repo_id (int): primary key of the repository
-        user_id (int): primary key of user
     Returns:
         list of learningresources.LearningResource: resources
     """

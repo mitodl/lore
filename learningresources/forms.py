@@ -4,7 +4,7 @@ Forms for LearningResources
 
 from __future__ import unicode_literals
 
-from django.forms import ModelForm, TextInput
+from django.forms import ModelForm
 from django.utils.text import slugify
 from django.db import transaction
 

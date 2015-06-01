@@ -28,7 +28,8 @@ class TestViews(LoreTestCase):
 
     def test_upload_get(self):
         """GET upload page."""
-        resp = self.client.get("/importer/upload", follow=True)
+        resp = self.client.get("/importer/upload/{0}".format(
+            self.repo.id), follow=True)
         body = resp.content.decode("utf-8")
         self.assertTrue('enctype="multipart/form-data"' in body)
 
@@ -53,7 +54,7 @@ class TestViews(LoreTestCase):
         """Used multiple times in tests"""
         with open(get_course_zip(), "rb") as post_file:
             resp = self.client.post(
-                "/importer/upload/",
+                "/importer/upload/{0}".format(self.repo.id),
                 {"course_file": post_file, "repository": self.repo.id},
                 follow=True
             )

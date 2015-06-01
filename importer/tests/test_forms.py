@@ -38,4 +38,4 @@ class TestUploadForm(LoreTestCase):
             {"course_file": get_upload_file()},
         )
         self.assertTrue(form.is_valid())
-        form.save(self.user)
+        form.save(self.user, self.repo.id)

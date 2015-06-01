@@ -8,10 +8,8 @@ import os
 from tempfile import mkstemp
 import logging
 
-from django.forms import Form, FileField, ChoiceField
+from django.forms import Form, FileField
 
-from learningresources.models import Repository
-from learningresources.api import get_repos
 from importer.api import import_course_from_file
 
 log = logging.getLogger(__name__)
