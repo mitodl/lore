@@ -43,7 +43,7 @@ def upload(request):
         if form.is_valid():
             try:
                 form.save(request.user)
-                return redirect("/lore/listing/{0}".format(
+                return redirect("/lore/listing/{0}/1".format(
                     form.cleaned_data["repository"]))
             except ValueError as ex:
                 log.debug("ex args: %s", ex.args)

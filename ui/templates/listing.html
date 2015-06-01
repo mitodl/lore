@@ -58,6 +58,14 @@
     </tr>
 {% endfor %}
 </table>
+
+{% if resources.has_previous %}
+<a href="{% url 'listing' repo resources.previous_page_number  %}">page {{ resources.previous_page_number }}</a>
+{% endif %}
+{{ resources }}
+{% if resources.has_next %}
+<a href="{% url 'listing' repo resources.next_page_number  %}">page {{ resources.next_page_number }}</a>
+{% endif %}
 </div>
 
 {% endblock %}

@@ -39,7 +39,7 @@ class TestViews(LoreTestCase):
     def test_listing_unauthorized(self):
         """View listing page."""
         # Not authorized to view this repository...
-        resp = self.client.get("/lore/listing/99", follow=True)
+        resp = self.client.get("/lore/listing/99/1", follow=True)
         body = resp.content.decode("utf-8")
         self.assertTrue(resp.status_code == UNAUTHORIZED)
         self.assertTrue("unauthorized" in body)

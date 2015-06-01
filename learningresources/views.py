@@ -5,6 +5,7 @@ Views for learningresources app.
 import logging
 
 from django.shortcuts import render, redirect
+from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.http.response import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
@@ -49,7 +50,7 @@ def create_repo(request):
 
 
 @login_required
-def listing(request, repo_id):
+def listing(request, repo_id, page=1):
     """
     View available LearningResources by repository.
     """
@@ -62,7 +63,8 @@ def listing(request, repo_id):
         "courses": get_repo_courses(repo_id),
         "runs": get_runs(request.user.id),
         "tags": get_user_tags(request.user.id),
-        "resources": get_user_resources(request.user.id)
+        "resources": Paginator(
+            get_user_resources(request.user.id), 20).page(page)
     }
     log.debug("%s tags", context["tags"].count())
     return render(

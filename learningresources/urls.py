@@ -12,5 +12,5 @@ urlpatterns = [
     url(r'^$', welcome, name='welcome'),
     url(r'^welcome/$', welcome, name='welcome'),
     url(r'^create_repo/$', create_repo, name='create_repo'),
-    url(r'^listing/(?P<repo_id>\d+)$', listing, name='listing'),
+    url(r'^listing/(?P<repo_id>\d+)/(?P<page>\d+)', listing, name='listing'),
 ]

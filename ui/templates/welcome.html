@@ -8,7 +8,7 @@
 <h2>Your repositories</h2>
 <ul>
 {% for repo in repos %}
-    <li><a href="{% url 'listing' repo.id %}">{{repo.name}} ({{repo.description}})</a></li>
+    <li><a href="{% url 'listing' repo.id 1 %}">{{repo.name}} ({{repo.description}})</a></li>
 {% endfor %}
 </ul>
 <p>
