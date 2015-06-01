@@ -5,6 +5,7 @@ Import OLX data into LORE.
 from __future__ import unicode_literals
 
 from shutil import rmtree
+import logging
 from tempfile import mkdtemp
 from os.path import join, exists
 from os import remove, listdir
@@ -14,6 +15,8 @@ from lxml import etree
 from archive import extract, ArchiveException
 
 from learningresources.api import create_course, create_resource
+
+log = logging.getLogger(__name__)
 
 
 def import_course_from_file(filename, repo_id, user_id):
@@ -92,6 +95,7 @@ def import_children(course, element, parent):
         parent (learningresources.LearningResource): parent LearningResource
     """
     mpath = etree.ElementTree(element).getpath(element)
+    log.debug("sending title %s", element.attrib.get("display_name", "MISSING"))
     resource = create_resource(
         course=course, parent=parent, resource_type=element.tag,
         title=element.attrib.get("display_name", "MISSING"),

@@ -42,14 +42,22 @@
 
 <div id="resources">
 <h2>Resource</h2>
-<ul>
+<table>
+<tr><th>Type</th><th>title</th><th>Path</th></tr>
 {% for resource in resources %}
-    <li>
-        {{ resources.title }}
-    </li>
-
+    <tr>
+        <td>
+            {{ resource.learning_resource_type.name }}
+        </td>
+        <td>
+            {{ resource.title }}
+        </td>
+        <td>
+            {{ resource.materialized_path }}
+        </td>
+    </tr>
 {% endfor %}
-</ul>
+</table>
 </div>
 
 {% endblock %}

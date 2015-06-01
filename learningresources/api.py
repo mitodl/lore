@@ -67,6 +67,7 @@ def create_resource(course, parent, resource_type, title, content_xml, mpath):
     Returns:
         resource (learningresources.LearningResource): new LearningResource
     """
+    log.debug("title: %s", title)
     params = {
         "course": course,
         "learning_resource_type_id": type_id_by_name(resource_type),
@@ -189,4 +190,6 @@ def get_user_resources(user_id):
         list of learningresources.LearningResource: resources
     """
     course_ids = get_user_courses(user_id).values_list("id", flat=True)
-    return LearningResource.objects.filter(course__id__in=course_ids)
+    return LearningResource.objects.select_related(
+        "learning_resource_type").filter(course__id__in=course_ids).order_by(
+        "title")
