@@ -5,6 +5,7 @@ MAINTAINER ODL DevOps <mitx-devops@mit.edu>
 # Add package files
 ADD requirements.txt /tmp/requirements.txt
 ADD test_requirements.txt /tmp/test_requirements.txt
+ADD doc_requirements.txt /tmp/doc_requirements.txt
 ADD apt.txt /tmp/apt.txt
 WORKDIR /tmp
 
@@ -16,6 +17,7 @@ RUN pip install pip --upgrade
 # Install project packages
 RUN pip install -r requirements.txt
 RUN pip install -r test_requirements.txt
+RUN pip install -r doc_requirements.txt
 RUN pip3 install -r requirements.txt
 RUN pip3 install -r test_requirements.txt
 

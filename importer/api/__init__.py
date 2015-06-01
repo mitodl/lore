@@ -24,8 +24,10 @@ def import_course_from_file(filename, user_id):
 
     Args:
         filename (unicode): Path to archive file (zip or .tar.gz)
+
     Raises:
         ValueError: Unable to extract or read archive contents.
+
     Returns: None
     """
     tempdir = mkdtemp()

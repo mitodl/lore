@@ -48,6 +48,9 @@ class LearningResourceType(models.Model):
     """
     name = models.TextField()
 
+    def __unicode__(self):
+        return self.name
+
 
 class Repository(models.Model):
     """

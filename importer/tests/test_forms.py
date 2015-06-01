@@ -5,11 +5,10 @@ from __future__ import unicode_literals
 
 from os.path import getsize
 
-from django.test.testcases import TestCase
-from django.contrib.auth.models import User
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 from importer.forms import UploadForm
+from learningresources.tests.base import LoreTestCase
 
 from .test_import import get_course_zip
 
@@ -26,12 +25,8 @@ def get_upload_file():
     )
 
 
-class TestUploadForm(TestCase):
+class TestUploadForm(LoreTestCase):
     """Test the upload form."""
-
-    def setUp(self):
-        """Initialize"""
-        self.user, _ = User.objects.get_or_create(username="tester dude")
 
     def test_init(self):
         """Get the form page."""
