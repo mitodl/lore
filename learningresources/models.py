@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.encoding import python_2_unicode_compatible
 
 
 class Course(models.Model):
@@ -41,6 +42,7 @@ class LearningResource(models.Model):
     xa_histogram_grade = models.FloatField(default=0)
 
 
+@python_2_unicode_compatible
 class LearningResourceType(models.Model):
     """
     Learning resource type:
@@ -48,7 +50,7 @@ class LearningResourceType(models.Model):
     """
     name = models.TextField()
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 

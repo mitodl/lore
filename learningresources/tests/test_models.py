@@ -17,4 +17,4 @@ class TestModels(TestCase):
             name="first"
         )
 
-        self.assertEquals("first", unicode(first))
+        self.assertEquals("first", str(first))
