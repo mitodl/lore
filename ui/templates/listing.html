@@ -6,7 +6,7 @@
 
 <div id="nav" style="float: left; height: 100%;">
 <p>
-<h2>Repository {{ repo }} </h2>
+<h2>Repository {{ repo.name }} </h2>
 </p>
 
 <h2>Courses</h2>
@@ -60,11 +60,11 @@
 </table>
 
 {% if resources.has_previous %}
-<a href="{% url 'listing' repo resources.previous_page_number  %}">page {{ resources.previous_page_number }}</a>
+<a href="{% url 'listing' repo_id resources.previous_page_number  %}">page {{ resources.previous_page_number }}</a>
 {% endif %}
 {{ resources }}
 {% if resources.has_next %}
-<a href="{% url 'listing' repo resources.next_page_number  %}">page {{ resources.next_page_number }}</a>
+<a href="{% url 'listing' repo_id resources.next_page_number  %}">page {{ resources.next_page_number }}</a>
 {% endif %}
 </div>
 

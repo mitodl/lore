@@ -11,6 +11,7 @@ import logging
 from django.forms import Form, FileField, ChoiceField
 
 from learningresources.models import Repository
+from learningresources.api import get_repos
 from importer.api import import_course_from_file
 
 log = logging.getLogger(__name__)
@@ -21,21 +22,14 @@ class UploadForm(Form):
     Form for allowing a user to upload a video.
     """
     course_file = FileField()
-    repository = ChoiceField()
 
     def __init__(self, *args, **kwargs):
         """
         Fill in choice fields.
         """
-        log.debug("in UploadForm __init__")
-        repos = Repository.objects.all().values_list('id', 'name')
-        log.debug("repos from db: %s", repos)
         super(UploadForm, self).__init__(*args, **kwargs)
 
-        options = (('', '-- SELECT --'),) + tuple(repos)
-        self.fields['repository'].choices = options
-
-    def save(self, user):
+    def save(self, user, repo_id):
         """
         Receives the request.FILES from the view.
 
@@ -57,5 +51,5 @@ class UploadForm(Form):
 
         log.debug("UploadForm cleaned_data: %s", self.cleaned_data)
         import_course_from_file(
-            filename, self.cleaned_data["repository"], user.id
+            filename, repo_id, user.id
         )

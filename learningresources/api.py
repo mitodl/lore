@@ -155,25 +155,29 @@ def get_user_courses(user_id):
     return Course.objects.filter(repository_id__in=repo_ids)
 
 
-def get_runs(user_id):
+def get_runs(repo_id, user_id):
     """
-    Get runs in all user's courses.
+    Get runs in all user's courses for the repo.
     Args:
+        repo_id (int): primary key of the repository
         user_id (int): primary key of user
     Returns:
         runs (list of strings): run names
     """
     courses = get_user_courses(user_id)
-    return sorted(list(set([x.run for x in courses])))
+    return sorted(list(set([x.run for x in courses if x.repository_id == repo_id])))
 
 
-def get_user_tags(user_id):
+def get_user_tags(repo_id, user_id):
     """
     Get all tags for a user's courses.
+    Args:
+        repo_id (int): primary key of the repository
+        user_id (int): primary key of user
+    Returns:
+        tags (list of strings): tag names
     """
-    log.debug("in get_user_tags")
-    course_ids = [x.id for x in get_user_courses(user_id)]
-    resources = LearningResource.objects.filter(course__id__in=course_ids)
+    resources = LearningResource.objects.filter(course__repository__id=repo_id)
     tag_ids = set([x.learning_resource_type_id for x in resources])
     log.debug("tag ids: %s", tag_ids)
     stuff = LearningResourceType.objects.filter(id__in=tag_ids).order_by(
@@ -181,15 +185,15 @@ def get_user_tags(user_id):
     return stuff
 
 
-def get_user_resources(user_id):
+def get_user_resources(repo_id, user_id):
     """
     Get resources from all of the user's courses.
     Args:
+        repo_id (int): primary key of the repository
         user_id (int): primary key of user
     Returns:
         list of learningresources.LearningResource: resources
     """
-    course_ids = get_user_courses(user_id).values_list("id", flat=True)
     return LearningResource.objects.select_related(
-        "learning_resource_type").filter(course__id__in=course_ids).order_by(
-            "title")
+        "learning_resource_type").filter(
+            course__repository__id=repo_id).order_by("title")

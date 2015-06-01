@@ -67,3 +67,8 @@ class Repository(models.Model):
     description = models.TextField()
     create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)
+
+    def has_resources(self):
+        """Are any LearningResources uploaded for this repository?"""
+        return LearningResource.objects.filter(
+            course__repository__id=self.id).exists()

@@ -55,16 +55,19 @@ def listing(request, repo_id, page=1):
     View available LearningResources by repository.
     """
     # Enforce repository access restrictions.
-    log.debug("in listing view")
-    if int(repo_id) not in set([x.id for x in get_repos(request.user.id)]):
+    repo_id = int(repo_id)
+    repos = get_repos(request.user.id)
+    if repo_id not in set([x.id for x in repos]):
         return HttpResponseForbidden("unauthorized")
+    repo = [x for x in repos if x.id == repo_id][0]
     context = {
-        "repo": repo_id,
+        "repo_id": repo_id,
+        "repo": repo,
         "courses": get_repo_courses(repo_id),
-        "runs": get_runs(request.user.id),
-        "tags": get_user_tags(request.user.id),
+        "runs": get_runs(repo_id, request.user.id),
+        "tags": get_user_tags(repo_id, request.user.id),
         "resources": Paginator(
-            get_user_resources(request.user.id), 20).page(page)
+            get_user_resources(repo_id, request.user.id), 20).page(page)
     }
     log.debug("%s tags", context["tags"].count())
     return render(

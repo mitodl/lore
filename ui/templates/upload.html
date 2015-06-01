@@ -2,7 +2,7 @@
 {% block content %}
 <h1>upload here</h1>
 <h2>{{ message }}</h2>
-<form method="post" action="{% url 'upload' %}" enctype="multipart/form-data">
+<form method="post" action="{% url 'upload' repo_id %}" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form }}
     <input type="submit" value="Upload Course" />

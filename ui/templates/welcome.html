@@ -6,9 +6,26 @@
 
 <p>
 <h2>Your repositories</h2>
-<ul>
+<table>
+<tr>
+    <th>Repository</th>
+    <th>Import Course</th>
+    <th>Listing</th>
+</tr>
 {% for repo in repos %}
-    <li><a href="{% url 'listing' repo.id 1 %}">{{repo.name}} ({{repo.description}})</a></li>
+<tr>
+    <td>{{repo.name}}</td>
+    <td>
+    <a href="{% url 'upload' repo.id %}">import</a>
+    </td>
+    <td>
+    {% if repo.has_resources %}
+    <a href="{% url 'listing' repo.id 1 %}">view listing</a>
+    {% else %}
+    No courses uploaded.
+    {% endif %}
+    </td>
+</tr>
 {% endfor %}
-</ul>
+</table>
 <p>
