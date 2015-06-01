@@ -9,7 +9,7 @@ from django.forms import ModelForm
 from .models import Course, Repository
 
 # pylint: disable=no-init,missing-docstring
-# pylint: disable=old-style-class,too-few-public-methods
+# pylint: disable=too-few-public-methods
 
 
 class CourseForm(ModelForm):

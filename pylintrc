@@ -8,3 +8,4 @@ generated-members =
 
 [MESSAGES CONTROL]
 disable = no-member
+disable = old-style-class

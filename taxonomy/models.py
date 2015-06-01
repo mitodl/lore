@@ -40,7 +40,6 @@ class Vocabulary(models.Model):
     )
 
     # pylint: disable=missing-docstring,no-init,too-few-public-methods,
-    # pylint: disable=old-style-class
     class Meta:
         unique_together = (("repository", "name"),)
 
@@ -55,6 +54,5 @@ class Term(models.Model):
                                                 related_name="terms")
 
     # pylint: disable=missing-docstring,no-init,too-few-public-methods,
-    # pylint: disable=old-style-class
     class Meta:
         unique_together = (('vocabulary', 'label'),)
