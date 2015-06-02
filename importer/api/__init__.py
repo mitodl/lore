@@ -33,6 +33,10 @@ def import_course_from_file(filename, repo_id, user_id):
         ValueError: Unable to extract or read archive contents.
 
     Returns: None
+
+    A valid OLX archive has a single occurrence of the file course.xml in its
+    root directory, or no course.xml in its root and a single occurrence of
+    course.xml in one or more of the root directory's children.
     """
     tempdir = mkdtemp()
     try:
