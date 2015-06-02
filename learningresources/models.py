@@ -72,7 +72,3 @@ class Repository(models.Model):
         """Are any LearningResources uploaded for this repository?"""
         return LearningResource.objects.filter(
             course__repository__id=self.id).exists()
-
-    class Meta:
-        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
-        prepopulated_fields = {"slug": ("name",)}
