@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import transaction
+from django.utils.text import slugify
 
 from learningresources.models import (
     Course, Repository, LearningResource, LearningResourceType
@@ -137,10 +138,19 @@ def create_repo(name, description, user_id):
         repo (learningresources.Repository): newly-created repo
     """
     with transaction.atomic():
-        return Repository.objects.create(
+        repo = Repository(
             name=name, description=description,
             created_by_id=user_id,
         )
+
+        slug = slugify(repo.name)
+        count = 1
+        while Repository.objects.filter(slug=slug).exists():
+            slug = "{0}{1}".format(slugify(repo.name), count)
+            count += 1
+        repo.slug = slug
+        repo.save()
+        return repo
 
 
 def get_courses(repo_id):

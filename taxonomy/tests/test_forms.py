@@ -25,7 +25,7 @@ class TestForms(LoreTestCase):
         Initialize
         """
         super(TestForms, self).setUp()
-        import_course_from_file(get_course_zip(), self.user.id)
+        import_course_from_file(get_course_zip(), self.repo.id, self.user.id)
 
         self.video_type, _ = LearningResourceType.objects.get_or_create(
             name="video")
