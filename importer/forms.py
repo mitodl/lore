@@ -46,6 +46,7 @@ class UploadForm(Form):
 
         Args:
             user_id (int): primary key of the user uploading the course.
+            repo_id (int): primary key of repository we're uploading to
         """
         # Assumes a single file, because we only accept
         # one at a time.

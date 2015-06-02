@@ -41,7 +41,6 @@ def upload(request, repo_id):
     if int(repo_id) not in set([x.id for x in get_repos(request.user.id)]):
         return HttpResponseForbidden("unauthorized")
     form = UploadForm()
-    message = ""
     if request.method == "POST":
         form = UploadForm(
             data=request.POST, files=request.FILES)
@@ -53,9 +52,9 @@ def upload(request, repo_id):
                 log.debug("ex args: %s", ex.args)
                 if "Duplicate course" not in ex.args:
                     raise ex
-                message = "Duplicate course"
+                form.add_error("course_file", "Duplicate course")
     return render(
         request,
         "upload.html",
-        {'form': form, "message": message, "repo_id": repo_id},
+        {'form': form, "repo_id": repo_id},
     )
