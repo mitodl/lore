@@ -119,7 +119,7 @@ def get_repo_courses(repo_id):
     """
     Get courses for a repository.
     Args:
-        repository (int): pk of learningresource.Repository
+        repo_id (int): pk of learningresource.Repository
     Returns:
         courses (queryset of learningresource.Course): courses
     """

@@ -63,7 +63,7 @@ class Repository(models.Model):
     that come from (usually tightly-related) courses.
     """
     name = models.CharField(max_length=256, unique=True)
-    slug = models.CharField(max_length=256, unique=True)
+    slug = models.SlugField(max_length=256, unique=True)
     description = models.TextField()
     create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)
@@ -72,3 +72,7 @@ class Repository(models.Model):
         """Are any LearningResources uploaded for this repository?"""
         return LearningResource.objects.filter(
             course__repository__id=self.id).exists()
+
+    class meta:
+        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        prepopulated_fields = {"slug": ("name",)}
