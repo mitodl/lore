@@ -162,7 +162,7 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'lore', 'static'),
+    os.path.join(BASE_DIR, 'ui', 'static'),
 )
 COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
