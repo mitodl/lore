@@ -8,7 +8,8 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import transaction
-from django.utils.text import slugify
+from django.shortcuts import get_object_or_404
+from django.http.response import HttpResponseForbidden
 
 from learningresources.models import (
     Course, Repository, LearningResource, LearningResourceType
@@ -68,7 +69,6 @@ def create_resource(course, parent, resource_type, title, content_xml, mpath):
     Returns:
         resource (learningresources.LearningResource): new LearningResource
     """
-    log.debug("title: %s", title)
     params = {
         "course": course,
         "learning_resource_type_id": type_id_by_name(resource_type),
@@ -138,19 +138,10 @@ def create_repo(name, description, user_id):
         repo (learningresources.Repository): newly-created repo
     """
     with transaction.atomic():
-        repo = Repository(
+        return Repository.objects.create(
             name=name, description=description,
             created_by_id=user_id,
         )
-
-        slug = slugify(repo.name)
-        count = 1
-        while Repository.objects.filter(slug=slug).exists():
-            slug = "{0}{1}".format(slugify(repo.name), count)
-            count += 1
-        repo.slug = slug
-        repo.save()
-        return repo
 
 
 def get_courses(repo_id):
@@ -186,7 +177,6 @@ def get_user_tags(repo_id):
     """
     resources = LearningResource.objects.filter(course__repository__id=repo_id)
     tag_ids = set([x.learning_resource_type_id for x in resources])
-    log.debug("tag ids: %s", tag_ids)
     stuff = LearningResourceType.objects.filter(id__in=tag_ids).order_by(
         "name")
     return stuff
@@ -203,3 +193,31 @@ def get_resources(repo_id):
     return LearningResource.objects.select_related(
         "learning_resource_type").filter(
             course__repository__id=repo_id).order_by("title")
+
+
+def get_resource(resource_id, user_id):
+    """
+    Get single resource.
+    Args:
+        resource_id (int): primary key of the LearningResource
+        user_id (int): primary key of the user requesting the resource
+    Returns:
+        learningresources.LearningResource: resource
+    """
+    resource = get_object_or_404(LearningResource, id=resource_id)
+    if has_repo(resource.course.repository_id, user_id):
+        return resource
+    return HttpResponseForbidden
+
+
+def has_repo(repo_id, user_id):
+    """
+    Can a user see a repository?
+    Args:
+        repo_id (int): primary key of the repository
+        user_id (int): primary key of the user
+    Returns:
+        bool: if they're allowed to see the repo.
+    """
+    repos = get_repos(user_id)
+    return repo_id in set([x.id for x in repos])
