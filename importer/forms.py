@@ -27,12 +27,12 @@ class UploadForm(Form):
         """
         super(UploadForm, self).__init__(*args, **kwargs)
 
-    def save(self, user, repo_id):
+    def save(self, user_id, repo_id):
         """
         Receives the request.FILES from the view.
 
         Args:
-            user (auth.User): request.user
+            user_id (int): primary key of the user uploading the course.
         """
         # Assumes a single file, because we only accept
         # one at a time.
@@ -49,5 +49,5 @@ class UploadForm(Form):
 
         log.debug("UploadForm cleaned_data: %s", self.cleaned_data)
         import_course_from_file(
-            filename, repo_id, user.id
+            filename, repo_id, user_id
         )

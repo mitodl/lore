@@ -47,7 +47,7 @@ def upload(request, repo_id):
             data=request.POST, files=request.FILES)
         if form.is_valid():
             try:
-                form.save(request.user, repo_id)
+                form.save(request.user.id, repo_id)
                 return redirect("/lore/listing/{0}/1".format(repo_id))
             except ValueError as ex:
                 log.debug("ex args: %s", ex.args)

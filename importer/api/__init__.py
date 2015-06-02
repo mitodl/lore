@@ -21,10 +21,13 @@ log = logging.getLogger(__name__)
 
 def import_course_from_file(filename, repo_id, user_id):
     """
-    Import OLX from .zip or tar.gz.
+    Import OLX from .zip or tar.gz. Imports from a file
+    and deletes the file.
 
     Args:
         filename (unicode): Path to archive file (zip or .tar.gz)
+        repo_id (int): Primary key of repository course belongs to
+        user_id (int): Primary key of user importing the course
 
     Raises:
         ValueError: Unable to extract or read archive contents.
