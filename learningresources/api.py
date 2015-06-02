@@ -205,7 +205,7 @@ def get_resource(resource_id, user_id):
         learningresources.LearningResource: resource
     """
     resource = get_object_or_404(LearningResource, id=resource_id)
-    if has_repo(resource.repository_id, user_id):
+    if has_repo(resource.course.repository_id, user_id):
         return resource
     return HttpResponseForbidden
 
