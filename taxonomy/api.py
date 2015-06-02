@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.text import slugify
 
 from taxonomy.models import (
     Vocabulary,
@@ -56,6 +57,12 @@ def create_vocabulary(
         vocabulary_type=vocabulary_type,
         weight=weight,
     )
+    slug = slugify(vocabulary.name)
+    count = 1
+    while Vocabulary.objects.filter(slug=slug).exists():
+        slug = "{0}{1}".format(slugify(vocabulary.name), count)
+        count += 1
+    vocabulary.slug = slug
     vocabulary.full_clean()
     vocabulary.save()
     return vocabulary

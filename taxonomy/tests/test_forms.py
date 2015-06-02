@@ -78,6 +78,7 @@ class TestForms(LoreTestCase):
         )
 
         self.assertEquals('name', vocab.name)
+        self.assertEquals('name', vocab.slug)
         self.assertEquals(Vocabulary.MANAGED, vocab.vocabulary_type)
         self.assertEquals(0, vocab.learning_resource_types.count())
         self.assertEquals(True, vocab.required)
@@ -92,6 +93,7 @@ class TestForms(LoreTestCase):
 
         vocab = Vocabulary.objects.get(id=vocab.id)
         self.assertEquals('edited name', vocab.name)
+        self.assertEquals('edited-name', vocab.slug)
         self.assertEquals(Vocabulary.FREE_TAGGING, vocab.vocabulary_type)
         self.assertEquals(1, vocab.learning_resource_types.count())
         self.assertEquals(True, vocab.required)

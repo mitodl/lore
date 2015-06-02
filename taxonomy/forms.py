@@ -36,6 +36,7 @@ class VocabularyForm(ModelForm):
             'vocabulary_type': RadioSelect(),
         }
 
+    # pylint: disable=arguments-differ
     # commit argument is omitted since we need to update slug
     @transaction.atomic
     def save(self):

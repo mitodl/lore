@@ -159,6 +159,22 @@ class TestApi(LoreTestCase):
                                        9)
         self.assertEquals([self.vocabulary, vocabulary],
                           list(Vocabulary.objects.order_by('id')))
+
+        other_repository = Repository.objects.create(
+            create_date="2014-08-08",
+            created_by=self.user,
+        )
+
+        vocabulary_1 = create_vocabulary(
+            other_repository.id,
+            "vocabulary",
+            "description",
+            False,
+            Vocabulary.FREE_TAGGING,
+            9)
+        # the slug is different
+        self.assertNotEqual(vocabulary, vocabulary_1)
+        self.assertEqual("vocabulary1", vocabulary_1.slug)
         self.assertRaises(ValidationError,
                           lambda: create_vocabulary(9,
                                                     "vocabulary",
