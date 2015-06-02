@@ -49,7 +49,7 @@
 <div id="resources">
 <h2>Resource</h2>
 <table>
-<tr><th>Type</th><th>title</th><th>Path</th></tr>
+<tr><th>Type</th><th>title</th><th>Path</th><th>Export</th></tr>
 {% for resource in resources %}
     <tr>
         <td>
@@ -60,6 +60,9 @@
         </td>
         <td>
             {{ resource.materialized_path }}
+        </td>
+        <td>
+            <a href="{% url 'export' resource.id %}">xml</a>
         </td>
     </tr>
 {% endfor %}

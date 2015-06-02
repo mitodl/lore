@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import logging
 
 from django.db import transaction
+from django.shortcuts import get_object_or_404
 
 from learningresources.models import (
     Course, Repository, LearningResource, LearningResourceType
@@ -67,7 +68,6 @@ def create_resource(course, parent, resource_type, title, content_xml, mpath):
     Returns:
         resource (learningresources.LearningResource): new LearningResource
     """
-    log.debug("title: %s", title)
     params = {
         "course": course,
         "learning_resource_type_id": type_id_by_name(resource_type),
@@ -176,7 +176,6 @@ def get_user_tags(repo_id):
     """
     resources = LearningResource.objects.filter(course__repository__id=repo_id)
     tag_ids = set([x.learning_resource_type_id for x in resources])
-    log.debug("tag ids: %s", tag_ids)
     stuff = LearningResourceType.objects.filter(id__in=tag_ids).order_by(
         "name")
     return stuff
@@ -193,3 +192,13 @@ def get_resources(repo_id):
     return LearningResource.objects.select_related(
         "learning_resource_type").filter(
             course__repository__id=repo_id).order_by("title")
+
+def get_resource(resource_id):
+    """
+    Get single resource.
+    Args:
+        resource_id (int): primary key of the LearningResource
+    Returns:
+        learningresources.LearningResource: resource
+    """
+    return get_object_or_404(LearningResource, id=resource_id)
