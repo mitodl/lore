@@ -4,11 +4,17 @@ Views for the importer app.
 
 from __future__ import unicode_literals
 
-from django.shortcuts import render
+import logging
+
+from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from django.http.response import HttpResponseForbidden
 
 from learningresources.models import Repository, Course, LearningResource
+from learningresources.api import get_repos
 from .forms import UploadForm
+
+log = logging.getLogger(__name__)
 
 
 def status(request):
@@ -28,17 +34,28 @@ def status(request):
 
 
 @login_required
-def upload(request):
+def upload(request, repo_id):
     """
     Upload a OLX archive.
     """
+    if int(repo_id) not in set([x.id for x in get_repos(request.user.id)]):
+        return HttpResponseForbidden("unauthorized")
     form = UploadForm()
+    message = ""
     if request.method == "POST":
-        form = UploadForm(data=request.POST, files=request.FILES)
+        form = UploadForm(
+            data=request.POST, files=request.FILES)
         if form.is_valid():
-            form.save(request.user)
+            try:
+                form.save(request.user.id, repo_id)
+                return redirect("/lore/listing/{0}/1".format(repo_id))
+            except ValueError as ex:
+                log.debug("ex args: %s", ex.args)
+                if "Duplicate course" not in ex.args:
+                    raise ex
+                message = "Duplicate course"
     return render(
         request,
         "upload.html",
-        {'form': form},
+        {'form': form, "message": message, "repo_id": repo_id},
     )

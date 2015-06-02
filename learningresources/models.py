@@ -16,9 +16,13 @@ class Course(models.Model):
     repository = models.ForeignKey('Repository')
     org = models.TextField()
     course_number = models.TextField()
-    semester = models.TextField()
+    run = models.TextField()
     import_date = models.DateField(auto_now_add=True)
     imported_by = models.ForeignKey(User)
+
+    class meta:
+        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        unique_together = ("repository", "org", "course_number", "run")
 
 
 class LearningResource(models.Model):
@@ -41,6 +45,10 @@ class LearningResource(models.Model):
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
 
+    class meta:
+        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        unique_together = ("course", "uuid")
+
 
 @python_2_unicode_compatible
 class LearningResourceType(models.Model):
@@ -48,7 +56,7 @@ class LearningResourceType(models.Model):
     Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
     """
-    name = models.TextField()
+    name = models.TextField(unique=True)
 
     def __str__(self):
         return self.name
@@ -59,7 +67,17 @@ class Repository(models.Model):
     A collection of learning resources
     that come from (usually tightly-related) courses.
     """
-    name = models.TextField()
+    name = models.CharField(max_length=256, unique=True)
+    slug = models.SlugField(max_length=256, unique=True)
     description = models.TextField()
     create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)
+
+    def has_resources(self):
+        """Are any LearningResources uploaded for this repository?"""
+        return LearningResource.objects.filter(
+            course__repository__id=self.id).exists()
+
+    class meta:
+        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        prepopulated_fields = {"slug": ("name",)}

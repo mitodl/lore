@@ -16,14 +16,15 @@ class TestCourseForm(LoreTestCase):
         """Initialize"""
         super(TestCourseForm, self).setUp()
         self.repo, _ = Repository.objects.get_or_create(
-            name="tester repo", created_by_id=self.user.id)
+            name="tester repo", created_by_id=self.user.id,
+            slug="tester-repo")
 
     def test_init(self):
         """Get the form page."""
         data = {
             "imported_by": self.user.id,
             "repository": self.repo.id,
-            "org": "fake org", "semester": "Febtober",
+            "org": "fake org", "run": "Febtober",
             "course_number": "1234",
         }
         form = CourseForm(data)

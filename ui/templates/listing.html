@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div id="header">
+<h1>Listing</h1>
+</div>
+
+<div>
+    <a href="{% url 'upload' repo.id %}">import</a>
+</div>
+
+<div id="nav" style="float: left; height: 100%;">
+<p>
+<h2>Repository {{ repo.name }} </h2>
+</p>
+
+{% if courses.count > 0 %}
+
+<h2>Courses</h2>
+<ul>
+{% for course in courses %}
+    <li>
+        {{ course.course_number }}
+    </li>
+
+{% endfor %}
+</ul>
+
+<h2>Runs</h2>
+<ul>
+{% for run in runs %}
+    <li>
+        {{ run }}
+    </li>
+
+{% endfor %}
+</ul>
+
+<h2>Resource Type</h2>
+<ul>
+{% for tag in tags %}
+    <li>
+        {{ tag.name }}
+    </li>
+
+{% endfor %}
+</ul>
+</div>
+
+<div id="resources">
+<h2>Resource</h2>
+<table>
+<tr><th>Type</th><th>title</th><th>Path</th></tr>
+{% for resource in resources %}
+    <tr>
+        <td>
+            {{ resource.learning_resource_type.name }}
+        </td>
+        <td>
+            {{ resource.title }}
+        </td>
+        <td>
+            {{ resource.materialized_path }}
+        </td>
+    </tr>
+{% endfor %}
+</table>
+
+{% if resources.has_other_pages %}
+{% if resources.has_previous %}
+<a href="{% url 'listing' repo_id resources.previous_page_number  %}">page {{ resources.previous_page_number }}</a>
+{% endif %}
+{{ resources }}
+{% if resources.has_next %}
+<a href="{% url 'listing' repo_id resources.next_page_number  %}">page {{ resources.next_page_number }}</a>
+{% endif %}
+{% endif %}
+</div>
+{% endif %} {# endif for if courses.count > 0, hide all this for empty repos #}
+
+{% endblock %}

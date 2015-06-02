@@ -22,8 +22,9 @@ class TestCreateCourse(LoreTestCase):
         self.kwargs = {
             'org': 'demo org',
             'course_number': '42',
-            'semester': 'Febtober',
+            'run': 'Febtober',
             'user_id': self.user.id,
+            'repo_id': self.repo.id,
         }
 
     def tearDown(self):
@@ -32,7 +33,9 @@ class TestCreateCourse(LoreTestCase):
         """
         super(TestCreateCourse, self).tearDown()
         kwargs = self.kwargs
+        kwargs["repository_id"] = kwargs["repo_id"]
         kwargs.pop("user_id")
+        kwargs.pop("repo_id")
         Course.objects.filter(**kwargs).delete()
 
     def test_create(self):
