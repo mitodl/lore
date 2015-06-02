@@ -87,3 +87,13 @@ class TestViews(LoreTestCase):
             follow=True
         )
         self.assertTrue(Repository.objects.filter(slug=slug1).exists())
+
+    def test_invalid_repo_form(self):
+        """Upload invalid form"""
+        resp = self.client.post(
+            "/lore/create_repo/",
+            {}, follow=True
+        )
+        self.assertTrue(resp.status_code == HTTP_OK)
+        body = resp.content.decode("utf-8")
+        self.assertTrue("This field is required." in body)
