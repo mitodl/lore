@@ -8,7 +8,7 @@ import os
 from tempfile import mkstemp
 import logging
 
-from django.forms import Form, FileField
+from django.forms import Form, FileField, ValidationError
 
 from importer.api import import_course_from_file
 
@@ -27,6 +27,19 @@ class UploadForm(Form):
         """
         super(UploadForm, self).__init__(*args, **kwargs)
 
+    def clean_course_file(self):
+        """Only certain extensions are allowed."""
+        upload = self.cleaned_data["course_file"]
+        log.debug("checking filename %s", upload.name)
+        for ext in (".zip", ".tar.gz", ".tgz"):
+            if upload.name.endswith(ext):
+                log.debug("the filename is good")
+                upload.ext = ext
+                log.debug("setting upload.ext to %s", ext)
+                return upload
+        log.debug("got to end, so the file is bad")
+        raise ValidationError("Unsupported file type.")
+
     def save(self, user_id, repo_id):
         """
         Receives the request.FILES from the view.
@@ -36,11 +49,13 @@ class UploadForm(Form):
         """
         # Assumes a single file, because we only accept
         # one at a time.
-        uploaded_file = list(self.files.values())[0]
-        _, ext = os.path.splitext(uploaded_file.name)
+        uploaded_file = self.cleaned_data["course_file"]
+        log.debug("uploaded file: %s", uploaded_file)
+        log.debug("name: %s, extension: %s", uploaded_file.name, uploaded_file.ext)
+        _, ext = os.path.splitext(uploaded_file.ext)
 
         # Save the uploaded file into a temp file.
-        handle, filename = mkstemp(suffix=ext)
+        handle, filename = mkstemp(suffix=uploaded_file.ext)
         os.close(handle)
 
         with open(filename, 'wb') as temp:

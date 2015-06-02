@@ -37,7 +37,8 @@ def import_course_from_file(filename, repo_id, user_id):
     tempdir = mkdtemp()
     try:
         extract(path=filename, to_path=tempdir, method="safe")
-    except ArchiveException:
+    except ArchiveException as ex:
+        log.debug("failed to extract: %s", ex)
         remove(filename)
         raise ValueError("Invalid OLX archive, unable to extract.")
     course_imported = False
