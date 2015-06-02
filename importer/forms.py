@@ -50,9 +50,6 @@ class UploadForm(Form):
         # Assumes a single file, because we only accept
         # one at a time.
         uploaded_file = self.cleaned_data["course_file"]
-        log.debug("uploaded file: %s", uploaded_file)
-        log.debug("name: %s, extension: %s", uploaded_file.name, uploaded_file.ext)
-        _, ext = os.path.splitext(uploaded_file.ext)
 
         # Save the uploaded file into a temp file.
         handle, filename = mkstemp(suffix=uploaded_file.ext)
