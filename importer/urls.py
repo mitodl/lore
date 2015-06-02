@@ -10,5 +10,5 @@ from importer.views import status, upload
 
 urlpatterns = [
     url(r'^status/$', status, name='status'),
-    url(r'^upload/$', upload, name='upload'),
+    url(r'^upload/(?P<repo_id>\d+)$', upload, name='upload'),
 ]

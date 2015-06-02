@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('org', models.TextField()),
                 ('course_number', models.TextField()),
-                ('semester', models.TextField()),
+                ('run', models.TextField()),
                 ('import_date', models.DateField(auto_now_add=True)),
                 ('imported_by', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
@@ -47,14 +47,15 @@ class Migration(migrations.Migration):
             name='LearningResourceType',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.TextField()),
+                ('name', models.TextField(unique=True)),
             ],
         ),
         migrations.CreateModel(
             name='Repository',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.TextField()),
+                ('name', models.CharField(unique=True, max_length=256)),
+                ('slug', models.SlugField(unique=True, max_length=256)),
                 ('description', models.TextField()),
                 ('create_date', models.DateField(auto_now_add=True)),
                 ('created_by', models.ForeignKey(to=settings.AUTH_USER_MODEL)),

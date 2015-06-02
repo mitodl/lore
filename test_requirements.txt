@@ -5,6 +5,7 @@ pytest-pep8
 pytest-pylint
 pytest-cov
 pytest-django
+pytest-capturelog
 git+https://github.com/joeyespo/pytest-watch@cd236e6507e6463a9949d2515391ebe68599ad55#egg=pytest-watch-poll
 mock
 ipython

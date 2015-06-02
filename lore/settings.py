@@ -187,3 +187,14 @@ CAS_SERVER_URL = get_var(
 )
 
 LOGIN_URL = "/admin/"
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'loggers': {
+        'django': {
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
