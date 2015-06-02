@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-    #    ('learningresources', '0001_initial'),
+        ('learningresources', '0001_initial'),
     ]
 
     operations = [
