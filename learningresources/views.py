@@ -82,6 +82,6 @@ def listing(request, repo_id, page=1):
 def export(request, resource_id):
     """Dump LearningResource as XML"""
     return HttpResponse(
-        get_resource(resource_id).content_xml,
+        get_resource(resource_id, request.user.id).content_xml,
         content_type='text/xml'
     )

@@ -9,6 +9,7 @@ import logging
 
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.http.response import HttpResponseForbidden
 
 from learningresources.models import (
     Course, Repository, LearningResource, LearningResourceType
@@ -193,12 +194,30 @@ def get_resources(repo_id):
         "learning_resource_type").filter(
             course__repository__id=repo_id).order_by("title")
 
-def get_resource(resource_id):
+
+def get_resource(resource_id, user_id):
     """
     Get single resource.
     Args:
         resource_id (int): primary key of the LearningResource
+        user_id (int): primary key of the user requesting the resource
     Returns:
         learningresources.LearningResource: resource
     """
-    return get_object_or_404(LearningResource, id=resource_id)
+    resource = get_object_or_404(LearningResource, id=resource_id)
+    if has_repo(resource.repository_id, user_id):
+        return resource
+    return HttpResponseForbidden
+
+
+def has_repo(repo_id, user_id):
+    """
+    Can a user see a repository?
+    Args:
+        repo_id (int): primary key of the repository
+        user_id (int): primary key of the user
+    Returns:
+        bool: if they're allowed to see the repo.
+    """
+    repos = get_repos(user_id)
+    return repo_id in set([x.id for x in repos])
