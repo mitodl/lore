@@ -8,11 +8,12 @@ from django.shortcuts import render, redirect
 from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.http.response import HttpResponseForbidden
+from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 
 from learningresources.api import (
     get_repos, get_repo_courses, get_runs, get_user_tags,
-    get_resources,
+    get_resources, get_resource
 )
 from learningresources.forms import RepositoryForm
 
@@ -74,4 +75,13 @@ def listing(request, repo_id, page=1):
         request,
         "listing.html",
         context,
+    )
+
+
+@login_required
+def export(request, resource_id):
+    """Dump LearningResource as XML"""
+    return HttpResponse(
+        get_resource(resource_id, request.user.id).content_xml,
+        content_type='text/xml'
     )

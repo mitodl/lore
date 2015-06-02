@@ -109,3 +109,12 @@ For additional options like having it say "passed"
 out loud, or sending desktop notifications for failures see the
 `README <https://github.com/joeyespo/pytest-watch/blob/master/README.md>`_.
 Keep in mind, there can be a bit of a lag between saves and the test running.
+
+Building Local Documentation
+============================
+
+To build the sphinx documentation project, run:
+``docker-compose run web tox -e docs``
+
+This will build it on your local machine and you should be able to
+point your browser at ``</path/to/lore/repo>/docs/_build/index.html``.
