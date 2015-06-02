@@ -6,11 +6,11 @@ from __future__ import unicode_literals
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=invalid-name
 
-from django.test.testcases import TestCase
-from django.contrib.auth.models import User
 from django.http.response import Http404
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
+
+from learningresources.tests.base import LoreTestCase
 
 from taxonomy.models import (
     Vocabulary,
@@ -40,13 +40,11 @@ from taxonomy.api import (
 )
 
 
-class TestApi(TestCase):
+class TestApi(LoreTestCase):
     """Tests for taxomony API"""
 
     def setUp(self):
         super(TestApi, self).setUp()
-        self.user = User.objects.create(username="test")
-
         self.repository = Repository.objects.create(
             create_date="2014-08-08",
             created_by=self.user,
