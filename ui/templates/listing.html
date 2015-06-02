@@ -4,10 +4,16 @@
 <h1>Listing</h1>
 </div>
 
+<div>
+    <a href="{% url 'upload' repo.id %}">import</a>
+</div>
+
 <div id="nav" style="float: left; height: 100%;">
 <p>
 <h2>Repository {{ repo.name }} </h2>
 </p>
+
+{% if courses.count > 0 %}
 
 <h2>Courses</h2>
 <ul>
@@ -69,5 +75,6 @@
 {% endif %}
 {% endif %}
 </div>
+{% endif %} {# endif for if courses.count > 0, hide all this for empty repos #}
 
 {% endblock %}
