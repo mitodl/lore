@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
+from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 
 from learningresources.models import (
@@ -17,7 +18,8 @@ class Vocabulary(models.Model):
     FREE_TAGGING = "f"
 
     repository = models.ForeignKey(Repository, on_delete=models.PROTECT)
-    name = models.TextField()
+    name = models.CharField(max_length=256)
+    slug = models.CharField(max_length=256, unique=True)
     description = models.TextField(
         help_text=_("Describe how content authors should use this vocabulary")
     )
