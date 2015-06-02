@@ -19,7 +19,7 @@ class Course(models.Model):
     import_date = models.DateField(auto_now_add=True)
     imported_by = models.ForeignKey(User)
 
-    class meta:
+    class Meta:
         # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
         unique_together = ("repository", "org", "course_number", "run")
 
@@ -44,7 +44,7 @@ class LearningResource(models.Model):
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
 
-    class meta:
+    class Meta:
         # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
         unique_together = ("course", "uuid")
 
@@ -73,6 +73,6 @@ class Repository(models.Model):
         return LearningResource.objects.filter(
             course__repository__id=self.id).exists()
 
-    class meta:
+    class Meta:
         # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
         prepopulated_fields = {"slug": ("name",)}
