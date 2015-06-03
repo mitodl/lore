@@ -19,9 +19,9 @@ from taxonomy.models import (
 from learningresources.models import (
     LearningResource,
     LearningResourceType,
+    Repository,
     Course,
 )
-from learningresources.api import create_repo
 from taxonomy.api import (
     add_term_to_learning_resource,
     add_type_for_vocabulary,
@@ -45,9 +45,13 @@ class TestApi(LoreTestCase):
 
     def setUp(self):
         super(TestApi, self).setUp()
+        self.repository = Repository.objects.create(
+            create_date="2014-08-08",
+            created_by=self.user,
+        )
 
         self.vocabulary = Vocabulary.objects.create(
-            repository=self.repo,
+            repository=self.repository,
             required=False,
             weight=100,
         )
@@ -60,7 +64,7 @@ class TestApi(LoreTestCase):
         )
 
         self.course = Course.objects.create(
-            repository=self.repo,
+            repository=self.repository,
             imported_by=self.user,
         )
 
@@ -147,7 +151,7 @@ class TestApi(LoreTestCase):
         self.assertEquals([self.vocabulary],
                           list(Vocabulary.objects.all()))
 
-        vocabulary = create_vocabulary(self.repo.id,
+        vocabulary = create_vocabulary(self.repository.id,
                                        "vocabulary",
                                        "description",
                                        False,
@@ -156,10 +160,9 @@ class TestApi(LoreTestCase):
         self.assertEquals([self.vocabulary, vocabulary],
                           list(Vocabulary.objects.order_by('id')))
 
-        other_repository = create_repo(
-            "other repository",
-            "description",
-            self.user.id,
+        other_repository = Repository.objects.create(
+            create_date="2014-08-08",
+            created_by=self.user,
         )
 
         vocabulary_1 = create_vocabulary(
@@ -181,7 +184,7 @@ class TestApi(LoreTestCase):
                                                     9))
 
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repo.id,
+                          lambda: create_vocabulary(self.repository.id,
                                                     "vocabulary",
                                                     "description",
                                                     "abc",
@@ -190,7 +193,7 @@ class TestApi(LoreTestCase):
 
         # pass in None, violates constraints
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repo.id,
+                          lambda: create_vocabulary(self.repository.id,
                                                     "vocabulary",
                                                     "description",
                                                     None,
@@ -198,7 +201,7 @@ class TestApi(LoreTestCase):
                                                     9))
 
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repo.id,
+                          lambda: create_vocabulary(self.repository.id,
                                                     "vocabulary",
                                                     "description",
                                                     False,
