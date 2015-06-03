@@ -60,7 +60,7 @@ class TestViews(LoreTestCase):
         """Used multiple times in tests"""
         with open(get_course_zip(), "rb") as post_file:
             resp = self.client.post(
-                "/repositories/{0}/import".format(self.repo.slug),
+                "/repositories/{0}/import/".format(self.repo.slug),
                 {"course_file": post_file, "repository": self.repo.id},
                 follow=True
             )
@@ -69,7 +69,7 @@ class TestViews(LoreTestCase):
     def test_invalid_form(self):
         """Upload invalid form"""
         resp = self.client.post(
-            "/repositories/{0}/import".format(self.repo.slug),
+            "/repositories/{0}/import/".format(self.repo.slug),
             {}, follow=True
         )
         self.assertTrue(resp.status_code == HTTP_OK)

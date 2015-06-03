@@ -14,13 +14,13 @@ from learningresources.models import Repository
 from taxonomy.models import Vocabulary
 
 
-def create_vocabulary(request, repository_id):
+def create_vocabulary(request, repo_slug):
     """
     Show form to create a new vocabulary
     """
     form = VocabularyForm()
 
-    repository = get_object_or_404(Repository, id=repository_id)
+    repository = get_object_or_404(Repository, slug=repo_slug)
 
     if request.method == "POST":
         form = VocabularyForm(request.POST)
@@ -31,9 +31,9 @@ def create_vocabulary(request, repository_id):
         if form.is_valid():
             form.save()
             return redirect(
-                'taxonomy:edit_vocabulary',
-                vocabulary_id=form.instance.id,
-                repository_id=repository_id,
+                'edit_vocabulary',
+                vocab_slug=form.instance.slug,
+                repo_slug=repo_slug,
             )
 
         return render(
@@ -41,7 +41,7 @@ def create_vocabulary(request, repository_id):
             "vocabulary.html",
             {
                 'form': form,
-                'repository_id': repository_id,
+                'repo_slug': repo_slug,
             }
         )
 
@@ -50,19 +50,19 @@ def create_vocabulary(request, repository_id):
         "vocabulary.html",
         {
             'form': form,
-            'repository_id': repository_id,
+            'repo_slug': repo_slug,
         }
     )
 
 
-def edit_vocabulary(request, repository_id, vocabulary_id):
+def edit_vocabulary(request, repo_slug, vocab_slug):
     """
     Show form to edit an existing vocabulary
     """
-    vocabulary = get_object_or_404(Vocabulary, id=vocabulary_id)
+    vocabulary = get_object_or_404(Vocabulary, slug=vocab_slug)
     form = VocabularyForm(instance=vocabulary)
 
-    repository = get_object_or_404(Repository, id=repository_id)
+    repository = get_object_or_404(Repository, slug=repo_slug)
     form.instance.repository = repository
     form.instance.required = False
     form.instance.weight = 1000
@@ -76,9 +76,9 @@ def edit_vocabulary(request, repository_id, vocabulary_id):
         if form.is_valid():
             form.save()
             return redirect(
-                'taxonomy:edit_vocabulary',
-                vocabulary_id=form.instance.id,
-                repository_id=repository_id,
+                'edit_vocabulary',
+                vocab_slug=form.instance.slug,
+                repo_slug=repo_slug,
             )
 
         return render(
@@ -86,8 +86,8 @@ def edit_vocabulary(request, repository_id, vocabulary_id):
             "vocabulary.html",
             {
                 'form': form,
-                'vocabulary_id': vocabulary_id,
-                'repository_id': repository_id,
+                'vocab_slug': vocab_slug,
+                'repo_slug': repo_slug,
             }
         )
 
@@ -96,7 +96,7 @@ def edit_vocabulary(request, repository_id, vocabulary_id):
         "vocabulary.html",
         {
             'form': form,
-            'vocabulary_id': vocabulary_id,
-            'repository_id': repository_id,
+            'vocab_slug': vocab_slug,
+            'repo_slug': repo_slug,
         }
     )
