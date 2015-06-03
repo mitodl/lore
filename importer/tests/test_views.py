@@ -45,7 +45,7 @@ class TestViews(LoreTestCase):
         body = self.upload_test_file()
         self.assertTrue(LearningResource.objects.count() == 5)
         # We should have been redirected to the Listing page.
-        self.assertTrue('<h1>Listing</h1>' in body)
+        self.assertTrue('Listing</title>' in body)
 
     def test_upload_duplicate(self):
         """Gracefully inform the user."""

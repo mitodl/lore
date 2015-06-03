@@ -416,4 +416,7 @@ footer {
   font-weight: 700;
 }
 
-
+.listing-table {
+  table-layout: fixed;
+  word-wrap: break-word;
+}
