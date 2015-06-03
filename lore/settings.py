@@ -99,7 +99,7 @@ MIDDLEWARE_CLASSES = (
 
 AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 
-ROOT_URLCONF = 'lore.urls'
+ROOT_URLCONF = 'ui.urls'
 
 TEMPLATES = [
     {

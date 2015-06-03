@@ -22,21 +22,21 @@ class TestViews(LoreTestCase):
 
     def test_status_get(self):
         """Status page."""
-        resp = self.client.get("/importer/status", follow=True)
+        resp = self.client.get("/status", follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
         self.assertTrue("Number of learning resources:" in body)
 
     def test_upload_get(self):
         """GET upload page."""
-        resp = self.client.get("/importer/upload/{0}".format(
-            self.repo.id), follow=True)
+        resp = self.client.get("/repositories/{0}/import".format(
+            self.repo.slug), follow=True)
         body = resp.content.decode("utf-8")
         self.assertTrue('enctype="multipart/form-data"' in body)
 
     def test_upload_get_bad_repo(self):
         """GET upload page."""
-        resp = self.client.get("/importer/upload/999", follow=True)
+        resp = self.client.get("/repositories/999/import", follow=True)
         self.assertTrue(resp.status_code == UNAUTHORIZED)
 
     def test_upload_post(self):
@@ -60,7 +60,7 @@ class TestViews(LoreTestCase):
         """Used multiple times in tests"""
         with open(get_course_zip(), "rb") as post_file:
             resp = self.client.post(
-                "/importer/upload/{0}".format(self.repo.id),
+                "/repositories/{0}/import".format(self.repo.slug),
                 {"course_file": post_file, "repository": self.repo.id},
                 follow=True
             )
@@ -69,7 +69,7 @@ class TestViews(LoreTestCase):
     def test_invalid_form(self):
         """Upload invalid form"""
         resp = self.client.post(
-            "/importer/upload/{0}".format(self.repo.id),
+            "/repositories/{0}/import".format(self.repo.slug),
             {}, follow=True
         )
         self.assertTrue(resp.status_code == HTTP_OK)

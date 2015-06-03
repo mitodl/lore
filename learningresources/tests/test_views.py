@@ -15,9 +15,14 @@ UNAUTHORIZED = 403
 class TestViews(LoreTestCase):
     """Hit each view."""
 
-    def test_status_get(self):
-        """Status page."""
-        resp = self.client.get("/lore/welcome", follow=True)
+    def test_get_home(self):
+        """Welcome page."""
+        resp = self.client.get("/home", follow=True)
+        self.assertTrue(resp.status_code == HTTP_OK)
+        body = resp.content.decode("utf-8")
+        self.assertTrue("Welcome" in body)
+
+        resp = self.client.get("/", follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
         self.assertTrue("Welcome" in body)
@@ -26,7 +31,7 @@ class TestViews(LoreTestCase):
         """Create repo."""
         repo_name = "my really sweet repository"
         resp = self.client.post(
-            "/lore/create_repo/",
+            "/repositories/new",
             {"name": repo_name, "description": "foo"},
             follow=True,
         )
@@ -39,21 +44,21 @@ class TestViews(LoreTestCase):
     def test_listing_unauthorized(self):
         """View listing page."""
         # Not authorized to view this repository...
-        resp = self.client.get("/lore/listing/99/1", follow=True)
+        resp = self.client.get("/repositories/99/1", follow=True)
         body = resp.content.decode("utf-8")
         self.assertTrue(resp.status_code == UNAUTHORIZED)
         self.assertTrue("unauthorized" in body)
 
     def test_welcome(self):
         """Welcome page."""
-        resp = self.client.get("/lore/welcome", follow=True)
+        resp = self.client.get("/home", follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
         self.assertTrue("<h1>Welcome</h1>" in body)
 
     def test_create_repo_get(self):
         """GET repo creation page."""
-        resp = self.client.get("/lore/create_repo", follow=True)
+        resp = self.client.get("/repositories/new", follow=True)
         body = resp.content.decode("utf-8")
         self.assertTrue('<h1>Create repository</h1>' in body)
 
@@ -62,7 +67,7 @@ class TestViews(LoreTestCase):
         # We have the default self.repo in the database...
         self.assertTrue(Repository.objects.count() == 1)
         self.client.post(
-            "/lore/create_repo/",
+            "/repositories/new",
             {"name": "test name", "description": "test description"},
             follow=True
         )
@@ -76,13 +81,13 @@ class TestViews(LoreTestCase):
         self.assertFalse(Repository.objects.filter(slug=slug).exists())
         self.assertFalse(Repository.objects.filter(slug=slug1).exists())
         self.client.post(
-            "/lore/create_repo/",
+            "/repositories/new",
             {"name": "awesome repo", "description": "test description"},
             follow=True
         )
         self.assertTrue(Repository.objects.filter(slug=slug).exists())
         self.client.post(
-            "/lore/create_repo/",
+            "/repositories/new",
             {"name": "awesome       repo", "description": "test description"},
             follow=True
         )
@@ -91,7 +96,7 @@ class TestViews(LoreTestCase):
     def test_invalid_repo_form(self):
         """Upload invalid form"""
         resp = self.client.post(
-            "/lore/create_repo/",
+            "/repositories/new",
             {}, follow=True
         )
         self.assertTrue(resp.status_code == HTTP_OK)
