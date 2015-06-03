@@ -8,6 +8,7 @@ from django.db import models
 from django.db import transaction
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.utils.encoding import python_2_unicode_compatible
 
 
 class Course(models.Model):
@@ -51,12 +52,16 @@ class LearningResource(models.Model):
         unique_together = ("course", "uuid")
 
 
+@python_2_unicode_compatible
 class LearningResourceType(models.Model):
     """
     Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
     """
     name = models.TextField(unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Repository(models.Model):
