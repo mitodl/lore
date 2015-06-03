@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.text import slugify
+from django.shortcuts import get_object_or_404
 
 from learningresources.models import (
     Repository,
@@ -48,12 +49,14 @@ class Vocabulary(models.Model):
     @transaction.atomic
     def save(self, *args, **kwargs):
         """Handle slugs."""
-        slug = slugify(self.name)
-        count = 1
-        while Vocabulary.objects.filter(slug=slug).exists():
-            slug = "{0}{1}".format(slugify(self.name), count)
-            count += 1
-        self.slug = slug
+        if self.id is None or self.name != get_object_or_404(
+                Vocabulary, id=self.id).name:
+            slug = slugify(self.name)
+            count = 1
+            while Vocabulary.objects.filter(slug=slug).exists():
+                slug = "{0}{1}".format(slugify(self.name), count)
+                count += 1
+            self.slug = slug
         return super(Vocabulary, self).save(*args, **kwargs)
 
 
