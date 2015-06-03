@@ -57,5 +57,5 @@ def upload(request, repo_slug):
     return render(
         request,
         "upload.html",
-        {'form': form, "repo_slug": repo_slug},
+        {'form': form, "repo": repo},
     )

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block nav %}
+  {{ nav.super }}
+  <li><a href="{% url 'upload' repo.slug %}"><i class="fa fa-arrow-circle-o-right"></i> Import Course</a></li>
+  <!-- <li><a href="#0" class="btn-taxonomies"><i class="fa fa-cogs"></i> Manage Taxonomies</a></li> -->
+  {% endblock %}
+
+  {% block extranavbarright %}
+  <span class="text-repo-name">Viewing Repository: {{ repo.name }}</span>
+  {% endblock %}

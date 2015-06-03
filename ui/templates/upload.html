@@ -1,9 +1,16 @@
-{% extends "base.html" %}
+{% extends "repo_base.html" %}
 {% load bootstrap3 %}
+{% block title %}Upload Course{% endblock %}
+{% block nav %}
+<li>
+  <a href="{% url 'listing' repo.slug 1 %}"><i class="fa fa-book"> Listing</i></a>
+</li>
+
+{% endblock %}
 {% block content %}
 
 <h1>upload here</h1>
-<form method="post" action="{% url 'upload' repo_slug %}" enctype="multipart/form-data">
+<form method="post" action="{% url 'upload' repo.slug %}" enctype="multipart/form-data">
     {% csrf_token %}
     {% bootstrap_form form %}
     <button type="submit" class="btn btn-primary">
