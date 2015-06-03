@@ -5,12 +5,12 @@ Forms for LearningResources
 from __future__ import unicode_literals
 
 from django.forms import ModelForm
-from django.utils.text import slugify
 from django.db import transaction
 
 from .models import Course, Repository
 
-# pylint: disable=missing-docstring
+# pylint: disable=no-init,missing-docstring
+# pylint: disable=old-style-class,too-few-public-methods
 
 
 class CourseForm(ModelForm):
@@ -42,12 +42,6 @@ class RepositoryForm(ModelForm):
         Save a newly-created form.
         """
         repo = super(RepositoryForm, self).save(commit=False)
-        slug = slugify(repo.name)
-        count = 1
-        while Repository.objects.filter(slug=slug).exists():
-            slug = "{0}{1}".format(slugify(repo.name), count)
-            count += 1
-        repo.slug = slug
         repo.created_by = user
         repo.save()
         return repo

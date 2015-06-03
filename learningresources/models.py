@@ -5,8 +5,9 @@ Learning resources data model
 from __future__ import unicode_literals
 
 from django.db import models
+from django.db import transaction
 from django.contrib.auth.models import User
-from django.utils.encoding import python_2_unicode_compatible
+from django.utils.text import slugify
 
 
 class Course(models.Model):
@@ -20,7 +21,7 @@ class Course(models.Model):
     import_date = models.DateField(auto_now_add=True)
     imported_by = models.ForeignKey(User)
 
-    class meta:
+    class Meta:
         # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
         unique_together = ("repository", "org", "course_number", "run")
 
@@ -45,21 +46,17 @@ class LearningResource(models.Model):
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
 
-    class meta:
+    class Meta:
         # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
         unique_together = ("course", "uuid")
 
 
-@python_2_unicode_compatible
 class LearningResourceType(models.Model):
     """
     Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
     """
     name = models.TextField(unique=True)
-
-    def __str__(self):
-        return self.name
 
 
 class Repository(models.Model):
@@ -78,6 +75,13 @@ class Repository(models.Model):
         return LearningResource.objects.filter(
             course__repository__id=self.id).exists()
 
-    class meta:
-        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
-        prepopulated_fields = {"slug": ("name",)}
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        """Handle slugs."""
+        slug = slugify(self.name)
+        count = 1
+        while Repository.objects.filter(slug=slug).exists():
+            slug = "{0}{1}".format(slugify(self.name), count)
+            count += 1
+        self.slug = slug
+        return super(Repository, self).save(*args, **kwargs)

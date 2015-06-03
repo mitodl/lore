@@ -77,6 +77,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'compressor',
+    'bootstrap3',
     'learningresources',
     'importer',
     'ui',
@@ -160,7 +162,7 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'lore', 'static'),
+    os.path.join(BASE_DIR, 'ui', 'static'),
 )
 COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
