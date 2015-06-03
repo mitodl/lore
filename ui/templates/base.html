@@ -17,7 +17,7 @@
        rel="stylesheet"
        type="text/css"
      >
-    
+
     {% compress css %}
     {# Vendor CSS #}
     <link
@@ -41,7 +41,7 @@
     <![endif]-->
     {% block extrahead %}
     {% endblock %}
-      
+
 
   </head>
   <body>
@@ -62,8 +62,8 @@
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
           <ul class="nav navbar-nav">
             {% block nav %}{% endblock %}
-            <!-- <li><a href="#"><i class="fa fa-arrow-circle-o-right"></i> Import Course</a></li> -->
-            <!-- <li><a href="#0" class="btn-taxonomies"><i class="fa fa-cogs"></i> Manage Taxonomies</a></li> -->
+            <li><a href="#"><i class="fa fa-arrow-circle-o-right"></i> Import Course</a></li>
+            <li><a href="#0" class="btn-taxonomies"><i class="fa fa-cogs"></i> Manage Taxonomies</a></li>
           </ul>
           <ul class="nav navbar-nav navbar-right navbar-utility">
             <li class="dropdown">
@@ -78,6 +78,7 @@
                 <!-- <li><a href="#">Separated link</a></li> -->
               </ul>
             </li>
+          <span class="text-repo-name">Viewing Repository: {{ repo.name }}</span>
             {% block extranavbarright %}{% endblock %}
             <!-- <li><span class="text-repo-name">Viewing Repository: </span></li> -->
           </ul>
