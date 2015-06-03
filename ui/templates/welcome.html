@@ -11,7 +11,7 @@
 <ul>
 {% for repo in repos %}
     <li>
-    <a href="{% url 'listing' repo.id 1 %}">{{ repo.name }}</a>
+    <a href="{% url 'listing' repo.slug 1 %}">{{ repo.name }}</a>
     </li>
 {% endfor %}
 </ul>

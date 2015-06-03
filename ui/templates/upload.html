@@ -3,7 +3,7 @@
 {% block content %}
 
 <h1>upload here</h1>
-<form method="post" action="{% url 'upload' repo_id %}" enctype="multipart/form-data">
+<form method="post" action="{% url 'upload' repo_slug %}" enctype="multipart/form-data">
     {% csrf_token %}
     {% bootstrap_form form %}
     <button type="submit" class="btn btn-primary">
