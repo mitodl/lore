@@ -41,8 +41,8 @@ def create_repo(request):
     if request.method == "POST":
         form = RepositoryForm(data=request.POST)
         if form.is_valid():
-            form.save(request.user)
-            return redirect(reverse("welcome"))
+            repo = form.save(request.user)
+            return redirect(reverse("listing", args=(repo.id, 1)))
     return render(
         request,
         "create_repo.html",
