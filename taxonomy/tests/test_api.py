@@ -45,13 +45,8 @@ class TestApi(LoreTestCase):
 
     def setUp(self):
         super(TestApi, self).setUp()
-        self.repository = Repository.objects.create(
-            create_date="2014-08-08",
-            created_by=self.user,
-        )
-
         self.vocabulary = Vocabulary.objects.create(
-            repository=self.repository,
+            repository=self.repo,
             required=False,
             weight=100,
         )
@@ -64,7 +59,7 @@ class TestApi(LoreTestCase):
         )
 
         self.course = Course.objects.create(
-            repository=self.repository,
+            repository=self.repo,
             imported_by=self.user,
         )
 
@@ -151,7 +146,7 @@ class TestApi(LoreTestCase):
         self.assertEquals([self.vocabulary],
                           list(Vocabulary.objects.all()))
 
-        vocabulary = create_vocabulary(self.repository.id,
+        vocabulary = create_vocabulary(self.repo.id,
                                        "vocabulary",
                                        "description",
                                        False,
@@ -184,7 +179,7 @@ class TestApi(LoreTestCase):
                                                     9))
 
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repository.id,
+                          lambda: create_vocabulary(self.repo.id,
                                                     "vocabulary",
                                                     "description",
                                                     "abc",
@@ -193,7 +188,7 @@ class TestApi(LoreTestCase):
 
         # pass in None, violates constraints
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repository.id,
+                          lambda: create_vocabulary(self.repo.id,
                                                     "vocabulary",
                                                     "description",
                                                     None,
@@ -201,7 +196,7 @@ class TestApi(LoreTestCase):
                                                     9))
 
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repository.id,
+                          lambda: create_vocabulary(self.repo.id,
                                                     "vocabulary",
                                                     "description",
                                                     False,
