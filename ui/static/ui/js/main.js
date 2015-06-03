@@ -1,4 +1,4 @@
-define(['jquery', 'bootstrap', 'icheck', 'retina'], function($) {
+define(['jquery', 'bootstrap', 'icheck'], function($) {
     jQuery(document).ready(function($){
       $('input.icheck-11').iCheck({
           checkboxClass: 'icheckbox_square-blue',

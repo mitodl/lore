@@ -64,6 +64,7 @@ def listing(request, repo_slug, page=1):
     repo = [x for x in repos if x.slug == repo_slug][0]
     context = {
         "repo_id": repo.id,
+        "repo_slug": repo.slug,
         "repo": repo,
         "courses": get_repo_courses(repo.id),
         "runs": get_runs(repo.id),
