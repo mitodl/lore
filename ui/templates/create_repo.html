@@ -2,11 +2,6 @@
 {% load bootstrap3 %}
 {% block content %}
 <h1>Create repository</h1>
-
-<p>
-<a href="{% url 'welcome' %}">Return to welcome page</a>
-</p>
-
 <form method="post" action="{% url 'create_repo' %}">
   {% csrf_token %}
   {% bootstrap_form form %}
