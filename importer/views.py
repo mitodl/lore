@@ -34,20 +34,21 @@ def status(request):
 
 
 @login_required
-def upload(request, repo_id):
+def upload(request, repo_slug):
     """
     Upload a OLX archive.
     """
-    if int(repo_id) not in set([x.id for x in get_repos(request.user.id)]):
+    if repo_slug not in set([x.slug for x in get_repos(request.user.id)]):
         return HttpResponseForbidden("unauthorized")
+    repo = [x for x in get_repos(request.user.id) if x.slug == repo_slug][0]
     form = UploadForm()
     if request.method == "POST":
         form = UploadForm(
             data=request.POST, files=request.FILES)
         if form.is_valid():
             try:
-                form.save(request.user.id, repo_id)
-                return redirect("/lore/listing/{0}/1".format(repo_id))
+                form.save(request.user.id, repo.id)
+                return redirect("/repositories/{0}/1".format(repo_slug))
             except ValueError as ex:
                 log.debug("ex args: %s", ex.args)
                 if "Duplicate course" not in ex.args:
@@ -56,5 +57,5 @@ def upload(request, repo_id):
     return render(
         request,
         "upload.html",
-        {'form': form, "repo_id": repo_id},
+        {'form': form, "repo_slug": repo_slug},
     )

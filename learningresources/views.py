@@ -42,7 +42,7 @@ def create_repo(request):
         form = RepositoryForm(data=request.POST)
         if form.is_valid():
             repo = form.save(request.user)
-            return redirect(reverse("listing", args=(repo.id, 1)))
+            return redirect(reverse("listing", args=(repo.slug, 1)))
     return render(
         request,
         "create_repo.html",
@@ -51,24 +51,25 @@ def create_repo(request):
 
 
 @login_required
-def listing(request, repo_id, page=1):
+def listing(request, repo_slug, page=1):
     """
     View available LearningResources by repository.
     """
     # Enforce repository access restrictions.
-    repo_id = int(repo_id)
+
+    # may work better as a database query, not likely a bottleneck though
     repos = get_repos(request.user.id)
-    if repo_id not in set([x.id for x in repos]):
+    if repo_slug not in set([x.slug for x in repos]):
         return HttpResponseForbidden("unauthorized")
-    repo = [x for x in repos if x.id == repo_id][0]
+    repo = [x for x in repos if x.slug == repo_slug][0]
     context = {
-        "repo_id": repo_id,
+        "repo_id": repo.id,
         "repo": repo,
-        "courses": get_repo_courses(repo_id),
-        "runs": get_runs(repo_id),
-        "tags": get_user_tags(repo_id),
+        "courses": get_repo_courses(repo.id),
+        "runs": get_runs(repo.id),
+        "tags": get_user_tags(repo.id),
         "resources": Paginator(
-            get_resources(repo_id), 20).page(page)
+            get_resources(repo.id), 20).page(page)
     }
     log.debug("%s tags", context["tags"].count())
     return render(
