@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
 
 from learningresources.tests.base import LoreTestCase
+from learningresources.api import create_repo
 
 from taxonomy.models import (
     Vocabulary,
@@ -19,7 +20,6 @@ from taxonomy.models import (
 from learningresources.models import (
     LearningResource,
     LearningResourceType,
-    Repository,
     Course,
 )
 from taxonomy.api import (
@@ -155,10 +155,9 @@ class TestApi(LoreTestCase):
         self.assertEquals([self.vocabulary, vocabulary],
                           list(Vocabulary.objects.order_by('id')))
 
-        other_repository = Repository.objects.create(
-            create_date="2014-08-08",
-            created_by=self.user,
-        )
+        other_repository = create_repo("other repository",
+                                       "description",
+                                       self.user.id)
 
         vocabulary_1 = create_vocabulary(
             other_repository.id,
