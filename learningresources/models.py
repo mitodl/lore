@@ -4,6 +4,8 @@ Learning resources data model
 
 from __future__ import unicode_literals
 
+from uuid import uuid4
+
 from django.db import models
 from django.db import transaction
 from django.contrib.auth.models import User
@@ -35,7 +37,7 @@ class LearningResource(models.Model):
     """
     course = models.ForeignKey(Course)
     learning_resource_type = models.ForeignKey('LearningResourceType')
-    uuid = models.TextField()
+    uuid = models.UUIDField()
     title = models.TextField()
     description = models.TextField()
     content_xml = models.TextField()
@@ -47,6 +49,16 @@ class LearningResource(models.Model):
     xa_nr_attempts = models.IntegerField(default=0)
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
+
+    class Meta:
+        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        unique_together = ("course", "uuid")
+
+    def save(self, *args, **kwargs):
+        """Create UUID"""
+        if self.id is None:
+            self.uuid = uuid4().hex
+        return super(LearningResource, self).save(*args, **kwargs)
 
 
 @python_2_unicode_compatible
