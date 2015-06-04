@@ -63,6 +63,10 @@ class UploadForm(Form):
                 temp.write(chunk)
 
         if settings.USE_CELERY:
-            import_file.delay(filename, repo_id, user_id)
+            # Justification for coverage skip: This "if" statement and
+            # setting exist solely to allow tests to pass without the
+            # celery worker running. We know `import_file` works because
+            # it's tested separately.
+            import_file.delay(filename, repo_id, user_id)  # pragma: no cover
         else:
             import_course_from_file(filename, repo_id, user_id)

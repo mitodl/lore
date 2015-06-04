@@ -50,8 +50,11 @@ def upload(request, repo_slug):
                 form.save(request.user.id, repo.id)
                 return redirect("/repositories/{0}/".format(repo_slug))
             except ValueError as ex:
-                log.debug("ex args: %s", ex.args)
-                if "Duplicate course" not in ex.args:
+                # Coverage exception reasoning: After successful upload,
+                # extraction, and validation, any error *should* be
+                # "Duplicate course," and if it's not, it will be re-raised
+                # and we'll code for it then.
+                if "Duplicate course" not in ex.args:  # pragma: no cover
                     raise ex
                 form.add_error("course_file", "Duplicate course")
     return render(

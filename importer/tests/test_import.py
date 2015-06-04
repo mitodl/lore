@@ -11,6 +11,7 @@ from shutil import copyfile
 import zipfile
 
 from importer.api import import_course_from_file
+from importer.tasks import import_file
 from learningresources.models import LearningResource, Course
 from learningresources.tests.base import LoreTestCase
 
@@ -102,22 +103,18 @@ class TestImportToy(LoreTestCase):
 
     def test_invalid_file(self):
         """Invalid zip file"""
-        try:
+        with self.assertRaises(ValueError) as ex:
             import_course_from_file(self.bad_file, self.repo.id, self.user.id)
-            raise ValueError("shouldn't happen")
-        except ValueError as ex:
-            self.assertTrue(
-                'Invalid OLX archive, unable to extract.' in ex.args)
+        self.assertTrue(
+            'Invalid OLX archive, unable to extract.' in ex.exception.args)
 
     def test_incompatible_file(self):
         """incompatible zip file (missing course structure)"""
-        try:
+        with self.assertRaises(ValueError) as ex:
             import_course_from_file(
                 self.incompatible, self.repo.id, self.user.id)
-            raise ValueError("shouldn't happen")
-        except ValueError as ex:
-            self.assertTrue(
-                'Invalid OLX archive, no courses found.' in ex.args)
+        self.assertTrue(
+            'Invalid OLX archive, no courses found.' in ex.exception.args)
 
     def test_import_single(self):
         """
@@ -125,5 +122,14 @@ class TestImportToy(LoreTestCase):
         """
         self.assertTrue(Course.objects.count() == 0)
         import_course_from_file(
+            get_course_single_tarball(), self.repo.id, self.user.id)
+        self.assertTrue(Course.objects.count() == 1)
+
+    def test_import_task(self):
+        """
+        Copy of test_import_single that just exercises tasks.py.
+        """
+        self.assertTrue(Course.objects.count() == 0)
+        import_file(
             get_course_single_tarball(), self.repo.id, self.user.id)
         self.assertTrue(Course.objects.count() == 1)
