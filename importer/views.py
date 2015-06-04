@@ -48,7 +48,7 @@ def upload(request, repo_slug):
         if form.is_valid():
             try:
                 form.save(request.user.id, repo.id)
-                return redirect("/repositories/{0}/1".format(repo_slug))
+                return redirect("/repositories/{0}/".format(repo_slug))
             except ValueError as ex:
                 log.debug("ex args: %s", ex.args)
                 if "Duplicate course" not in ex.args:

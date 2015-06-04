@@ -46,12 +46,12 @@
             <div class="lore-pagination">
                 {% if resources.has_other_pages %}
                     {% if resources.has_previous %}
-                        <a href="{% url 'listing' repo.slug resources.previous_page_number %}"><i
+                        <a href="{% url 'listing' repo.slug %}?page={{ resources.previous_page_number }}"><i
                                 class="fa fa-angle-left"></i></a>
                     {% endif %}
 
                     {% if resources.has_next %}
-                        <a href="{% url 'listing' repo.slug resources.next_page_number %}"><i
+                        <a href="{% url 'listing' repo.slug %}?page={{ resources.next_page_number }}"><i
                                 class="fa fa-angle-right"></i></a>
                     {% endif %}
                 {% endif %}
