@@ -26,7 +26,7 @@ class CourseForm(ModelForm):
 
 class RepositoryForm(ModelForm):
     """
-    Form for the Course object.
+    Form for the Repository object.
     """
     class Meta:
         model = Repository
