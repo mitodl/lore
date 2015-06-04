@@ -2,6 +2,10 @@ db:
   image: postgres
   ports:
     - "5432"
+redis:
+  image: redis
+  ports:
+    - "6379"
 web:
   build: .
   command: >
@@ -11,16 +15,45 @@ web:
     python manage.py runserver 0.0.0.0:$PORT'
   volumes:
     - .:/src
+    - /tmp
   environment:
     DEBUG: True
     LORE_LOG_LEVEL: DEBUG
+    DJANGO_LOG_LEVEL: INFO
     PORT: 8070
     DATABASE_URL: postgres://postgres@db:5432/postgres
     ALLOWED_HOSTS:
+    BROKER_URL: redis://redis:6379/4
     LORE_USE_CAS:
     LORE_ADMIN_EMAIL:
     LORE_CAS_URL:
+    PYTHONPATH: /src
+    DJANGO_SETTINGS_MODULE: lore.settings
   ports:
     - "8070:8070"
   links:
     - db
+    - redis
+celery:
+  build: .
+  command: >
+    /bin/bash -c '
+    sleep 5;
+    celery -A lore worker -l debug'
+  volumes_from:
+    - web
+  environment:
+    DEBUG: True
+    LORE_LOG_LEVEL: DEBUG
+    DJANGO_LOG_LEVEL: INFO
+    DATABASE_URL: postgres://postgres@db:5432/postgres
+    ALLOWED_HOSTS:
+    BROKER_URL: redis://redis:6379/4
+    LORE_USE_CAS:
+    LORE_ADMIN_EMAIL:
+    LORE_CAS_URL:
+    PYTHONPATH: /src
+    DJANGO_SETTINGS_MODULE: lore.settings
+  links:
+    - db
+    - redis

@@ -48,10 +48,6 @@ class LearningResource(models.Model):
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
 
-    class Meta:
-        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
-        unique_together = ("course", "uuid")
-
 
 @python_2_unicode_compatible
 class LearningResourceType(models.Model):

@@ -9,7 +9,9 @@ from tempfile import mkstemp
 import logging
 
 from django.forms import Form, FileField, ValidationError
+from django.conf import settings
 
+from importer.tasks import import_file
 from importer.api import import_course_from_file
 
 log = logging.getLogger(__name__)
@@ -60,7 +62,7 @@ class UploadForm(Form):
             for chunk in uploaded_file:
                 temp.write(chunk)
 
-        log.debug("UploadForm cleaned_data: %s", self.cleaned_data)
-        import_course_from_file(
-            filename, repo_id, user_id
-        )
+        if settings.USE_CELERY:
+            import_file.delay(filename, repo_id, user_id)
+        else:
+            import_course_from_file(filename, repo_id, user_id)
