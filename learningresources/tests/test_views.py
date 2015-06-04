@@ -38,8 +38,6 @@ class TestViews(LoreTestCase):
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
         self.assertTrue(repo_name in body)
-        # Should have been redirected to the welcome page.
-        self.assertTrue("Viewing Repository: {0}".format(repo_name) in body)
 
     def test_listing_unauthorized(self):
         """View listing page."""
