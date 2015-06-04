@@ -1,19 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Welcome</h1>
+    <div class="section-header">
+        <div class="row">
+            <div class="col-md-2 col-md-offset-5"><a href="{% url 'create_repo' %}" role="button"
+                                                     class="btn btn-primary btn-large">Create repository</a></div>
+        </div>
+    </div>
 
-<p>
-<a href="{% url 'create_repo' %}">Create repository</a>
-</p>
-
-<p>
-<h2>Your repositories</h2>
-<ul>
-{% for repo in repos %}
-    <li>
-    <a href="{% url 'listing' repo.slug 1 %}">{{ repo.name }}</a>
-    </li>
-{% endfor %}
-</ul>
-</p>
+    {% if repos %}
+        <div class="row">
+            <div class="col-md-4"></div>
+            <div class="col-md-4">
+                <h2>Your repositories</h2>
+                <ul class="repos">
+                    {% for repo in repos %}
+                        <li>
+                            <a href="{% url 'listing' repo.slug 1 %}">{{ repo.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-4"></div>
+        </div>
+    {% endif %}
 {% endblock %}
