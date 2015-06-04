@@ -420,3 +420,16 @@ footer {
   table-layout: fixed;
   word-wrap: break-word;
 }
+
+/* welcome/home page */
+
+.section-header {
+    padding: 80px;
+    border-bottom:1px dashed #E3E6EA;
+}
+
+ul.repos {
+    list-style-type: none;
+    padding: 0px;
+    margin: 0px;
+}
