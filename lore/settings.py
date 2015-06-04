@@ -191,6 +191,7 @@ LOGIN_URL = "/admin/"
 
 # Logging configuration
 LOG_LEVEL = get_var('LORE_LOG_LEVEL', 'DEBUG')
+DJANGO_LOG_LEVEL = get_var('DJANGO_LOG_LEVEL', 'DEBUG')
 
 # For logging to a remote syslog host
 LOG_HOST = get_var('LORE_LOG_HOST', 'localhost')
@@ -241,13 +242,17 @@ LOGGING = {
         },
         'django': {
             'propogate': True,
-            'level': LOG_LEVEL,
+            'level': DJANGO_LOG_LEVEL,
             'handlers': ['console', 'syslog'],
         },
         'django.request': {
             'handlers': ['mail_admins'],
-            'level': LOG_LEVEL,
+            'level': DJANGO_LOG_LEVEL,
             'propagate': True,
         },
     },
 }
+
+# Celery
+BROKER_URL = get_var("BROKER_URL", None)
+USE_CELERY = get_var("USE_CELERY", "True")
