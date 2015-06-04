@@ -22,6 +22,7 @@ from django.contrib import admin
 from learningresources.views import welcome, create_repo, listing, export
 from importer.views import status, upload
 import cas.urls as cas_urls
+import taxonomy.urls as taxonomy_urls
 
 urlpatterns = [
     url(r'^$', welcome, name='welcome'),
@@ -34,4 +35,5 @@ urlpatterns = [
     url(r'^status$', status, name='status'),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import$', upload, name='upload'),
     url(r'^cas/', include(cas_urls)),
+    url(r'^taxonomy/', include(taxonomy_urls, namespace="taxonomy")),
 ]

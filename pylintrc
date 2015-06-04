@@ -7,4 +7,4 @@ generated-members =
     status_code
 
 [MESSAGES CONTROL]
-disable = no-member, old-style-class, no-init
+disable = no-member, old-style-class, no-init, too-few-public-methods

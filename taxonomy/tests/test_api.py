@@ -6,11 +6,12 @@ from __future__ import unicode_literals
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=invalid-name
 
-from django.test.testcases import TestCase
-from django.contrib.auth.models import User
 from django.http.response import Http404
 from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
+
+from learningresources.tests.base import LoreTestCase
+from learningresources.api import create_repo
 
 from taxonomy.models import (
     Vocabulary,
@@ -19,7 +20,6 @@ from taxonomy.models import (
 from learningresources.models import (
     LearningResource,
     LearningResourceType,
-    Repository,
     Course,
 )
 from taxonomy.api import (
@@ -40,20 +40,13 @@ from taxonomy.api import (
 )
 
 
-class TestApi(TestCase):
+class TestApi(LoreTestCase):
     """Tests for taxomony API"""
 
     def setUp(self):
         super(TestApi, self).setUp()
-        self.user = User.objects.create(username="test")
-
-        self.repository = Repository.objects.create(
-            create_date="2014-08-08",
-            created_by=self.user,
-        )
-
         self.vocabulary = Vocabulary.objects.create(
-            repository=self.repository,
+            repository=self.repo,
             required=False,
             weight=100,
         )
@@ -66,7 +59,7 @@ class TestApi(TestCase):
         )
 
         self.course = Course.objects.create(
-            repository=self.repository,
+            repository=self.repo,
             imported_by=self.user,
         )
 
@@ -153,7 +146,7 @@ class TestApi(TestCase):
         self.assertEquals([self.vocabulary],
                           list(Vocabulary.objects.all()))
 
-        vocabulary = create_vocabulary(self.repository.id,
+        vocabulary = create_vocabulary(self.repo.id,
                                        "vocabulary",
                                        "description",
                                        False,
@@ -161,6 +154,21 @@ class TestApi(TestCase):
                                        9)
         self.assertEquals([self.vocabulary, vocabulary],
                           list(Vocabulary.objects.order_by('id')))
+
+        other_repository = create_repo("other repository",
+                                       "description",
+                                       self.user.id)
+
+        vocabulary_1 = create_vocabulary(
+            other_repository.id,
+            "vocabulary",
+            "description",
+            False,
+            Vocabulary.FREE_TAGGING,
+            9)
+        # the slug is different
+        self.assertNotEqual(vocabulary, vocabulary_1)
+        self.assertEqual("vocabulary1", vocabulary_1.slug)
         self.assertRaises(ValidationError,
                           lambda: create_vocabulary(9,
                                                     "vocabulary",
@@ -170,7 +178,7 @@ class TestApi(TestCase):
                                                     9))
 
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repository.id,
+                          lambda: create_vocabulary(self.repo.id,
                                                     "vocabulary",
                                                     "description",
                                                     "abc",
@@ -179,7 +187,7 @@ class TestApi(TestCase):
 
         # pass in None, violates constraints
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repository.id,
+                          lambda: create_vocabulary(self.repo.id,
                                                     "vocabulary",
                                                     "description",
                                                     None,
@@ -187,7 +195,7 @@ class TestApi(TestCase):
                                                     9))
 
         self.assertRaises(ValidationError,
-                          lambda: create_vocabulary(self.repository.id,
+                          lambda: create_vocabulary(self.repo.id,
                                                     "vocabulary",
                                                     "description",
                                                     False,

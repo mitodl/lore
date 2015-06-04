@@ -8,6 +8,8 @@ from django.db import models
 from django.db import transaction
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.utils.encoding import python_2_unicode_compatible
+from django.shortcuts import get_object_or_404
 
 
 class Course(models.Model):
@@ -51,12 +53,16 @@ class LearningResource(models.Model):
         unique_together = ("course", "uuid")
 
 
+@python_2_unicode_compatible
 class LearningResourceType(models.Model):
     """
     Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
     """
     name = models.TextField(unique=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Repository(models.Model):
@@ -78,10 +84,13 @@ class Repository(models.Model):
     @transaction.atomic
     def save(self, *args, **kwargs):
         """Handle slugs."""
-        slug = slugify(self.name)
-        count = 1
-        while Repository.objects.filter(slug=slug).exists():
-            slug = "{0}{1}".format(slugify(self.name), count)
-            count += 1
-        self.slug = slug
+        if self.id is None or self.name != get_object_or_404(
+                Repository, id=self.id).name:
+            slug = slugify(self.name)
+            count = 1
+            while Repository.objects.filter(slug=slug).exists():
+                slug = "{0}{1}".format(slugify(self.name), count)
+                count += 1
+            self.slug = slug
+
         return super(Repository, self).save(*args, **kwargs)
