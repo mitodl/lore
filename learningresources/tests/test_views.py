@@ -16,16 +16,16 @@ class TestViews(LoreTestCase):
     """Hit each view."""
 
     def test_get_home(self):
-        """Welcome page."""
+        """Home Page."""
         resp = self.client.get("/home", follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
-        self.assertTrue("Welcome" in body)
+        self.assertTrue("<title>MIT - LORE </title>" in body)
 
         resp = self.client.get("/", follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
-        self.assertTrue("Welcome" in body)
+        self.assertTrue("<title>MIT - LORE </title>" in body)
 
     def test_create_repo_post(self):
         """Create repo."""
@@ -48,13 +48,6 @@ class TestViews(LoreTestCase):
         body = resp.content.decode("utf-8")
         self.assertTrue(resp.status_code == UNAUTHORIZED)
         self.assertTrue("unauthorized" in body)
-
-    def test_welcome(self):
-        """Welcome page."""
-        resp = self.client.get("/home", follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)
-        body = resp.content.decode("utf-8")
-        self.assertTrue("<h1>Welcome</h1>" in body)
 
     def test_create_repo_get(self):
         """GET repo creation page."""
