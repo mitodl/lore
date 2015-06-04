@@ -42,7 +42,7 @@ def create_repo(request):
         form = RepositoryForm(data=request.POST)
         if form.is_valid():
             repo = form.save(request.user)
-            return redirect(reverse("listing", args=(repo.slug, 1)))
+            return redirect(reverse("listing", args=(repo.slug,)))
     return render(
         request,
         "create_repo.html",
@@ -51,7 +51,7 @@ def create_repo(request):
 
 
 @login_required
-def listing(request, repo_slug, page=1):
+def listing(request, repo_slug):
     """
     View available LearningResources by repository.
     """
@@ -62,6 +62,7 @@ def listing(request, repo_slug, page=1):
     if repo_slug not in set([x.slug for x in repos]):
         return HttpResponseForbidden("unauthorized")
     repo = [x for x in repos if x.slug == repo_slug][0]
+    page = int(request.GET.get("page", "1"))
     context = {
         "repo_id": repo.id,
         "repo_slug": repo.slug,

@@ -29,7 +29,7 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^home/$', welcome, name='welcome'),
     url(r'^repositories/new$', create_repo, name='create_repo'),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/(?P<page>\d+)$', listing,
+    url(r'^repositories/(?P<repo_slug>[-\w]+)/$', listing,
         name='listing'),
     url(r'^learningresources/(?P<resource_id>\d+)$', export, name='export'),
     url(r'^status$', status, name='status'),
