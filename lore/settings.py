@@ -254,5 +254,8 @@ LOGGING = {
 }
 
 # Celery
-BROKER_URL = get_var("BROKER_URL", None)
-USE_CELERY = get_var("USE_CELERY", "True")
+BROKER_URL = get_var("BROKER_URL", get_var("REDISCLOUD_URL", None))
+CELERY_RESULT_BACKEND = get_var(
+    "CELERY_RESULT_BACKEND", get_var("REDISCLOUD_URL", None)
+)
+USE_CELERY = get_var("USE_CELERY", False)
