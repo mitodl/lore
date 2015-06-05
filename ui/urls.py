@@ -26,6 +26,7 @@ from ui.views import (
     upload, edit_vocabulary, create_vocabulary,
     RepositoryView,
 )
+import rest.urls as rest_urls
 import cas.urls as cas_urls
 
 
@@ -39,6 +40,8 @@ def get_sqs():
 urlpatterns = [
     url(r'^$', welcome, name='welcome'),
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^api/v1/', include(rest_urls)),
+    url(r'^cas/', include(cas_urls)),
     url(r'^home/$', welcome, name='welcome'),
     url(r'^repositories/new/$', create_repo, name='create_repo'),
     url(
@@ -55,7 +58,6 @@ urlpatterns = [
         name='export'),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),
-    url(r'^cas/', include(cas_urls)),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/vocabularies/$',
         create_vocabulary,
         name="create_vocabulary"),
@@ -63,5 +65,4 @@ urlpatterns = [
         r'vocabularies/(?P<vocab_slug>[-\w]+)/$',
         edit_vocabulary,
         name="edit_vocabulary"),
-
 ]

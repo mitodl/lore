@@ -6,11 +6,14 @@ from __future__ import unicode_literals
 
 import logging
 
-from learningresources.models import Course, LearningResource
+from django.db.utils import IntegrityError
+
 from learningresources.api import (
-    create_course, get_resource, get_repo,
+    get_repo, get_repos,
     NotFound, PermissionDenied,
 )
+from learningresources.models import Course, LearningResource
+from learningresources.api import create_course, get_resource, create_repo
 from importer.api import import_course_from_file
 
 from .base import LoreTestCase
@@ -60,6 +63,12 @@ class TestCreateCourse(LoreTestCase):
         with self.assertRaises(ValueError):
             create_course(**self.kwargs)
         self.assertTrue(course_count() == after)
+
+        # NOT NULL constraint fails on org
+        with self.assertRaises(IntegrityError) as ex:
+            create_course(None, self.repo.id, "course", "run", self.user.id)
+
+        self.assertIn("org", ex.exception.args[0])
 
 
 class TestResources(LoreTestCase):
@@ -116,6 +125,25 @@ class TestRepoAPI(LoreTestCase):
             self.repo.slug,
             self.user_norepo.id
         )
+
+    def test_get_repos(self):
+        """test get_repos"""
+        self.assertEqual([self.repo],
+                         list(get_repos(self.user.id)))
+        self.assertEqual([],
+                         list(get_repos(self.user_norepo.id)))
+        with self.assertRaises(PermissionDenied):
+            get_repos(-1)
+
+    def test_invalid_create_repo(self):
+        """Create a repository with empty name and description"""
+        with self.assertRaises(IntegrityError) as ex:
+            create_repo(None, "description", self.user.id)
+        self.assertIn("name", ex.exception.args[0])
+
+        with self.assertRaises(IntegrityError) as ex:
+            create_repo("name", None, self.user.id)
+        self.assertIn("description", ex.exception.args[0])
 
 
 def course_count():
