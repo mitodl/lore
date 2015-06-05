@@ -12,7 +12,7 @@ from django.http.response import HttpResponseForbidden
 
 from learningresources.models import Repository, Course, LearningResource
 from learningresources.api import get_repos
-from .forms import UploadForm
+from ui.forms import UploadForm
 
 log = logging.getLogger(__name__)
 

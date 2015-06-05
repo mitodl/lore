@@ -8,7 +8,7 @@ import logging
 
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-from importer.forms import UploadForm
+from ui.forms import UploadForm
 from learningresources.tests.base import LoreTestCase
 
 from .test_import import get_course_zip
