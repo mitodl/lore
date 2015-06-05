@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
     {% if vocabulary_id %}
-        <form action="{% url 'taxonomy:edit_vocabulary' repository_id=repository_id vocabulary_id=vocabulary_id %}" method="post">
+        <form action="{% url 'edit_vocabulary' repo_slug=repo_slug vocab_slug=vocab_slug %}" method="post">
     {% else %}
-        <form action="{% url 'taxonomy:create_vocabulary' repository_id=repository_id %}" method="post">
+        <form action="{% url 'create_vocabulary' repo_slug=repo_slug %}" method="post">
     {% endif %}
         {%  csrf_token %}
         <table>

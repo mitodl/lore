@@ -21,17 +21,19 @@ class TestViews(LoreTestCase):
     def test_create_vocabulary(self):
         """Test new vocabulary page"""
         # look at empty create page
-        resp = self.client.get("/taxonomy/{repository_id}/vocabulary".format(
-            repository_id=self.repo.id
-        ), follow=True)
+        resp = self.client.get(
+            "/repositories/{repo_slug}/vocabularies".format(
+                repo_slug=self.repo.slug
+            ), follow=True)
         self.assertEquals(HTTP_OK, resp.status_code)
         body = resp.content.decode('utf-8')
         self.assertIn("Describe how content authors", body)
 
         # post empty form to create new vocabulary. Shouldn't work
-        resp = self.client.post("/taxonomy/{repository_id}/vocabulary/".format(
-            repository_id=self.repo.id
-        ), {}, follow=True)
+        resp = self.client.post(
+            "/repositories/{repo_slug}/vocabularies/".format(
+                repo_slug=self.repo.slug
+            ), {}, follow=True)
         # form was invalid but page should still be 200
         self.assertEqual(HTTP_OK, resp.status_code)
         self.assertIn("Describe how content authors", body)
@@ -40,14 +42,15 @@ class TestViews(LoreTestCase):
 
         # post a valid form
         lrt = LearningResourceType.objects.first()
-        resp = self.client.post("/taxonomy/{repository_id}/vocabulary/".format(
-            repository_id=self.repo.id
-        ), {
-            'name': 'vocab 1',
-            'description': 'description 1',
-            'learning_resource_types': lrt.id,
-            'vocabulary_type': Vocabulary.FREE_TAGGING
-        }, follow=True)
+        resp = self.client.post(
+            "/repositories/{repo_slug}/vocabularies/".format(
+                repo_slug=self.repo.slug
+            ), {
+                'name': 'vocab 1',
+                'description': 'description 1',
+                'learning_resource_types': lrt.id,
+                'vocabulary_type': Vocabulary.FREE_TAGGING
+            }, follow=True)
         self.assertEquals(HTTP_OK, resp.status_code)
         self.assertEquals(1, Vocabulary.objects.count())
 
@@ -61,8 +64,12 @@ class TestViews(LoreTestCase):
 
         self.assertEqual(0, Vocabulary.objects.count())
 
-        resp = self.client.get("/taxonomy/{repository_id}/vocabulary/345",
-                               follow=True)
+        resp = self.client.get(
+            "/repositories/{repo_slug}/vocabularies/345".format(
+                repo_slug=self.repo.slug
+            ),
+            follow=True
+        )
         self.assertEqual(NOT_FOUND, resp.status_code)
 
         vocab = create_vocabulary(
@@ -74,13 +81,13 @@ class TestViews(LoreTestCase):
             100
         )
 
-        resp = self.client.get("/taxonomy/999/vocabulary", follow=True)
+        resp = self.client.get("/repositories/999/vocabularies", follow=True)
         self.assertEqual(NOT_FOUND, resp.status_code)
 
         resp = self.client.get(
-            "/taxonomy/{repository_id}/vocabulary/{vocabulary_id}".format(
-                repository_id=self.repo.id,
-                vocabulary_id=vocab.id,
+            "/repositories/{repo_slug}/vocabularies/{vocab_slug}".format(
+                repo_slug=self.repo.slug,
+                vocab_slug=vocab.slug,
             ), follow=True)
         self.assertEqual(HTTP_OK, resp.status_code)
         body = resp.content.decode('utf-8')
@@ -92,9 +99,9 @@ class TestViews(LoreTestCase):
         # edit existing vocabulary but keep the same name
         lrt = LearningResourceType.objects.first()
         resp = self.client.post(
-            "/taxonomy/{repository_id}/vocabulary/{vocabulary_id}".format(
-                repository_id=self.repo.id,
-                vocabulary_id=vocab.id,
+            "/repositories/{repo_slug}/vocabularies/{vocab_slug}/".format(
+                repo_slug=self.repo.slug,
+                vocab_slug=vocab.slug,
             ), {
                 'name': vocab.name,
                 'description': 'description 2',
@@ -112,9 +119,9 @@ class TestViews(LoreTestCase):
 
         # edit existing vocabulary and change the name
         resp = self.client.post(
-            "/taxonomy/{repository_id}/vocabulary/{vocabulary_id}".format(
-                repository_id=self.repo.id,
-                vocabulary_id=vocab.id,
+            "/repositories/{repo_slug}/vocabularies/{vocab_slug}/".format(
+                repo_slug=self.repo.slug,
+                vocab_slug=vocab.slug,
             ), {
                 'name': "new name",
                 'description': 'description 2',
@@ -126,17 +133,34 @@ class TestViews(LoreTestCase):
         self.assertEqual(1, Vocabulary.objects.count())
         self.assertEqual("new name", Vocabulary.objects.first().name)
 
-        # validate that some learning resource type needs to be specified
+        # get a 404 when we POST to a non-existing vocabulary
         resp = self.client.post(
-            "/taxonomy/{repository_id}/vocabulary/{vocabulary_id}".format(
-                repository_id=self.repo.id,
-                vocabulary_id=vocab.id,
+            "/repositories/{repo_slug}/vocabularies/{vocab_slug}/".format(
+                repo_slug=self.repo.slug,
+                vocab_slug="987",
+            ), {
+                'name': "new name",
+                'description': 'description 2',
+                'learning_resource_types': lrt.id,
+                'vocabulary_type': Vocabulary.FREE_TAGGING
+            }, follow=True)
+        self.assertEqual(NOT_FOUND, resp.status_code)
+
+        # validate that some learning resource type needs to be specified
+        self.assertEqual(1, Vocabulary.objects.count())
+        vocab = Vocabulary.objects.first()
+
+        resp = self.client.post(
+            "/repositories/{repo_slug}/vocabularies/{vocab_slug}/".format(
+                repo_slug=self.repo.slug,
+                vocab_slug=vocab.slug,
             ), {
                 'name': "new name",
                 'description': 'description 2',
                 'vocabulary_type': Vocabulary.FREE_TAGGING
             }, follow=True)
         self.assertEqual(HTTP_OK, resp.status_code)
+
         self.assertEqual(1, Vocabulary.objects.count())
         self.assertEqual(
             [lrt],

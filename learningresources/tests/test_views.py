@@ -31,7 +31,7 @@ class TestViews(LoreTestCase):
         """Create repo."""
         repo_name = "my really sweet repository"
         resp = self.client.post(
-            "/repositories/new",
+            "/repositories/new/",
             {"name": repo_name, "description": "foo"},
             follow=True,
         )
@@ -58,7 +58,7 @@ class TestViews(LoreTestCase):
         # We have the default self.repo in the database...
         self.assertTrue(Repository.objects.count() == 1)
         self.client.post(
-            "/repositories/new",
+            "/repositories/new/",
             {"name": "test name", "description": "test description"},
             follow=True
         )
@@ -72,13 +72,13 @@ class TestViews(LoreTestCase):
         self.assertFalse(Repository.objects.filter(slug=slug).exists())
         self.assertFalse(Repository.objects.filter(slug=slug1).exists())
         self.client.post(
-            "/repositories/new",
+            "/repositories/new/",
             {"name": "awesome repo", "description": "test description"},
             follow=True
         )
         self.assertTrue(Repository.objects.filter(slug=slug).exists())
         self.client.post(
-            "/repositories/new",
+            "/repositories/new/",
             {"name": "awesome       repo", "description": "test description"},
             follow=True
         )
@@ -87,7 +87,7 @@ class TestViews(LoreTestCase):
     def test_invalid_repo_form(self):
         """Upload invalid form"""
         resp = self.client.post(
-            "/repositories/new",
+            "/repositories/new/",
             {}, follow=True
         )
         self.assertTrue(resp.status_code == HTTP_OK)

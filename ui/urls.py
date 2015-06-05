@@ -21,19 +21,27 @@ from django.contrib import admin
 
 from learningresources.views import welcome, create_repo, listing, export
 from importer.views import status, upload
+from taxonomy.views import edit_vocabulary, create_vocabulary
 import cas.urls as cas_urls
-import taxonomy.urls as taxonomy_urls
 
 urlpatterns = [
     url(r'^$', welcome, name='welcome'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^home/$', welcome, name='welcome'),
-    url(r'^repositories/new$', create_repo, name='create_repo'),
+    url(r'^repositories/new/$', create_repo, name='create_repo'),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/$', listing,
         name='listing'),
-    url(r'^learningresources/(?P<resource_id>\d+)$', export, name='export'),
-    url(r'^status$', status, name='status'),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/import$', upload, name='upload'),
+    url(r'^learningresources/(?P<resource_id>\d+)/$', export, name='export'),
+    url(r'^status/$', status, name='status'),
+    url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
+        upload, name='upload'),
     url(r'^cas/', include(cas_urls)),
-    url(r'^taxonomy/', include(taxonomy_urls, namespace="taxonomy")),
+    url(r'^repositories/(?P<repo_slug>[-\w]+)/vocabularies/$',
+        create_vocabulary,
+        name="create_vocabulary"),
+    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
+        r'vocabularies/(?P<vocab_slug>[-\w]+)/$',
+        edit_vocabulary,
+        name="edit_vocabulary"),
+
 ]
