@@ -15,3 +15,7 @@ nodejs
 libxml2-dev
 libxslt1-dev
 libxslt1.1
+
+# developer requirements
+postgresql-client
+
