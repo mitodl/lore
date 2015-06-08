@@ -1,5 +1,5 @@
 """
-Forms for importer.
+Forms for LORE.
 """
 
 from __future__ import unicode_literals
@@ -8,11 +8,17 @@ import os
 from tempfile import mkstemp
 import logging
 
-from django.forms import Form, FileField, ValidationError
+from django.forms import (
+    Form, FileField, ValidationError, ModelForm, TextInput,
+    CheckboxSelectMultiple, RadioSelect,
+)
 from django.conf import settings
+from django.db import transaction
 
 from importer.tasks import import_file
 from importer.api import import_course_from_file
+from learningresources.models import Course, Repository
+from taxonomy.models import Vocabulary
 
 log = logging.getLogger(__name__)
 
@@ -70,3 +76,59 @@ class UploadForm(Form):
             import_file.delay(filename, repo_id, user_id)  # pragma: no cover
         else:
             import_course_from_file(filename, repo_id, user_id)
+
+
+class CourseForm(ModelForm):
+    """
+    Form for the Course object.
+    """
+    class Meta:  # pylint: disable=missing-docstring
+        model = Course
+        fields = (
+            "repository", "org", "course_number", "run", "imported_by"
+        )
+
+
+class RepositoryForm(ModelForm):
+    """
+    Form for the Repository object.
+    """
+    class Meta:  # pylint: disable=missing-docstring
+        model = Repository
+        fields = ("name", "description")
+
+    # pylint: disable=signature-differs
+    # The ModelForm.save() accepts "commit" and this doesn't, because
+    # we always set commit=False then add the user because created_by is
+    # not part of the form, and shouldn't be.
+    @transaction.atomic
+    def save(self, user):
+        """
+        Save a newly-created form.
+        """
+        repo = super(RepositoryForm, self).save(commit=False)
+        repo.created_by = user
+        repo.save()
+        return repo
+
+
+class VocabularyForm(ModelForm):
+    """
+    Form for the Vocabulary object.
+    """
+
+    class Meta:
+        # pylint: disable=missing-docstring
+        model = Vocabulary
+
+        fields = [
+            'name',
+            'description',
+            'learning_resource_types',
+            'vocabulary_type'
+        ]
+        widgets = {
+            'name': TextInput(),
+            'learning_resource_types': CheckboxSelectMultiple(),
+            'vocabulary_type': RadioSelect(),
+        }

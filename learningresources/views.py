@@ -15,7 +15,7 @@ from learningresources.api import (
     get_repos, get_repo_courses, get_runs, get_user_tags,
     get_resources, get_resource
 )
-from learningresources.forms import RepositoryForm
+from ui.forms import RepositoryForm
 
 log = logging.getLogger(__name__)
 

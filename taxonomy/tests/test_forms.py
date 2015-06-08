@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 from django.db.utils import IntegrityError
 from django.db import transaction
 
-from taxonomy.forms import VocabularyForm
+from ui.forms import VocabularyForm
 from taxonomy.models import Vocabulary
 from taxonomy.api import create_vocabulary
 from learningresources.models import LearningResourceType

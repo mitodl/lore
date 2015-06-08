@@ -9,7 +9,7 @@ from django.shortcuts import (
     get_object_or_404,
 )
 
-from .forms import VocabularyForm
+from ui.forms import VocabularyForm
 from learningresources.models import Repository
 from taxonomy.models import Vocabulary
 
