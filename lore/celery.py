@@ -4,9 +4,13 @@ http://celery.readthedocs.org/en/latest/django/first-steps-with-django.html
 """
 from __future__ import absolute_import
 
+import os
 import logging
 
 from celery import Celery
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'lore.settings')
+
 from django.conf import settings
 
 log = logging.getLogger(__name__)
