@@ -17,13 +17,13 @@ from learningresources.models import (
 
 def get_vocabulary(vocabulary_id):
     """
-    Lookup vocabulary given its id
+    Lookup vocabulary given its id.
 
     Args:
         vocabulary_id (int): Vocabulary id
 
     Returns:
-        Vocabulary: The vocabulary from the database
+        Vocabulary (Vocabulary): The vocabulary from the database
     """
     return get_object_or_404(Vocabulary, id=vocabulary_id)
 
@@ -34,7 +34,7 @@ def create_vocabulary(
         repository_id, name, description, required, vocabulary_type, weight
 ):
     """
-    Create a Vocabulary and save it in database
+    Create a Vocabulary and save it in database.
 
     Args:
         repository_id (int): Repository id
@@ -45,7 +45,8 @@ def create_vocabulary(
         weight (int): Weight
 
     Returns:
-        Vocabulary: The Vocabulary which was just added to the database
+        Vocabulary (Vocabulary): The Vocabulary which was just
+        added to the database
 
     """
 
@@ -70,7 +71,7 @@ def create_vocabulary(
 
 def delete_vocabulary(vocabulary_id):
     """
-    Delete Vocabulary with given id
+    Delete Vocabulary with given id.
 
     Args:
         vocabulary_id (int): Vocabulary id
@@ -80,13 +81,13 @@ def delete_vocabulary(vocabulary_id):
 
 def get_term(term_id):
     """
-    Get Term with existing id
+    Get Term with existing id.
 
     Args:
         term_id (int): Term id
 
     Returns:
-        Term: The Term with the id
+        Term (Term): The Term with the id
     """
     return get_object_or_404(Term, id=term_id)
 
@@ -94,7 +95,7 @@ def get_term(term_id):
 @transaction.atomic
 def create_term(vocabulary_id, label, weight):
     """
-    Create new Term and save it in database
+    Create new Term and save it in database.
 
     Args:
         vocabulary_id (int): Vocabulary id
@@ -102,7 +103,7 @@ def create_term(vocabulary_id, label, weight):
         weight (int): Weight for term
 
     Returns:
-        Term: The newly created Term
+        Term (Term): The newly created Term
     """
     term = Term(
         vocabulary_id=vocabulary_id,
@@ -116,7 +117,7 @@ def create_term(vocabulary_id, label, weight):
 
 def delete_term(term_id):
     """
-    Delete an existing Term
+    Delete Term with given id.
 
     Args:
         term_id (int): Term id
@@ -126,7 +127,9 @@ def delete_term(term_id):
 
 def get_learning_resources_for_term(term_id):
     """
-    Get LearningResources using a particular Term
+    Get LearningResources for a particular Term.
+
+    Learning resources are ordered by ``id``.
 
     Args:
         term_id (int): Term id
@@ -142,7 +145,7 @@ def get_learning_resources_for_term(term_id):
 
 def get_terms_for_learning_resource(learning_resource_id):
     """
-    Get Terms using a particular LearningResource
+    Get Terms using a particular LearningResource.
 
     Args:
         learning_resource_id (int): Learning object id
@@ -157,8 +160,10 @@ def get_terms_for_learning_resource(learning_resource_id):
 @transaction.atomic
 def add_term_to_learning_resource(learning_resource_id, term_id):
     """
-    Add existing Term with id term_id to a particular LearningResource
-    with id learning_resource_id
+    Add existing Term to a particular LearningResource.
+
+    Add existing Term with id ``term_id`` to a particular LearningResource
+    with id ``learning_resource_id``.
 
     Args:
         learning_resource_id (int): Id for LearningResource
@@ -175,8 +180,10 @@ def add_term_to_learning_resource(learning_resource_id, term_id):
 @transaction.atomic
 def remove_term_from_learning_resource(learning_resource_id, term_id):
     """
-    Remove existing Term with id term_id from a LearningResource with id
-    learning_resource_id
+    Remove Term from LearningResource.
+
+    Remove existing Term with id ``term_id`` from a LearningResource with id
+    ``learning_resource_id``.
 
     Args:
         learning_resource_id (int): Id for LearningResource
@@ -190,7 +197,9 @@ def remove_term_from_learning_resource(learning_resource_id, term_id):
 
 def get_vocabularies_for_type(learning_resource_type):
     """
-    Get vocabularies supporting the given learning object type
+    Get vocabularies supporting the given learning object type.
+
+    Vocabularies are ordered by ``name``.
 
     Args:
         learning_resource_type (unicode): The learning resource type
@@ -206,14 +215,14 @@ def get_vocabularies_for_type(learning_resource_type):
 
 def get_types_for_vocabulary(vocabulary_id):
     """
-    Get learning object types supported by a Vocabulary
+    Get learning object types supported by a Vocabulary.
 
     Args:
         vocabulary_id (int): Id for existing Vocabulary
 
     Returns:
-        list of unicode: sequence of learning object types supported by
-            a LearningResource
+        list (list of unicode): sequence of learning object types supported by
+        a LearningResource
     """
     learning_resource_types = get_object_or_404(
         Vocabulary, id=vocabulary_id
@@ -226,7 +235,7 @@ def get_types_for_vocabulary(vocabulary_id):
 def add_type_for_vocabulary(learning_resource_type,
                             vocabulary_id):
     """
-    Add learning object type to an existing Vocabulary
+    Add learning object type to an existing Vocabulary.
 
     Args:
         learning_resource_type (unicode): A learning object type
@@ -242,7 +251,7 @@ def add_type_for_vocabulary(learning_resource_type,
 def remove_type_from_vocabulary(learning_resource_type_name,
                                 vocabulary_id):
     """
-    Remove learning object type from existing Vocabulary
+    Remove learning object type from existing Vocabulary.
 
     Args:
         learning_resource_type (unicode): A learning object type
