@@ -12,11 +12,9 @@ from django.forms import (
     Form, FileField, ValidationError, ModelForm, TextInput,
     CheckboxSelectMultiple, RadioSelect,
 )
-from django.conf import settings
 from django.db import transaction
 
 from importer.tasks import import_file
-from importer.api import import_course_from_file
 from learningresources.models import Course, Repository
 from taxonomy.models import Vocabulary
 
@@ -68,14 +66,7 @@ class UploadForm(Form):
             for chunk in uploaded_file:
                 temp.write(chunk)
 
-        if settings.USE_CELERY:
-            # Justification for coverage skip: This "if" statement and
-            # setting exist solely to allow tests to pass without the
-            # celery worker running. We know `import_file` works because
-            # it's tested separately.
-            import_file.delay(filename, repo_id, user_id)  # pragma: no cover
-        else:
-            import_course_from_file(filename, repo_id, user_id)
+        import_file.delay(filename, repo_id, user_id)
 
 
 class CourseForm(ModelForm):

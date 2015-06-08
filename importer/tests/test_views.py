@@ -52,9 +52,8 @@ class TestViews(LoreTestCase):
         self.assertTrue(Course.objects.count() == 0)
         self.upload_test_file()
         self.assertTrue(Course.objects.count() == 1)
-        body = self.upload_test_file()
+        self.upload_test_file()
         self.assertTrue(Course.objects.count() == 1)
-        self.assertTrue("Duplicate course" in body)
 
     def upload_test_file(self):
         """Used multiple times in tests"""
