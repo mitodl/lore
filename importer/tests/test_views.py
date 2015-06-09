@@ -20,13 +20,6 @@ log = logging.getLogger(__name__)
 class TestViews(LoreTestCase):
     """Hit each view."""
 
-    def test_status_get(self):
-        """Status page."""
-        resp = self.client.get("/status", follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)
-        body = resp.content.decode("utf-8")
-        self.assertTrue("Number of learning resources:" in body)
-
     def test_upload_get(self):
         """GET upload page."""
         resp = self.client.get("/repositories/{0}/import".format(
