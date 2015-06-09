@@ -4,10 +4,11 @@ Forms for LORE.
 
 from __future__ import unicode_literals
 
-import os
-from tempfile import mkstemp
 import logging
+import uuid
 
+from django.conf import settings
+from django.core.files.storage import default_storage
 from django.forms import (
     Form, FileField, ValidationError, ModelForm, TextInput,
     CheckboxSelectMultiple, RadioSelect,
@@ -23,7 +24,7 @@ log = logging.getLogger(__name__)
 
 class UploadForm(Form):
     """
-    Form for allowing a user to upload a video.
+    Form for allowing a user to upload an OLX course archive
     """
     course_file = FileField()
 
@@ -59,14 +60,15 @@ class UploadForm(Form):
         uploaded_file = self.cleaned_data["course_file"]
 
         # Save the uploaded file into a temp file.
-        handle, filename = mkstemp(suffix=uploaded_file.ext)
-        os.close(handle)
-
-        with open(filename, 'wb') as temp:
-            for chunk in uploaded_file:
-                temp.write(chunk)
-
-        import_file.delay(filename, repo_id, user_id)
+        path = default_storage.save(
+            '{prefix}/{random}{ext}'.format(
+                prefix=settings.IMPORT_PATH_PREFIX,
+                random=str(uuid.uuid4()),
+                ext=uploaded_file.ext
+            ),
+            uploaded_file
+        )
+        import_file.delay(path, repo_id, user_id)
 
 
 class CourseForm(ModelForm):

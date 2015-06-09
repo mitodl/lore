@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 
 import logging
 
+from django.core.files.storage import default_storage
+
 from learningresources.models import LearningResource, Course
 from learningresources.tests.base import LoreTestCase
 
@@ -50,7 +52,7 @@ class TestViews(LoreTestCase):
 
     def upload_test_file(self):
         """Used multiple times in tests"""
-        with open(get_course_zip(), "rb") as post_file:
+        with default_storage.open(get_course_zip(), "rb") as post_file:
             resp = self.client.post(
                 "/repositories/{0}/import/".format(self.repo.slug),
                 {"course_file": post_file, "repository": self.repo.id},

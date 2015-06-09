@@ -73,3 +73,6 @@ codekit-config.json
 
 # Django static
 staticfiles/
+
+# Heroku/Foreman
+.env

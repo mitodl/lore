@@ -8,11 +8,12 @@ from shutil import rmtree
 import logging
 from tempfile import mkdtemp
 from os.path import join, exists
-from os import remove, listdir
+from os import listdir
 
-from xbundle import XBundle, DESCRIPTOR_TAGS
+from archive import Archive, ArchiveException
+from django.core.files.storage import default_storage
 from lxml import etree
-from archive import extract, ArchiveException
+from xbundle import XBundle, DESCRIPTOR_TAGS
 
 from learningresources.api import create_course, create_resource
 
@@ -40,11 +41,22 @@ def import_course_from_file(filename, repo_id, user_id):
 
     """
     tempdir = mkdtemp()
+
+    # HACK: Have to patch in "seekable" attribute for python3 and tar
+    # See: https://code.djangoproject.com/ticket/24963#ticket
+    def seekable():
+        """Hacked seekable for django storage to work in python3"""
+        return True
+    course_archive = default_storage.open(filename)
+    course_archive.seekable = seekable
     try:
-        extract(path=filename, to_path=tempdir, method="safe")
+        Archive(
+            course_archive
+        ).extract(to_path=tempdir, method="safe")
     except ArchiveException as ex:
         log.debug("failed to extract: %s", ex)
-        remove(filename)
+        log.exception('Archive exception occurred')
+        default_storage.delete(filename)
         raise ValueError("Invalid OLX archive, unable to extract.")
     course_imported = False
     if "course.xml" in listdir(tempdir):
@@ -56,7 +68,7 @@ def import_course_from_file(filename, repo_id, user_id):
                 import_course_from_path(join(tempdir, path), repo_id, user_id)
                 course_imported = True
     rmtree(tempdir)
-    remove(filename)
+    default_storage.delete(filename)
     if course_imported is False:
         raise ValueError("Invalid OLX archive, no courses found.")
 
