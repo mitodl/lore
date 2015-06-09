@@ -241,7 +241,7 @@ LOGGING = {
             'level': LOG_LEVEL,
         },
         'django': {
-            'propogate': True,
+            'propagate': True,
             'level': DJANGO_LOG_LEVEL,
             'handlers': ['console', 'syslog'],
         },
