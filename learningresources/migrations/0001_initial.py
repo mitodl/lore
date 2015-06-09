@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
             name='LearningResource',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('uuid', models.TextField()),
+                ('uuid', models.UUIDField()),
                 ('title', models.TextField()),
                 ('description', models.TextField()),
                 ('content_xml', models.TextField()),
@@ -75,5 +75,13 @@ class Migration(migrations.Migration):
             model_name='course',
             name='repository',
             field=models.ForeignKey(to='learningresources.Repository'),
+        ),
+        migrations.AlterUniqueTogether(
+            name='learningresource',
+            unique_together=set([('course', 'uuid')]),
+        ),
+        migrations.AlterUniqueTogether(
+            name='course',
+            unique_together=set([('repository', 'org', 'course_number', 'run')]),
         ),
     ]
