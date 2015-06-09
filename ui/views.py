@@ -23,6 +23,7 @@ from taxonomy.models import Vocabulary
 from ui.forms import UploadForm, VocabularyForm, RepositoryForm
 
 
+@login_required
 def create_vocabulary(request, repo_slug):
     """
     Show form to create a new vocabulary
@@ -64,6 +65,7 @@ def create_vocabulary(request, repo_slug):
     )
 
 
+@login_required
 def edit_vocabulary(request, repo_slug, vocab_slug):
     """
     Show form to edit an existing vocabulary
