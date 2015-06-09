@@ -25,15 +25,14 @@ def create_course(org, repo_id, course_number, run, user_id):
     Add a course to the database.
 
     Args:
-        org (unicode): organization
-        course_number (unicode): course number
-        run (unicode): run
-        user_id (int): primary key of user creating the course
-
+        org (unicode): Organization
+        course_number (unicode): Course number
+        run (unicode): Run
+        user_id (int): Primary key of user creating the course
     Raises:
         ValueError: Duplicate course
-
-    Returns: None
+    Returns:
+        course (learningresource.Course): The created course
 
     """
     # Check on unique values before attempting a get_or_create, because
@@ -60,14 +59,15 @@ def create_resource(course, parent, resource_type, title, content_xml, mpath):
     Create a learning resource.
 
     Args:
-        course (learningresources.Course): course
-        parent (learningresources.LearningResource): parent LearningResource
-        resource_type (unicode): name of LearningResourceType
-        title (unicode): title of resource
+        course (learningresources.Course): Course
+        parent (learningresources.LearningResource): Parent LearningResource
+        resource_type (unicode): Name of LearningResourceType
+        title (unicode): Title of resource
         content_xml (unicode): XML
-        mpath (unicode): materialized path
+        mpath (unicode): Materialized path
+
     Returns:
-        resource (learningresources.LearningResource): new LearningResource
+        resource (learningresources.LearningResource): New LearningResource
     """
     params = {
         "course": course,
@@ -94,7 +94,7 @@ def type_id_by_name(name):
     Args:
         name (unicode): LearningResourceType.name
     Returns:
-        type_id (int): pk of learningresources.LearningResourceType
+        type_id (int): Primary key of learningresources.LearningResourceType
     """
     if name in TYPE_LOOKUP:
         return TYPE_LOOKUP[name]
@@ -106,12 +106,12 @@ def type_id_by_name(name):
 
 def get_repos(user_id):
     """
-    Get all repositories a user may see.
+    Get all repositories a user may access.
 
     Args:
-        user (auth.User): request.user
+        user_id (int): Primary key of user
     Returns:
-        repos query set of learningresource.Repository: repositories
+        repos (query set of learningresource.Repository): Repositories
     """
     return Repository.objects.filter(created_by__id=user_id).order_by('name')
 
@@ -119,10 +119,11 @@ def get_repos(user_id):
 def get_repo_courses(repo_id):
     """
     Get courses for a repository.
+
     Args:
-        repo_id (int): pk of learningresource.Repository
+        repo_id (int): Primary key of learningresource.Repository
     Returns:
-        courses (queryset of learningresource.Course): courses
+        courses (queryset of learningresource.Course): Courses
     """
     return Course.objects.filter(repository__id=repo_id)
 
@@ -130,12 +131,13 @@ def get_repo_courses(repo_id):
 def create_repo(name, description, user_id):
     """
     Create a new repository.
+
     Args:
-        name (unicode): repository name
-        description (unicode): repository description
-        user_id (int): user ID of repository creator
+        name (unicode): Repository name
+        description (unicode): Repository description
+        user_id (int): User ID of repository creator
     Returns:
-        repo (learningresources.Repository): newly-created repo
+        repo (learningresources.Repository): Newly-created repository
     """
     with transaction.atomic():
         return Repository.objects.create(
@@ -147,10 +149,11 @@ def create_repo(name, description, user_id):
 def get_courses(repo_id):
     """
     Get all user's courses.
+
     Args:
-        repo_id (int): primary key of the repository
+        repo_id (int): Primary key of the repository
     Returns:
-        Queryset of learningresources.Course: courses
+        courses (Queryset of learningresources.Course): User's courses
     """
     return Course.objects.filter(repository_id=repo_id)
 
@@ -158,10 +161,13 @@ def get_courses(repo_id):
 def get_runs(repo_id):
     """
     Get runs in all user's courses for the repo.
+
+    The list of runs is sorted.
+
     Args:
-        repo_id (int): primary key of the repository
+        repo_id (int): Primary key of the repository
     Returns:
-        runs (list of strings): run names
+        runs (list of strings): Run names
     """
     courses = get_courses(repo_id)
     return sorted(list(set([x.run for x in courses])))
@@ -170,10 +176,11 @@ def get_runs(repo_id):
 def get_user_tags(repo_id):
     """
     Get all tags for a user's courses.
+
     Args:
-        repo_id (int): primary key of the repository
+        repo_id (int): Primary key of the repository
     Returns:
-        tags (list of strings): tag names
+        tags (list of strings): Tag names
     """
     resources = LearningResource.objects.filter(course__repository__id=repo_id)
     tag_ids = set([x.learning_resource_type_id for x in resources])
@@ -184,11 +191,12 @@ def get_user_tags(repo_id):
 
 def get_resources(repo_id):
     """
-    Get resources from a repository.
+    Get resources from a repository ordered by title.
+
     Args:
-        repo_id (int): primary key of the repository
+        repo_id (int): Primary key of the repository
     Returns:
-        list of learningresources.LearningResource: resources
+        list (list of learningresources.LearningResource): List of resources
     """
     return LearningResource.objects.select_related(
         "learning_resource_type").filter(
@@ -198,11 +206,12 @@ def get_resources(repo_id):
 def get_resource(resource_id, user_id):
     """
     Get single resource.
+
     Args:
-        resource_id (int): primary key of the LearningResource
-        user_id (int): primary key of the user requesting the resource
+        resource_id (int): Primary key of the LearningResource
+        user_id (int): Primary key of the user requesting the resource
     Returns:
-        learningresources.LearningResource: resource
+        resource (learningresources.LearningResource): Resource
     """
     resource = get_object_or_404(LearningResource, id=resource_id)
     if has_repo(resource.course.repository_id, user_id):
@@ -212,12 +221,16 @@ def get_resource(resource_id, user_id):
 
 def has_repo(repo_id, user_id):
     """
-    Can a user see a repository?
+    Can a user access a repository?
+
+    Returns ``True`` if a user can view a repository,
+    ``False`` if they can not.
+
     Args:
-        repo_id (int): primary key of the repository
-        user_id (int): primary key of the user
+        repo_id (int): Primary key of the repository
+        user_id (int): Primary key of the user
     Returns:
-        bool: if they're allowed to see the repo.
+        bool: If user is allowed to access the repository.
     """
     repos = get_repos(user_id)
     return repo_id in set([x.id for x in repos])

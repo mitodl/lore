@@ -21,22 +21,23 @@ log = logging.getLogger(__name__)
 
 def import_course_from_file(filename, repo_id, user_id):
     """
-    Import OLX from .zip or tar.gz. Imports from a file
-    and deletes the file.
+    Import OLX archive from .zip or tar.gz.
+
+    Imports from a file and then deletes that file.
+    A valid OLX archive has a single occurrence of the file course.xml in its
+    root directory, or no course.xml in its root and a single occurrence of
+    course.xml in one or more of the root directory's children.
 
     Args:
         filename (unicode): Path to archive file (zip or .tar.gz)
         repo_id (int): Primary key of repository course belongs to
         user_id (int): Primary key of user importing the course
-
+    Returns:
+        None
     Raises:
         ValueError: Unable to extract or read archive contents.
 
-    Returns: None
 
-    A valid OLX archive has a single occurrence of the file course.xml in its
-    root directory, or no course.xml in its root and a single occurrence of
-    course.xml in one or more of the root directory's children.
     """
     tempdir = mkdtemp()
     try:
@@ -65,8 +66,11 @@ def import_course_from_path(path, repo_id, user_id):
     Import course from an OLX directory.
 
     Args:
-        path (unicode): path to extracted OLX tree
-        user_id (int): pk of Django user doing the import
+        path (unicode): Path to extracted OLX tree
+        repo_id (int): Primary key of repository course belongs to
+        user_id (int): Primary key of Django user doing the import
+    Returns:
+        course (learningresources.Course)
     """
     bundle = XBundle()
     bundle.import_from_directory(path)
@@ -79,7 +83,10 @@ def import_course(bundle, repo_id, user_id):
 
     Args:
         bundle (xbundle.XBundle): Course as xbundle XML
-        user_id (int): pk of Django user doing the import
+        repo_id (int): Primary key of repository course belongs to
+        user_id (int): Primary key of Django user doing the import
+    Returns:
+        None
     """
     src = bundle.course
     course = create_course(
@@ -100,7 +107,9 @@ def import_children(course, element, parent):
     Args:
         course (learningresources.Course): Course
         element (lxml.etree): XML element within xbundle
-        parent (learningresources.LearningResource): parent LearningResource
+        parent (learningresources.LearningResource): Parent LearningResource
+    Returns:
+        None
     """
     mpath = etree.ElementTree(element).getpath(element)
     resource = create_resource(

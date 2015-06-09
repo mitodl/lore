@@ -5,18 +5,27 @@ For convenient reference in development, here are the LORE
 API docs.
 
 
-LearningResources 
-=======================
+LearningResources
+=================
 
 .. automodule:: learningresources.api
     :members:
     :undoc-members:
     :show-inheritance:
-    
-Importer 
-===============
+
+Importer
+========
 
 .. automodule:: importer.api
     :members:
     :undoc-members:
     :show-inheritance:
+
+Taxonomy
+========
+
+.. automodule:: taxonomy.api
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
