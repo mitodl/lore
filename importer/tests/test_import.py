@@ -7,14 +7,43 @@ from __future__ import unicode_literals
 import os
 from os.path import abspath, dirname, join
 from tempfile import mkstemp
-from shutil import copyfile
+import uuid
 import zipfile
+
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 
 from importer.api import import_course_from_file
 from importer.tasks import import_file
 from learningresources.api import get_resources
 from learningresources.models import Course
 from learningresources.tests.base import LoreTestCase
+
+
+def copy_file(path):
+    """
+    Copy given file into django default_storage.
+
+    Args:
+        path (str): Path to file to copy
+
+    Returns:
+        path (str): default_storage path to copy
+    """
+    if path.endswith('.tar.gz'):
+        ext = '.tar.gz'
+    else:
+        _, ext = os.path.splitext(path)
+
+    return default_storage.save(
+        '{prefix}/{random}{ext}'.format(
+            prefix=settings.IMPORT_PATH_PREFIX,
+            random=str(uuid.uuid4()),
+            ext=ext
+        ),
+        open(path, 'rb')
+    )
 
 
 def get_course_zip():
@@ -26,10 +55,7 @@ def get_course_zip():
         path (unicode): absolute path to zip file
     """
     path = join(abspath(dirname(__file__)), "testdata", "courses")
-    handle, filename = mkstemp(suffix=".zip")
-    os.close(handle)
-    copyfile(join(path, "simple.zip"), filename)
-    return filename
+    return copy_file(join(path, "simple.zip"))
 
 
 def get_course_multiple_zip():
@@ -41,10 +67,7 @@ def get_course_multiple_zip():
         path (unicode): absolute path to zip file
     """
     path = join(abspath(dirname(__file__)), "testdata", "courses")
-    handle, filename = mkstemp(suffix=".tar.gz")
-    os.close(handle)
-    copyfile(join(path, "two_courses.tar.gz"), filename)
-    return filename
+    return copy_file(join(path, "two_courses.tar.gz"))
 
 
 def get_course_single_tarball():
@@ -55,10 +78,7 @@ def get_course_single_tarball():
         path (unicode): absolute path to tarball.
     """
     path = join(abspath(dirname(__file__)), "testdata", "courses")
-    handle, filename = mkstemp(suffix=".tgz")
-    os.close(handle)
-    copyfile(join(path, "single.tgz"), filename)
-    return filename
+    return copy_file(join(path, "single.tgz"))
 
 
 class TestImportToy(LoreTestCase):
@@ -73,15 +93,19 @@ class TestImportToy(LoreTestCase):
         """
         super(TestImportToy, self).setUp()
         self.course_zip = get_course_zip()
-        handle, self.bad_file = mkstemp()
-        os.close(handle)
+        self.bad_file = default_storage.save('bad_file', ContentFile(''))
+        self.addCleanup(default_storage.delete, self.bad_file)
 
         # Valid zip file, wrong stuff in it.
-        handle, self.incompatible = mkstemp(suffix=".zip")
+        handle, bad_zip = mkstemp(suffix=".zip")
         os.close(handle)
         archive = zipfile.ZipFile(
-            self.incompatible, "w", compression=zipfile.ZIP_DEFLATED)
+            bad_zip, "w", compression=zipfile.ZIP_DEFLATED)
         archive.close()
+        self.incompatible = default_storage.save(
+            'bad_zip.zip', open(bad_zip, 'rb')
+        )
+        self.addCleanup(default_storage.delete, self.incompatible)
 
     def test_import_toy(self):
         """

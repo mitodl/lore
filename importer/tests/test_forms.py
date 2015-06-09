@@ -3,9 +3,9 @@ Tests for importer forms.
 """
 from __future__ import unicode_literals
 
-from os.path import getsize
 import logging
 
+from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 from ui.forms import UploadForm
@@ -20,10 +20,10 @@ def get_upload_file(ext):
     """Return an upload file to test the form."""
     filename = get_course_zip()
     return InMemoryUploadedFile(
-        file=open(filename, "rb"),
+        file=default_storage.open(filename, "rb"),
         field_name="course_file",
         name="toy{0}".format(ext),
-        content_type="application/zip", size=getsize(filename),
+        content_type="application/zip", size=default_storage.size(filename),
         charset="utf-8",
     )
 
