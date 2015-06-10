@@ -4,12 +4,16 @@ Test the importer views to make sure they work.
 
 from __future__ import unicode_literals
 
+import logging
+
 from learningresources.models import Repository
 
 from .base import LoreTestCase
 
 HTTP_OK = 200
 UNAUTHORIZED = 403
+
+log = logging.getLogger(__name__)
 
 
 class TestViews(LoreTestCase):
@@ -26,6 +30,23 @@ class TestViews(LoreTestCase):
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
         self.assertTrue("<title>MIT - LORE </title>" in body)
+        self.assertTrue('>Create repository</a>' in body)
+
+    def test_get_home_norepo(self):
+        """Home Page with no authorization to create repositories"""
+        self.logout()
+        self.login(self.USERNAME_NO_REPO)
+        resp = self.client.get("/home", follow=True)
+        self.assertTrue(resp.status_code == HTTP_OK)
+        body = resp.content.decode("utf-8")
+        self.assertTrue("<title>MIT - LORE </title>" in body)
+
+        resp = self.client.get("/", follow=True)
+        self.assertTrue(resp.status_code == HTTP_OK)
+        body = resp.content.decode("utf-8")
+        self.assertTrue("<title>MIT - LORE </title>" in body)
+        self.assertFalse('<a href="/lore/create_repo/">'
+                         'Create repository</a>' in body)
 
     def test_create_repo_post(self):
         """Create repo."""
@@ -93,3 +114,4 @@ class TestViews(LoreTestCase):
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
         self.assertTrue("This field is required." in body)
+        self.assertTrue(Repository.objects.count() == 1)

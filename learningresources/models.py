@@ -11,6 +11,9 @@ from django.utils.text import slugify
 from django.utils.encoding import python_2_unicode_compatible
 from django.shortcuts import get_object_or_404
 
+from roles.api import roles_init_new_repo, roles_update_repo
+from roles.permissions import RepoPermission
+
 
 class Course(models.Model):
     """
@@ -79,14 +82,36 @@ class Repository(models.Model):
 
     @transaction.atomic
     def save(self, *args, **kwargs):
-        """Handle slugs."""
+        """Handle slugs and groups"""
+        is_create = False
+        is_update = False
         if self.id is None or self.name != get_object_or_404(
                 Repository, id=self.id).name:
+            # if it is an update of the repository, need the old slug
+            if self.id is not None:
+                is_update = True
+                old_slug = get_object_or_404(Repository, id=self.id).slug
             slug = slugify(self.name)
             count = 1
             while Repository.objects.filter(slug=slug).exists():
                 slug = "{0}{1}".format(slugify(self.name), count)
                 count += 1
             self.slug = slug
+            # check if it's necessary to initialize the permissions
+            if self.id is None:
+                is_create = True
+        new_repository = super(Repository, self).save(*args, **kwargs)
+        if is_create:
+            roles_init_new_repo(self)
+        if is_update:
+            roles_update_repo(self, old_slug)
+        return new_repository
 
-        return super(Repository, self).save(*args, **kwargs)
+    class Meta:
+        # pylint: disable=missing-docstring
+        permissions = (
+            RepoPermission.view_repo,
+            RepoPermission.import_course,
+            RepoPermission.manage_taxonomy,
+            RepoPermission.add_edit_metadata,
+        )

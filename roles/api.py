@@ -1,0 +1,105 @@
+"""
+Functions for handling roles
+"""
+
+from __future__ import unicode_literals
+
+from django.contrib.auth.models import Group
+from django.db import transaction
+from guardian.shortcuts import assign_perm
+
+from roles.permissions import RepoPermission, GroupTypes
+
+
+def roles_init_new_repo(repo):
+    """
+    Create new groups for the repository
+
+    It assumes that there are only 3 types of users:
+        - administrator
+        - curator
+        - author
+
+    Args:
+        repo (learningresources.models.Repository): repository used to create
+            groups and assign permissions to them
+    Returns:
+        None
+    """
+    with transaction.atomic():
+        administrator_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.repo_administrator.format(repo.slug)
+        )
+        curator_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.repo_curator.format(repo.slug)
+        )
+        author_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.repo_author.format(repo.slug)
+        )
+
+    with transaction.atomic():
+        # administrator permissions
+        for permission in RepoPermission.administrator_permissions():
+            assign_perm(permission, administrator_group, repo)
+        # curator permissions
+        for permission in RepoPermission.curator_permissions():
+            assign_perm(permission, curator_group, repo)
+        # author permissions
+        for permission in RepoPermission.author_permissions():
+            assign_perm(permission, author_group, repo)
+
+
+def roles_update_repo(repo, old_slug):
+    """
+    Updates the groups names for the repo
+
+    Args:
+        repo (learningresources.models.Repository): repository used to update
+            groups and assign permissions to them
+        old_slug (unicode): old slug string used to retrieve the groups that
+            need to be renamed
+    Returns:
+        None
+    """
+    # if the slug has not changed there is nothing to do
+    if repo.slug == old_slug:
+        return
+    with transaction.atomic():
+        administrator_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.repo_administrator.format(old_slug)
+        )
+        curator_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.repo_curator.format(old_slug)
+        )
+        author_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.repo_author.format(old_slug)
+        )
+    administrator_group.name = GroupTypes.repo_administrator.format(repo.slug)
+    curator_group.name = GroupTypes.repo_curator.format(repo.slug)
+    author_group.name = GroupTypes.repo_author.format(repo.slug)
+    with transaction.atomic():
+        administrator_group.save()
+        curator_group.save()
+        author_group.save()
+
+
+def assign_user_to_repo_group(
+        user,
+        repo,
+        group_type):
+    """
+    Assigns an user to a repo specific group type
+
+    Args:
+        user (django.contrib.auth.models.User): user
+        repo (learningresources.models.Repository): repository used to extract
+            the right group to use
+        group_type (roles.permissions.GroupTypes): group string to be used to
+            construct the group name
+    Returns:
+        None
+    """
+    with transaction.atomic():
+        repo_group = Group.objects.get(name=group_type.format(repo.slug))
+        user.groups.add(repo_group)
+        user.save()

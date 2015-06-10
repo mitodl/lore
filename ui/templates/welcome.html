@@ -2,8 +2,8 @@
 {% block content %}
     <div class="section-header">
         <div class="row">
-            <div class="col-md-2 col-md-offset-5"><a href="{% url 'create_repo' %}" role="button"
-                                                     class="btn btn-primary btn-large">Create repository</a></div>
+            <div class="col-md-2 col-md-offset-5">{% if perms.learningresources.add_repository %}<a href="{% url 'create_repo' %}" role="button"
+                                                     class="btn btn-primary btn-large">Create repository</a>{% endif %}</div>
         </div>
     </div>
 

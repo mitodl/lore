@@ -121,3 +121,10 @@ class TestSettings(TestCase):
         settings.ADMINS = (('Admins', test_admin_email),)
         mail.mail_admins('Test', 'message')
         self.assertIn(test_admin_email, mail.outbox[0].to)
+
+    def test_guardian_settings(self):
+        """Verify guardian settings get set correctly"""
+        settings_vars = self.reload_settings()
+        self.assertIn('ANONYMOUS_USER_ID', settings_vars)
+        self.assertIsNone(settings_vars.get('ANONYMOUS_USER_ID'))
+        self.assertTrue(settings_vars.get('GUARDIAN_RAISE_403'))

@@ -8,9 +8,7 @@ import sphinx_bootstrap_theme
 sys.path.insert(0, os.path.abspath('..'))
 
 # django-specific configuration
-from django.conf import settings
-settings.configure()
-
+os.environ['DJANGO_SETTINGS_MODULE'] = 'lore.settings'
 # -- General configuration ------------------------------------------------
 
 extensions = [

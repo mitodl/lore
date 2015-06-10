@@ -7,13 +7,17 @@ from __future__ import unicode_literals
 
 import logging
 
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.http.response import HttpResponseForbidden
 
+from guardian.shortcuts import get_objects_for_user
+
 from learningresources.models import (
     Course, Repository, LearningResource, LearningResourceType
 )
+from roles.permissions import RepoPermission
 
 TYPE_LOOKUP = {}
 
@@ -113,7 +117,12 @@ def get_repos(user_id):
     Returns:
         repos (query set of learningresource.Repository): Repositories
     """
-    return Repository.objects.filter(created_by__id=user_id).order_by('name')
+    user = User.objects.get(id=user_id)
+    return get_objects_for_user(
+        user,
+        RepoPermission.view_repo[0],
+        klass=Repository
+    )
 
 
 def get_repo_courses(repo_id):
