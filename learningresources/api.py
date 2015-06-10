@@ -8,11 +8,12 @@ from __future__ import unicode_literals
 import logging
 
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.http.response import HttpResponseForbidden
 
-from guardian.shortcuts import get_objects_for_user
+from guardian.shortcuts import get_objects_for_user, get_perms
 
 from learningresources.models import (
     Course, Repository, LearningResource, LearningResourceType
@@ -123,6 +124,26 @@ def get_repos(user_id):
         RepoPermission.view_repo[0],
         klass=Repository
     )
+
+
+def get_repo_or_error(repo_slug, user_id):
+    """
+    Get repository for a user if s/he can access it.
+    Returns a repository object if it exists or
+    * raises a 404 if the object does not exist
+    * raises a 403 if the object exists but the user doesn't have permission
+
+    Args:
+        repo_slug (unicode): Repository slug
+        user_id (int): Primary key of user
+    Returns:
+        repo (learningresource.Repository): Repository
+    """
+    user = User.objects.get(id=user_id)
+    repo = get_object_or_404(Repository, slug=repo_slug)
+    if RepoPermission.view_repo[0] in get_perms(user, repo):
+        return repo
+    raise PermissionDenied()
 
 
 def get_repo_courses(repo_id):

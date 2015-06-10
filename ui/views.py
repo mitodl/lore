@@ -14,14 +14,15 @@ from django.shortcuts import (
     get_object_or_404,
 )
 from guardian.decorators import permission_required_or_403
+from guardian.shortcuts import get_perms
 
 from learningresources.api import (
-    get_repos, get_repo_courses, get_runs, get_user_tags,
-    get_resources, get_resource
+    get_repos, get_repo_or_error, get_repo_courses, get_runs,
+    get_user_tags, get_resources, get_resource
 )
 from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group
-from roles.permissions import GroupTypes
+from roles.permissions import GroupTypes, RepoPermission
 from taxonomy.models import Vocabulary
 from ui.forms import UploadForm, VocabularyForm, RepositoryForm
 
@@ -117,13 +118,21 @@ def edit_vocabulary(request, repo_slug, vocab_slug):
 
 
 @login_required
+@permission_required_or_403(
+    # pylint: disable=protected-access
+    # the following string is "learningresources.import_course"
+    # (unless the Repository model has been moved)
+    '{}.{}'.format(
+        Repository._meta.app_label,
+        RepoPermission.import_course[0]
+    ),
+    (Repository, 'slug', 'repo_slug')
+)
 def upload(request, repo_slug):
     """
     Upload a OLX archive.
     """
-    if repo_slug not in set([x.slug for x in get_repos(request.user.id)]):
-        return HttpResponseForbidden("unauthorized")
-    repo = [x for x in get_repos(request.user.id) if x.slug == repo_slug][0]
+    repo = get_repo_or_error(repo_slug, request.user.id)
     form = UploadForm()
     if request.method == "POST":
         form = UploadForm(
@@ -162,7 +171,8 @@ def welcome(request):
 @login_required
 @permission_required_or_403(
     # pylint: disable=protected-access
-    # the following string is learningresources.add_repo unless model has moved
+    # the following string is "learningresources.add_repo"
+    # (unless the Repository model has been moved)
     '{}.add_{}'.format(
         Repository._meta.app_label,
         Repository._meta.model_name
@@ -180,7 +190,7 @@ def create_repo(request):
             assign_user_to_repo_group(
                 request.user,
                 repo,
-                GroupTypes.repo_administrator
+                GroupTypes.REPO_ADMINISTRATOR
             )
             return redirect(reverse("listing", args=(repo.slug,)))
     return render(
@@ -203,6 +213,7 @@ def listing(request, repo_slug):
         return HttpResponseForbidden("unauthorized")
     repo = [x for x in repos if x.slug == repo_slug][0]
     page = int(request.GET.get("page", "1"))
+    perms_on_cur_repo = get_perms(request.user, repo)
     context = {
         "repo_id": repo.id,
         "repo_slug": repo.slug,
@@ -211,7 +222,8 @@ def listing(request, repo_slug):
         "runs": get_runs(repo.id),
         "tags": get_user_tags(repo.id),
         "resources": Paginator(
-            get_resources(repo.id), 20).page(page)
+            get_resources(repo.id), 20).page(page),
+        "perms_on_cur_repo": perms_on_cur_repo
     }
     return render(
         request,

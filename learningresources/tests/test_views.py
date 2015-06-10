@@ -7,6 +7,8 @@ from __future__ import unicode_literals
 import logging
 
 from learningresources.models import Repository
+from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
+from roles.permissions import GroupTypes
 
 from .base import LoreTestCase
 
@@ -19,16 +21,16 @@ log = logging.getLogger(__name__)
 class TestViews(LoreTestCase):
     """Hit each view."""
 
+    def setUp(self):
+        super(TestViews, self).setUp()
+        self.repository_url = "/repositories/{0}/".format(self.repo.slug)
+
     def test_get_home(self):
         """Home Page."""
-        resp = self.client.get("/home", follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)
-        body = resp.content.decode("utf-8")
+        body = self.assert_status_code("/home", HTTP_OK, return_body=True)
         self.assertTrue("<title>MIT - LORE </title>" in body)
 
-        resp = self.client.get("/", follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)
-        body = resp.content.decode("utf-8")
+        body = self.assert_status_code("/", HTTP_OK, return_body=True)
         self.assertTrue("<title>MIT - LORE </title>" in body)
         self.assertTrue('>Create repository</a>' in body)
 
@@ -36,14 +38,10 @@ class TestViews(LoreTestCase):
         """Home Page with no authorization to create repositories"""
         self.logout()
         self.login(self.USERNAME_NO_REPO)
-        resp = self.client.get("/home", follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)
-        body = resp.content.decode("utf-8")
+        body = self.assert_status_code("/home", HTTP_OK, return_body=True)
         self.assertTrue("<title>MIT - LORE </title>" in body)
 
-        resp = self.client.get("/", follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)
-        body = resp.content.decode("utf-8")
+        body = self.assert_status_code("/", HTTP_OK, return_body=True)
         self.assertTrue("<title>MIT - LORE </title>" in body)
         self.assertFalse('<a href="/lore/create_repo/">'
                          'Create repository</a>' in body)
@@ -63,10 +61,81 @@ class TestViews(LoreTestCase):
     def test_listing_unauthorized(self):
         """View listing page."""
         # Not authorized to view this repository...
-        resp = self.client.get("/repositories/99/", follow=True)
-        body = resp.content.decode("utf-8")
-        self.assertTrue(resp.status_code == UNAUTHORIZED)
+        body = self.assert_status_code(
+            "/repositories/99/",
+            UNAUTHORIZED,
+            return_body=True
+        )
         self.assertTrue("unauthorized" in body)
+
+    def test_listing_importcourse_perms(self):
+        """
+        Tests the listing page with different user permissions
+        to check who can see the import course html
+        """
+        self.logout()
+        self.login(self.USERNAME_NO_REPO)
+        # user has no permissions at all
+        self.assert_status_code(
+            self.repository_url,
+            UNAUTHORIZED
+        )
+        # user has author permissions and cannot see the import for the repo
+        assign_user_to_repo_group(
+            self.user_norepo,
+            self.repo,
+            GroupTypes.REPO_AUTHOR
+        )
+        body = self.assert_status_code(
+            self.repository_url,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertFalse("Import Course</a>" in body)
+        # user has no permissions
+        remove_user_from_repo_group(
+            self.user_norepo,
+            self.repo,
+            GroupTypes.REPO_AUTHOR
+        )
+        self.assert_status_code(
+            self.repository_url,
+            UNAUTHORIZED
+        )
+        # user has curator permissions and can see the the import for the repo
+        assign_user_to_repo_group(
+            self.user_norepo,
+            self.repo,
+            GroupTypes.REPO_CURATOR
+        )
+        body = self.assert_status_code(
+            self.repository_url,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertTrue("Import Course</a>" in body)
+        # user has no permissions
+        remove_user_from_repo_group(
+            self.user_norepo,
+            self.repo,
+            GroupTypes.REPO_CURATOR
+        )
+        self.assert_status_code(
+            self.repository_url,
+            UNAUTHORIZED
+        )
+        # user has admin permissions and can see the the import for the repo
+        assign_user_to_repo_group(
+            self.user_norepo,
+            self.repo,
+            GroupTypes.REPO_ADMINISTRATOR
+        )
+        body = self.assert_status_code(
+            self.repository_url,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertTrue("Import Course</a>" in body)
 
     def test_create_repo_get(self):
         """GET repo creation page."""

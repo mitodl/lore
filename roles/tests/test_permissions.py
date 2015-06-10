@@ -18,15 +18,15 @@ class TestRolePermission(TestCase):
         Checks repo group types
         """
         self.assertEqual(
-            GroupTypes.repo_administrator,
+            GroupTypes.REPO_ADMINISTRATOR,
             '{}_repo_administrators'
         )
         self.assertEqual(
-            GroupTypes.repo_curator,
+            GroupTypes.REPO_CURATOR,
             '{}_repo_curators'
         )
         self.assertEqual(
-            GroupTypes.repo_author,
+            GroupTypes.REPO_AUTHOR,
             '{}_repo_authors'
         )
 
