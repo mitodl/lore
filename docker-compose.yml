@@ -33,6 +33,7 @@ web:
   links:
     - db
     - redis
+    - elastic
 celery:
   build: .
   command: >
@@ -51,3 +52,7 @@ celery:
   links:
     - db
     - redis
+elastic:
+  image: elasticsearch
+  ports:
+    - "9200"

@@ -85,6 +85,7 @@ INSTALLED_APPS = (
     'importer',
     'ui',
     'taxonomy',
+    'haystack',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -267,3 +268,15 @@ CELERY_ALWAYS_EAGER = get_var("CELERY_ALWAYS_EAGER", True)
 # guardian specific settings
 ANONYMOUS_USER_ID = None
 GUARDIAN_RAISE_403 = True
+
+# Haystack
+HAYSTACK_CONNECTIONS = {
+    'default': {
+        'ENGINE': (
+            'haystack.backends.elasticsearch_backend'
+            '.ElasticsearchSearchEngine'
+        ),
+        'URL': get_var('HAYSTACK_URL', 'http://127.0.0.1:9200'),
+        'INDEX_NAME': 'haystack'
+    }
+}

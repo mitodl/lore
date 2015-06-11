@@ -43,5 +43,4 @@ urlpatterns = [
         r'vocabularies/(?P<vocab_slug>[-\w]+)/$',
         edit_vocabulary,
         name="edit_vocabulary"),
-
 ]
