@@ -10,14 +10,13 @@ import uuid
 from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.core.files.storage import default_storage
+from django.core.management import call_command
 from django.test import Client
 from django.test.testcases import TestCase
-from django.contrib.auth.models import User, Permission
-from django.core.management import call_command
 import haystack
 
-from learningresources.models import Repository
 from learningresources.api import create_repo
+from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes
 
@@ -82,6 +81,7 @@ class LoreTestCase(TestCase):
         for key, _ in haystack.connections.connections_info.items():
             haystack.connections.reload(key)
         call_command('clear_index', interactive=False, verbosity=0)
+
     def copy_file(self, path):
         """
         Copy given file into django default_storage.

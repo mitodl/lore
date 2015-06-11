@@ -47,30 +47,33 @@ def import_course_from_file(filename, repo_id, user_id):
     def seekable():
         """Hacked seekable for django storage to work in python3"""
         return True
-    course_archive = default_storage.open(filename)
-    course_archive.seekable = seekable
     try:
-        Archive(
-            course_archive
-        ).extract(to_path=tempdir, method="safe")
-    except ArchiveException as ex:
-        log.debug("failed to extract: %s", ex)
-        log.exception('Archive exception occurred')
+        course_archive = default_storage.open(filename)
+        course_archive.seekable = seekable
+        try:
+            Archive(
+                course_archive
+            ).extract(to_path=tempdir, method="safe")
+        except ArchiveException as ex:
+            log.debug("failed to extract: %s", ex)
+            log.exception('Archive exception occurred')
+            raise ValueError("Invalid OLX archive, unable to extract.")
+        course_imported = False
+        if "course.xml" in listdir(tempdir):
+            import_course_from_path(tempdir, repo_id, user_id)
+            course_imported = True
+        else:
+            for path in listdir(tempdir):
+                if exists(join(tempdir, path, 'course.xml')):
+                    import_course_from_path(
+                        join(tempdir, path), repo_id, user_id
+                    )
+                    course_imported = True
+        if course_imported is False:
+            raise ValueError("Invalid OLX archive, no courses found.")
+    finally:
         default_storage.delete(filename)
-        raise ValueError("Invalid OLX archive, unable to extract.")
-    course_imported = False
-    if "course.xml" in listdir(tempdir):
-        import_course_from_path(tempdir, repo_id, user_id)
-        course_imported = True
-    else:
-        for path in listdir(tempdir):
-            if exists(join(tempdir, path, 'course.xml')):
-                import_course_from_path(join(tempdir, path), repo_id, user_id)
-                course_imported = True
-    rmtree(tempdir)
-    default_storage.delete(filename)
-    if course_imported is False:
-        raise ValueError("Invalid OLX archive, no courses found.")
+        rmtree(tempdir)
 
 
 def import_course_from_path(path, repo_id, user_id):
