@@ -50,18 +50,14 @@ class TestUploadForm(LoreTestCase):
             (".jpg", False),
         )
         for ext, validity in checks:
-            log.debug("checking extension %s", ext)
             self.assertEqual(validity, self.attempt_extension(ext))
-            log.debug("it worked")
 
     def attempt_extension(self, ext):
         """Try to upload a file with a given extension."""
         upload = get_upload_file(ext)
-        log.debug("attempt_extension %s, %s", ext, upload.name)
         form = UploadForm(
             {"repository": self.repo.id},
             {"course_file": upload},
         )
         is_valid = form.is_valid()
-        log.debug("%s was valid: %s", upload.name, is_valid)
         return is_valid

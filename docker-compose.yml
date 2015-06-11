@@ -28,6 +28,7 @@ web:
     LORE_CAS_URL:
     CELERY_ALWAYS_EAGER: False
     BROKER_URL: redis://redis:6379/4
+    HAYSTACK_URL: elastic:9200
   ports:
     - "8070:8070"
   links:
@@ -49,8 +50,10 @@ celery:
     DATABASE_URL: postgres://postgres@db:5432/postgres
     BROKER_URL: redis://redis:6379/4
     CELERY_RESULT_BACKEND: redis://redis:6379/4
+    HAYSTACK_URL: elastic:9200
   links:
     - db
+    - elastic
     - redis
 elastic:
   image: elasticsearch

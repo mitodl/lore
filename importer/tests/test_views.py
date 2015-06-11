@@ -66,5 +66,4 @@ class TestViews(LoreTestCase):
         )
         self.assertTrue(resp.status_code == HTTP_OK)
         body = resp.content.decode("utf-8")
-        log.debug(body)
         self.assertTrue("This field is required." in body)
