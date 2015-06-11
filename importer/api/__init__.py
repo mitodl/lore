@@ -10,9 +10,9 @@ from tempfile import mkdtemp
 from os.path import join, exists
 from os import remove, listdir
 
-from xbundle import XBundle, DESCRIPTOR_TAGS
-from lxml import etree
 from archive import extract, ArchiveException
+from lxml import etree
+from xbundle import XBundle, DESCRIPTOR_TAGS
 
 from learningresources.api import create_course, create_resource
 
@@ -43,7 +43,7 @@ def import_course_from_file(filename, repo_id, user_id):
     try:
         extract(path=filename, to_path=tempdir, method="safe")
     except ArchiveException as ex:
-        log.debug("failed to extract: %s", ex)
+        log.error("failed to extract: %s", ex)
         remove(filename)
         raise ValueError("Invalid OLX archive, unable to extract.")
     course_imported = False
@@ -74,7 +74,7 @@ def import_course_from_path(path, repo_id, user_id):
     """
     bundle = XBundle()
     bundle.import_from_directory(path)
-    return import_course(bundle, repo_id, user_id)
+    import_course(bundle, repo_id, user_id)
 
 
 def import_course(bundle, repo_id, user_id):

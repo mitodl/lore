@@ -4,6 +4,8 @@ Learning resources data model
 
 from __future__ import unicode_literals
 
+import logging
+
 from django.db import models
 from django.db import transaction
 from django.contrib.auth.models import User
@@ -13,6 +15,8 @@ from django.shortcuts import get_object_or_404
 
 from roles.api import roles_init_new_repo, roles_update_repo
 from roles.permissions import RepoPermission
+
+log = logging.getLogger(__name__)
 
 
 class Course(models.Model):

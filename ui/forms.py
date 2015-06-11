@@ -36,14 +36,10 @@ class UploadForm(Form):
     def clean_course_file(self):
         """Only certain extensions are allowed."""
         upload = self.cleaned_data["course_file"]
-        log.debug("checking filename %s", upload.name)
         for ext in (".zip", ".tar.gz", ".tgz"):
             if upload.name.endswith(ext):
-                log.debug("the filename is good")
                 upload.ext = ext
-                log.debug("setting upload.ext to %s", ext)
                 return upload
-        log.debug("got to end, so the file is bad")
         raise ValidationError("Unsupported file type.")
 
     def save(self, user_id, repo_id):

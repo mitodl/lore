@@ -3,8 +3,9 @@ Views for the all apps
 """
 from __future__ import unicode_literals
 
+import logging
+
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse
 from django.http.response import HttpResponseForbidden
@@ -13,17 +14,20 @@ from django.shortcuts import (
     redirect,
     get_object_or_404,
 )
+from haystack.views import SearchView
 from guardian.decorators import permission_required_or_403
 
 from learningresources.api import (
     get_repos, get_repo_courses, get_runs, get_user_tags,
-    get_resources, get_resource
+    get_resource
 )
 from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes
 from taxonomy.models import Vocabulary
 from ui.forms import UploadForm, VocabularyForm, RepositoryForm
+
+log = logging.getLogger(__name__)
 
 
 @login_required
@@ -182,7 +186,7 @@ def create_repo(request):
                 repo,
                 GroupTypes.repo_administrator
             )
-            return redirect(reverse("listing", args=(repo.slug,)))
+            return redirect(reverse("repositories", args=(repo.slug,)))
     return render(
         request,
         "create_repo.html",
@@ -190,34 +194,31 @@ def create_repo(request):
     )
 
 
-@login_required
-def listing(request, repo_slug):
-    """
-    View available LearningResources by repository.
-    """
-    # Enforce repository access restrictions.
+class RepositoryView(SearchView):
+    """Subclass of haystack.views.SearchView"""
 
-    # may work better as a database query, not likely a bottleneck though
-    repos = get_repos(request.user.id)
-    if repo_slug not in set([x.slug for x in repos]):
-        return HttpResponseForbidden("unauthorized")
-    repo = [x for x in repos if x.slug == repo_slug][0]
-    page = int(request.GET.get("page", "1"))
-    context = {
-        "repo_id": repo.id,
-        "repo_slug": repo.slug,
-        "repo": repo,
-        "courses": get_repo_courses(repo.id),
-        "runs": get_runs(repo.id),
-        "tags": get_user_tags(repo.id),
-        "resources": Paginator(
-            get_resources(repo.id), 20).page(page)
-    }
-    return render(
-        request,
-        "listing.html",
-        context,
-    )
+    # pylint: disable=arguments-differ
+    # We need the extra kwarg.
+    def __call__(self, request, repo_slug):
+        # Get arguments from the URL
+        # pylint: disable=attribute-defined-outside-init
+        # It's a subclass of an external class, so we don't have
+        # repo_slug in __init__.
+        repos = get_repos(request.user.id)
+        if repo_slug not in set([x.slug for x in repos]):
+            return HttpResponseForbidden("unauthorized")
+        self.repo = [x for x in repos if x.slug == repo_slug][0]
+        return super(RepositoryView, self).__call__(request)
+
+    def extra_context(self):
+        """Add to the context."""
+        context = {
+            "repo": self.repo,
+            "courses": get_repo_courses(self.repo.id),
+            "runs": get_runs(self.repo.id),
+            "tags": get_user_tags(self.repo.id),
+        }
+        return context
 
 
 @login_required
