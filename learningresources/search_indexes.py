@@ -3,19 +3,19 @@ Index information for Haystack.
 
 http://django-haystack.readthedocs.org/en/latest/tutorial.html
 """
-from haystack.indexes import (
-    SearchIndex, Indexable, CharField
-)  # pragma: no cover
 
-from learningresources.models import LearningResource  # pragma: no cover
+from haystack import indexes
+
+from learningresources.models import LearningResource
 
 
-class LearningResourceIndex(SearchIndex, Indexable):  # pragma: no cover
+class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     """
     Index configuration for the LearningResource model.
     """
-    text = CharField(
+    text = indexes.CharField(
         document=True, model_attr="content_xml", use_template=True)
+    resource_type = indexes.CharField(model_attr="learning_resource_type")
 
     def get_model(self):
         """Return the model for which this configures indexing."""
