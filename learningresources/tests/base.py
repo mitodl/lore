@@ -3,7 +3,13 @@ A subclass of the Django TestCase which handles
 often-needed features, like creating an authenticated
 test client.
 """
+import os
+from os.path import abspath, dirname, join
+import uuid
 
+from django.conf import settings
+from django.contrib.auth.models import User, Permission
+from django.core.files.storage import default_storage
 from django.test import Client
 from django.test.testcases import TestCase
 from django.contrib.auth.models import User, Permission
@@ -76,3 +82,60 @@ class LoreTestCase(TestCase):
         for key, _ in haystack.connections.connections_info.items():
             haystack.connections.reload(key)
         call_command('clear_index', interactive=False, verbosity=0)
+    def copy_file(self, path):
+        """
+        Copy given file into django default_storage.
+
+        Args:
+            path (str): Path to file to copy
+
+        Returns:
+            path (str): default_storage path to copy
+        """
+        if path.endswith('.tar.gz'):
+            ext = '.tar.gz'
+        else:
+            _, ext = os.path.splitext(path)
+
+        copied_path = default_storage.save(
+            '{prefix}/{random}{ext}'.format(
+                prefix=settings.IMPORT_PATH_PREFIX,
+                random=str(uuid.uuid4()),
+                ext=ext
+            ),
+            open(path, 'rb')
+        )
+        self.addCleanup(default_storage.delete, copied_path)
+        return copied_path
+
+    def get_course_zip(self):
+        """
+        Get the path to the demo course. Creates a copy, because the
+        importer deletes the file during cleanup.
+
+        Returns:
+            path (unicode): absolute path to zip file
+        """
+        path = join(abspath(dirname(__file__)), "testdata", "courses")
+        return self.copy_file(join(path, "simple.zip"))
+
+    def get_course_multiple_zip(self):
+        """
+        Get the path to the demo course. Creates a copy, because the
+        importer deletes the file during cleanup.
+
+        Returns:
+            path (unicode): absolute path to zip file
+        """
+        path = join(abspath(dirname(__file__)), "testdata", "courses")
+        return self.copy_file(join(path, "two_courses.tar.gz"))
+
+    def get_course_single_tarball(self):
+        """
+        Get the path to a course with course.xml in the root
+        of the archive.
+        Returns:
+            path (unicode): absolute path to tarball.
+        """
+        path = join(abspath(dirname(__file__)), "testdata", "courses")
+        return self.copy_file(join(path, "single.tgz"))

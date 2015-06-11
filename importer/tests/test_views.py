@@ -13,8 +13,6 @@ from learningresources.tests.base import LoreTestCase
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.api import GroupTypes
 
-from .test_import import get_course_zip
-
 HTTP_OK = 200
 UNAUTHORIZED = 403
 NOT_FOUND = 404
@@ -144,7 +142,7 @@ class TestViews(LoreTestCase):
 
     def upload_test_file(self):
         """Used multiple times in tests"""
-        with default_storage.open(get_course_zip(), "rb") as post_file:
+        with default_storage.open(self.get_course_zip(), "rb") as post_file:
             resp = self.client.post(
                 self.import_url_slug,
                 {"course_file": post_file, "repository": self.repo.id},

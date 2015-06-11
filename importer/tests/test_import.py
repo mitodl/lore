@@ -5,12 +5,9 @@ Tests for LORE imports.
 from __future__ import unicode_literals
 
 import os
-from os.path import abspath, dirname, join
 from tempfile import mkstemp
-import uuid
 import zipfile
 
-from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 
@@ -19,66 +16,6 @@ from importer.tasks import import_file
 from learningresources.api import get_resources
 from learningresources.models import Course
 from learningresources.tests.base import LoreTestCase
-
-
-def copy_file(path):
-    """
-    Copy given file into django default_storage.
-
-    Args:
-        path (str): Path to file to copy
-
-    Returns:
-        path (str): default_storage path to copy
-    """
-    if path.endswith('.tar.gz'):
-        ext = '.tar.gz'
-    else:
-        _, ext = os.path.splitext(path)
-
-    return default_storage.save(
-        '{prefix}/{random}{ext}'.format(
-            prefix=settings.IMPORT_PATH_PREFIX,
-            random=str(uuid.uuid4()),
-            ext=ext
-        ),
-        open(path, 'rb')
-    )
-
-
-def get_course_zip():
-    """
-    Get the path to the demo course. Creates a copy, because the
-    importer deletes the file during cleanup.
-
-    Returns:
-        path (unicode): absolute path to zip file
-    """
-    path = join(abspath(dirname(__file__)), "testdata", "courses")
-    return copy_file(join(path, "simple.zip"))
-
-
-def get_course_multiple_zip():
-    """
-    Get the path to the demo course. Creates a copy, because the
-    importer deletes the file during cleanup.
-
-    Returns:
-        path (unicode): absolute path to zip file
-    """
-    path = join(abspath(dirname(__file__)), "testdata", "courses")
-    return copy_file(join(path, "two_courses.tar.gz"))
-
-
-def get_course_single_tarball():
-    """
-    Get the path to a course with course.xml in the root
-    of the archive.
-    Returns:
-        path (unicode): absolute path to tarball.
-    """
-    path = join(abspath(dirname(__file__)), "testdata", "courses")
-    return copy_file(join(path, "single.tgz"))
 
 
 class TestImportToy(LoreTestCase):
@@ -92,7 +29,7 @@ class TestImportToy(LoreTestCase):
         Return location of the local copy of the "simple" course for testing.
         """
         super(TestImportToy, self).setUp()
-        self.course_zip = get_course_zip()
+        self.course_zip = self.get_course_zip()
         self.bad_file = default_storage.save('bad_file', ContentFile(''))
         self.addCleanup(default_storage.delete, self.bad_file)
 
@@ -123,7 +60,7 @@ class TestImportToy(LoreTestCase):
         """
         self.assertTrue(Course.objects.count() == 0)
         import_course_from_file(
-            get_course_multiple_zip(), self.repo.id, self.user.id)
+            self.get_course_multiple_zip(), self.repo.id, self.user.id)
         self.assertTrue(Course.objects.count() == 2)
 
     def test_invalid_file(self):
@@ -147,7 +84,7 @@ class TestImportToy(LoreTestCase):
         """
         self.assertTrue(Course.objects.count() == 0)
         import_course_from_file(
-            get_course_single_tarball(), self.repo.id, self.user.id)
+            self.get_course_single_tarball(), self.repo.id, self.user.id)
         self.assertTrue(Course.objects.count() == 1)
 
     def test_import_task(self):
@@ -156,5 +93,5 @@ class TestImportToy(LoreTestCase):
         """
         self.assertTrue(Course.objects.count() == 0)
         import_file(
-            get_course_single_tarball(), self.repo.id, self.user.id)
+            self.get_course_single_tarball(), self.repo.id, self.user.id)
         self.assertTrue(Course.objects.count() == 1)
