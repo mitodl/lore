@@ -1,3 +1,6 @@
 {{ object.title }}
 {{ object.description }}
 {{ object.LearningResourceType.name }}
+{{ object.Course.course_number }}
+{{ object.Course.Repository.name }}
+{{ object.Course.Repository.id }}

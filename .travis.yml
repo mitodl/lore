@@ -19,3 +19,7 @@ deploy:
     repo: mitodl/lore
     branch: master
   run: "python manage.py migrate --noinput"
+services:
+  - elasticsearch
+before_script:
+  - sleep 10

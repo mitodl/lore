@@ -10,5 +10,5 @@
   {% endblock %}
 
   {% block extranavbarright %}
-  <span class="text-repo-name">Repository: <a href="{% url 'listing' repo.slug %}">{{ repo.name }}</a></span>
+  <span class="text-repo-name">Repository: <a href="{% url 'repositories' repo.slug %}">{{ repo.name }}</a></span>
   {% endblock %}

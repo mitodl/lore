@@ -3,13 +3,17 @@
 {% block content %}
     <div id="header"></div>
     <div class="col-md-3">
+        <form method="GET" action="{% url 'repositories' repo.slug %}">
+            {{ form.as_table }}
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
     </div>
     <div class="col-md-9 col-results">
         <div class="row grid-row-top">
             <div class="col-md-5"></div>
             <div class="col-md-7 text-right"></div>
         </div>
-        {% for resource in resources %}
+        {% for result in page.object_list %}
             <div class="row">
                 <div class="col-md-10">
                     <div class="tile">
@@ -19,9 +23,9 @@
                         </div>
                         <div class="tile-content">
                             <h2>
-                                <a href="{% url 'export' resource.id %}">
-                                    {% if resource.title %}
-                                        {{ resource.title }}
+                                <a href="{% url 'export' result.object.id %}">
+                                    {% if result.object.title %}
+                                        {{ result.object.title }}
                                     {% else %}
                                         no title
                                     {% endif %}
@@ -31,8 +35,8 @@
                             <div class="tile-blurb"> Description .. should be editable by user
                             </div>
                             <div class="tile-meta">
-                                <span class="meta-item">{{ resource.course.course_number }}</span>
-                                <span class="meta-item">{{ resource.course.run }}</span>
+                                <span class="meta-item">{{ result.object.course.course_number }}</span>
+                                <span class="meta-item">{{ result.object.course.run }}</span>
                             </div>
                         </div>
                     </div>
@@ -44,14 +48,14 @@
     <div class="row">
         <div class="col-md-12">
             <div class="lore-pagination">
-                {% if resources.has_other_pages %}
-                    {% if resources.has_previous %}
-                        <a href="{% url 'listing' repo.slug %}?page={{ resources.previous_page_number }}"><i
+                {% if page.has_other_pages %}
+                    {% if page.has_previous %}
+                        <a href="{% url 'repositories' repo.slug %}?page={{ page.previous_page_number }}"><i
                                 class="fa fa-angle-left"></i></a>
                     {% endif %}
 
-                    {% if resources.has_next %}
-                        <a href="{% url 'listing' repo.slug %}?page={{ resources.next_page_number }}"><i
+                    {% if page.has_next %}
+                        <a href="{% url 'repositories' repo.slug %}?page={{ page.next_page_number }}"><i
                                 class="fa fa-angle-right"></i></a>
                     {% endif %}
                 {% endif %}
