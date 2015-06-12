@@ -86,6 +86,7 @@ INSTALLED_APPS = (
     'ui',
     'taxonomy',
     'haystack',
+    'search'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -280,3 +281,4 @@ HAYSTACK_CONNECTIONS = {
         'INDEX_NAME': 'haystack'
     }
 }
+HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'

@@ -20,8 +20,6 @@ from learningresources.models import (
 )
 from roles.permissions import RepoPermission
 
-TYPE_LOOKUP = {}
-
 log = logging.getLogger(__name__)
 
 
@@ -101,12 +99,9 @@ def type_id_by_name(name):
     Returns:
         type_id (int): Primary key of learningresources.LearningResourceType
     """
-    if name in TYPE_LOOKUP:
-        return TYPE_LOOKUP[name]
     with transaction.atomic():
         obj, _ = LearningResourceType.objects.get_or_create(name=name.lower())
-    TYPE_LOOKUP[name] = obj.id
-    return obj.id
+        return obj.id
 
 
 def get_repos(user_id):

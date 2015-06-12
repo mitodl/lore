@@ -4,6 +4,9 @@ Test api functions.
 
 from __future__ import unicode_literals
 
+import logging
+
+from django.http.response import HttpResponseForbidden
 from django.http.response import Http404
 from django.core.exceptions import PermissionDenied
 
@@ -15,6 +18,8 @@ from importer.tests.test_import import get_course_single_tarball
 from importer.api import import_course_from_file
 
 from .base import LoreTestCase
+
+log = logging.getLogger(__name__)
 
 
 class TestCreateCourse(LoreTestCase):
@@ -80,6 +85,14 @@ class TestResources(LoreTestCase):
                 get_resource(resource_id, self.user.id),
                 LearningResource
             )
+        )
+
+    def test_get_missing_resource(self):
+        """Get a resource"""
+        resource_id = LearningResource.objects.all()[0].id
+        self.assertEqual(
+            HttpResponseForbidden,
+            get_resource(resource_id, self.user_norepo.id)
         )
 
 

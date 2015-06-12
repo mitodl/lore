@@ -12,7 +12,8 @@ import zipfile
 
 from importer.api import import_course_from_file
 from importer.tasks import import_file
-from learningresources.models import LearningResource, Course
+from learningresources.api import get_resources
+from learningresources.models import Course
 from learningresources.tests.base import LoreTestCase
 
 
@@ -86,10 +87,10 @@ class TestImportToy(LoreTestCase):
         """
         Simplest possible test.
         """
-        self.assertTrue(LearningResource.objects.count() == 0)
+        self.assertTrue(get_resources(self.repo.id).count() == 0)
         self.assertTrue(Course.objects.count() == 0)
         import_course_from_file(self.course_zip, self.repo.id, self.user.id)
-        self.assertTrue(LearningResource.objects.count() == 5)
+        self.assertTrue(get_resources(self.repo.id).count() == 5)
         self.assertTrue(Course.objects.count() == 1)
 
     def test_import_multiple(self):

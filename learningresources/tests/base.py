@@ -7,6 +7,8 @@ test client.
 from django.test import Client
 from django.test.testcases import TestCase
 from django.contrib.auth.models import User, Permission
+from django.core.management import call_command
+import haystack
 
 from learningresources.models import Repository
 from learningresources.api import create_repo
@@ -60,7 +62,6 @@ class LoreTestCase(TestCase):
             description="just a test",
             user_id=self.user.id,
         )
-
         assign_user_to_repo_group(
             self.user,
             self.repo,
@@ -69,3 +70,9 @@ class LoreTestCase(TestCase):
 
         self.client = Client()
         self.login(username=self.USERNAME)
+
+    def tearDown(self):
+        """Clean up Elasticsearch between tests."""
+        for key, _ in haystack.connections.connections_info.items():
+            haystack.connections.reload(key)
+        call_command('clear_index', interactive=False, verbosity=0)
