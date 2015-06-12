@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 from learningresources.models import Course, LearningResource
 from learningresources.api import create_course, get_resource
-from importer.tests.test_import import get_course_single_tarball
 from importer.api import import_course_from_file
 
 from .base import LoreTestCase
@@ -65,7 +64,7 @@ class TestResources(LoreTestCase):
         """
         super(TestResources, self).setUp()
         import_course_from_file(
-            get_course_single_tarball(), self.repo.id, self.user.id)
+            self.get_course_single_tarball(), self.repo.id, self.user.id)
 
     def test_get_resource(self):
         """Get a resource"""

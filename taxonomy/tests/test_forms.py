@@ -11,7 +11,6 @@ from taxonomy.models import Vocabulary
 from taxonomy.api import create_vocabulary
 from learningresources.models import LearningResourceType
 from importer.api import import_course_from_file
-from importer.tests.test_import import get_course_zip
 
 from learningresources.models import Repository
 from learningresources.tests.base import LoreTestCase
@@ -25,8 +24,11 @@ class TestForms(LoreTestCase):
         Initialize
         """
         super(TestForms, self).setUp()
-        import_course_from_file(get_course_zip(), self.repo.id, self.user.id)
-
+        import_course_from_file(
+            self.get_course_zip(),
+            self.repo.id,
+            self.user.id
+        )
         self.video_type, _ = LearningResourceType.objects.get_or_create(
             name="video")
 
