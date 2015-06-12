@@ -29,13 +29,13 @@ class TestRoleApi(LoreTestCase):
         self.repo_name2 = 'other test repo'
         self.repo_desc2 = 'other test description'
         self.repo_slug2 = slugify(self.repo_name2)
-        self.group_admin = GroupTypes.repo_administrator.format(self.repo_slug)
-        self.group_curator = GroupTypes.repo_curator.format(self.repo_slug)
-        self.group_author = GroupTypes.repo_author.format(self.repo_slug)
-        self.group_admin2 = GroupTypes.repo_administrator.format(
+        self.group_admin = GroupTypes.REPO_ADMINISTRATOR.format(self.repo_slug)
+        self.group_curator = GroupTypes.REPO_CURATOR.format(self.repo_slug)
+        self.group_author = GroupTypes.REPO_AUTHOR.format(self.repo_slug)
+        self.group_admin2 = GroupTypes.REPO_ADMINISTRATOR.format(
             self.repo_slug2)
-        self.group_curator2 = GroupTypes.repo_curator.format(self.repo_slug2)
-        self.group_author2 = GroupTypes.repo_author.format(self.repo_slug2)
+        self.group_curator2 = GroupTypes.REPO_CURATOR.format(self.repo_slug2)
+        self.group_author2 = GroupTypes.REPO_AUTHOR.format(self.repo_slug2)
 
     def test_roles_init_new_repo_1(self):
         """
@@ -157,7 +157,7 @@ class TestRoleApi(LoreTestCase):
         api.assign_user_to_repo_group(
             self.user,
             repo,
-            group_type=GroupTypes.repo_administrator
+            group_type=GroupTypes.REPO_ADMINISTRATOR
         )
         self.assertIn(self.user, admin.user_set.all())
         self.assertNotIn(self.user, curator.user_set.all())
@@ -167,7 +167,7 @@ class TestRoleApi(LoreTestCase):
         api.assign_user_to_repo_group(
             self.user,
             repo,
-            group_type=GroupTypes.repo_curator
+            group_type=GroupTypes.REPO_CURATOR
         )
         self.assertNotIn(self.user, admin.user_set.all())
         self.assertIn(self.user, curator.user_set.all())
@@ -177,9 +177,34 @@ class TestRoleApi(LoreTestCase):
         api.assign_user_to_repo_group(
             self.user,
             repo,
-            group_type=GroupTypes.repo_author
+            group_type=GroupTypes.REPO_AUTHOR
         )
         self.assertNotIn(self.user, admin.user_set.all())
         self.assertNotIn(self.user, curator.user_set.all())
         self.assertIn(self.user, author.user_set.all())
         author.user_set.clear()
+
+    def test_remove_user_from_group(self):
+        """
+        Test for api.remove_user_from_repo_group
+        """
+        repo = Repository.objects.create(
+            name=self.repo_name,
+            description=self.repo_desc,
+            created_by=self.user
+        )
+        admin = Group.objects.get(name=self.group_admin)
+
+        api.assign_user_to_repo_group(
+            self.user,
+            repo,
+            group_type=GroupTypes.REPO_ADMINISTRATOR
+        )
+        self.assertIn(self.user, admin.user_set.all())
+
+        api.remove_user_from_repo_group(
+            self.user,
+            repo,
+            group_type=GroupTypes.REPO_ADMINISTRATOR
+        )
+        self.assertNotIn(self.user, admin.user_set.all())

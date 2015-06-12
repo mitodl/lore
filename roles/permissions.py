@@ -9,9 +9,9 @@ class GroupTypes(object):
     """
     Definition of generic group names
     """
-    repo_administrator = '{}_repo_administrators'
-    repo_curator = '{}_repo_curators'
-    repo_author = '{}_repo_authors'
+    REPO_ADMINISTRATOR = '{}_repo_administrators'
+    REPO_CURATOR = '{}_repo_curators'
+    REPO_AUTHOR = '{}_repo_authors'
 
 
 class RepoPermission(object):

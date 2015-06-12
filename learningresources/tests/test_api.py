@@ -4,8 +4,13 @@ Test api functions.
 
 from __future__ import unicode_literals
 
+from django.http.response import Http404
+from django.core.exceptions import PermissionDenied
+
 from learningresources.models import Course, LearningResource
-from learningresources.api import create_course, get_resource
+from learningresources.api import (
+    create_course, get_resource, get_repo_or_error
+)
 from importer.tests.test_import import get_course_single_tarball
 from importer.api import import_course_from_file
 
@@ -75,6 +80,28 @@ class TestResources(LoreTestCase):
                 get_resource(resource_id, self.user.id),
                 LearningResource
             )
+        )
+
+
+class TestRepoAPI(LoreTestCase):
+    """
+    Tests repo getters
+    """
+    def test_get_repo_or_error(self):
+        """repo does not exist"""
+        # this should not fail
+        get_repo_or_error(self.repo.slug, self.user.id)
+        self.assertRaises(
+            Http404,
+            get_repo_or_error,
+            "nonexistent_repo",
+            self.user.id
+        )
+        self.assertRaises(
+            PermissionDenied,
+            get_repo_or_error,
+            self.repo.slug,
+            self.user_norepo.id
         )
 
 

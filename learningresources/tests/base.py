@@ -35,6 +35,13 @@ class LoreTestCase(TestCase):
         """just a client logout"""
         self.client.logout()
 
+    def assert_status_code(self, url, code, return_body=False):
+        """Asserts the status code of GET attempt"""
+        resp = self.client.get(url, follow=True)
+        self.assertTrue(resp.status_code == code)
+        if return_body:
+            return resp.content.decode("utf-8")
+
     def setUp(self):
         """set up"""
         super(LoreTestCase, self).setUp()
@@ -54,9 +61,11 @@ class LoreTestCase(TestCase):
             user_id=self.user.id,
         )
 
-        assign_user_to_repo_group(self.user,
-                                  self.repo,
-                                  GroupTypes.repo_administrator)
+        assign_user_to_repo_group(
+            self.user,
+            self.repo,
+            GroupTypes.REPO_ADMINISTRATOR
+        )
 
         self.client = Client()
         self.login(username=self.USERNAME)

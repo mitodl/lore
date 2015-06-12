@@ -28,13 +28,13 @@ def roles_init_new_repo(repo):
     """
     with transaction.atomic():
         administrator_group, _ = Group.objects.get_or_create(
-            name=GroupTypes.repo_administrator.format(repo.slug)
+            name=GroupTypes.REPO_ADMINISTRATOR.format(repo.slug)
         )
         curator_group, _ = Group.objects.get_or_create(
-            name=GroupTypes.repo_curator.format(repo.slug)
+            name=GroupTypes.REPO_CURATOR.format(repo.slug)
         )
         author_group, _ = Group.objects.get_or_create(
-            name=GroupTypes.repo_author.format(repo.slug)
+            name=GroupTypes.REPO_AUTHOR.format(repo.slug)
         )
 
     with transaction.atomic():
@@ -66,17 +66,17 @@ def roles_update_repo(repo, old_slug):
         return
     with transaction.atomic():
         administrator_group, _ = Group.objects.get_or_create(
-            name=GroupTypes.repo_administrator.format(old_slug)
+            name=GroupTypes.REPO_ADMINISTRATOR.format(old_slug)
         )
         curator_group, _ = Group.objects.get_or_create(
-            name=GroupTypes.repo_curator.format(old_slug)
+            name=GroupTypes.REPO_CURATOR.format(old_slug)
         )
         author_group, _ = Group.objects.get_or_create(
-            name=GroupTypes.repo_author.format(old_slug)
+            name=GroupTypes.REPO_AUTHOR.format(old_slug)
         )
-    administrator_group.name = GroupTypes.repo_administrator.format(repo.slug)
-    curator_group.name = GroupTypes.repo_curator.format(repo.slug)
-    author_group.name = GroupTypes.repo_author.format(repo.slug)
+    administrator_group.name = GroupTypes.REPO_ADMINISTRATOR.format(repo.slug)
+    curator_group.name = GroupTypes.REPO_CURATOR.format(repo.slug)
+    author_group.name = GroupTypes.REPO_AUTHOR.format(repo.slug)
     with transaction.atomic():
         administrator_group.save()
         curator_group.save()
@@ -102,4 +102,26 @@ def assign_user_to_repo_group(
     with transaction.atomic():
         repo_group = Group.objects.get(name=group_type.format(repo.slug))
         user.groups.add(repo_group)
+        user.save()
+
+
+def remove_user_from_repo_group(
+        user,
+        repo,
+        group_type):
+    """
+    Remove an user to from a repo specific group type
+
+    Args:
+        user (django.contrib.auth.models.User): user
+        repo (learningresources.models.Repository): repository used to extract
+            the right group to use
+        group_type (roles.permissions.GroupTypes): group string to be used to
+            construct the group name
+    Returns:
+        None
+    """
+    with transaction.atomic():
+        repo_group = Group.objects.get(name=group_type.format(repo.slug))
+        user.groups.remove(repo_group)
         user.save()
