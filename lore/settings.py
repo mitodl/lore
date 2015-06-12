@@ -12,6 +12,7 @@ import os
 import platform
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 import yaml
 
 CONFIG_PATHS = [
@@ -78,6 +79,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'storages',
     'compressor',
     'bootstrap3',
     'guardian',
@@ -175,6 +177,32 @@ COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
 )
 
+# Media and storage settings
+IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
+MEDIA_ROOT = get_var('MEDIA_ROOT', '/tmp/')
+LORE_USE_S3 = get_var('LORE_USE_S3', False)
+AWS_ACCESS_KEY_ID = get_var('AWS_ACCESS_KEY_ID', False)
+AWS_SECRET_ACCESS_KEY = get_var('AWS_SECRET_ACCESS_KEY', False)
+AWS_STORAGE_BUCKET_NAME = get_var('AWS_STORAGE_BUCKET_NAME', False)
+# Provide nice validation of the configuration
+if(
+        LORE_USE_S3 and
+        (not AWS_ACCESS_KEY_ID or
+         not AWS_SECRET_ACCESS_KEY or
+         not AWS_STORAGE_BUCKET_NAME)
+):
+    raise ImproperlyConfigured(
+        'You have enabled S3 support, but are missing one of '
+        'AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or '
+        'AWS_STORAGE_BUCKET_NAME'
+    )
+# Swap the storage
+if LORE_USE_S3:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
+else:
+    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+
+
 # Configure e-mail settings
 EMAIL_HOST = get_var('LORE_EMAIL_HOST', 'localhost')
 EMAIL_PORT = get_var('LORE_EMAIL_PORT', 25)
@@ -187,6 +215,8 @@ DEFAULT_FROM_EMAIL = get_var('LORE_FROM_EMAIL', 'webmaster@localhost')
 ADMIN_EMAIL = get_var('LORE_ADMIN_EMAIL', '')
 if ADMIN_EMAIL is not '':
     ADMINS = (('Admins', ADMIN_EMAIL),)
+else:
+    ADMINS = ()
 
 CAS_ENABLED = get_var('LORE_USE_CAS', False)
 CAS_SERVER_URL = get_var(

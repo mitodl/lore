@@ -8,11 +8,12 @@ from shutil import rmtree
 import logging
 from tempfile import mkdtemp
 from os.path import join, exists
-from os import remove, listdir
+from os import listdir
 
-from xbundle import XBundle, DESCRIPTOR_TAGS
+from archive import Archive, ArchiveException
+from django.core.files.storage import default_storage
 from lxml import etree
-from archive import extract, ArchiveException
+from xbundle import XBundle, DESCRIPTOR_TAGS
 
 from learningresources.api import create_course, create_resource
 
@@ -40,25 +41,39 @@ def import_course_from_file(filename, repo_id, user_id):
 
     """
     tempdir = mkdtemp()
+
+    # HACK: Have to patch in "seekable" attribute for python3 and tar
+    # See: https://code.djangoproject.com/ticket/24963#ticket
+    def seekable():
+        """Hacked seekable for django storage to work in python3"""
+        return True
     try:
-        extract(path=filename, to_path=tempdir, method="safe")
-    except ArchiveException as ex:
-        log.debug("failed to extract: %s", ex)
-        remove(filename)
-        raise ValueError("Invalid OLX archive, unable to extract.")
-    course_imported = False
-    if "course.xml" in listdir(tempdir):
-        import_course_from_path(tempdir, repo_id, user_id)
-        course_imported = True
-    else:
-        for path in listdir(tempdir):
-            if exists(join(tempdir, path, 'course.xml')):
-                import_course_from_path(join(tempdir, path), repo_id, user_id)
-                course_imported = True
-    rmtree(tempdir)
-    remove(filename)
-    if course_imported is False:
-        raise ValueError("Invalid OLX archive, no courses found.")
+        course_archive = default_storage.open(filename)
+        course_archive.seekable = seekable
+        try:
+            Archive(
+                course_archive
+            ).extract(to_path=tempdir, method="safe")
+        except ArchiveException as ex:
+            log.debug("failed to extract: %s", ex)
+            log.exception('Archive exception occurred')
+            raise ValueError("Invalid OLX archive, unable to extract.")
+        course_imported = False
+        if "course.xml" in listdir(tempdir):
+            import_course_from_path(tempdir, repo_id, user_id)
+            course_imported = True
+        else:
+            for path in listdir(tempdir):
+                if exists(join(tempdir, path, 'course.xml')):
+                    import_course_from_path(
+                        join(tempdir, path), repo_id, user_id
+                    )
+                    course_imported = True
+        if course_imported is False:
+            raise ValueError("Invalid OLX archive, no courses found.")
+    finally:
+        default_storage.delete(filename)
+        rmtree(tempdir)
 
 
 def import_course_from_path(path, repo_id, user_id):

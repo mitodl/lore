@@ -26,3 +26,6 @@ git+https://github.com/mingchen/django-cas-ng@69463fe7c23f025be7165c2967f4ceb983
 # Importer application requirements
 git+https://github.com/mitodl/xbundle.git@7799a0957c502103fb030fc0b16c64204f551c75#egg=xbundle
 git+https://github.com/gdub/python-archive.git@61b9afde21621a8acce964d3336a7fb5d2d07ca6#egg=python-archive
+django-storages-redux==1.2
+python-magic==0.4.6
+boto>=2.38.0,<3.0.0
