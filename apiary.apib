@@ -6,18 +6,22 @@ HOST: http://lore.mit.edu/
 Simple API on top of MIT LORE application
 
 # URL
-URL Structure is `https://{domain}/api/v1/{resource}/{resourceId}`
+URL Structure is `https://{domain}/api/v1/{resource}/{resource_id}`
 
 | Code   | Description |
 | ---    | --- |
 |`{domain}`    | The domain of the LORE service. `private-b0103d-lore.apiary-mock.com/` is the Apiary mock server. |
 |`/api/v1/`    | The service endpoint includes the current version (v1) |
 |`{resource}`  | The resource endpoint for a specific set of objects in the system. Supported endpoints include repositories, vocabularies, learningresources, members|
-|`{resource_idd}`  |The `resource_id` sets the ID for a specific object to reference |
+|`{resource_id}`  |The `resource_id` sets the unique identifier (name or numerical) for a specific object to reference |
 
 *Example: `http://lore.mit.edu/api/v1/repos` will return a json representation of all repositories.*
 
-*Example: `http://lore.mit.edu/api/v1/repos/123` will return a json representation of the repository with id=123.*
+*Example: `http://lore.mit.edu/api/v1/repos/physics1` will return a json representation of the repository with name "physics1".*
+
+*Example: `http://lore.mit.edu/api/v1/repos/physics1/learningresources/1007` will return a json representation
+of the learning resource with ID= 1007.*
+
 
 # Operations
 LORE API uses the following HTTP verbs
@@ -72,10 +76,10 @@ Page numbering is 1-based. Omitting the ?page parameter will return the first pa
 
 Repository resource
 
-## Repositories [/repos/{repo_id}]
+## Repositories [/repos/{repo_name}]
 
 + Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
+    + repo_name: `physics-intro` (string, required) - name of the repository
 
 ### Retrieve a repository [GET]
 
@@ -105,13 +109,14 @@ Create a repository by providing its JSON representation
 
     + Headers
 
-            Location: /repos/123
+            Location: /repos/physics-intro
 
     + Body
 
             {
-                "name": "Physics 1",
-                "description": "All intro-to-physics courses"
+                "name": "physics-intro",
+                "...": "..."
+                "tbd": "Full json representation of the new repo goes here
             }
 
 
