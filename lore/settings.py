@@ -308,7 +308,7 @@ HAYSTACK_CONNECTIONS = {
             '.ElasticsearchSearchEngine'
         ),
         'URL': get_var('HAYSTACK_URL', 'http://127.0.0.1:9200'),
-        'INDEX_NAME': 'haystack'
+        'INDEX_NAME': get_var('HAYSTACK_INDEX', 'haystack'),
     }
 }
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
