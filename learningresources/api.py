@@ -8,10 +8,8 @@ from __future__ import unicode_literals
 import logging
 
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from django.http.response import HttpResponseForbidden
 
 from guardian.shortcuts import get_objects_for_user, get_perms
 
@@ -21,6 +19,24 @@ from learningresources.models import (
 from roles.permissions import RepoPermission
 
 log = logging.getLogger(__name__)
+
+
+class LearningResourceException(Exception):
+    """Base class for our custom exceptions."""
+    pass
+
+
+class PermissionDenied(LearningResourceException):
+    """
+    Returned by the API when the requested item exists, but the
+    user is not allowed to access it.
+    """
+    pass
+
+
+class NotFound(LearningResourceException):
+    """Returned by the API when the item requested does not exist."""
+    pass
 
 
 def create_course(org, repo_id, course_number, run, user_id):
@@ -121,7 +137,7 @@ def get_repos(user_id):
     )
 
 
-def get_repo_or_error(repo_slug, user_id):
+def get_repo(repo_slug, user_id):
     """
     Get repository for a user if s/he can access it.
     Returns a repository object if it exists or
@@ -138,7 +154,7 @@ def get_repo_or_error(repo_slug, user_id):
     repo = get_object_or_404(Repository, slug=repo_slug)
     if RepoPermission.view_repo[0] in get_perms(user, repo):
         return repo
-    raise PermissionDenied()
+    raise PermissionDenied("user does not have permission for this repository")
 
 
 def get_repo_courses(repo_id):
@@ -237,25 +253,13 @@ def get_resource(resource_id, user_id):
         user_id (int): Primary key of the user requesting the resource
     Returns:
         resource (learningresources.LearningResource): Resource
+            May be None if the resource does not exist or the user does
+            not have permissions.
     """
-    resource = get_object_or_404(LearningResource, id=resource_id)
-    if has_repo(resource.course.repository_id, user_id):
-        return resource
-    return HttpResponseForbidden
-
-
-def has_repo(repo_id, user_id):
-    """
-    Can a user access a repository?
-
-    Returns ``True`` if a user can view a repository,
-    ``False`` if they can not.
-
-    Args:
-        repo_id (int): Primary key of the repository
-        user_id (int): Primary key of the user
-    Returns:
-        bool: If user is allowed to access the repository.
-    """
-    repos = get_repos(user_id)
-    return repo_id in set([x.id for x in repos])
+    try:
+        resource = LearningResource.objects.get(id=resource_id)
+    except LearningResource.DoesNotExist:
+        raise NotFound("LearningResource not found")
+    # This will raise PermissionDenied if it fails.
+    get_repo(resource.course.repository.slug, user_id)
+    return resource

@@ -48,20 +48,28 @@ class TestImportToy(LoreTestCase):
         """
         Simplest possible test.
         """
-        self.assertTrue(get_resources(self.repo.id).count() == 0)
-        self.assertTrue(Course.objects.count() == 0)
+        resource_count = get_resources(self.repo.id).count()
+        course_count = Course.objects.count()
         import_course_from_file(self.course_zip, self.repo.id, self.user.id)
-        self.assertTrue(get_resources(self.repo.id).count() == 5)
-        self.assertTrue(Course.objects.count() == 1)
+        self.assertEqual(
+            get_resources(self.repo.id).count(),
+            resource_count + 5)
+        self.assertEqual(
+            Course.objects.count(),
+            course_count + 1,
+        )
 
     def test_import_multiple(self):
         """
         Simplest possible test.
         """
-        self.assertTrue(Course.objects.count() == 0)
+        original_count = Course.objects.count()
         import_course_from_file(
             self.get_course_multiple_zip(), self.repo.id, self.user.id)
-        self.assertTrue(Course.objects.count() == 2)
+        self.assertEqual(
+            Course.objects.count(),
+            original_count + 2,
+        )
 
     def test_invalid_file(self):
         """Invalid zip file"""
@@ -82,16 +90,22 @@ class TestImportToy(LoreTestCase):
         """
         Single course (course.xml in root of archive).
         """
-        self.assertTrue(Course.objects.count() == 0)
+        original_count = Course.objects.count()
         import_course_from_file(
             self.get_course_single_tarball(), self.repo.id, self.user.id)
-        self.assertTrue(Course.objects.count() == 1)
+        self.assertEqual(
+            Course.objects.count(),
+            original_count + 1,
+        )
 
     def test_import_task(self):
         """
         Copy of test_import_single that just exercises tasks.py.
         """
-        self.assertTrue(Course.objects.count() == 0)
+        original_count = Course.objects.count()
         import_file(
             self.get_course_single_tarball(), self.repo.id, self.user.id)
-        self.assertTrue(Course.objects.count() == 1)
+        self.assertEqual(
+            Course.objects.count(),
+            original_count + 1,
+        )

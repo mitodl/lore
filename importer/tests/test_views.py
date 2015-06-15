@@ -126,19 +126,22 @@ class TestViews(LoreTestCase):
 
     def test_upload_post(self):
         """POST upload page."""
-        self.assertTrue(LearningResource.objects.count() == 0)
+        original_count = LearningResource.objects.count()
         body = self.upload_test_file()
-        self.assertTrue(LearningResource.objects.count() == 5)
+        self.assertEqual(
+            LearningResource.objects.count(),
+            original_count + 5,
+        )
         # We should have been redirected to the Listing page.
         self.assertTrue('Listing</title>' in body)
 
     def test_upload_duplicate(self):
         """Gracefully inform the user."""
-        self.assertTrue(Course.objects.count() == 0)
+        original_count = Course.objects.count()
         self.upload_test_file()
-        self.assertTrue(Course.objects.count() == 1)
+        self.assertTrue(Course.objects.count() == original_count + 1)
         self.upload_test_file()
-        self.assertTrue(Course.objects.count() == 1)
+        self.assertTrue(Course.objects.count() == original_count + 1)
 
     def upload_test_file(self):
         """Used multiple times in tests"""

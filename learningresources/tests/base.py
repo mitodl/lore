@@ -15,7 +15,7 @@ from django.test import Client
 from django.test.testcases import TestCase
 import haystack
 
-from learningresources.api import create_repo
+from learningresources.api import create_repo, create_course, create_resource
 from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes
@@ -67,6 +67,22 @@ class LoreTestCase(TestCase):
             description="just a test",
             user_id=self.user.id,
         )
+        self.course = create_course(
+            org="test org",
+            repo_id=self.repo.id,
+            course_number="infinity",
+            run="Febtober",
+            user_id=self.user.id,
+        )
+        self.resource = create_resource(
+            course=self.course,
+            parent=None,
+            resource_type="example",
+            title="silly example",
+            content_xml="<blah>blah</blah>",
+            mpath="/blah",
+        )
+
         assign_user_to_repo_group(
             self.user,
             self.repo,

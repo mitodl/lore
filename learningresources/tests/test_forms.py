@@ -29,6 +29,6 @@ class TestCourseForm(LoreTestCase):
         }
         form = CourseForm(data)
         self.assertTrue(form.is_valid())
-        self.assertTrue(Course.objects.count() == 0)
+        original_count = Course.objects.count()
         form.save(self.user)
-        self.assertTrue(Course.objects.count() == 1)
+        self.assertTrue(Course.objects.count() == original_count + 1)
