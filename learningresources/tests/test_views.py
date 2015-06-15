@@ -6,6 +6,8 @@ from __future__ import unicode_literals
 
 import logging
 
+from django.core.urlresolvers import reverse
+
 from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
@@ -14,6 +16,7 @@ from .base import LoreTestCase
 
 HTTP_OK = 200
 UNAUTHORIZED = 403
+NOT_FOUND = 404
 
 log = logging.getLogger(__name__)
 
@@ -184,3 +187,25 @@ class TestViews(LoreTestCase):
         body = resp.content.decode("utf-8")
         self.assertTrue("This field is required." in body)
         self.assertTrue(Repository.objects.count() == 1)
+
+    def test_export_good(self):
+        """Get raw XML of something I should be allowed to see."""
+        url = reverse("export", args=(self.resource.id,))
+        resp = self.client.get(url, follow=True)
+        body = resp.content.decode("utf-8")
+        self.assertTrue(resp.status_code == HTTP_OK)
+        self.assertTrue(self.resource.content_xml in body)
+
+    def test_export_no_permission(self):
+        """Get raw XML of something I should not be allowed to see."""
+        url = reverse("export", args=(self.resource.id,))
+        self.logout()
+        self.login(self.USERNAME_NO_REPO)
+        resp = self.client.get(url, follow=True)
+        self.assertTrue(resp.status_code == UNAUTHORIZED)
+
+    def test_export_nonexistent(self):
+        """Get raw XML of something than does not exist."""
+        url = reverse("export", args=(999999,))
+        resp = self.client.get(url, follow=True)
+        self.assertTrue(resp.status_code == NOT_FOUND)

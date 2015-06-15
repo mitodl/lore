@@ -6,8 +6,9 @@ from __future__ import unicode_literals
 import logging
 
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.http.response import HttpResponseForbidden
 from django.shortcuts import (
     render,
@@ -19,8 +20,9 @@ from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import get_perms
 
 from learningresources.api import (
-    get_repo_courses, get_repo_or_error, get_repos,
+    get_repo_courses, get_repo, get_repos,
     get_resource, get_runs, get_user_tags,
+    NotFound, PermissionDenied,
 )
 from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group
@@ -136,7 +138,7 @@ def upload(request, repo_slug):
     """
     Upload a OLX archive.
     """
-    repo = get_repo_or_error(repo_slug, request.user.id)
+    repo = get_repo(repo_slug, request.user.id)
     form = UploadForm()
     if request.method == "POST":
         form = UploadForm(
@@ -240,7 +242,12 @@ class RepositoryView(SearchView):
 @login_required
 def export(request, resource_id):
     """Dump LearningResource as XML"""
-    return HttpResponse(
-        get_resource(resource_id, request.user.id).content_xml,
-        content_type='text/xml'
-    )
+    try:
+        return HttpResponse(
+            get_resource(resource_id, request.user.id).content_xml,
+            content_type='text/xml'
+        )
+    except NotFound:
+        raise Http404()
+    except PermissionDenied:
+        raise DjangoPermissionDenied()

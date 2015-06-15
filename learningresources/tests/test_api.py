@@ -6,13 +6,12 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.http.response import HttpResponseForbidden
 from django.http.response import Http404
-from django.core.exceptions import PermissionDenied
 
 from learningresources.models import Course, LearningResource
 from learningresources.api import (
-    create_course, get_resource, get_repo_or_error
+    create_course, get_resource, get_repo,
+    NotFound, PermissionDenied,
 )
 from importer.api import import_course_from_file
 
@@ -88,30 +87,34 @@ class TestResources(LoreTestCase):
 
     def test_get_missing_resource(self):
         """Get a resource"""
+        resource_id = LearningResource.objects.all().order_by("-id")[0].id + 1
+        with self.assertRaises(NotFound):
+            get_resource(resource_id, self.user.id)
+
+    def test_get_no_permission_resource(self):
+        """Get a resource"""
         resource_id = LearningResource.objects.all()[0].id
-        self.assertEqual(
-            HttpResponseForbidden,
+        with self.assertRaises(PermissionDenied):
             get_resource(resource_id, self.user_norepo.id)
-        )
 
 
 class TestRepoAPI(LoreTestCase):
     """
     Tests repo getters
     """
-    def test_get_repo_or_error(self):
+    def test_get_repo(self):
         """repo does not exist"""
         # this should not fail
-        get_repo_or_error(self.repo.slug, self.user.id)
+        get_repo(self.repo.slug, self.user.id)
         self.assertRaises(
             Http404,
-            get_repo_or_error,
+            get_repo,
             "nonexistent_repo",
             self.user.id
         )
         self.assertRaises(
             PermissionDenied,
-            get_repo_or_error,
+            get_repo,
             self.repo.slug,
             self.user_norepo.id
         )
