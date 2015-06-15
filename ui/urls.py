@@ -37,7 +37,10 @@ urlpatterns = [
         RepositoryView(form_class=SearchForm, template="repositories.html"),
         name='repositories'
     ),
-    url(r'^learningresources/(?P<resource_id>\d+)/$', export, name='export'),
+    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
+        r'learningresources/(?P<resource_id>\d+)/$',
+        export,
+        name='export'),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),
     url(r'^cas/', include(cas_urls)),

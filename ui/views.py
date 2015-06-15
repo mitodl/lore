@@ -239,8 +239,10 @@ class RepositoryView(SearchView):
         return context
 
 
+# pylint: disable=unused-argument
+# repo_slug argument will be used by the decorator to protect the view
 @login_required
-def export(request, resource_id):
+def export(request, repo_slug, resource_id):
     """Dump LearningResource as XML"""
     try:
         return HttpResponse(
