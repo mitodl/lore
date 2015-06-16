@@ -41,6 +41,8 @@ class TestRolePermission(TestCase):
                            'Permission to manage repository taxonomy')
         add_edit_metadata = ('add_edit_metadata',
                              'Permission to add or edit metadata')
+        manage_repo_users = ('manage_repo_users',
+                             'Permission manage users for the repository')
         self.assertEqual(
             RepoPermission.view_repo,
             view_repo
@@ -57,17 +59,33 @@ class TestRolePermission(TestCase):
             RepoPermission.add_edit_metadata,
             add_edit_metadata
         )
+        self.assertEqual(
+            RepoPermission.manage_repo_users,
+            manage_repo_users
+        )
         self.assertListEqual(
             RepoPermission.administrator_permissions(),
-            [view_repo[0], import_course[0],
-             manage_taxonomy[0], add_edit_metadata[0]]
+            [
+                view_repo[0],
+                import_course[0],
+                manage_taxonomy[0],
+                add_edit_metadata[0],
+                manage_repo_users[0]
+            ]
         )
         self.assertListEqual(
             RepoPermission.curator_permissions(),
-            [view_repo[0], import_course[0],
-             manage_taxonomy[0], add_edit_metadata[0]]
+            [
+                view_repo[0],
+                import_course[0],
+                manage_taxonomy[0],
+                add_edit_metadata[0]
+            ]
         )
         self.assertListEqual(
             RepoPermission.author_permissions(),
-            [view_repo[0], add_edit_metadata[0]]
+            [
+                view_repo[0],
+                add_edit_metadata[0]
+            ]
         )

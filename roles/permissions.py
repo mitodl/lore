@@ -26,6 +26,8 @@ class RepoPermission(object):
                        'Permission to manage repository taxonomy')
     add_edit_metadata = ('add_edit_metadata',
                          'Permission to add or edit metadata')
+    manage_repo_users = ('manage_repo_users',
+                         'Permission manage users for the repository')
 
     @classmethod
     def administrator_permissions(cls):
@@ -37,6 +39,7 @@ class RepoPermission(object):
             cls.import_course[0],
             cls.manage_taxonomy[0],
             cls.add_edit_metadata[0],
+            cls.manage_repo_users[0],
         ]
 
     @classmethod

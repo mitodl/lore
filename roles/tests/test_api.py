@@ -7,7 +7,10 @@ from __future__ import unicode_literals
 from django.contrib.auth.models import Group
 from django.utils.text import slugify
 from guardian.core import ObjectPermissionChecker
+from guardian.shortcuts import get_perms
+from mock import patch
 
+from learningresources.api import create_repo
 from learningresources.models import Repository
 from learningresources.tests.base import LoreTestCase
 from roles import api
@@ -20,7 +23,8 @@ class TestRoleApi(LoreTestCase):
     roles_init_new_repo is tested indirectly from
     the repository model where it is called
     """
-    # pylint: disable=too-many-instance-attributes
+    # there are too many self assignment in the init: disabling the check
+    # pylint: disable=too-many-instance-attributes, invalid-name
     def __init__(self, *args, **kwargs):
         super(TestRoleApi, self).__init__(*args, **kwargs)
         self.repo_name = 'my little+test repo'
@@ -75,6 +79,60 @@ class TestRoleApi(LoreTestCase):
             sorted(checker_author.get_perms(repo)),
             sorted(RepoPermission.author_permissions())
         )
+
+    def test_roles_init_new_repo_fake_permission_admin(self):
+        """
+        Non existing permissions for admin
+        """
+        with patch.object(api.RepoPermission,
+                          'administrator_permissions') as mock_method:
+            mock_method.return_value = ['fake_permission']
+            repo = create_repo(
+                name=self.repo_name,
+                description=self.repo_desc,
+                user_id=self.user.id,
+            )
+            admin = Group.objects.get(name=self.group_admin)
+            self.assertListEqual(
+                get_perms(admin, repo),
+                []
+            )
+
+    def test_roles_init_new_repo_fake_permission_curator(self):
+        """
+        Non existing permissions for curator
+        """
+        with patch.object(api.RepoPermission,
+                          'curator_permissions') as mock_method:
+            mock_method.return_value = ['fake_permission']
+            repo = create_repo(
+                name=self.repo_name,
+                description=self.repo_desc,
+                user_id=self.user.id,
+            )
+            curator = Group.objects.get(name=self.group_curator)
+            self.assertListEqual(
+                get_perms(curator, repo),
+                []
+            )
+
+    def test_roles_init_new_repo_fake_permission_author(self):
+        """
+        Non existing permissions for author
+        """
+        with patch.object(api.RepoPermission,
+                          'author_permissions') as mock_method:
+            mock_method.return_value = ['fake_permission']
+            repo = create_repo(
+                name=self.repo_name,
+                description=self.repo_desc,
+                user_id=self.user.id,
+            )
+            author = Group.objects.get(name=self.group_author)
+            self.assertListEqual(
+                get_perms(author, repo),
+                []
+            )
 
     def test_roles_update_repo_1(self):
         """
@@ -208,3 +266,17 @@ class TestRoleApi(LoreTestCase):
             group_type=GroupTypes.REPO_ADMINISTRATOR
         )
         self.assertNotIn(self.user, admin.user_set.all())
+
+    def test_clear_permissions(self):
+        """
+        Test for roles_clear_repo_permissions
+        """
+        self.assertListEqual(
+            sorted(get_perms(self.user, self.repo)),
+            sorted(RepoPermission.administrator_permissions())
+        )
+        api.roles_clear_repo_permissions(self.repo)
+        self.assertListEqual(
+            get_perms(self.user, self.repo),
+            []
+        )
