@@ -23,3 +23,7 @@ services:
   - elasticsearch
 before_script:
   - sleep 10
+notifications:
+  slack:
+    secure: Lf8X2Q4UZXyGunzF5vOYPs0G3quCNFqi67UmpKBJOmX0n6mlBCAtcMFeiVunZKZ1onC6AD0rZnGj77SsIV0p6u57vp6LjMSfl8xbDz10HO+1Pw+hVlnI+dFcAeto67IVhLLm67rpbwjTXoEOTXbdZCtS/a+fWnIKnGRJIysqebE=
+
