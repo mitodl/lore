@@ -146,8 +146,8 @@ class TestViews(LoreTestCase):
         body = resp.content.decode("utf-8")
         self.assertTrue('<h1>Create repository</h1>' in body)
 
-    def test_upload_post(self):
-        """POST upload page."""
+    def test_repo_post(self):
+        """POST repo page."""
         # We have the default self.repo in the database...
         self.assertTrue(Repository.objects.count() == 1)
         self.client.post(
@@ -157,7 +157,7 @@ class TestViews(LoreTestCase):
         )
         self.assertTrue(Repository.objects.count() == 2)
 
-    def test_upload_dupe_slug(self):
+    def test_repo_dupe_slug(self):
         """slug must be unique"""
         # We have the default self.repo in the database...
         slug = "awesome-repo"
