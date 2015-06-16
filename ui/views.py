@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 import logging
 
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404
 from django.http.response import HttpResponseForbidden
@@ -22,7 +21,7 @@ from guardian.shortcuts import get_perms
 from learningresources.api import (
     get_repo_courses, get_repo, get_repos,
     get_resource, get_runs, get_user_tags,
-    NotFound, PermissionDenied,
+    NotFound
 )
 from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group
@@ -242,6 +241,16 @@ class RepositoryView(SearchView):
 # pylint: disable=unused-argument
 # repo_slug argument will be used by the decorator to protect the view
 @login_required
+@permission_required_or_403(
+    # pylint: disable=protected-access
+    # the following string is "learningresources.import_course"
+    # (unless the Repository model has been moved)
+    '{}.{}'.format(
+        Repository._meta.app_label,
+        RepoPermission.view_repo[0]
+    ),
+    (Repository, 'slug', 'repo_slug')
+)
 def export(request, repo_slug, resource_id):
     """Dump LearningResource as XML"""
     try:
@@ -251,5 +260,3 @@ def export(request, repo_slug, resource_id):
         )
     except NotFound:
         raise Http404()
-    except PermissionDenied:
-        raise DjangoPermissionDenied()
