@@ -4,11 +4,10 @@ python:
 env:
   - DATABASE_URL=postgres://postgres@localhost:5432/postgres
 install:
-  - pip install tox==2.0.2
+  - "pip install 'tox>=2.0.2,<3.0.0'"
   - pip install coveralls
 script: 
   - tox
-  - tox -e docs
 after_success: coveralls
 deploy:
   provider: heroku
