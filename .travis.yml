@@ -4,7 +4,7 @@ python:
 env:
   - DATABASE_URL=postgres://postgres@localhost:5432/postgres
 install:
-  - pip install tox==2.0.2
+  - pip install tox>=2.0.2
   - pip install coveralls
 script: 
   - tox
