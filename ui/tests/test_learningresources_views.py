@@ -12,7 +12,7 @@ from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
 
-from .base import LoreTestCase
+from learningresources.tests.base import LoreTestCase
 
 HTTP_OK = 200
 UNAUTHORIZED = 403
