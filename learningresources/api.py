@@ -9,7 +9,6 @@ import logging
 
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.shortcuts import get_object_or_404
 
 from guardian.shortcuts import get_objects_for_user, get_perms
 
@@ -28,14 +27,14 @@ class LearningResourceException(Exception):
 
 class PermissionDenied(LearningResourceException):
     """
-    Returned by the API when the requested item exists, but the
+    Raised by the API when the requested item exists, but the
     user is not allowed to access it.
     """
     pass
 
 
 class NotFound(LearningResourceException):
-    """Returned by the API when the item requested does not exist."""
+    """Raised by the API when the item requested does not exist."""
     pass
 
 
@@ -151,7 +150,11 @@ def get_repo(repo_slug, user_id):
         repo (learningresource.Repository): Repository
     """
     user = User.objects.get(id=user_id)
-    repo = get_object_or_404(Repository, slug=repo_slug)
+    try:
+        repo = Repository.objects.get(slug=repo_slug)
+    except Repository.DoesNotExist:
+        raise NotFound()
+
     if RepoPermission.view_repo[0] in get_perms(user, repo):
         return repo
     raise PermissionDenied("user does not have permission for this repository")

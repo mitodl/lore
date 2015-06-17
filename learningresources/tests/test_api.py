@@ -6,8 +6,6 @@ from __future__ import unicode_literals
 
 import logging
 
-from django.http.response import Http404
-
 from learningresources.models import Course, LearningResource
 from learningresources.api import (
     create_course, get_resource, get_repo,
@@ -107,7 +105,7 @@ class TestRepoAPI(LoreTestCase):
         # this should not fail
         get_repo(self.repo.slug, self.user.id)
         self.assertRaises(
-            Http404,
+            NotFound,
             get_repo,
             "nonexistent_repo",
             self.user.id
