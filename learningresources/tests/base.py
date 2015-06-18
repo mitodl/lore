@@ -132,7 +132,7 @@ class LoreTestCase(TestCase):
         importer deletes the file during cleanup.
 
         Returns:
-            path (unicode): absolute path to zip file
+            unicode: absolute path to zip file
         """
         path = join(abspath(dirname(__file__)), "testdata", "courses")
         return self.copy_file(join(path, "simple.zip"))
@@ -143,7 +143,7 @@ class LoreTestCase(TestCase):
         importer deletes the file during cleanup.
 
         Returns:
-            path (unicode): absolute path to zip file
+            unicode: absolute path to zip file
         """
         path = join(abspath(dirname(__file__)), "testdata", "courses")
         return self.copy_file(join(path, "two_courses.tar.gz"))
@@ -153,7 +153,19 @@ class LoreTestCase(TestCase):
         Get the path to a course with course.xml in the root
         of the archive.
         Returns:
-            path (unicode): absolute path to tarball.
+            unicode: absolute path to tarball.
         """
         path = join(abspath(dirname(__file__)), "testdata", "courses")
         return self.copy_file(join(path, "single.tgz"))
+
+    def get_course_static_tarball(self):
+        """
+        Get the path to a course with course.xml in the root of the
+        archive and a static folder with two assets (one of which is
+        in a subfolder.
+
+        Returns:
+            unicode: absolute path to tarball.
+        """
+        path = join(abspath(dirname(__file__)), "testdata", "courses")
+        return self.copy_file(join(path, "static.tar.gz"))

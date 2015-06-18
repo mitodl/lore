@@ -19,6 +19,27 @@ from roles.permissions import RepoPermission
 log = logging.getLogger(__name__)
 
 
+def static_asset_basepath(asset, filename):
+    """
+    Creates folder base path for given asset.
+
+    Callback API defined by:
+    https://docs.djangoproject.com/en/1.8/ref/models/fields/#django.db.models.FileField.upload_to
+    Args:
+        asset (StaticAsset): The model to create the name for.
+        filename (unicode): The subpath and filename of ``asset.asset``
+    Returns:
+        (unicode): forward slash separated path to use below
+            ``settings.MEDIA_ROOT``.
+    """
+    return 'assets/{org}/{course_number}/{run}/{filename}'.format(
+        org=asset.course.org,
+        course_number=asset.course.course_number,
+        run=asset.course.run,
+        filename=filename
+    )
+
+
 class Course(models.Model):
     """
     A course on edX platform (MITx or residential).
@@ -35,6 +56,15 @@ class Course(models.Model):
         unique_together = ("repository", "org", "course_number", "run")
 
 
+class StaticAsset(models.Model):
+    """
+    Holds static assets for a course (css, html, javascript, images, etc)
+    """
+    course = models.ForeignKey(Course)
+    learning_resources = models.ManyToManyField('LearningResource', blank=True)
+    asset = models.FileField(upload_to=static_asset_basepath)
+
+
 class LearningResource(models.Model):
     """
     The units that compose an edX course:
@@ -42,6 +72,7 @@ class LearningResource(models.Model):
     """
     course = models.ForeignKey(Course)
     learning_resource_type = models.ForeignKey('LearningResourceType')
+    static_assets = models.ManyToManyField(StaticAsset, blank=True)
     uuid = models.TextField()
     title = models.TextField()
     description = models.TextField()

@@ -3,8 +3,14 @@ Tests for learningresources models
 """
 from __future__ import unicode_literals
 
+from mock import MagicMock
+
 from .base import LoreTestCase
-from learningresources.models import LearningResourceType, Repository
+from learningresources.models import (
+    LearningResourceType,
+    Repository,
+    static_asset_basepath
+)
 
 
 class TestModels(LoreTestCase):
@@ -38,3 +44,16 @@ class TestModels(LoreTestCase):
         repo.save()
         self.assertEqual(repo.name, "repo name")
         self.assertEqual(repo.slug, "repo-name")
+
+    def test_static_asset_basepath(self):
+        """Verify we are setting the path we expect"""
+        filename = 'asdf/asdf.txt'
+        asset = MagicMock()
+        asset.course.org = 'hi'
+        asset.course.course_number = '1'
+        asset.course.run = 'runnow'
+        path = static_asset_basepath(asset, filename)
+        self.assertEqual(
+            path,
+            'assets/hi/1/runnow/asdf/asdf.txt'
+        )
