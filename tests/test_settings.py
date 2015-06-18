@@ -160,3 +160,36 @@ class TestSettings(TestCase):
         self.assertIn('ANONYMOUS_USER_ID', settings_vars)
         self.assertIsNone(settings_vars.get('ANONYMOUS_USER_ID'))
         self.assertTrue(settings_vars.get('GUARDIAN_RAISE_403'))
+
+    def test_db_ssl_enable(self):
+        """Verify that we can enable/disable database SSL with a var"""
+
+        # Check default state is SSL on
+        with mock.patch.dict('os.environ', {
+            'LORE_DB_DISABLE_SSL': ''
+        }, clear=True):
+            settings_vars = self.reload_settings()
+            self.assertEqual(
+                settings_vars['DATABASES']['default']['OPTIONS'],
+                {'sslmode': 'require'}
+            )
+
+        # Check enabling the setting explicitly
+        with mock.patch.dict('os.environ', {
+            'LORE_DB_DISABLE_SSL': 'True'
+        }, clear=True):
+            settings_vars = self.reload_settings()
+            self.assertEqual(
+                settings_vars['DATABASES']['default']['OPTIONS'],
+                {}
+            )
+
+        # Disable it
+        with mock.patch.dict('os.environ', {
+            'LORE_DB_DISABLE_SSL': 'False'
+        }, clear=True):
+            settings_vars = self.reload_settings()
+            self.assertEqual(
+                settings_vars['DATABASES']['default']['OPTIONS'],
+                {'sslmode': 'require'}
+            )
