@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 
 from django.conf.urls import include, url
 from django.contrib import admin
+from haystack.query import SearchQuerySet
 
 from search.forms import SearchForm
 from ui.views import (
@@ -27,6 +28,14 @@ from ui.views import (
 )
 import cas.urls as cas_urls
 
+
+def get_sqs():
+    """Get custom SearchQuerySet for LORE"""
+    sqs = SearchQuerySet()
+    for facet in ("course", "run", "resource_type"):
+        sqs = sqs.facet(facet)
+    return sqs
+
 urlpatterns = [
     url(r'^$', welcome, name='welcome'),
     url(r'^admin/', include(admin.site.urls)),
@@ -34,7 +43,10 @@ urlpatterns = [
     url(r'^repositories/new/$', create_repo, name='create_repo'),
     url(
         r'^repositories/(?P<repo_slug>[-\w]+)/$',
-        RepositoryView(form_class=SearchForm, template="repositories.html"),
+        RepositoryView(
+            form_class=SearchForm, template="repositories.html",
+            searchqueryset=get_sqs(),
+        ),
         name='repositories'
     ),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/'

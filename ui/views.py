@@ -14,14 +14,12 @@ from django.shortcuts import (
     redirect,
     get_object_or_404,
 )
-from haystack.views import SearchView
+from haystack.views import FacetedSearchView
 from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import get_perms
 
 from learningresources.api import (
-    get_repo_courses, get_repo, get_repos,
-    get_resource, get_runs, get_user_tags,
-    NotFound
+    get_repo, get_repos, get_resource, NotFound,
 )
 from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group
@@ -205,8 +203,8 @@ def create_repo(request):
     )
 
 
-class RepositoryView(SearchView):
-    """Subclass of haystack.views.SearchView"""
+class RepositoryView(FacetedSearchView):
+    """Subclass of haystack.views.FacetedSearchView"""
 
     # pylint: disable=arguments-differ
     # We need the extra kwarg.
@@ -228,13 +226,29 @@ class RepositoryView(SearchView):
 
     def extra_context(self):
         """Add to the context."""
-        context = {
+        context = super(RepositoryView, self).extra_context()
+        params = dict(self.request.GET.copy())
+        qs_prefix = "?"
+        # Chop out page number so we don't end up with
+        # something like ?page=2&page=3&page=4.
+        if "page" in params:
+            params.pop("page")
+        if len(params) > 0:
+            qs_prefix = []
+            for key in params.keys():
+                qs_prefix.append(
+                    "&".join([
+                        "{0}={1}".format(key, val)
+                        for val in params[key]
+                    ])
+                )
+            qs_prefix = "?{0}&".format("&".join(qs_prefix))
+
+        context.update({
             "repo": self.repo,
-            "courses": get_repo_courses(self.repo.id),
-            "runs": get_runs(self.repo.id),
-            "tags": get_user_tags(self.repo.id),
-            "perms_on_cur_repo": get_perms(self.request.user, self.repo)
-        }
+            "perms_on_cur_repo": get_perms(self.request.user, self.repo),
+            "qs_prefix": qs_prefix,
+        })
         return context
 
 
