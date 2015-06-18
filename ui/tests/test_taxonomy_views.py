@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 from learningresources.tests.base import LoreTestCase
 from learningresources.models import LearningResourceType
 from taxonomy.models import Vocabulary
-from taxonomy.api import create_vocabulary
 
 HTTP_OK = 200
 NOT_FOUND = 404
@@ -72,13 +71,13 @@ class TestViews(LoreTestCase):
         )
         self.assertEqual(NOT_FOUND, resp.status_code)
 
-        vocab = create_vocabulary(
-            self.repo.id,
-            "XY Z",
-            "ABC",
-            False,
-            Vocabulary.MANAGED,
-            100
+        vocab = Vocabulary.objects.create(
+            repository=self.repo,
+            name="XY Z",
+            description="ABC",
+            required=False,
+            vocabulary_type=Vocabulary.MANAGED,
+            weight=100
         )
 
         resp = self.client.get("/repositories/999/vocabularies", follow=True)
