@@ -1,6 +1,10 @@
 language: python
 python:
   - '2.7'
+services:
+  - elasticsearch
+before_script:
+  - sleep 10
 env:
   - DATABASE_URL=postgres://postgres@localhost:5432/postgres
 install:
@@ -12,13 +16,13 @@ after_success: coveralls
 deploy:
   provider: heroku
   api_key:
-    secure: DsIeqPjhg6gFe+VzgBRo6wwResoIOrrP7nTw2x5XOcL5VzkxQLHHrmu176uX0u95qLTQtVr5DKEm/+ZYMGVRc3aTwiXDig2/CmBHC7HEvfBDU4yDudCClxE0skTiuDuR+jYUo4T1H3UxhrQYJeotU+cZkgrz3TuxSLKoA+j8GSg=
+    secure: CGv5mHV8SFnFkdwpRl2EGRU5kvnl7xfxZPgl5DvqJHZ6xBreDpGFQOyQDVVqRAt7s9Dq/JD8qMCvm15rVRdXN9rKMDFV9ilPiR2dTBPs5rzE+upA/W2N2+pkQrnXEP+80EF3Wy3ODUAUb4aUlCwG1NqZCWnn4NzuZNCtAYEqwuk=
   app: lore-ci
   on:
     repo: mitodl/lore
     branch: master
+  app: lore-release
+  on:
+    repo: mitodl/lore
+    branch: release
   run: "python manage.py migrate --noinput"
-services:
-  - elasticsearch
-before_script:
-  - sleep 10
