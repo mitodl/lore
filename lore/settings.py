@@ -87,6 +87,8 @@ INSTALLED_APPS = (
     'importer',
     'ui',
     'taxonomy',
+    'rest',
+    'rest_framework',
     'haystack',
     'search'
 )
@@ -287,6 +289,13 @@ LOGGING = {
             'propagate': True,
         },
     },
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'PAGE_SIZE': 20
 }
 
 # Celery

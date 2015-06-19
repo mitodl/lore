@@ -128,7 +128,12 @@ def get_repos(user_id):
     Returns:
         repos (query set of learningresource.Repository): Repositories
     """
-    user = User.objects.get(id=user_id)
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        raise PermissionDenied(
+            "user does not have permission for this repository"
+        )
     return get_objects_for_user(
         user,
         RepoPermission.view_repo[0],
@@ -149,7 +154,11 @@ def get_repo(repo_slug, user_id):
     Returns:
         repo (learningresource.Repository): Repository
     """
-    user = User.objects.get(id=user_id)
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        raise PermissionDenied(
+            "user does not have permission for this repository")
     try:
         repo = Repository.objects.get(slug=repo_slug)
     except Repository.DoesNotExist:
