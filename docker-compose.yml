@@ -47,6 +47,7 @@ celery:
   environment:
     DEBUG: True
     LORE_LOG_LEVEL: DEBUG
+    LORE_DB_DISABLE_SSL: True
     DJANGO_LOG_LEVEL: INFO
     DATABASE_URL: postgres://postgres@db:5432/postgres
     BROKER_URL: redis://redis:6379/4
