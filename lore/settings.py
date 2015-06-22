@@ -90,7 +90,8 @@ INSTALLED_APPS = (
     'rest',
     'rest_framework',
     'haystack',
-    'search'
+    'search',
+    'roles'
 )
 
 MIDDLEWARE_CLASSES = (

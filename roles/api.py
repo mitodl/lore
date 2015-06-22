@@ -4,9 +4,9 @@ Functions for handling roles
 
 from __future__ import unicode_literals
 
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.db import transaction
-from guardian.shortcuts import assign_perm
+from guardian.shortcuts import assign_perm, get_perms, remove_perm
 
 from roles.permissions import RepoPermission, GroupTypes
 
@@ -40,13 +40,50 @@ def roles_init_new_repo(repo):
     with transaction.atomic():
         # administrator permissions
         for permission in RepoPermission.administrator_permissions():
-            assign_perm(permission, administrator_group, repo)
+            try:
+                Permission.objects.get(codename=permission)
+                assign_perm(permission, administrator_group, repo)
+            except Permission.DoesNotExist:
+                pass
         # curator permissions
         for permission in RepoPermission.curator_permissions():
-            assign_perm(permission, curator_group, repo)
+            try:
+                Permission.objects.get(codename=permission)
+                assign_perm(permission, curator_group, repo)
+            except Permission.DoesNotExist:
+                pass
         # author permissions
         for permission in RepoPermission.author_permissions():
-            assign_perm(permission, author_group, repo)
+            try:
+                Permission.objects.get(codename=permission)
+                assign_perm(permission, author_group, repo)
+            except Permission.DoesNotExist:
+                pass
+
+
+def roles_clear_repo_permissions(repo):
+    """
+    Removes all the permissions a group has on a repo
+    Args:
+        repo (learningresources.models.Repository): repository
+    Returns:
+        None
+    """
+    with transaction.atomic():
+        administrator_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.REPO_ADMINISTRATOR.format(repo.slug)
+        )
+        curator_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.REPO_CURATOR.format(repo.slug)
+        )
+        author_group, _ = Group.objects.get_or_create(
+            name=GroupTypes.REPO_AUTHOR.format(repo.slug)
+        )
+        all_groups = [administrator_group, curator_group, author_group]
+        for group in all_groups:
+            perms = get_perms(group, repo)
+            for perm in perms:
+                remove_perm(perm, group, repo)
 
 
 def roles_update_repo(repo, old_slug):

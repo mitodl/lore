@@ -3,6 +3,8 @@ A subclass of the Django TestCase which handles
 often-needed features, like creating an authenticated
 test client.
 """
+from __future__ import unicode_literals
+
 import os
 from os.path import abspath, dirname, join
 import uuid

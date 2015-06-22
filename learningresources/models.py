@@ -112,4 +112,5 @@ class Repository(models.Model):
             RepoPermission.import_course,
             RepoPermission.manage_taxonomy,
             RepoPermission.add_edit_metadata,
+            RepoPermission.manage_repo_users,
         )
