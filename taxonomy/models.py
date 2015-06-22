@@ -63,28 +63,12 @@ class Vocabulary(models.Model):
 class Term(models.Model):
     """Model for term table"""
     vocabulary = models.ForeignKey(Vocabulary, on_delete=models.PROTECT)
-    label = models.CharField(max_length=256)
-    slug = models.CharField(max_length=256, unique=True)
+    label = models.TextField()
     weight = models.IntegerField()
 
-    learning_resources = models.ManyToManyField(
-        LearningResource,
-        related_name="terms",
-    )
+    learning_resources = models.ManyToManyField(LearningResource,
+                                                related_name="terms")
 
     class Meta:
         # pylint: disable=missing-docstring
         unique_together = (('vocabulary', 'label'),)
-
-    @transaction.atomic
-    def save(self, *args, **kwargs):
-        """Handle slugs."""
-        if self.id is None or self.label != get_object_or_404(
-                Term, id=self.id).label:
-            slug = slugify(self.label)
-            count = 1
-            while Term.objects.filter(slug=slug).exists():
-                slug = "{0}{1}".format(slugify(self.label), count)
-                count += 1
-            self.slug = slug
-        return super(Term, self).save(*args, **kwargs)

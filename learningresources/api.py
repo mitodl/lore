@@ -128,12 +128,7 @@ def get_repos(user_id):
     Returns:
         repos (query set of learningresource.Repository): Repositories
     """
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        raise PermissionDenied(
-            "user does not have permission for this repository"
-        )
+    user = User.objects.get(id=user_id)
     return get_objects_for_user(
         user,
         RepoPermission.view_repo[0],
@@ -154,11 +149,7 @@ def get_repo(repo_slug, user_id):
     Returns:
         repo (learningresource.Repository): Repository
     """
-    try:
-        user = User.objects.get(id=user_id)
-    except User.DoesNotExist:
-        raise PermissionDenied(
-            "user does not have permission for this repository")
+    user = User.objects.get(id=user_id)
     try:
         repo = Repository.objects.get(slug=repo_slug)
     except Repository.DoesNotExist:
@@ -167,6 +158,18 @@ def get_repo(repo_slug, user_id):
     if RepoPermission.view_repo[0] in get_perms(user, repo):
         return repo
     raise PermissionDenied("user does not have permission for this repository")
+
+
+def get_repo_courses(repo_id):
+    """
+    Get courses for a repository.
+
+    Args:
+        repo_id (int): Primary key of learningresource.Repository
+    Returns:
+        courses (queryset of learningresource.Course): Courses
+    """
+    return Course.objects.filter(repository__id=repo_id)
 
 
 def create_repo(name, description, user_id):
@@ -185,6 +188,49 @@ def create_repo(name, description, user_id):
             name=name, description=description,
             created_by_id=user_id,
         )
+
+
+def get_courses(repo_id):
+    """
+    Get all user's courses.
+
+    Args:
+        repo_id (int): Primary key of the repository
+    Returns:
+        courses (Queryset of learningresources.Course): User's courses
+    """
+    return Course.objects.filter(repository_id=repo_id)
+
+
+def get_runs(repo_id):
+    """
+    Get runs in all user's courses for the repo.
+
+    The list of runs is sorted.
+
+    Args:
+        repo_id (int): Primary key of the repository
+    Returns:
+        runs (list of strings): Run names
+    """
+    courses = get_courses(repo_id)
+    return sorted(list(set([x.run for x in courses])))
+
+
+def get_user_tags(repo_id):
+    """
+    Get all tags for a user's courses.
+
+    Args:
+        repo_id (int): Primary key of the repository
+    Returns:
+        tags (list of strings): Tag names
+    """
+    resources = LearningResource.objects.filter(course__repository__id=repo_id)
+    tag_ids = set([x.learning_resource_type_id for x in resources])
+    stuff = LearningResourceType.objects.filter(id__in=tag_ids).order_by(
+        "name")
+    return stuff
 
 
 def get_resources(repo_id):

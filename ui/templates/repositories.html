@@ -7,50 +7,6 @@
             {{ form.as_table }}
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
-
-        {% if facets.fields.course %}
-        Course
-        <ul class="list-group">
-        {% for course in facets.fields.course %}
-            <li class="list-group-item">
-                <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=course_exact:{{ course.0|urlencode }}">
-                {{ course.0 }}
-                </a>
-                <span class="badge">{{ course.1 }}</span>
-            </li>
-        {% endfor %}
-        </ul>
-        {% endif %}
-
-        {% if facets.fields.run %}
-        Run
-        <ul class="list-group">
-        {% for run in facets.fields.run %}
-            <li class="list-group-item">
-                <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=run_exact:{{ run.0|urlencode }}">
-                {{ run.0 }}
-                </a>
-                <span class="badge">{{ run.1 }}</span>
-            </li>
-        {% endfor %}
-        </ul>
-        {% endif %}
-
-        {% if facets.fields.resource_type %}
-        Item Type
-        <ul class="list-group">
-        {% for resource_type in facets.fields.resource_type %}
-            <li class="list-group-item">
-                <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=resource_type_exact:{{ resource_type.0|urlencode }}">
-                {{ resource_type.0 }}
-                </a>
-                <span class="badge">{{ resource_type.1 }}</span>
-            </li>
-        {% endfor %}
-        </ul>
-        {% endif %}
-
-
     </div>
     <div class="col-md-9 col-results">
         <div class="row grid-row-top">
@@ -94,12 +50,12 @@
             <div class="lore-pagination">
                 {% if page.has_other_pages %}
                     {% if page.has_previous %}
-                        <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}page={{ page.previous_page_number }}"><i
+                        <a href="{% url 'repositories' repo.slug %}?page={{ page.previous_page_number }}"><i
                                 class="fa fa-angle-left"></i></a>
                     {% endif %}
 
                     {% if page.has_next %}
-                        <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}page={{ page.next_page_number }}"><i
+                        <a href="{% url 'repositories' repo.slug %}?page={{ page.next_page_number }}"><i
                                 class="fa fa-angle-right"></i></a>
                     {% endif %}
                 {% endif %}

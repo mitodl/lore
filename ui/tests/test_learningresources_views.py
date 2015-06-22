@@ -209,20 +209,3 @@ class TestViews(LoreTestCase):
         url = reverse("export", args=(self.repo.slug, 999999))
         resp = self.client.get(url, follow=True)
         self.assertTrue(resp.status_code == NOT_FOUND)
-
-    def test_repo_url(self):
-        """Hit repo site normally."""
-        resp = self.client.get(self.repository_url, follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)
-
-    def test_repo_page_num(self):
-        """Hit repo site normally."""
-        resp = self.client.get(self.repository_url + "?page=1", follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)
-
-    def test_repo_course_filter(self):
-        """Hit repo site normally."""
-        querystring = "?selected_facets=course_exact:{0}".format(
-            self.course.course_number)
-        resp = self.client.get(self.repository_url + querystring, follow=True)
-        self.assertTrue(resp.status_code == HTTP_OK)

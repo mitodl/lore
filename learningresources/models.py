@@ -79,6 +79,11 @@ class Repository(models.Model):
     create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)
 
+    def has_resources(self):
+        """Are any LearningResources uploaded for this repository?"""
+        return LearningResource.objects.filter(
+            course__repository__id=self.id).exists()
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         """Handle slugs and groups"""
@@ -106,7 +111,8 @@ class Repository(models.Model):
             roles_update_repo(self, old_slug)
         return new_repository
 
-    class Meta:  # pylint: disable=missing-docstring
+    class Meta:
+        # pylint: disable=missing-docstring
         permissions = (
             RepoPermission.view_repo,
             RepoPermission.import_course,

@@ -7,8 +7,8 @@ from __future__ import unicode_literals
 # pylint: disable=invalid-name
 
 from django.http.response import Http404
+from django.core.exceptions import ValidationError
 from django.db.models.deletion import ProtectedError
-from django.db.utils import IntegrityError
 
 from learningresources.tests.base import LoreTestCase
 from learningresources.api import create_repo
@@ -130,14 +130,13 @@ class TestApi(LoreTestCase):
         self.assertEquals([self.term],
                           list(Term.objects.all()))
 
-        term1 = create_term(self.vocabulary.id, "label", 9)
-        self.assertEquals([self.term, term1],
+        term = create_term(self.vocabulary.id, "label", 9)
+        self.assertEquals([self.term, term],
                           list(Term.objects.order_by('id')))
 
-        term2 = create_term(456, "label", 9)
-        self.assertEquals([self.term, term1, term2],
-                          list(Term.objects.order_by('id')))
-        self.assertRaises(IntegrityError,
+        self.assertRaises(ValidationError,
+                          lambda: create_term(456, "label", 9))
+        self.assertRaises(ValidationError,
                           lambda: create_term(self.vocabulary.id, None, 9))
 
     def test_create_vocabulary(self):
@@ -170,24 +169,37 @@ class TestApi(LoreTestCase):
         # the slug is different
         self.assertNotEqual(vocabulary, vocabulary_1)
         self.assertEqual("vocabulary1", vocabulary_1.slug)
+        self.assertRaises(ValidationError,
+                          lambda: create_vocabulary(9,
+                                                    "vocabulary",
+                                                    "description",
+                                                    False,
+                                                    Vocabulary.MANAGED,
+                                                    9))
 
-        # IntegrityError from duplicate repo_id and name
-        self.assertRaises(
-            IntegrityError,
-            lambda: create_vocabulary(self.repo.id,
-                                      "vocabulary",
-                                      "description",
-                                      "abc",
-                                      Vocabulary.FREE_TAGGING,
-                                      9))
+        self.assertRaises(ValidationError,
+                          lambda: create_vocabulary(self.repo.id,
+                                                    "vocabulary",
+                                                    "description",
+                                                    "abc",
+                                                    Vocabulary.FREE_TAGGING,
+                                                    9))
 
         # pass in None, violates constraints
-        self.assertRaises(IntegrityError,
+        self.assertRaises(ValidationError,
                           lambda: create_vocabulary(self.repo.id,
                                                     "vocabulary",
                                                     "description",
                                                     None,
                                                     Vocabulary.MANAGED,
+                                                    9))
+
+        self.assertRaises(ValidationError,
+                          lambda: create_vocabulary(self.repo.id,
+                                                    "vocabulary",
+                                                    "description",
+                                                    False,
+                                                    "",
                                                     9))
 
     def test_delete_term(self):

@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.utils.text import slugify
 
 from taxonomy.models import (
     Vocabulary,
@@ -49,7 +50,7 @@ def create_vocabulary(
 
     """
 
-    return Vocabulary.objects.create(
+    vocabulary = Vocabulary(
         repository_id=repository_id,
         name=name,
         description=description,
@@ -57,6 +58,15 @@ def create_vocabulary(
         vocabulary_type=vocabulary_type,
         weight=weight,
     )
+    slug = slugify(vocabulary.name)
+    count = 1
+    while Vocabulary.objects.filter(slug=slug).exists():
+        slug = "{0}{1}".format(slugify(vocabulary.name), count)
+        count += 1
+    vocabulary.slug = slug
+    vocabulary.full_clean()
+    vocabulary.save()
+    return vocabulary
 
 
 def delete_vocabulary(vocabulary_id):
@@ -95,11 +105,14 @@ def create_term(vocabulary_id, label, weight):
     Returns:
         Term (Term): The newly created Term
     """
-    return Term.objects.create(
+    term = Term(
         vocabulary_id=vocabulary_id,
         label=label,
         weight=weight
     )
+    term.full_clean()
+    term.save()
+    return term
 
 
 def delete_term(term_id):
