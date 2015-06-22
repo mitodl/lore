@@ -87,10 +87,8 @@ INSTALLED_APPS = (
     'importer',
     'ui',
     'taxonomy',
-    'rest',
-    'rest_framework',
+    'search',
     'haystack',
-    'search'
 )
 
 MIDDLEWARE_CLASSES = (
@@ -137,20 +135,12 @@ WSGI_APPLICATION = 'lore.wsgi.application'
 # Uses DATABASE_URL to configure with sqlite default:
 # For URL structure:
 # https://github.com/kennethreitz/dj-database-url
-DEFAULT_DATABASE_CONFIG = dj_database_url.parse(
-    get_var(
-        'DATABASE_URL',
-        'sqlite:///{0}'.format(os.path.join(BASE_DIR, 'db.sqlite3'))
-    )
-)
-# Enable SSL
-if get_var('LORE_DB_DISABLE_SSL', False):
-    DEFAULT_DATABASE_CONFIG['OPTIONS'] = {}
-else:
-    DEFAULT_DATABASE_CONFIG['OPTIONS'] = {'sslmode': 'require'}
-
 DATABASES = {
-    'default': DEFAULT_DATABASE_CONFIG
+    'default': dj_database_url.parse(
+        get_var('DATABASE_URL', 'sqlite:///{0}'.format(
+            os.path.join(BASE_DIR, 'db.sqlite3')
+        ))
+    )
 }
 
 # Internationalization
@@ -299,13 +289,6 @@ LOGGING = {
     },
 }
 
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'PAGE_SIZE': 20
-}
-
 # Celery
 BROKER_URL = get_var("BROKER_URL", get_var("REDISCLOUD_URL", None))
 CELERY_RESULT_BACKEND = get_var(
@@ -316,16 +299,3 @@ CELERY_ALWAYS_EAGER = get_var("CELERY_ALWAYS_EAGER", True)
 # guardian specific settings
 ANONYMOUS_USER_ID = None
 GUARDIAN_RAISE_403 = True
-
-# Haystack
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': (
-            'haystack.backends.elasticsearch_backend'
-            '.ElasticsearchSearchEngine'
-        ),
-        'URL': get_var('HAYSTACK_URL', 'http://127.0.0.1:9200'),
-        'INDEX_NAME': get_var('HAYSTACK_INDEX', 'haystack'),
-    }
-}
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
