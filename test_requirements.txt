@@ -9,6 +9,7 @@ pytest-capturelog
 pytest-watch
 pytest-xdist
 mock
+ipdb
 ipython
 urltools
 semantic_version

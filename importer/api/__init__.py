@@ -42,8 +42,6 @@ def import_course_from_file(filename, repo_id, user_id):
         None
     Raises:
         ValueError: Unable to extract or read archive contents.
-
-
     """
     tempdir = mkdtemp()
 
@@ -167,3 +165,69 @@ def import_static_assets(path, course):
                 # Remove base path from file name
                 django_file.name = join(root, name).replace(path + sep, '', 1)
                 create_static_asset(course.id, django_file)
+
+
+def parse_static(learning_resource):
+    """
+    Parse static assets from LearningResource XML.
+
+    learning_resource_types can be 'html', 'problem', or 'video'.
+
+    Args:
+        learning_resource (LearningResource):
+
+    Returns:
+        List of green, slimy things
+    """
+    tree = etree.fromstring(learning_resource.content_xml)
+    # expecting only one sub attribute in video LR.
+    if learning_resource.learning_resource_type.name == "video":
+        sub = tree.xpath("/video/@sub")
+        # convert sub into filename
+        if len(sub) > 0:
+            filename = _subs_filename(sub)
+            log.info('subtitle filename is %s'.format(filename))
+
+    elif learning_resource.learning_resource_type.name == "html":
+        tree.xpath("/div/")
+
+    elif learning_resource.learning_resource_type.name == "problem":
+        pass
+
+
+def _subs_filename(subs_id, lang='en'):
+    """
+    Generate proper filename for storage.
+
+    Function copied from:
+    edx-platform/common/lib/xmodule/xmodule/video_module/transcripts_utils.py
+
+    Args:
+        subs_id (str): Subs id string
+        lang (str): Locale language (optional) default: en
+
+    Returns:
+        filename (str): Filename of subs file
+    """
+    if lang == 'en':
+        return u'subs_{0}.srt.sjson'.format(subs_id)
+    else:
+        return u'{0}_subs_{1}.srt.sjson'.format(lang, subs_id)
+
+
+def _parse_relative_asset_path(path):
+    """
+    Extract path to static asset file from relative edX path
+
+    Static assets whose location are relative to edX datastore such as
+    ``/c4x/edX/DemoX/asset/images_logic_gate_image.png`` can be
+    converted to a local path by extracting the portion of the path
+    after ``asset/``.
+
+    Args:
+        path (str):
+
+    Returns:
+        Path to asset relative to ``static`` directory
+    """
+    return path.split('/asset/')[1]
