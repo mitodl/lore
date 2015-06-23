@@ -4,17 +4,23 @@ REST serializers for taxonomy models
 
 from __future__ import unicode_literals
 
+from django.contrib.auth.models import User
+from rest_framework.generics import get_object_or_404
 from rest_framework.serializers import (
+    Serializer,
     ModelSerializer,
     HiddenField,
     CurrentUserDefault,
     CreateOnlyDefault,
+    CharField,
+    ChoiceField,
+    ValidationError,
 )
-from rest_framework.generics import get_object_or_404
 
-from taxonomy.models import Vocabulary, Term
 from learningresources.models import Repository
-from .util import LambdaDefault, RequiredBooleanField
+from rest.util import LambdaDefault, RequiredBooleanField
+from roles.permissions import BaseGroupTypes
+from taxonomy.models import Vocabulary, Term
 
 
 class RepositorySerializer(ModelSerializer):
@@ -97,3 +103,49 @@ class TermSerializer(ModelSerializer):
             'id',
             'slug',
         )
+
+
+class GroupSerializer(Serializer):
+    """
+    Serializer for base_group_type
+    """
+    # pylint: disable=abstract-method
+    group_type = ChoiceField(
+        choices=BaseGroupTypes.all_base_groups()
+    )
+
+    def validate_group_type(self, value):
+        """Validate group_type"""
+        # pylint: disable=no-self-use
+        if value not in BaseGroupTypes.all_base_groups():
+            raise ValidationError(
+                'group "{group}" is not valid'.format(group=value)
+            )
+        return value
+
+
+class UserSerializer(Serializer):
+    """
+    Serializer for user
+    """
+    # pylint: disable=abstract-method
+    username = CharField()
+
+    def validate_username(self, value):
+        """Validate username"""
+        # pylint: disable=no-self-use
+        try:
+            User.objects.get(username=value)
+        except User.DoesNotExist:
+            raise ValidationError(
+                'user "{user}" is not available'.format(user=value)
+            )
+        return value
+
+
+class UserGroupSerializer(UserSerializer, GroupSerializer):
+    """
+    Serializer for username base_group_type association
+    """
+    # pylint: disable=abstract-method
+    pass

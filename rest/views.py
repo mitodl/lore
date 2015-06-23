@@ -4,20 +4,33 @@ Controllers for REST app
 
 from __future__ import unicode_literals
 
+from django.contrib.auth.models import User
+from rest_framework import status
 from rest_framework.generics import (
+    ListAPIView,
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
     RetrieveAPIView,
+    RetrieveDestroyAPIView,
 )
+from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.permissions import IsAuthenticated
 
-from roles.permissions import GroupTypes
-from roles.api import assign_user_to_repo_group
+from roles.permissions import GroupTypes, BaseGroupTypes
+from roles.api import (
+    assign_user_to_repo_group,
+    remove_user_from_repo_group,
+    list_users_in_repo,
+    is_last_admin_in_repo,
+)
 from rest.serializers import (
     VocabularySerializer,
     RepositorySerializer,
     TermSerializer,
+    UserGroupSerializer,
+    UserSerializer,
+    GroupSerializer,
 )
 from rest.permissions import (
     AddRepoPermission,
@@ -25,11 +38,13 @@ from rest.permissions import (
     ViewVocabularyPermission,
     ViewTermPermission,
     ManageTaxonomyPermission,
+    ManageRepoMembersPermission,
 )
 from learningresources.models import Repository
 from learningresources.api import (
     get_repos,
 )
+from django.http.response import Http404
 
 
 # pylint: disable=too-many-ancestors
@@ -174,3 +189,181 @@ class TermDetail(RetrieveUpdateDestroyAPIView):
         return vocabs.first().term_set.filter(
             slug=self.kwargs['term_slug']
         )
+
+
+class RepoMemberList(ListAPIView):
+    """
+    REST list view for repository members
+    """
+    serializer_class = UserGroupSerializer
+    permission_classes = (
+        ViewRepoPermission,
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """
+        Return a list of repository members
+        """
+        repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
+        return list_users_in_repo(repo)
+
+
+class RepoMemberGroupList(ListCreateAPIView):
+    """
+    REST list view for repository members per group
+    """
+    serializer_class = UserSerializer
+    permission_classes = (
+        ManageRepoMembersPermission,
+        ViewRepoPermission,
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """
+        Return a list of repository members
+        """
+        repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
+        group_type = self.kwargs.get('group_type')
+        return list_users_in_repo(repo, group_type)
+
+    def perform_create(self, serializer):
+        """Add a user in the group"""
+        # Validate the incoming data
+        serializer.is_valid(raise_exception=True)
+        # Get the user
+        username = serializer.data.get('username')
+        user = User.objects.get(username=username)
+        # Get the repo group type
+        group_type = self.kwargs.get('group_type')
+        repo_group_type = GroupTypes.get_repo_groupname_by_base(group_type)
+        # Get the repo object
+        repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
+        assign_user_to_repo_group(user, repo, repo_group_type)
+
+    def get_success_headers(self, data):
+        """
+        Add Location header for create
+        """
+        url = reverse(
+            'repo-members-group-user-detail',
+            kwargs={
+                'repo_slug': self.kwargs['repo_slug'],
+                'username': data['username'],
+                'group_type': self.kwargs.get('group_type'),
+            }
+        )
+        return {'Location': url}
+
+
+class RepoMemberUserList(ListCreateAPIView):
+    """
+    REST group list view for a repository member
+    """
+    serializer_class = GroupSerializer
+    permission_classes = (
+        ManageRepoMembersPermission,
+        ViewRepoPermission,
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """
+        Return groups for a repository member
+        """
+        repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
+        username = self.kwargs.get('username')
+        return list(
+            set(
+                user_group for user_group in list_users_in_repo(repo)
+                if user_group.username == username
+            )
+        )
+
+    def perform_create(self, serializer):
+        """Add a group for a user"""
+        # Validate the incoming data
+        serializer.is_valid(raise_exception=True)
+        # Get the user
+        username = self.kwargs.get('username')
+        user = User.objects.get(username=username)
+        # Get the repo group type
+        group_type = serializer.data.get('group_type')
+        repo_group_type = GroupTypes.get_repo_groupname_by_base(group_type)
+        # Get the repo object
+        repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
+        assign_user_to_repo_group(user, repo, repo_group_type)
+
+    def get_success_headers(self, data):
+        """
+        Add Location header for create
+        """
+        url = reverse(
+            'repo-members-user-group-detail',
+            kwargs={
+                'repo_slug': self.kwargs['repo_slug'],
+                'group_type': data['group_type'],
+                'username': self.kwargs.get('username'),
+            }
+        )
+        return {'Location': url}
+
+
+class RepoMemberUserGroupDetail(RetrieveDestroyAPIView):
+    """
+    REST for one group assigned to a user in a repository
+    """
+    serializer_class = GroupSerializer
+    permission_classes = (
+        ManageRepoMembersPermission,
+        ViewRepoPermission,
+        IsAuthenticated,
+    )
+
+    def get_object(self):
+        """
+        Return details about a group for a user in a repo
+        """
+        repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
+        username = self.kwargs.get('username')
+        group_type = self.kwargs.get('group_type')
+        user_groups = list_users_in_repo(repo, group_type)
+        # There can be max only one user with the specified username in a group
+        for user_group in user_groups:
+            if user_group.username == username:
+                return user_group
+        raise Http404()
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Delete a group for a user in a repo
+        """
+        # Get the user
+        username = self.kwargs.get('username')
+        user = User.objects.get(username=username)
+        # Get the repo group type
+        group_type = self.kwargs.get('group_type')
+        repo_group_type = GroupTypes.get_repo_groupname_by_base(group_type)
+        # Get the repo object
+        repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
+        # if the group is administrators and this user is the last one
+        # forbid to delete
+        if (group_type == BaseGroupTypes.ADMINISTRATORS and
+                is_last_admin_in_repo(user, repo)):
+            return Response(
+                data={
+                    "detail": ("This is the last "
+                               "administrator of the repository")
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        remove_user_from_repo_group(user, repo, repo_group_type)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class RepoMemberGroupUserDetail(RepoMemberUserGroupDetail):
+    """
+    REST for one user assigned to a group in a repository
+    """
+    serializer_class = UserSerializer
