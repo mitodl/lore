@@ -8,6 +8,7 @@ import os
 from shutil import rmtree
 from tempfile import mkstemp, mkdtemp
 import zipfile
+import logging
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -16,12 +17,20 @@ import mock
 from importer.api import (
     import_course_from_file,
     import_course_from_path,
-    import_static_assets
+    import_static_assets,
+    parse_static
 )
 from importer.tasks import import_file
 from learningresources.api import get_resources
-from learningresources.models import Course, StaticAsset, static_asset_basepath
+from learningresources.models import (
+    Course,
+    StaticAsset,
+    static_asset_basepath,
+    LearningResource
+)
 from learningresources.tests.base import LoreTestCase
+
+log = logging.getLogger(__name__)
 
 
 class TestImportToy(LoreTestCase):
@@ -224,3 +233,18 @@ class TestImportToy(LoreTestCase):
                 asset.asset.name.replace(base_path, ''),
                 ['test.txt', 'subdir/subtext.txt']
             )
+
+    def test_parse_static(self):
+        """
+        Parse the static assets in the sample course
+        """
+        import_course_from_file(self.course_zip, self.repo.id, self.user.id)
+        resources = LearningResource.objects.filter(
+            course__course_number='toy'
+        )
+        self.assertEqual(
+            resources.count(),
+            5
+        )
+        for item in resources:
+            parse_static(item)
