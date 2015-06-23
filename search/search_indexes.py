@@ -2,13 +2,23 @@
 Index information for Haystack.
 
 http://django-haystack.readthedocs.org/en/latest/tutorial.html
+
+There are three ways to define what gets indexed for a field in
+the index. They can not be mixed.
+
+* Use the model_attr kwarg: This works when the field is text, or a
+  foreign key to a model whose unicode representation is what we want.
+* Use the use_template kwarg: For complex mixing of fields.
+* Use a prepare_* function: Flexible and easy.
 """
 
 from __future__ import unicode_literals
 
+from lxml import etree
 from haystack import indexes
 
 from learningresources.models import LearningResource
+from taxonomy.models import Vocabulary
 
 
 class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
@@ -20,8 +30,8 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         model_attr="learning_resource_type",
         faceted=True,
     )
-    course = indexes.CharField(model_attr="course", faceted=True)
-    run = indexes.CharField(model_attr="course", faceted=True)
+    course = indexes.CharField(faceted=True)
+    run = indexes.CharField(faceted=True)
 
     # repository is here for filtering the repository listing page by the
     # repo_slug in the URL. It is not used or needed in the repository listing
@@ -38,17 +48,53 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_text(self, obj):  # pylint: disable=no-self-use
         """Indexing of the primary content of a LearningResource."""
+        try:
+            # Strip XML tags from content before indexing.
+            tree = etree.fromstring(obj.content_xml)
+            content = etree.tostring(tree, encoding="utf-8", method="text")
+        except etree.XMLSyntaxError:
+            # For blank/invalid XML.
+            content = obj.content_xml
+        try:
+            content = content.decode('utf-8')
+        except AttributeError:
+            # For Python 3.
+            pass
+
         return "{0} {1} {2}".format(
-            obj.title, obj.description, obj.content_xml,
+            obj.title, obj.description, content
         )
 
     def prepare_run(self, obj):  # pylint: disable=no-self-use
         """Define what goes into the "run" index."""
         return obj.course.run
 
-    def prepare_course(self, obj):  # pylint: disable=no-self-use
+    @staticmethod
+    def prepare_course(obj):
         """Define what goes into the "course" index."""
         return obj.course.course_number
+
+    def prepare(self, obj):
+        """
+        Get dynamic vocabularies.
+
+        The prepare() method runs last, similar to Django's form.clean().
+        This allows us to override anything we want. Here we add vocabularies
+        to the index because they must be dynamic.
+
+        Technically, we could handle the other stuff (run, course, etc.) here
+        as well, but don't because explicit is better than implicit.
+        """
+        prepared = super(LearningResourceIndex, self).prepare(obj)
+        for vocab in Vocabulary.objects.all():
+            # Values with spaces do not work, so we use the slug.
+            terms = [
+                term.label for term in obj.terms.filter(vocabulary_id=vocab.id)
+            ]
+            prepared[vocab.slug] = terms
+            # for faceted "_exact" in URL
+            prepared[vocab.slug + "_exact"] = terms  # for faceted "exact"
+        return prepared
 
     def prepare_repository(self, obj):  # pylint: disable=no-self-use
         """Use the slug for the repo, since it's unique."""
