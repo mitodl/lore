@@ -47,7 +47,7 @@ urlpatterns = [
     url(
         r'^repositories/(?P<repo_slug>[-\w]+)/$',
         RepositoryView(
-            form_class=SearchForm, template="repositories.html",
+            form_class=SearchForm, template="repository.html",
             searchqueryset=get_sqs(),
         ),
         name='repositories'
