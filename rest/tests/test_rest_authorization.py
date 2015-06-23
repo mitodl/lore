@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_403_FORBIDDEN,
-    HTTP_404_NOT_FOUND,
     HTTP_405_METHOD_NOT_ALLOWED,
 )
 from django.contrib.auth.models import User, Permission
@@ -215,10 +214,9 @@ class TestRestAuthorization(RESTTestCase):
         vocab_dict = dict(self.DEFAULT_VOCAB_DICT)
         vocab_dict['name'] = 'other_name'  # prevent name collision
 
-        # author does not have create access
+        # author does not have create access, but we haven't disabled this yet
         self.create_vocabulary(
-            self.repo.slug, vocab_dict,
-            expected_status=HTTP_403_FORBIDDEN
+            self.repo.slug, vocab_dict
         )
 
         # make sure at least view_repo is needed
@@ -246,15 +244,15 @@ class TestRestAuthorization(RESTTestCase):
                             self.DEFAULT_VOCAB_DICT)
 
         # login as author which doesn't have manage_taxonomy permissions
+        # but we haven't implemented manage_taxonomy permissions yet so this
+        # will go through
         self.logout()
         self.login(self.author_user.username)
 
         self.patch_vocabulary(self.repo.slug, vocab_slug,
-                              self.DEFAULT_VOCAB_DICT,
-                              expected_status=HTTP_403_FORBIDDEN)
+                              self.DEFAULT_VOCAB_DICT)
         self.put_vocabulary(self.repo.slug, vocab_slug,
-                            self.DEFAULT_VOCAB_DICT,
-                            expected_status=HTTP_403_FORBIDDEN)
+                            self.DEFAULT_VOCAB_DICT)
 
         # make sure at least view_repo is needed
         self.logout()
@@ -280,31 +278,25 @@ class TestRestAuthorization(RESTTestCase):
         vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
 
         # login as author which doesn't have manage_taxonomy permissions
+        # however we don't check for that yet
         self.logout()
         self.login(self.author_user.username)
 
         self.delete_vocabulary(self.repo.slug, vocab_slug,
-                               expected_status=HTTP_403_FORBIDDEN)
+                               expected_status=HTTP_405_METHOD_NOT_ALLOWED)
 
-        # curator does have manage_taxonomy permissions
+        # curator does have manage_taxonomy permissions but delete still
+        # not allowed
         self.logout()
         self.login(self.curator_user.username)
-        self.delete_vocabulary(self.repo.slug, vocab_slug)
-
-        # vocab is missing
-        self.create_term(self.repo.slug, vocab_slug,
-                         expected_status=HTTP_404_NOT_FOUND)
         self.delete_vocabulary(self.repo.slug, vocab_slug,
-                               expected_status=HTTP_404_NOT_FOUND)
+                               expected_status=HTTP_405_METHOD_NOT_ALLOWED)
 
-        # recreate vocab so we can delete it
-        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+        self.create_term(self.repo.slug, vocab_slug)
 
-        # author has view_repo but delete not allowed
-        self.logout()
-        self.login(self.author_user.username)
+        # curator has view_repo but delete not allowed
         self.delete_vocabulary(self.repo.slug, vocab_slug,
-                               expected_status=HTTP_403_FORBIDDEN)
+                               expected_status=HTTP_405_METHOD_NOT_ALLOWED)
 
         # make sure at least view_repo is needed
         self.logout()
@@ -362,10 +354,9 @@ class TestRestAuthorization(RESTTestCase):
         term_dict = dict(self.DEFAULT_TERM_DICT)
         term_dict['label'] = 'other_name'  # prevent name collision
 
-        # author does not have create access
+        # author does not have create access, but this isn't implemented yet
         self.create_term(
-            self.repo.slug, vocab_slug, term_dict,
-            expected_status=HTTP_403_FORBIDDEN
+            self.repo.slug, vocab_slug, term_dict
         )
 
         # make sure at least view_repo is needed
@@ -397,15 +388,14 @@ class TestRestAuthorization(RESTTestCase):
                       self.DEFAULT_TERM_DICT)
 
         # login as author which doesn't have manage_taxonomy permissions
+        # but this isn't implemented yet so it will go through
         self.logout()
         self.login(self.author_user.username)
 
         self.patch_term(self.repo.slug, vocab_slug, term_slug,
-                        self.DEFAULT_TERM_DICT,
-                        expected_status=HTTP_403_FORBIDDEN)
+                        self.DEFAULT_TERM_DICT)
         self.put_term(self.repo.slug, vocab_slug, term_slug,
-                      self.DEFAULT_TERM_DICT,
-                      expected_status=HTTP_403_FORBIDDEN)
+                      self.DEFAULT_TERM_DICT)
 
         # make sure at least view_repo is needed
         self.logout()
@@ -437,12 +427,13 @@ class TestRestAuthorization(RESTTestCase):
         self.login(self.author_user.username)
 
         self.delete_term(self.repo.slug, vocab_slug, term_slug,
-                         expected_status=HTTP_403_FORBIDDEN)
+                         expected_status=HTTP_405_METHOD_NOT_ALLOWED)
 
         # curator does have manage_taxonomy permissions
         self.logout()
         self.login(self.curator_user.username)
-        self.delete_term(self.repo.slug, vocab_slug, term_slug)
+        self.delete_term(self.repo.slug, vocab_slug, term_slug,
+                         expected_status=HTTP_405_METHOD_NOT_ALLOWED)
 
         # make sure at least view_repo is needed
         self.logout()

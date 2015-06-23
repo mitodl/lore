@@ -8,6 +8,7 @@ from django.db import transaction
 
 from ui.forms import VocabularyForm
 from taxonomy.models import Vocabulary
+from taxonomy.api import create_vocabulary
 from learningresources.models import LearningResourceType
 from importer.api import import_course_from_file
 
@@ -68,13 +69,13 @@ class TestForms(LoreTestCase):
         """
         Update vocabulary via form
         """
-        vocab = Vocabulary.objects.create(
-            repository=Repository.objects.order_by('id').first(),
-            name='name',
-            description='description',
-            required=True,
-            vocabulary_type=Vocabulary.MANAGED,
-            weight=100,
+        vocab = create_vocabulary(
+            Repository.objects.order_by('id').first().id,
+            'name',
+            'description',
+            True,
+            Vocabulary.MANAGED,
+            100,
         )
 
         self.assertEquals('name', vocab.name)
