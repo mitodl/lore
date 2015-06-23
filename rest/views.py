@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 from rest_framework.generics import (
     ListCreateAPIView,
-    RetrieveUpdateDestroyAPIView,
+    RetrieveUpdateAPIView,
     RetrieveAPIView,
 )
 from rest_framework.reverse import reverse
@@ -22,9 +22,6 @@ from rest.serializers import (
 from rest.permissions import (
     AddRepoPermission,
     ViewRepoPermission,
-    ViewVocabularyPermission,
-    ViewTermPermission,
-    ManageTaxonomyPermission,
 )
 from learningresources.models import Repository
 from learningresources.api import (
@@ -36,10 +33,9 @@ from learningresources.api import (
 class RepositoryList(ListCreateAPIView):
     """REST list view for Repository"""
     serializer_class = RepositorySerializer
-    permission_classes = (
-        AddRepoPermission,
-        IsAuthenticated,
-    )
+    lookup_field = 'slug'
+    lookup_url_kwarg = 'repo_slug'
+    permission_classes = (AddRepoPermission, IsAuthenticated)
 
     def get_success_headers(self, data):
         """Add Location header for model create"""
@@ -68,10 +64,7 @@ class RepositoryDetail(RetrieveAPIView):
     serializer_class = RepositorySerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'repo_slug'
-    permission_classes = (
-        ViewRepoPermission,
-        IsAuthenticated,
-    )
+    permission_classes = (ViewRepoPermission, IsAuthenticated)
 
     def get_queryset(self):
         """Filter to this repository"""
@@ -81,11 +74,9 @@ class RepositoryDetail(RetrieveAPIView):
 class VocabularyList(ListCreateAPIView):
     """REST list view for Vocabulary"""
     serializer_class = VocabularySerializer
-    permission_classes = (
-        ViewRepoPermission,
-        ManageTaxonomyPermission,
-        IsAuthenticated,
-    )
+    lookup_field = 'slug'
+    lookup_url_kwarg = 'vocab_slug'
+    permission_classes = (ViewRepoPermission, IsAuthenticated)
 
     def get_queryset(self):
         """Filter to vocabularies for a repository"""
@@ -101,16 +92,12 @@ class VocabularyList(ListCreateAPIView):
         return {'Location': url}
 
 
-class VocabularyDetail(RetrieveUpdateDestroyAPIView):
+class VocabularyDetail(RetrieveUpdateAPIView):
     """REST detail view for Vocabulary"""
     serializer_class = VocabularySerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'vocab_slug'
-    permission_classes = (
-        ViewVocabularyPermission,
-        ManageTaxonomyPermission,
-        IsAuthenticated,
-    )
+    permission_classes = (ViewRepoPermission, IsAuthenticated)
 
     def get_queryset(self):
         """Filter to a vocabulary within a repository"""
@@ -123,11 +110,9 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
 class TermList(ListCreateAPIView):
     """REST list view for Term"""
     serializer_class = TermSerializer
-    permission_classes = (
-        ViewVocabularyPermission,
-        ManageTaxonomyPermission,
-        IsAuthenticated,
-    )
+    lookup_field = 'slug'
+    lookup_url_kwarg = 'term_slug'
+    permission_classes = (ViewRepoPermission, IsAuthenticated)
 
     def get_queryset(self):
         """Filter to terms within a vocabulary and repository"""
@@ -151,16 +136,12 @@ class TermList(ListCreateAPIView):
         return {'Location': url}
 
 
-class TermDetail(RetrieveUpdateDestroyAPIView):
+class TermDetail(RetrieveUpdateAPIView):
     """REST detail view for Term"""
     serializer_class = TermSerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'term_slug'
-    permission_classes = (
-        ViewTermPermission,
-        ManageTaxonomyPermission,
-        IsAuthenticated,
-    )
+    permission_classes = (ViewRepoPermission, IsAuthenticated)
 
     def get_queryset(self):
         """Filter to a term within a vocabulary within a repository"""
