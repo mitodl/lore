@@ -42,6 +42,7 @@ class TestImportToy(LoreTestCase):
         # Valid zip file, wrong stuff in it.
         handle, bad_zip = mkstemp(suffix=".zip")
         os.close(handle)
+        self.addCleanup(os.remove, bad_zip)
         archive = zipfile.ZipFile(
             bad_zip, "w", compression=zipfile.ZIP_DEFLATED)
         archive.close()
@@ -203,7 +204,7 @@ class TestImportToy(LoreTestCase):
         Do integration test to validate course import with static assets.
         """
         original_count = Course.objects.count()
-        tarball_file = self.get_course_static_tarball()
+        tarball_file = self.get_course_single_tarball()
         import_file(
             tarball_file, self.repo.id, self.user.id)
         self.assertEqual(
