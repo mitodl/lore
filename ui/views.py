@@ -251,6 +251,13 @@ class RepositoryView(FacetedSearchView):
         })
         return context
 
+    def build_form(self, form_kwargs=None):
+        """Override of FacetedSearchView.build_form to inject repo slug."""
+        if form_kwargs is None:
+            form_kwargs = {}
+        form_kwargs["repo_slug"] = self.repo.slug
+        return super(RepositoryView, self).build_form(form_kwargs)
+
 
 # pylint: disable=unused-argument
 # repo_slug argument will be used by the decorator to protect the view
