@@ -13,7 +13,6 @@ from rest_framework.status import (
 )
 
 from learningresources.models import Repository
-from taxonomy.api import create_vocabulary, create_term
 from taxonomy.models import Vocabulary, Term
 from rest.serializers import (
     RepositorySerializer,
@@ -98,11 +97,10 @@ class TestRest(RESTTestCase):
         self.delete_repository(self.repo.slug,
                                expected_status=HTTP_405_METHOD_NOT_ALLOWED)
 
-        self.delete_vocabulary(self.repo.slug, vocab_slug,
-                               expected_status=HTTP_405_METHOD_NOT_ALLOWED)
+        self.delete_vocabulary(self.repo.slug, vocab_slug)
 
         vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(1, vocabularies['count'])
+        self.assertEqual(0, vocabularies['count'])
 
         self.delete_repository(self.repo.slug,
                                expected_status=HTTP_405_METHOD_NOT_ALLOWED)
@@ -165,11 +163,10 @@ class TestRest(RESTTestCase):
         self.assertEqual(1, Vocabulary.objects.count())
 
         # try deleting a vocabulary
-        self.delete_vocabulary(self.repo.slug, new_vocab_slug,
-                               expected_status=HTTP_405_METHOD_NOT_ALLOWED)
+        self.delete_vocabulary(self.repo.slug, new_vocab_slug)
 
         vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(1, vocabularies['count'])
+        self.assertEqual(0, vocabularies['count'])
 
         # test missing repository
         self.create_vocabulary("missing", input_dict,
@@ -258,48 +255,45 @@ class TestRest(RESTTestCase):
 
     def test_term(self):
         """Test REST access for term"""
-        vocab = create_vocabulary(
-            self.repo.id,
-            "name",
-            "description",
-            True,
-            Vocabulary.FREE_TAGGING,
-            1000
-        )
-        terms = self.get_terms(self.repo.slug, vocab.slug)
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+        terms = self.get_terms(self.repo.slug, vocab_slug)
         self.assertEqual(0, terms['count'])
 
         input_dict = {
             "label": "term label",
             "weight": 3000,
         }
-        output_dict = self.create_term(self.repo.slug, vocab.slug, input_dict)
+        self.create_term(self.repo.slug, "missing", input_dict,
+                         expected_status=HTTP_404_NOT_FOUND)
+        self.create_term("missing", vocab_slug, input_dict,
+                         expected_status=HTTP_404_NOT_FOUND)
+        output_dict = self.create_term(self.repo.slug, vocab_slug, input_dict)
         new_term_slug = output_dict['slug']
-        self.get_term(self.repo.slug, vocab.slug, new_term_slug)
+        self.get_term(self.repo.slug, vocab_slug, new_term_slug)
 
         # delete a term
         self.delete_term(
-            self.repo.slug, vocab.slug, new_term_slug,
-            expected_status=HTTP_405_METHOD_NOT_ALLOWED
+            self.repo.slug, vocab_slug, new_term_slug
         )
 
-        terms = self.get_terms(self.repo.slug, vocab.slug)
-        self.assertEqual(1, terms['count'])
+        terms = self.get_terms(self.repo.slug, vocab_slug)
+        self.assertEqual(0, terms['count'])
 
+        self.create_term(self.repo.slug, vocab_slug, input_dict)
         # create term again, prevented due to duplicate data
         self.create_term(
-            self.repo.slug, vocab.slug, input_dict,
+            self.repo.slug, vocab_slug, input_dict,
             expected_status=HTTP_400_BAD_REQUEST
         )
 
         # patch with missing slug
         self.patch_term(
-            self.repo.slug, vocab.slug, "missing", {'label': 'rename'},
+            self.repo.slug, vocab_slug, "missing", {'label': 'rename'},
             expected_status=HTTP_404_NOT_FOUND
         )
 
         output_dict = self.patch_term(
-            self.repo.slug, vocab.slug, new_term_slug, {'label': 'rename'}
+            self.repo.slug, vocab_slug, new_term_slug, {'label': 'rename'}
         )
 
         new_term_slug = output_dict['slug']
@@ -308,12 +302,12 @@ class TestRest(RESTTestCase):
 
         # put with missing slug
         self.put_term(
-            self.repo.slug, vocab.slug, "missing slug", input_dict,
+            self.repo.slug, vocab_slug, "missing slug", input_dict,
             expected_status=HTTP_404_NOT_FOUND
         )
 
         output_dict = self.put_term(
-            self.repo.slug, vocab.slug, new_term_slug, input_dict
+            self.repo.slug, vocab_slug, new_term_slug, input_dict
         )
         new_term_slug = output_dict['slug']
         self.assertEqual(input_dict['label'],
@@ -321,24 +315,28 @@ class TestRest(RESTTestCase):
         # never created a duplicate
         self.assertEqual(1, Term.objects.count())
 
-        # test missing vocabulary
-        # term permission work not done
-        self.get_term(self.repo.slug, vocab.slug, "missing",
+        # test missing repository
+        self.get_term(self.repo.slug, vocab_slug, "missing",
                       expected_status=HTTP_404_NOT_FOUND,
                       skip_options_head_test=True)
-        self.assertEqual(0, self.get_terms(self.repo.slug, "missing")['count'])
+        self.get_terms(self.repo.slug, "missing",
+                       expected_status=HTTP_404_NOT_FOUND)
 
-        vocab2 = create_vocabulary(
-            self.repo.id,
-            "other name",
-            "description",
-            True,
-            Vocabulary.FREE_TAGGING,
-            1000
-        )
+        vocab2_slug = self.create_vocabulary(
+            self.repo.slug,
+            {
+                "name": "other name",
+                "description": "description",
+                "required": True,
+                "vocabulary_type": Vocabulary.FREE_TAGGING,
+                "weight": 1000,
+            }
+        )['slug']
 
-        self.delete_term(self.repo.slug, vocab.slug, new_term_slug,
-                         expected_status=HTTP_405_METHOD_NOT_ALLOWED)
+        self.delete_term(self.repo.slug, vocab_slug, new_term_slug)
+        # verify deletion
+        self.delete_term(self.repo.slug, vocab_slug, new_term_slug,
+                         expected_status=HTTP_404_NOT_FOUND)
 
         # make sure terms only show up under vocabulary they belong to
         input_dict = {
@@ -346,34 +344,33 @@ class TestRest(RESTTestCase):
             "weight": 3000,
         }
 
-        term1 = self.create_term(self.repo.slug, vocab.slug, input_dict)
-        term2 = self.create_term(self.repo.slug, vocab2.slug, input_dict)
-        self.create_term(self.repo.slug, vocab.slug,
-                         expected_status=HTTP_400_BAD_REQUEST)
+        term1 = self.create_term(self.repo.slug, vocab_slug, input_dict)
+        term2 = self.create_term(self.repo.slug, vocab2_slug, input_dict)
+        self.create_term(self.repo.slug, vocab_slug)
 
-        terms = self.get_terms(self.repo.slug, vocab.slug)
+        terms = self.get_terms(self.repo.slug, vocab_slug)
         self.assertEqual(2, terms['count'])
-        terms = self.get_terms(self.repo.slug, vocab2.slug)
+        terms = self.get_terms(self.repo.slug, vocab2_slug)
         self.assertEqual(1, terms['count'])
 
-        self.get_term(self.repo.slug, vocab.slug, term1['slug'])
-        self.get_term(self.repo.slug, vocab.slug, term2['slug'],
+        self.get_term(self.repo.slug, vocab_slug, term1['slug'])
+        self.get_term(self.repo.slug, vocab_slug, term2['slug'],
                       expected_status=HTTP_404_NOT_FOUND,
                       skip_options_head_test=True)
-        self.get_term(self.repo.slug, vocab2.slug, term1['slug'],
+        self.get_term(self.repo.slug, vocab2_slug, term1['slug'],
                       expected_status=HTTP_404_NOT_FOUND,
                       skip_options_head_test=True)
-        self.get_term(self.repo.slug, vocab2.slug, term2['slug'])
+        self.get_term(self.repo.slug, vocab2_slug, term2['slug'])
 
         # as anonymous
         self.logout()
-        self.get_term(self.repo.slug, vocab.slug, term1['slug'],
+        self.get_term(self.repo.slug, vocab_slug, term1['slug'],
                       expected_status=HTTP_403_FORBIDDEN)
-        self.get_term(self.repo.slug, vocab.slug, term2['slug'],
+        self.get_term(self.repo.slug, vocab_slug, term2['slug'],
                       expected_status=HTTP_403_FORBIDDEN)
-        self.get_term(self.repo.slug, vocab2.slug, term1['slug'],
+        self.get_term(self.repo.slug, vocab2_slug, term1['slug'],
                       expected_status=HTTP_403_FORBIDDEN)
-        self.get_term(self.repo.slug, vocab2.slug, term2['slug'],
+        self.get_term(self.repo.slug, vocab2_slug, term2['slug'],
                       expected_status=HTTP_403_FORBIDDEN)
 
     def test_repository_pagination(self):
@@ -412,13 +409,15 @@ class TestRest(RESTTestCase):
         """Test pagination for collections"""
 
         expected = [
-            create_vocabulary(
-                self.repo.id,
-                "name{i}".format(i=i),
-                "description",
-                True,
-                Vocabulary.FREE_TAGGING,
-                1000
+            self.create_vocabulary(
+                self.repo.slug,
+                {
+                    "name": "name{i}".format(i=i),
+                    "description": "description",
+                    "required": True,
+                    "vocabulary_type": Vocabulary.FREE_TAGGING,
+                    "weight": 1000,
+                }
             ) for i in range(40)]
 
         resp = self.client.get(
@@ -446,23 +445,19 @@ class TestRest(RESTTestCase):
     def test_term_pagination(self):
         """Test pagination for collections"""
 
-        vocab = create_vocabulary(
-            self.repo.id,
-            "name",
-            "description",
-            True,
-            Vocabulary.FREE_TAGGING,
-            1000
-        )
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
 
         expected = [
-            create_term(
-                vocab.id,
-                "name{i}".format(i=i),
-                1000
+            self.create_term(
+                self.repo.slug,
+                vocab_slug,
+                {
+                    "label": "name{i}".format(i=i),
+                    "weight": 1000,
+                }
             ) for i in range(40)]
 
-        terms = self.get_terms(self.repo.slug, vocab.slug)
+        terms = self.get_terms(self.repo.slug, vocab_slug)
         self.assertEqual(40, terms['count'])
         self.assertEqual([TermSerializer(x).data for x in expected[:20]],
                          terms['results'])
@@ -472,7 +467,7 @@ class TestRest(RESTTestCase):
             '{vocab_slug}/terms/?page=2'.format(
                 repo_slug=self.repo.slug,
                 repo_base=REPO_BASE,
-                vocab_slug=vocab.slug,
+                vocab_slug=vocab_slug,
             ))
         self.assertEqual(HTTP_200_OK, resp.status_code)
         terms = as_json(resp)

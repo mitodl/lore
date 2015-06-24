@@ -10,11 +10,16 @@ from rest_framework.permissions import (
 )
 from django.http import Http404
 
+from roles.permissions import RepoPermission
 from learningresources.models import Repository
 from learningresources.api import (
     get_repo,
     PermissionDenied,
     NotFound,
+)
+from taxonomy.api import (
+    get_vocabulary,
+    get_term,
 )
 
 
@@ -44,3 +49,68 @@ class ViewRepoPermission(BasePermission):
         except PermissionDenied:
             return False
         return True
+
+
+class ViewVocabularyPermission(BasePermission):
+    """Checks view_repo permission on repository and that
+    repository owns vocabulary"""
+
+    def has_permission(self, request, view):
+        try:
+            get_vocabulary(
+                view.kwargs['repo_slug'],
+                request.user.id,
+                view.kwargs['vocab_slug']
+            )
+        except NotFound:
+            raise Http404()
+        except PermissionDenied:
+            return False
+        return True
+
+
+class ViewTermPermission(BasePermission):
+    """Checks view_repo permission on repository and that repository owns
+    vocabulary and that vocabulary owns term"""
+
+    def has_permission(self, request, view):
+        try:
+            get_term(
+                view.kwargs['repo_slug'],
+                request.user.id,
+                view.kwargs['vocab_slug'],
+                view.kwargs['term_slug']
+            )
+        except NotFound:
+            raise Http404()
+        except PermissionDenied:
+            return False
+        return True
+
+
+class ManageTaxonomyPermission(BasePermission):
+    """Checks manage_taxonomy permission"""
+
+    def has_permission(self, request, view):
+        # verify repo just in case we haven't done this earlier
+        try:
+            get_repo(view.kwargs['repo_slug'], request.user.id)
+        except NotFound:
+            raise Http404()
+        except PermissionDenied:
+            return False
+
+        if request.method in SAFE_METHODS:
+            return True
+        else:
+            repo_slug = view.kwargs['repo_slug']
+            try:
+                repo = Repository.objects.get(slug=repo_slug)
+            except Repository.DoesNotExist:
+                raise NotFound()
+
+            manage_taxonomies_permission = '{}.{}'.format(
+                Repository._meta.app_label,
+                RepoPermission.manage_taxonomy[0]
+            )
+            return request.user.has_perm(manage_taxonomies_permission, repo)
