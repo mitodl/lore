@@ -85,6 +85,7 @@ INSTALLED_APPS = (
     'compressor',
     'bootstrap3',
     'guardian',
+    'audit',
     'learningresources',
     'importer',
     'ui',

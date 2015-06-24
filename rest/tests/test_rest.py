@@ -483,7 +483,7 @@ class TestRest(RESTTestCase):
             'slug': 'sluggy',
             'name': 'other name',
             'description': 'description',
-            'create_date': "2015-01-01",
+            'date_created': "2015-01-01",
             'created_by': self.user_norepo.id,
         }
         result = self.create_repository(repo_dict, skip_assert=True)
@@ -491,7 +491,7 @@ class TestRest(RESTTestCase):
         # the serializer
         self.assertNotEqual(repo_dict['id'], result['id'])
         self.assertNotEqual(repo_dict['slug'], result['slug'])
-        self.assertNotEqual(repo_dict['create_date'], result['create_date'])
+        self.assertNotEqual(repo_dict['date_created'], result['date_created'])
         self.assertNotIn('created_by', result)
         repository = Repository.objects.get(slug=result['slug'])
         self.assertEqual(repository.created_by.id, self.user.id)

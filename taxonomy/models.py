@@ -6,6 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.text import slugify
 from django.shortcuts import get_object_or_404
 
+from audit.models import BaseModel
 from learningresources.models import (
     Repository,
     LearningResourceType,
@@ -13,7 +14,7 @@ from learningresources.models import (
 )
 
 
-class Vocabulary(models.Model):
+class Vocabulary(BaseModel):
     """Model for vocabulary table"""
     MANAGED = "m"
     FREE_TAGGING = "f"
@@ -60,7 +61,7 @@ class Vocabulary(models.Model):
         return super(Vocabulary, self).save(*args, **kwargs)
 
 
-class Term(models.Model):
+class Term(BaseModel):
     """Model for term table"""
     vocabulary = models.ForeignKey(Vocabulary, on_delete=models.PROTECT)
     label = models.CharField(max_length=256)

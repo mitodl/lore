@@ -13,6 +13,7 @@ from django.utils.text import slugify
 from django.utils.encoding import python_2_unicode_compatible
 from django.shortcuts import get_object_or_404
 
+from audit.models import BaseModel
 from roles.api import roles_init_new_repo, roles_update_repo
 from roles.permissions import RepoPermission
 
@@ -40,7 +41,7 @@ def static_asset_basepath(asset, filename):
     )
 
 
-class Course(models.Model):
+class Course(BaseModel):
     """
     A course on edX platform (MITx or residential).
     """
@@ -48,7 +49,6 @@ class Course(models.Model):
     org = models.TextField()
     course_number = models.TextField()
     run = models.TextField()
-    import_date = models.DateField(auto_now_add=True)
     imported_by = models.ForeignKey(User)
 
     class Meta:
@@ -56,7 +56,7 @@ class Course(models.Model):
         unique_together = ("repository", "org", "course_number", "run")
 
 
-class StaticAsset(models.Model):
+class StaticAsset(BaseModel):
     """
     Holds static assets for a course (css, html, javascript, images, etc)
     """
@@ -65,7 +65,7 @@ class StaticAsset(models.Model):
     asset = models.FileField(upload_to=static_asset_basepath)
 
 
-class LearningResource(models.Model):
+class LearningResource(BaseModel):
     """
     The units that compose an edX course:
     chapter, sequential, vertical, problem, video, html, etc.
@@ -88,7 +88,7 @@ class LearningResource(models.Model):
 
 
 @python_2_unicode_compatible
-class LearningResourceType(models.Model):
+class LearningResourceType(BaseModel):
     """
     Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
@@ -99,7 +99,7 @@ class LearningResourceType(models.Model):
         return self.name
 
 
-class Repository(models.Model):
+class Repository(BaseModel):
     """
     A collection of learning resources
     that come from (usually tightly-related) courses.
@@ -107,7 +107,6 @@ class Repository(models.Model):
     name = models.CharField(max_length=256, unique=True)
     slug = models.SlugField(max_length=256, unique=True)
     description = models.TextField()
-    create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)
 
     @transaction.atomic

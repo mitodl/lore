@@ -32,13 +32,13 @@ class RepositorySerializer(ModelSerializer):
             'slug',
             'name',
             'description',
-            'create_date',
+            'date_created',
             'created_by',
         )
         read_only_fields = (
             'id',
             'slug',
-            'create_date',
+            'date_created',
         )
 
 
