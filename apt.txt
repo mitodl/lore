@@ -1,0 +1,21 @@
+# Core requirements
+
+git
+libpq-dev
+python-pip
+python3-pip
+python-dev
+python3-dev
+npm
+nodejs
+
+
+# Importer app requirements
+
+libxml2-dev
+libxslt1-dev
+libxslt1.1
+
+# developer requirements
+postgresql-client
+

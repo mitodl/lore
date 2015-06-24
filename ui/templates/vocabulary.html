@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+    {% if vocabulary_id %}
+        <form action="{% url 'edit_vocabulary' repo_slug=repo_slug vocab_slug=vocab_slug %}" method="post">
+    {% else %}
+        <form action="{% url 'create_vocabulary' repo_slug=repo_slug %}" method="post">
+    {% endif %}
+        {%  csrf_token %}
+        <table>
+        {{ form }}
+        </table>
+        <input type="submit" value="Submit" />
+    </form>
+{% endblock %}

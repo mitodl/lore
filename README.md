@@ -1,2 +1,0 @@
-# lore
-placeholder for LORE

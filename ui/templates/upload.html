@@ -1,0 +1,17 @@
+{% extends "repo_base.html" %}
+{% load bootstrap3 %}
+{% block title %}Upload Course{% endblock %}
+{% block nav %}
+{% endblock %}
+{% block content %}
+
+<h1>Upload content in OLX format</h1>
+<form method="post" action="{% url 'upload' repo.slug %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% bootstrap_form form %}
+    <button type="submit" class="btn btn-primary">
+        {% bootstrap_icon "star" %} Upload Course
+    </button>
+</form>
+
+{% endblock %}

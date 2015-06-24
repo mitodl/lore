@@ -1,0 +1,13 @@
+# Core project/common application testing requirements
+
+pytest
+pytest-pep8
+pytest-pylint
+pytest-cov
+pytest-django
+pytest-capturelog
+pytest-watch
+mock
+ipython
+urltools
+semantic_version
