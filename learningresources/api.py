@@ -54,7 +54,7 @@ def create_course(org, repo_id, course_number, run, user_id):
 
     """
     # Check on unique values before attempting a get_or_create, because
-    # items such as import_date will always make it non-unique.
+    # items such as date_created  will always make it non-unique.
     unique = {
         "org": org, "course_number": course_number, "run": run,
         "repository_id": repo_id,
