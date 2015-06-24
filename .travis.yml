@@ -21,4 +21,8 @@ deploy:
   app:
     master: lore-ci
     release: lore-release
-  run: "python manage.py migrate --noinput"
+  run:
+    - "sleep 15"
+    - "python manage.py migrate --noinput"
+    - "python manage.py update_index"
+    - "python manage.py sync_permissions"

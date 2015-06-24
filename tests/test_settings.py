@@ -12,6 +12,7 @@ from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
 from django.test import TestCase
 import mock
+import semantic_version
 import yaml
 
 from lore.settings import load_fallback, get_var
@@ -193,3 +194,10 @@ class TestSettings(TestCase):
                 settings_vars['DATABASES']['default']['OPTIONS'],
                 {'sslmode': 'require'}
             )
+
+    @staticmethod
+    def test_semantic_version():
+        """
+        Verify that we have a semantic compatible version.
+        """
+        semantic_version.Version(settings.VERSION)

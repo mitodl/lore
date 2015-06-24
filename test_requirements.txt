@@ -10,3 +10,4 @@ pytest-watch
 mock
 ipython
 urltools
+semantic_version
