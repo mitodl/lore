@@ -13,7 +13,7 @@ from django.db import transaction
 from guardian.shortcuts import get_objects_for_user, get_perms
 
 from learningresources.models import (
-    Course, Repository, LearningResource, LearningResourceType
+    Course, Repository, LearningResource, LearningResourceType, StaticAsset
 )
 from roles.permissions import RepoPermission
 
@@ -220,3 +220,32 @@ def get_resource(resource_id, user_id):
     # This will raise PermissionDenied if it fails.
     get_repo(resource.course.repository.slug, user_id)
     return resource
+
+
+def create_static_asset(course_id, file_handle):
+    """
+    Create a static asset for a given course.
+
+    Warning:
+        This takes and open file handle and does not close it. You
+        will need to handle the opening and closing the
+        ``file_handle`` outside of this method.
+
+    Raises:
+        ValueError: If a closed handle is passed in
+
+    Args:
+        course_id (int): Primary key of the Course to add the asset to.
+        file_handle (django.core.files.File):
+            An open file handle to save to the model.
+
+    Returns:
+        learningresources.models.StaticAsset
+    """
+    course = Course.objects.get(id=course_id)
+    with transaction.atomic():
+        static_asset, _ = StaticAsset.objects.get_or_create(
+            course=course,
+            asset=file_handle
+        )
+    return static_asset

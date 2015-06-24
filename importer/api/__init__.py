@@ -7,15 +7,20 @@ from __future__ import unicode_literals
 from shutil import rmtree
 import logging
 from tempfile import mkdtemp
-from os.path import join, exists
-from os import listdir
+from os.path import join, exists, isdir
+from os import listdir, walk, sep
 
 from archive import Archive, ArchiveException
+from django.core.files import File
 from django.core.files.storage import default_storage
 from lxml import etree
 from xbundle import XBundle, DESCRIPTOR_TAGS
 
-from learningresources.api import create_course, create_resource
+from learningresources.api import (
+    create_course,
+    create_resource,
+    create_static_asset
+)
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +48,8 @@ def import_course_from_file(filename, repo_id, user_id):
     tempdir = mkdtemp()
 
     # HACK: Have to patch in "seekable" attribute for python3 and tar
-    # See: https://code.djangoproject.com/ticket/24963#ticket
+    # See: https://code.djangoproject.com/ticket/24963#ticket. Remove
+    # when updating to Django 1.9
     def seekable():
         """Hacked seekable for django storage to work in python3"""
         return True
@@ -89,7 +95,11 @@ def import_course_from_path(path, repo_id, user_id):
     """
     bundle = XBundle()
     bundle.import_from_directory(path)
-    return import_course(bundle, repo_id, user_id)
+    course = import_course(bundle, repo_id, user_id)
+    static_dir = join(path, 'static')
+    if isdir(static_dir):
+        import_static_assets(static_dir, course)
+    return course
 
 
 def import_course(bundle, repo_id, user_id):
@@ -101,7 +111,7 @@ def import_course(bundle, repo_id, user_id):
         repo_id (int): Primary key of repository course belongs to
         user_id (int): Primary key of Django user doing the import
     Returns:
-        None
+        learningresources.models.Course
     """
     src = bundle.course
     course = create_course(
@@ -112,6 +122,7 @@ def import_course(bundle, repo_id, user_id):
         user_id=user_id,
     )
     import_children(course, src, None)
+    return course
 
 
 def import_children(course, element, parent):
@@ -136,3 +147,23 @@ def import_children(course, element, parent):
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
             import_children(course, child, resource)
+
+
+def import_static_assets(path, course):
+    """
+    Upload all assets and create model records of them for a given
+    course and path.
+
+    Args:
+        path (unicode): course specific path to extracted OLX tree.
+        course (learningresources.models.Course): Course to add assets to.
+    Returns:
+        None
+    """
+    for root, _, files in walk(path):
+        for name in files:
+            with open(join(root, name), 'r') as open_file:
+                django_file = File(open_file)
+                # Remove base path from file name
+                django_file.name = join(root, name).replace(path + sep, '', 1)
+                create_static_asset(course.id, django_file)
