@@ -15,7 +15,6 @@ script:
 after_success: coveralls
 deploy:
   provider: heroku
-  strategy: git
   api_key:
     secure: CGv5mHV8SFnFkdwpRl2EGRU5kvnl7xfxZPgl5DvqJHZ6xBreDpGFQOyQDVVqRAt7s9Dq/JD8qMCvm15rVRdXN9rKMDFV9ilPiR2dTBPs5rzE+upA/W2N2+pkQrnXEP+80EF3Wy3ODUAUb4aUlCwG1NqZCWnn4NzuZNCtAYEqwuk=
   app:
@@ -24,5 +23,5 @@ deploy:
   run:
     - "sleep 15"
     - "python manage.py migrate --noinput"
-    - "python manage.py update_index"
+    - "python manage.py update_index --verbosity=0"
     - "python manage.py sync_permissions"
