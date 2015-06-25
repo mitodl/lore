@@ -13,6 +13,8 @@
     "icheck": "~1.0.2",
     "components-font-awesome": "~4.3.0",
     "modernizr": "~2.8.3",
-    "retina.js": "~1.3.0"
+    "retina.js": "~1.3.0",
+    "react": "0.13.3",
+    "react-addons": "0.1.2"
   }
 }
