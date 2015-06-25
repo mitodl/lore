@@ -300,6 +300,12 @@ LOGGING = {
             'level': DJANGO_LOG_LEVEL,
             'propagate': True,
         },
+        'urllib3': {
+            'level': 'INFO',
+        },
+        'elasticsearch': {
+            'level': 'INFO',
+        },
     },
 }
 
