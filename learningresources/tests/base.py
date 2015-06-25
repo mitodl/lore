@@ -92,6 +92,7 @@ class LoreTestCase(TestCase):
         )
 
         self.client = Client()
+
         self.login(username=self.USERNAME)
 
     def tearDown(self):

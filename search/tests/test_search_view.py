@@ -3,13 +3,14 @@
 from django.core.urlresolvers import reverse
 
 from learningresources.api import create_repo
-from learningresources.tests.base import LoreTestCase
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes
+from search.tests.base import SearchTestCase
 
 
-class TestSearchView(LoreTestCase):
+class TestSearchView(SearchTestCase):
     """Test Repository listing view.."""
+
     def test_single_repo(self):
         """
         Search should only return records for one repository
