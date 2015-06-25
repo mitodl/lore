@@ -113,16 +113,21 @@
         </div>
         <div class="tile-content">
           <h2>
-            <a href="{% url 'export' repo.slug result.object.id %}">
+            <a href="{% url 'export' repo.slug result.object.id %}" class="cd-btn">
               {% if result.object.title %}
               {{ result.object.title }}
               {% else %}
-              no title
+              No Title
               {% endif %}
             </a>
           </h2>
           
-          <div class="tile-blurb"> Description .. should be editable by user
+          <div class="tile-blurb">
+            {% if result.object.description %}
+            {{ result.object.description }}
+            {% else %}
+            No description provided.
+            {% endif %}
           </div>
           <div class="tile-meta">
             <span class="meta-item">{{ result.object.course.course_number }}</span>
@@ -152,5 +157,6 @@
     </div>
   </div>
 </div>
+{% include "includes/resource_panel.html" %}
 
 {% endblock %}
