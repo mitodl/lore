@@ -98,6 +98,10 @@ report. To run them all inside the docker image, run ``docker-compose
 run web tox``, or if you are running locally, after installing the
 requirements file, just run ``tox``.
 
+The project also contains JavaScript tests which can be run using
+[Karma](karma-runner.github.io). ``tox`` will run the JavaScript tests
+after the Python tests. You can run only the JavaScript tests using
+``docker-compose run web tox -e js``.
 
 Continuous Testing
 ~~~~~~~~~~~~~~~~~~
