@@ -5,13 +5,68 @@ Definition of Django custom permissions
 from __future__ import unicode_literals
 
 
+class PermissionException(Exception):
+    """Custom exception for permission"""
+
+
+class InvalidGroupType(PermissionException):
+    """Invalid group type"""
+
+
+class InvalidBaseGroupType(PermissionException):
+    """Invalid base group type"""
+
+
+class BaseGroupTypes(object):
+    """
+    Basic group types
+    """
+    ADMINISTRATORS = "administrators"
+    CURATORS = "curators"
+    AUTHORS = "authors"
+
+    @classmethod
+    def all_base_groups(cls):
+        """
+        Return the basic group names
+        """
+        return [cls.ADMINISTRATORS, cls.CURATORS, cls.AUTHORS]
+
+    @classmethod
+    def is_base_group_type(cls, base_group_type):
+        """
+        Checks if the basic_group_type is an allowed one
+        """
+        return base_group_type in cls.all_base_groups()
+
+
 class GroupTypes(object):
     """
-    Definition of generic group names
+    Definition of generic repository group names
     """
-    REPO_ADMINISTRATOR = '{}_repo_administrators'
-    REPO_CURATOR = '{}_repo_curators'
-    REPO_AUTHOR = '{}_repo_authors'
+    RAW_GROUP_NAME = '{}_repo_{}'
+
+    REPO_ADMINISTRATOR = RAW_GROUP_NAME.format(
+        '{}', BaseGroupTypes.ADMINISTRATORS
+    )
+    REPO_CURATOR = RAW_GROUP_NAME.format('{}', BaseGroupTypes.CURATORS)
+    REPO_AUTHOR = RAW_GROUP_NAME.format('{}', BaseGroupTypes.AUTHORS)
+
+    _GROUP_ASSOC = {
+        BaseGroupTypes.ADMINISTRATORS: REPO_ADMINISTRATOR,
+        BaseGroupTypes.CURATORS: REPO_CURATOR,
+        BaseGroupTypes.AUTHORS: REPO_AUTHOR
+    }
+
+    @classmethod
+    def get_repo_groupname_by_base(cls, base_group_type):
+        """
+        Returns the basic group name from the repo name
+        """
+        try:
+            return cls._GROUP_ASSOC[base_group_type]
+        except KeyError:
+            raise InvalidBaseGroupType
 
 
 class RepoPermission(object):

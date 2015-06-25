@@ -8,7 +8,10 @@ from django.contrib.auth.models import Group, Permission
 from django.db import transaction
 from guardian.shortcuts import assign_perm, get_perms, remove_perm
 
-from roles.permissions import RepoPermission, GroupTypes
+from roles.permissions import (
+    RepoPermission, GroupTypes, BaseGroupTypes, InvalidGroupType
+)
+from roles.user_models import UserGroup
 
 
 def roles_init_new_repo(repo):
@@ -162,3 +165,62 @@ def remove_user_from_repo_group(
         repo_group = Group.objects.get(name=group_type.format(repo.slug))
         user.groups.remove(repo_group)
         user.save()
+
+
+def list_users_in_repo(repo, base_group_type=None):
+    """
+    Lists all the users in the repository groups
+    If the group type is specified, the list is limited to that group
+
+    Args:
+        repo (learningresources.models.Repository): repository used to extract
+            the right group to use
+        base_group_type (unicode): group type from
+            roles.permissions.BaseGroupTypes
+    Returns:
+        list (list of roles.user_models.UserGroup): list of users in one or
+            all the repository groups
+    """
+    users_groups = []
+    if base_group_type is not None:
+        if not BaseGroupTypes.is_base_group_type(base_group_type):
+            raise InvalidGroupType
+        base_group_types = [base_group_type]
+    else:
+        base_group_types = BaseGroupTypes.all_base_groups()
+    for base_group_type in base_group_types:
+        group = Group.objects.get(
+            name=GroupTypes.get_repo_groupname_by_base(
+                base_group_type
+            ).format(repo.slug)
+        )
+        users_groups += [
+            UserGroup(user.username, base_group_type)
+            for user in group.user_set.all()
+        ]
+    return users_groups
+
+
+def is_last_admin_in_repo(user, repo):
+    """
+    Checks if user is the last administrator in the repository.
+    It does not check if the user is an actual administrator and in that case
+    it will simply return False
+
+    Args:
+        user (django.contrib.auth.models.User): user
+        repo (learningresources.models.Repository): repository used to extract
+            the right group to use
+    Returns:
+        bool
+    """
+    admins_in_repo = list_users_in_repo(
+        repo,
+        base_group_type=BaseGroupTypes.ADMINISTRATORS
+    )
+    return (
+        UserGroup(
+            user.username,
+            BaseGroupTypes.ADMINISTRATORS
+        ) in admins_in_repo
+    ) and len(admins_in_repo) == 1
