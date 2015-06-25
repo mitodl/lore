@@ -9,8 +9,8 @@ from rest_framework.permissions import (
     SAFE_METHODS,
 )
 from django.http import Http404
+from guardian.shortcuts import get_perms
 
-from roles.permissions import RepoPermission
 from learningresources.models import Repository
 from learningresources.api import (
     get_repo,
@@ -21,6 +21,7 @@ from taxonomy.api import (
     get_vocabulary,
     get_term,
 )
+from roles.permissions import RepoPermission
 
 
 # pylint: disable=protected-access
@@ -109,8 +110,7 @@ class ManageTaxonomyPermission(BasePermission):
             except Repository.DoesNotExist:
                 raise NotFound()
 
-            manage_taxonomies_permission = '{}.{}'.format(
-                Repository._meta.app_label,
+            return (
                 RepoPermission.manage_taxonomy[0]
+                in get_perms(request.user, repo)
             )
-            return request.user.has_perm(manage_taxonomies_permission, repo)
