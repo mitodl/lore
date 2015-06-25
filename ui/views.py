@@ -173,7 +173,10 @@ def welcome(request):
     return render(
         request,
         "welcome.html",
-        {"repos": get_repos(request.user.id)}
+        {
+            "repos": get_repos(request.user.id),
+            "support_email": settings.EMAIL_SUPPORT,
+        }
     )
 
 
