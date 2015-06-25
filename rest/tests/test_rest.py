@@ -175,6 +175,15 @@ class TestRest(RESTTestCase):
         self.get_vocabulary("missing", "missing",
                             expected_status=HTTP_404_NOT_FOUND)
 
+        # test create with missing required
+        dict_missing_required = dict(input_dict)
+        del dict_missing_required['required']
+        dict_missing_required['name'] = 'new name'
+
+        # we should get a 400 error for validation
+        self.create_vocabulary(self.repo.slug, dict_missing_required,
+                               expected_status=HTTP_400_BAD_REQUEST)
+
         # as anonymous
         self.logout()
         self.get_vocabularies("missing", expected_status=HTTP_403_FORBIDDEN)

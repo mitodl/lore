@@ -14,7 +14,7 @@ from rest_framework.generics import get_object_or_404
 
 from taxonomy.models import Vocabulary, Term
 from learningresources.models import Repository
-from .util import LambdaDefault
+from .util import LambdaDefault, RequiredBooleanField
 
 
 class RepositorySerializer(ModelSerializer):
@@ -50,6 +50,10 @@ class VocabularySerializer(ModelSerializer):
             Repository, slug=context['view'].kwargs['repo_slug']
         )
     ))
+
+    # django-rest-framework mistakenly assumes required=False
+    # unless we override the behavior
+    required = RequiredBooleanField()
 
     class Meta:
         # pylint: disable=missing-docstring
