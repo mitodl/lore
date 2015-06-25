@@ -56,10 +56,14 @@
   </div>
 </div>
 {% include "includes/resource_panel.html" %}
+{% include "includes/taxonomy_panel.html" %}
 {% endblock %}
 {% block postcontent %}
 {{ block.super }}
 {% compress js %}
+<script type="text/jsx"
+        src="{% static "ui/js/manage_taxonomies.jsx" %}">
+</script>
 <script type="text/javascript">
   require(["listing"]);
 </script>

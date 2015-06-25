@@ -1,12 +1,17 @@
 {% extends "base.html" %}
 {% block nav %}
   {{ nav.super }}
-  	{% if 'import_course' in perms_on_cur_repo %}
-	  <li>
-	  	<a href="{% url 'upload' repo.slug %}"><i class="fa fa-arrow-circle-o-right"></i> Import Course</a>
-	  </li>
-	{% endif %}
-  <!-- <li><a href="#0" class="btn-taxonomies"><i class="fa fa-cogs"></i> Manage Taxonomies</a></li> -->
+   	{% if 'import_course' in perms_on_cur_repo %}
+ 	  <li>
+ 	  	<a href="{% url 'upload' repo.slug %}"><i class="fa fa-arrow-circle-o-right"></i> Import Course</a>
+ 	  </li>
+ 	{% endif %}
+  	{% if 'manage_taxonomy' in perms_on_cur_repo %}
+      <li>
+        <a href="#0" class="btn-taxonomies"><i class="fa fa-cogs"></i> Manage Taxonomies</a>
+      </li>
+      {% endif %}
+      <input type="hidden" id="repo_slug" value="{{ repo.slug }}" />
   {% endblock %}
 
   {% block extranavbarright %}
