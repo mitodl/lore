@@ -1,4 +1,5 @@
-define(['jquery', 'bootstrap', 'icheck', 'csrf'], function(jQuery) {
+define(['jquery', 'setup_manage_taxonomies', 'react', 'bootstrap', 'icheck', 'csrf'],
+  function(jQuery, setupManageTaxonomies) {
   'use strict';
 
   jQuery(document).ready(function($) {
@@ -54,5 +55,8 @@ define(['jquery', 'bootstrap', 'icheck', 'csrf'], function(jQuery) {
         event.preventDefault();
       }
     });
+
+    var repoSlug = $("#repo_slug").val();
+    setupManageTaxonomies(repoSlug);
   });
 });

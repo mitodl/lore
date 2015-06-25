@@ -6,7 +6,8 @@
 	  	<a href="{% url 'upload' repo.slug %}"><i class="fa fa-arrow-circle-o-right"></i> Import Course</a>
 	  </li>
 	{% endif %}
-  <!-- <li><a href="#0" class="btn-taxonomies"><i class="fa fa-cogs"></i> Manage Taxonomies</a></li> -->
+  <li><a href="#0" class="btn-taxonomies"><i class="fa fa-cogs"></i> Manage Taxonomies</a></li>
+      <input type="hidden" id="repo_slug" value="{{ repo.slug }}" />
   {% endblock %}
 
   {% block extranavbarright %}
