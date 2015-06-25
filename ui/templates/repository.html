@@ -14,71 +14,139 @@
            {% if form.q.value %}value="{{ form.q.value }}"{% endif %}
          >
         <span class="input-group-btn">
-        <button type="submit" class="btn btn-default btn-lg">
-          <i class="fa fa-search"></i>
-        </button>
+          <button type="submit" class="btn btn-default btn-lg">
+            <i class="fa fa-search"></i>
+          </button>
         </span>
       </div>
     </form>
   </div>
 </div>
 <div class="col-md-3">
-
-  {% if facets.fields.course %}
-  Course
-  <ul class="list-group">
-    {% for course in facets.fields.course %}
-    <li class="list-group-item">
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=course_exact:{{ course.0|urlencode }}">
-        {{ course.0 }}
-      </a>
-      <span class="badge">{{ course.1 }}</span>
-    </li>
+  <div class="panel-group lore-panel-group">
+    {% if facets.fields.course %}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-1">
+            Course
+          </a>
+        </h4>
+      </div>
+      <div id="collapse-1" class="panel-collapse collapse in">
+        <div class="panel-body">
+          <ul class="icheck-list">
+            {% for course in facets.fields.course %}
+            <li>
+              <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=course_exact:{{ course.0|urlencode }}">
+                {{ course.0 }}
+              </a>
+              <span class="badge">{{ course.1 }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% if facets.fields.run %}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-2">
+            Run
+          </a>
+        </h4>
+      </div>
+      <div id="collapse-2" class="panel-collapse collapse in">
+        <div class="panel-body">
+          <ul class="icheck-list">
+            {% for run in facets.fields.run %}
+            <li>
+              <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=run_exact:{{ run.0|urlencode }}">
+                {{ run.0 }}
+              </a>
+              <span class="badge">{{ run.1 }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% if facets.fields.resource_type %}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-3">
+            Item Type
+          </a>
+        </h4>
+      </div>
+      <div id="collapse-3" class="panel-collapse collapse in">
+        <div class="panel-body">
+          <ul class="icheck-list">
+            {% for resource_type in facets.fields.resource_type %}
+            <li>
+              <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=resource_type_exact:{{ resource_type.0|urlencode }}">        
+                {# Select image based on type #}
+                {% if resource_type.0 == 'chapter' %}
+                <img class="ic-custom" height="18" width="24"
+                     src="{% static "ui/images/ic-book.png" %}">
+                {% elif resource_type.0 == 'sequential' %}
+                <img class="ic-custom" height="18" width="24"
+                     src="{% static "ui/images/ic-sequential.png" %}">
+                {% elif resource_type.0 == 'vertical' %}
+                <img class="ic-custom" height="18" width="24"
+                     src="{% static "ui/images/ic-vertical.png" %}">
+                {% elif resource_type.0 == 'problem' %}
+                <img class="ic-custom" height="18" width="24"
+                     src="{% static "ui/images/ic-pieces.png" %}">
+                {% elif resource_type.0 == 'video' %}
+                <img class="ic-custom" height="18" width="24"
+                     src="{% static "ui/images/ic-video.png" %}">
+                {% else %}
+                <img class="ic-custom" height="18" width="24"
+                     src="{% static "ui/images/ic-code.png" %}">
+                {% endif %}                  
+                {{ resource_type.0|title }}
+              </a>
+              <span class="badge">{{ resource_type.1 }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% for name, vocab in vocabularies.items %}
+    {% if vocab %}
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4 class="panel-title">
+          <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-vocab-{{ forloop.counter }}">
+            {{ name|title }}
+          </a>
+        </h4>
+      </div>
+      <div id="collapse-vocab-{{ forloop.counter }}" class="panel-collapse collapse in">
+        <div class="panel-body">
+          <ul class="icheck-list">
+            {% for term in vocab %}
+            <li>
+              <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets={{ name|urlencode }}_exact:{{ term.0|urlencode }}">
+                {{ term.0 }}
+              </a>
+              <span class="badge">{{ term.1 }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% endif %}
     {% endfor %}
-  </ul>
+  </div>
   {% endif %}
-
-  {% if facets.fields.run %}
-  Run
-  <ul class="list-group">
-    {% for run in facets.fields.run %}
-    <li class="list-group-item">
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=run_exact:{{ run.0|urlencode }}">
-        {{ run.0 }}
-      </a>
-      <span class="badge">{{ run.1 }}</span>
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-  
-  {% if facets.fields.resource_type %}
-  Item Type
-  <ul class="list-group">
-    {% for resource_type in facets.fields.resource_type %}
-    <li class="list-group-item">
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=resource_type_exact:{{ resource_type.0|urlencode }}">
-        {{ resource_type.0 }}
-      </a>
-      <span class="badge">{{ resource_type.1 }}</span>
-    </li>
-    {% endfor %}
-  </ul>
-  {% endif %}
-
-  {% for name, vocab in vocabularies.items %}
-  {{ name|capfirst }}
-  <ul class="list-group">
-    {% for term in vocab %}
-    <li class="list-group-item">
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets={{ name|urlencode }}_exact:{{ term.0|urlencode }}">
-        {{ term.0 }}
-      </a>
-      <span class="badge">{{ term.1 }}</span>
-    </li>
-    {% endfor %}
-  </ul>
-  {% endfor %}
 </div>
 <div class="col-md-9 col-results">
   <div class="row grid-row-top">
