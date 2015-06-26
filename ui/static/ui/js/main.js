@@ -11,13 +11,30 @@ define(['jquery', 'bootstrap', 'icheck'], function(jQuery) {
     //open the lateral panel
     $('.cd-btn').on('click', function(event) {
       event.preventDefault();
+      var url = $(this).attr('href');
+      var title = $(this).html();
+      var textarea = $('.cd-panel .textarea-xml');
+      $('.cd-panel header h1').html(title);
+
+      // Clear out text area while waiting for AJAX to return
+      textarea.val('');
+      $.ajax({url: url, dataType: 'text'}).done(function(data) {
+        $('.cd-panel .textarea-xml').val(data);
+      }).error(function() {
+        $('.cd-panel .textarea-xml').val('Unable to retrieve XML.');
+      });
       $('.cd-panel').addClass('is-visible');
     });
 
+    // Handle "Copy to Clipboard"
+    $('.cd-panel #copy-textarea-xml').on('click', function(event) {
+      event.preventDefault();
+      $('.cd-panel .textarea-xml').select();
+    });
     //close the lateral panel
     $('.cd-panel').on('click', function(event) {
       if ($(event.target).is('.cd-panel') ||
-        $(event.target).is('.cd-panel-close')) {
+          $(event.target).is('.cd-panel-close')) {
         $('.cd-panel').removeClass('is-visible');
         event.preventDefault();
       }
@@ -32,7 +49,7 @@ define(['jquery', 'bootstrap', 'icheck'], function(jQuery) {
     //close the lateral panel
     $('.cd-panel-2').on('click', function(event) {
       if ($(event.target).is('.cd-panel-2') ||
-        $(event.target).is('.cd-panel-close')) {
+          $(event.target).is('.cd-panel-close')) {
         $('.cd-panel-2').removeClass('is-visible');
         event.preventDefault();
       }
