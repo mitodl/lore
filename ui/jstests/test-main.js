@@ -18,7 +18,8 @@ require.config({
 
   // paths for required libraries
   paths: {
-    QUnit: 'node_modules/qunitjs/qunit/qunit'
+    QUnit: 'node_modules/qunitjs/qunit/qunit',
+    react: 'ui/static/bower/react/react'
   },
 
   // we have to kickoff karma, as it is asynchronous
