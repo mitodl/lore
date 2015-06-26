@@ -1,6 +1,30 @@
 Release Notes
 -------------
 
+Version 0.2.0
+=============
+
+- The search bar performs full-text search over the learning resources
+  in the repository, the search results replace the contents of the
+  listing page.
+- Full-text search includes taxonomy facets.
+- Learning resources details are displayed in a panel that slides out
+  from the right side of the page.
+- Glyphs for learning resources types are displayed in the left side
+  panel for facets.
+- LORE's RESTful web service documentation is available. 
+  (http://docs.lore.apiary.io)
+- Authorizations are in place for taxonomy endpoints in LORE's web
+  service.
+- Relationships between learning resources and static assets are
+  captured.
+- Roles app has additional features. 
+
+Other Changes
+*************
+
+- Switched to using get_perms for cleaner code.
+- Added JavaScript infrastructure to run unit tests.
 
 Version 0.1.0
 =============
@@ -29,3 +53,4 @@ Version 0.1.0
 - Protected export view
 - Added faceted filtering
 - Added new manage repo users permission
+- Fixed repository listing page to only show results for a single repo. 
