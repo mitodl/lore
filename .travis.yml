@@ -12,7 +12,8 @@ install:
   - pip install coveralls
 script: 
   - tox
-after_success: coveralls
+after_success:
+  - coveralls --merge=coverage/coverage-js.json
 deploy:
   provider: heroku
   api_key:

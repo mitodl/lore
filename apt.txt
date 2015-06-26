@@ -19,3 +19,6 @@ libxslt1.1
 # developer requirements
 postgresql-client
 
+# required for phantomjs
+libfreetype6
+libfontconfig1
