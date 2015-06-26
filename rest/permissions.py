@@ -120,13 +120,13 @@ class ManageRepoMembersPermission(BasePermission):
     """Checks manage_repo_users permission"""
 
     def has_permission(self, request, view):
-        if request.method in SAFE_METHODS:
-            return True
         try:
             repo = get_repo(view.kwargs['repo_slug'], request.user.id)
         except NotFound:
-            raise Http404()
+            raise Http404()  # pragma: no cover
         except PermissionDenied:
             return False
+        if request.method in SAFE_METHODS:
+            return True
         return RepoPermission.manage_repo_users[0] in get_perms(
             request.user, repo)

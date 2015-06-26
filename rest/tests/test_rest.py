@@ -1,7 +1,6 @@
 """
 Unit tests for REST api
 """
-
 from __future__ import unicode_literals
 
 from rest_framework.status import (
@@ -14,6 +13,7 @@ from rest_framework.status import (
 
 from learningresources.models import Repository
 from taxonomy.models import Vocabulary, Term
+
 from rest.serializers import (
     RepositorySerializer,
     VocabularySerializer,

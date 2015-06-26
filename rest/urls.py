@@ -20,6 +20,8 @@ from .views import (
     RepoMemberGroupUserDetail,
 )
 
+REPOSITORY_MEMBERS_URL = r'^repositories/(?P<repo_slug>[-\w]+)/members/'
+
 urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls',
                                namespace='rest_framework')),
@@ -46,32 +48,31 @@ urlpatterns = [
         name='term-detail'),
     # Section for repository group members
     url(
-        r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'members/$',
+        REPOSITORY_MEMBERS_URL + r'$',
         RepoMemberList.as_view(),
         name='repo-members'
     ),
     url(
-        r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'members/groups/(?P<group_type>[-\w]+)/users/$',
+        REPOSITORY_MEMBERS_URL +
+        r'groups/(?P<group_type>[-\w]+)/users/$',
         RepoMemberGroupList.as_view(),
         name='repo-members-group'
     ),
     url(
-        r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'members/groups/(?P<group_type>[-\w]+)/users/(?P<username>[-\w]+)/$',
+        REPOSITORY_MEMBERS_URL +
+        r'groups/(?P<group_type>[-\w]+)/users/(?P<username>[-\w]+)/$',
         RepoMemberGroupUserDetail.as_view(),
         name='repo-members-group-user-detail'
     ),
     url(
-        r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'members/users/(?P<username>[-\w]+)/groups/$',
+        REPOSITORY_MEMBERS_URL +
+        r'users/(?P<username>[-\w]+)/groups/$',
         RepoMemberUserList.as_view(),
         name='repo-members-user'
     ),
     url(
-        r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'members/users/(?P<username>[-\w]+)/groups/(?P<group_type>[-\w]+)/$',
+        REPOSITORY_MEMBERS_URL +
+        r'users/(?P<username>[-\w]+)/groups/(?P<group_type>[-\w]+)/$',
         RepoMemberUserGroupDetail.as_view(),
         name='repo-members-user-group-detail'
     ),

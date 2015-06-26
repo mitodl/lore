@@ -51,3 +51,21 @@ class TestRoleUtils(TestCase):
 
         user_group2 = FooObject('bar')
         self.assertFalse(user_group1.__eq__(user_group2))
+
+    def test_user_group_hash(self):
+        """Test for UserGroup __hash__"""
+        user_group1 = UserGroup('foo1', 'bar')
+        user_group2 = UserGroup('foo1', 'bar')
+        self.assertEqual(
+            user_group1.__hash__(),
+            hash((user_group1.username, user_group1.group_type))
+        )
+        self.assertEqual(
+            user_group1.__hash__(),
+            user_group2.__hash__()
+        )
+        user_group2.username = 'foo2'
+        self.assertNotEqual(
+            user_group1.__hash__(),
+            user_group2.__hash__()
+        )

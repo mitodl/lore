@@ -109,7 +109,6 @@ class GroupSerializer(Serializer):
     """
     Serializer for base_group_type
     """
-    # pylint: disable=abstract-method
     group_type = ChoiceField(
         choices=BaseGroupTypes.all_base_groups()
     )
@@ -117,7 +116,7 @@ class GroupSerializer(Serializer):
     def validate_group_type(self, value):
         """Validate group_type"""
         # pylint: disable=no-self-use
-        if value not in BaseGroupTypes.all_base_groups():
+        if value not in BaseGroupTypes.all_base_groups():  # pragma: no cover
             raise ValidationError(
                 'group "{group}" is not valid'.format(group=value)
             )
@@ -128,7 +127,6 @@ class UserSerializer(Serializer):
     """
     Serializer for user
     """
-    # pylint: disable=abstract-method
     username = CharField()
 
     def validate_username(self, value):
@@ -136,7 +134,7 @@ class UserSerializer(Serializer):
         # pylint: disable=no-self-use
         try:
             User.objects.get(username=value)
-        except User.DoesNotExist:
+        except User.DoesNotExist:  # pragma: no cover
             raise ValidationError(
                 'user "{user}" is not available'.format(user=value)
             )
@@ -147,5 +145,3 @@ class UserGroupSerializer(UserSerializer, GroupSerializer):
     """
     Serializer for username base_group_type association
     """
-    # pylint: disable=abstract-method
-    pass

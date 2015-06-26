@@ -40,6 +40,7 @@ from rest.permissions import (
     ManageTaxonomyPermission,
     ManageRepoMembersPermission,
 )
+from rest.util import CheckValidMemberParamMixin
 from learningresources.models import Repository
 from learningresources.api import (
     get_repos,
@@ -209,7 +210,7 @@ class RepoMemberList(ListAPIView):
         return list_users_in_repo(repo)
 
 
-class RepoMemberGroupList(ListCreateAPIView):
+class RepoMemberGroupList(CheckValidMemberParamMixin, ListCreateAPIView):
     """
     REST list view for repository members per group
     """
@@ -257,7 +258,7 @@ class RepoMemberGroupList(ListCreateAPIView):
         return {'Location': url}
 
 
-class RepoMemberUserList(ListCreateAPIView):
+class RepoMemberUserList(CheckValidMemberParamMixin, ListCreateAPIView):
     """
     REST group list view for a repository member
     """
@@ -310,7 +311,8 @@ class RepoMemberUserList(ListCreateAPIView):
         return {'Location': url}
 
 
-class RepoMemberUserGroupDetail(RetrieveDestroyAPIView):
+class RepoMemberUserGroupDetail(CheckValidMemberParamMixin,
+                                RetrieveDestroyAPIView):
     """
     REST for one group assigned to a user in a repository
     """
