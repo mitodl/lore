@@ -1,4 +1,4 @@
-define(['jquery', 'bootstrap', 'icheck'], function(jQuery) {
+define(['jquery', 'bootstrap', 'icheck', 'csrf'], function(jQuery) {
   'use strict';
 
   jQuery(document).ready(function($) {
