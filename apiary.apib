@@ -3,100 +3,96 @@ HOST: http://lore.mit.edu/
 
 # LORE
 
-Simple API on top of MIT LORE application
+The Learning Objects Repository for Education (LORE) project seeks to build a library of online “learning objects” that will enable the efficient reuse of resources from previous MITx courses by professors and instructional staff. See https://github.com/mitodl/lore
+
+This API exposes the LORE application as a RESTful web service.
 
 # URL
-URL Structure is `https://{domain}/api/v1/{resource}/{resource_id}`
+URL Structure is `https://{domain}/api/v1/{resource}/{resource_id}/`
 
 | Code   | Description |
 | ---    | --- |
 |`{domain}`    | The domain of the LORE service. `private-b0103d-lore.apiary-mock.com/` is the Apiary mock server. |
-|`/api/v1/`    | The service endpoint includes the current version (v1) |
-|`{resource}`  | The resource endpoint for a specific set of objects in the system. Supported endpoints include repositories, vocabularies, learningresources, members|
-|`{resource_id}`  |The `resource_id` sets the unique identifier (name or numerical) for a specific object to reference |
+|`/api/v1/`    | The service endpoint includes the current version (v1). |
+|`{resource}`  | The resource endpoint for a specific set of items in the system. |
+|`{resource_id}`  |The `resource_id` sets the unique identifier (name or numerical) for a specific item to reference. |
 
-*Example: `http://lore.mit.edu/api/v1/repos` will return a json representation of all repositories.*
+*Example: `http://lore.mit.edu/api/v1/repositories/` will return a JSON representation of all repositories.*
 
-*Example: `http://lore.mit.edu/api/v1/repos/physics1` will return a json representation of the repository with name "physics1".*
+*Example: `http://lore.mit.edu/api/v1/repositories/physics-1/` will return a JSON representation of the repository with name "physics-1".*
 
-*Example: `http://lore.mit.edu/api/v1/repos/physics1/learningresources/1007` will return a json representation
-of the learning resource with ID= 1007.*
+*Example: `http://lore.mit.edu/api/v1/repositories/physics-1/learningresources/1007/` will return a JSON representation
+of the learning resource with ID=1007.*
 
 
 # Operations
-LORE API uses the following HTTP verbs
+LORE API uses the following HTTP verbs:
 
 | Verb   | Description |
 | ---    | --- |
-|`GET`   |Select one or more items. Success returns 200 status code with json result item(s) in body.|
-|`POST`  |Create a new item. Success returns 201 status code with newly created json item in body.|
-|`PUT`   |Update an item. Success returns 200 status code with updated json item in body.|
+|`GET`   |Select one or more items. Success returns 200 status code with JSON result item(s) in body.|
+|`POST`  |Create a new item. Success returns 201 status code with newly created JSON item in body.|
+|`PUT`   |Update an item. Success returns 200 status code with updated JSON item in body.|
+|`PATCH` |Update part of an item. Success returns a 200 status code with updated JSON item in body.|
 |`DELETE`|Delete an item. Success returns 204 status code with no body.|
 
 # Status Codes
-The API responds with one of the following status codes.
+The API responds with one of the following status codes:
 
 | Code| Description |
 | --- | --- |
-|`200`| Success. Request completed. |
-|`201`| Success. New resource created. |
-|`204`| Success. No content to return. Only the status code returns. |
-|`400`| Bad Request - The request could not be parsed. |
+|`200`| Success - request completed. |
+|`201`| Success - new resource created. |
+|`204`| Success - no content to return, resource successfully deleted. |
+|`400`| Bad Request - request could not be parsed. |
 |`401`| Unauthorized - user is not logged in, cannot access resource. |
+|`403`| Forbidden - user does not have permission to access resource. |
 |`404`| Not Found - resource doesn't exist. |
-|`422`| Unprocessable Entity - The request could not be parsed due to validation errors. |
-|`500`| Server error. |
+|`405`| Method Not Allowed - resource cannot be accessed using this method. |
+|`422`| Unprocessable Entity - request could not be parsed due to validation errors. |
+|`500`| Server error - request could not be processed due to a server error. |
 
 
 # Authentication
 
-tbd.
+The API uses basic or session-based authentication to authenticate users using the same credentials as the main application.
 
 # Pagination
 
-Requests that return multiple items all accept a `?page` parameter
+Requests that return multiple items accept a `?page` parameter.
 
-Example: `http://lore.mit.edu/api/v1/repos?page=2`
+Example: `http://lore.mit.edu/api/v1/repositories/?page=2`
 
-Page numbering is 1-based. Omitting the ?page parameter will return the first page.
+Page numbering is 1-based. Omitting the `?page` parameter will return the first page. There are up to 20 results per page.
 
-# LORE API Root [/]
-
-## Retrieve the Entry Point [GET]
-
-+ Response 200 (application/json)
-
-        {
-            "repositories_url": "/repos"
-        }
-
-
+# LORE API
 
 ## Group Repositories
 
-Repository resource
+## Repository Collection [/repositories/]
 
-## Repositories [/repos/{repo_name}]
-
-+ Parameters
-    + repo_name: `physics-intro` (string, required) - name of the repository
-
-### Retrieve a repository [GET]
+### List All Repositories [GET]
 
 + Response 200 (application/json)
 
         {
-            "tbd": "tbd",
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "id": 1,
+                    "slug": "physics-1",
+                    "name": "Physics 1",
+                    "description": "All intro-to-physics courses",
+                    "create_date": "2015-06-22"
+                }
+            ]
         }
-
-### Delete a repository [DELETE]
-Delete the repository and all its associated resources (learning resources, vocabularies etc.)
-
-+ Response 204
 
 ### Create a New Repository [POST]
 
-Create a repository by providing its JSON representation
+Create a repository by providing its JSON representation.
 
 + Request (application/json)
 
@@ -109,89 +105,63 @@ Create a repository by providing its JSON representation
 
     + Headers
 
-            Location: /repos/physics-intro
+            Location: /api/v1/repositories/physics-1/
 
     + Body
 
             {
-                "name": "physics-intro",
-                "...": "..."
-                "tbd": "Full json representation of the new repo goes here
+                "id": 1,
+                "slug": "physics-1",
+                "name": "Physics 1",
+                "description": "All intro-to-physics courses",
+                "create_date": "2015-06-17"
             }
 
-
-## Repository Collection [/repos]
-
-### List All Repositories [GET]
-
-+ Response 200 (application/json)
-
-    + Headers
-
-            Link: </repos?page=2>; rel="next"
-
-    + Body
-
-            [
-                {
-                    "tbd": "tbd",
-                }
-            ]
-
-## Group Learningobjects
-
-Learning Object resource
-
-## Learningobjects [/repos/{repo_id}/learningobjects/{learningobject_id}]
+## Repository [/repositories/{repo_slug}/]
 
 + Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
-    + learningobject_id: `1007` (number, required) - ID of the learning object
+    + repo_slug: `physics-1` (string, required) - slug for the repository
 
-### View a Learning resource [GET]
+### Retrieve a Repository [GET]
 
 + Response 200 (application/json)
 
         {
-            "tbd": "tbd",
+            "id": 1,
+            "slug": "physics-1",
+            "name": "Physics 1",
+            "description": "All intro-to-physics courses",
+            "create_date": "2015-06-22"
         }
 
-## Learningobjects Collection [/repos/{repo_id}/learningobjects{?learning_resource_type%5b%5d,course_id,xa_nr_views,page}]
+## Group Learningresources
+
+## Learningresource Collection [/repositories/{repo_slug}/learningresources/{?learning_resource_type%5b%5d,course_id,xa_nr_views,page}]
 
 + Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
-    + learning_resource_type: `7` (number,optional) - types of learning resources
-    + course_id: (string,optional)
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + learning_resource_type: `chapter` (string, optional) - types of learning resources
+    + course_id: (string, optional)
 
 ### List learning resources [GET]
 
 + Response 200 (application/json)
 
-    + Headers
-
-            Link: </repos/17/learningobjects?learning_resource_type[]=3&learning_resource_type[]=4&page=2>; rel="next"
-
     + Body
 
-            [
-                {
-                    "tbd": "tbd",
-                }
-            ]
+        [
+            {
+                "tbd": "tbd",
+            }
+        ]
 
-## Group Vocabularies
-
-
-Resources related to Vocabularies in the API.
-
-## Vocabulary [/repos/{repo_id}/vocabs/{vocab_id}]
-
+## Learningresources  [/repositories/{repo_slug}/learningresources/{learningresource_id}/]
 
 + Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
-    + vocab_id: `7` (number, required) - ID of the Vocabulary
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + learningresource_id: `1007` (number, required) - ID of the learningresource
 
-### View a Vocabulary [GET]
+### View a Learningresource [GET]
 
 + Response 200 (application/json)
 
@@ -199,38 +169,50 @@ Resources related to Vocabularies in the API.
             "tbd": "tbd",
         }
 
-## Vocabularies Collection [/repos/{repo_id}/vocabs]
+## Group Vocabularies
+
+## Vocabularies Collection [/repositories/{repo_slug}/vocabularies/]
 
 + Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
+    + repo_slug: `physics-1` (string, required) - slug for the repository
 
 ### List All Vocabularies [GET]
 
 + Response 200 (application/json)
 
-    + Headers
-
-            Link: </repos/17/vocabs?page=2>; rel="next"
-
     + Body
 
-            [
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
                 {
-                    "tbd": "tbd",
+                    "id": 7,
+                    "slug": "difficulty",
+                    "name": "difficulty",
+                    "description": "Learning resource difficulty",
+                    "vocabulary_type": "m",
+                    "required": true,
+                    "weight": 1,
+                    "learning_resource_types": [
+                        "Problem",
+                        "Vertical"
+                    ]
                 }
             ]
+        }
 
 ### Create a New Vocabulary [POST]
-
-Create your own vocabulary by providing its JSON representation
 
 + Request (application/json)
 
         {
-            "name": "learning objectives",
-            "description": "learning objectives description",
-            "vocabulary_type": "m"
-            "weight": 1
+            "name": "difficulty",
+            "description": "Learning resource difficulty",
+            "vocabulary_type": "m",
+            "weight": 1,
+            "required": true,
             "learning_resource_types": [
                 "Problem",
                 "Vertical"
@@ -241,69 +223,215 @@ Create your own vocabulary by providing its JSON representation
 
     + Headers
 
-            Location: /repos/17/vocabularies/2
+            Location: /api/v1/repositories/physics-1/vocabularies/difficulty/
 
     + Body
 
-            {
-                "name": "learning objectives",
-                "description": "learning objectives description",
-                "vocabulary_type": "m"
-                "weight": 1
-                "learning_resource_types": [
-                    "Problem",
-                    "Vertical"
-                ]
-            }
+        {
+            "id": 7,
+            "slug": "difficulty",
+            "name": "difficulty",
+            "description": "Learning resource difficulty",
+            "vocabulary_type": "m",
+            "required": true,
+            "weight": 1,
+            "learning_resource_types": [
+                "Problem",
+                "Vertical"
+            ]
+        }
 
 
-## Term [/repos/{repo_id}/vocabs/{vocab_id}/term/{term_id}]
+## Vocabulary [/repositories/{repo_slug}/vocabularies/{vocab_slug}/]
+
 
 + Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
-    + vocab_id: 1 (required, String) - ID of the Vocabulary
-    + term_id: 1 (required, String) - ID of the Taxonomy term
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + vocab_slug: `difficulty` (string, required) - slug for the vocabulary
+
+### View a Vocabulary [GET]
+
++ Response 200 (application/json)
+
+        {
+            "id": 7,
+            "slug": "difficulty",
+            "name": "difficulty",
+            "description": "Learning resource difficulty",
+            "vocabulary_type": "m",
+            "required": true,
+            "weight": 1,
+            "learning_resource_types": [
+                "Problem",
+                "Vertical"
+            ]
+        }
+
+### Partially update a Vocabulary [PATCH]
+
++ Request (application/json)
+
+        {
+            "vocabulary_type": "f"
+        }
+
++ Response 200 (application/json)
+
+        {
+            "id": 7,
+            "slug": "difficulty",
+            "name": "difficulty",
+            "description": "Learning resource difficulty",
+            "vocabulary_type": "f",
+            "required": true,
+            "weight": 1,
+            "learning_resource_types": [
+                "Problem",
+                "Vertical"
+            ]
+        }
+
+### Update a Vocabulary [PUT]
+
++ Request (application/json)
+
+        {
+            "id": 7,
+            "slug": "difficulty",
+            "name": "difficulty",
+            "description": "Learning resource difficulty",
+            "vocabulary_type": "f",
+            "required": false,
+            "weight": 123
+        }
+
++ Response 200 (application/json)
+
+
+        {
+            "id": 7,
+            "slug": "difficulty",
+            "name": "difficulty",
+            "description": "Learning resource difficulty",
+            "vocabulary_type": "f",
+            "required": false,
+            "weight": 123
+        }
+
+## Group Terms
+
+## Terms Collection [/repositories/{repo_slug}/vocabularies/{vocab_slug}/terms/{?learning_resource_type%5b%5d}]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + vocab_slug: `difficulty` (string, required) - slug for the vocabulary
+    + learning_resource_type: `chapter` (string, optional) - types of learning resources
+
+### List All Terms [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "id": 1,
+                    "slug": "easy",
+                    "label": "Easy",
+                    "weight": 1
+                }
+            ]
+        }
+
+### Create a New Term [POST]
+
++ Request (application/json)
+
+        {
+            "label": "Easy",
+            "weight": 1
+        }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Location: /api/v1/repositories/physics-1/vocabularies/difficulty/terms/easy
+
+    + Body
+
+        {
+            "id": 1,
+            "slug": "easy",
+            "label": "Easy",
+            "weight": 1
+        }
+
+## Term [/repositories/{repo_slug}/vocabularies/{vocab_slug}/terms/{term_slug}/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + vocab_slug: `difficulty` (string, required) - slug for the vocabulary
+    + term_slug: `easy` (string, required) - slug for the term
 
 ### View a Term [GET]
 
 + Response 200 (application/json)
 
         {
-            "tbd": "tbd",
+            "id": 1,
+            "slug": "easy",
+            "label": "Easy",
+            "weight": 1
         }
 
+### Partially update a Term [PATCH]
 
-## Terms Collection [/repos/{repo_id}/vocabs/{vocab_id}/terms{?learning_resource_type%5b%5d}]
++ Request (application/json)
 
-+ Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
-    + vocab_id: `7` (number, required) - ID of the Vocabulary
-    + learning_resource_type: `1` (number, optional) - types of learning resources
-
-### List All Terms [GET]
+        {
+            "weight": 2
+        }
 
 + Response 200 (application/json)
 
-    + Headers
+        {
+            "id": 1,
+            "slug": "easy",
+            "label": "Easy",
+            "weight": 2
+        }
 
-            Link: </repos/17/vocabs/7/terms?page=2>; rel="next"
+### Update a term [PUT]
 
-    + Body
++ Request (application/json)
 
-            [
-                {
-                    "tbd": "tbd",
-                }
-            ]
+        {
+            "label": "Easy",
+            "weight": 3
+        }
+
++ Response 200 (application/json)
+
+        {
+            "id": 1,
+            "slug": "easy",
+            "label": "Easy",
+            "weight": 3
+        }
 
 ## Group Members
 
 Represents users / members of the repository
 
-## Member [/repos/{repo_id}/members/{member_id}]
+## Member [/repositories/{repo_slug}/members/{member_id}/]
 
 + Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
+    + repo_slug: `physics-1` (string, required) - slug for the repository
     + member_id: `107` (number, required) - ID of the user in the system
 
 ### View a Member [GET]
@@ -314,20 +442,16 @@ Represents users / members of the repository
             "tbd": "tbd"
         }
 
-## Members Collection [/repos/{repo_id}/members{?role_id}]
+## Members Collection [/repositories/{repo_slug}/members/{?role_id}]
 
 + Parameters
-    + repo_id: `17` (number, required) - ID of the Repository
+    + repo_slug: `physics-1` (number, required) - ID of the Repository
     + role_id: ID of the role this member belongs to
 
 
 ### List All Members [GET]
 
 + Response 200 (application/json)
-
-    + Headers
-
-            Link: </repos/1/members?page=2&role=3>; rel="next"
 
     + Body
 

@@ -24,6 +24,7 @@ from learningresources.api import (
 from learningresources.models import Repository
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes, RepoPermission
+from search import get_sqs
 from taxonomy.models import Vocabulary
 from ui.forms import UploadForm, VocabularyForm, RepositoryForm
 
@@ -227,6 +228,7 @@ class RepositoryView(FacetedSearchView):
     def extra_context(self):
         """Add to the context."""
         context = super(RepositoryView, self).extra_context()
+        vocabularies = Vocabulary.objects.all().values_list("slug", flat=True)
         params = dict(self.request.GET.copy())
         qs_prefix = "?"
         # Chop out page number so we don't end up with
@@ -247,12 +249,22 @@ class RepositoryView(FacetedSearchView):
         context.update({
             "repo": self.repo,
             "perms_on_cur_repo": get_perms(self.request.user, self.repo),
+            "vocabularies": {
+                k: v
+                for k, v in context["facets"]["fields"].items()
+                if k in vocabularies
+            },
             "qs_prefix": qs_prefix,
         })
         return context
 
     def build_form(self, form_kwargs=None):
         """Override of FacetedSearchView.build_form to inject repo slug."""
+        # get_sqs must be called here instead of putting it in urls.py as
+        # would be the default. This is because vocabularies could be added
+        # by the user at runtime, and we need to be able to search on those
+        # facets without restarting Django.
+        self.searchqueryset = get_sqs()
         if form_kwargs is None:
             form_kwargs = {}
         form_kwargs["repo_slug"] = self.repo.slug

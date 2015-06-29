@@ -97,7 +97,7 @@ a {
 }
 
 .row-search .form-inline {
-	margin:0 0 0 120px;
+	margin:24px 0 0 120px;
 }
 
 .input-search {
@@ -411,7 +411,7 @@ footer {
 }
 
 .form-control.textarea-xml {
-  height:200px;
+  height:400px;
   font-size:12px;
   font-weight: 700;
 }

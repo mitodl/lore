@@ -5,16 +5,22 @@ Tests for LORE imports.
 from __future__ import unicode_literals
 
 import os
-from tempfile import mkstemp
+from shutil import rmtree
+from tempfile import mkstemp, mkdtemp
 import zipfile
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+import mock
 
-from importer.api import import_course_from_file
+from importer.api import (
+    import_course_from_file,
+    import_course_from_path,
+    import_static_assets
+)
 from importer.tasks import import_file
 from learningresources.api import get_resources
-from learningresources.models import Course
+from learningresources.models import Course, StaticAsset, static_asset_basepath
 from learningresources.tests.base import LoreTestCase
 
 
@@ -36,6 +42,7 @@ class TestImportToy(LoreTestCase):
         # Valid zip file, wrong stuff in it.
         handle, bad_zip = mkstemp(suffix=".zip")
         os.close(handle)
+        self.addCleanup(os.remove, bad_zip)
         archive = zipfile.ZipFile(
             bad_zip, "w", compression=zipfile.ZIP_DEFLATED)
         archive.close()
@@ -77,6 +84,7 @@ class TestImportToy(LoreTestCase):
             import_course_from_file(self.bad_file, self.repo.id, self.user.id)
         self.assertTrue(
             'Invalid OLX archive, unable to extract.' in ex.exception.args)
+        self.assertFalse(os.path.exists(self.bad_file))
 
     def test_incompatible_file(self):
         """incompatible zip file (missing course structure)"""
@@ -91,12 +99,14 @@ class TestImportToy(LoreTestCase):
         Single course (course.xml in root of archive).
         """
         original_count = Course.objects.count()
+        tarball_file = self.get_course_single_tarball()
         import_course_from_file(
-            self.get_course_single_tarball(), self.repo.id, self.user.id)
+            tarball_file, self.repo.id, self.user.id)
         self.assertEqual(
             Course.objects.count(),
             original_count + 1,
         )
+        self.assertFalse(os.path.exists(tarball_file))
 
     def test_import_task(self):
         """
@@ -109,3 +119,108 @@ class TestImportToy(LoreTestCase):
             Course.objects.count(),
             original_count + 1,
         )
+
+    @staticmethod
+    def test_import_course_from_path():
+        """
+        Validate parameters and returns for ``course_from_path``.
+        """
+        test_path = '/tmp/foo'
+        test_repo_id = 2
+        test_user_id = 42
+        with mock.patch('importer.api.import_course') as mock_import:
+            with mock.patch(
+                'importer.api.import_static_assets'
+            ) as mock_static:
+                with mock.patch('importer.api.XBundle') as mock_bundle:
+                    with mock.patch('importer.api.isdir') as mock_is_dir:
+                        mock_import.return_value = True
+                        mock_is_dir.return_value = True
+                        import_course_from_path(
+                            test_path, test_repo_id, test_user_id
+                        )
+                        mock_import.assert_called_with(
+                            mock_bundle(), test_repo_id, test_user_id
+                        )
+                        mock_static.assert_called_with(
+                            os.path.join(test_path, 'static'), True
+                        )
+
+    def test_import_static_assets(self):
+        """
+        Verify walking a folder of assets and verifying they get added
+        """
+        temp_dir_path = mkdtemp()
+        self.addCleanup(rmtree, temp_dir_path)
+        basename = 'blah.txt'
+        file_contents = 'hello\n'
+        with open(os.path.join(temp_dir_path, basename), 'w') as temp:
+            temp.write(file_contents)
+        # All setup, now import
+        import_static_assets(temp_dir_path, self.course)
+        assets = StaticAsset.objects.filter(course=self.course)
+        self.assertEqual(assets.count(), 1)
+        asset = assets[0]
+        dummy = mock.MagicMock()
+        dummy.course = self.course
+        self.assertEqual(
+            asset.asset.name,
+            static_asset_basepath(dummy, basename)
+        )
+        self.addCleanup(default_storage.delete, asset.asset)
+
+    def test_import_static_recurse(self):
+        """
+        Verify walking a folder of assets and verifying they get added
+        """
+        temp_dir_path = mkdtemp()
+        self.addCleanup(rmtree, temp_dir_path)
+        basename = 'blah.txt'
+        file_contents = 'hello\n'
+        # Create folder and additional directory to verify recursion.
+        subdir_name = 'testdir'
+        os.mkdir(os.path.join(temp_dir_path, subdir_name))
+        with open(
+            os.path.join(temp_dir_path, subdir_name, basename),
+            'w'
+        ) as temp:
+            temp.write(file_contents)
+
+        # All setup, now import
+        import_static_assets(temp_dir_path, self.course)
+        assets = StaticAsset.objects.filter(course=self.course)
+        self.assertEqual(assets.count(), 1)
+        asset = assets[0]
+        dummy = mock.MagicMock()
+        dummy.course = self.course
+        self.assertEqual(
+            asset.asset.name,
+            static_asset_basepath(dummy, os.path.join(subdir_name, basename))
+        )
+        self.addCleanup(default_storage.delete, asset.asset)
+
+    def test_static_import_integration(self):
+        """
+        Do integration test to validate course import with static assets.
+        """
+        original_count = Course.objects.count()
+        tarball_file = self.get_course_single_tarball()
+        import_file(
+            tarball_file, self.repo.id, self.user.id)
+        self.assertEqual(
+            Course.objects.count(),
+            original_count + 1,
+        )
+        self.assertFalse(os.path.exists(tarball_file))
+        course = Course.objects.all().exclude(id=self.course.id)
+        self.assertEqual(course.count(), 1)
+        assets = StaticAsset.objects.filter(course=course)
+        for asset in assets:
+            self.addCleanup(default_storage.delete, asset.asset)
+        self.assertEqual(assets.count(), 2)
+        for asset in assets:
+            base_path = static_asset_basepath(asset, '')
+            self.assertIn(
+                asset.asset.name.replace(base_path, ''),
+                ['test.txt', 'subdir/subtext.txt']
+            )

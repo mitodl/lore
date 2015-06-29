@@ -13,13 +13,35 @@ from django.utils.text import slugify
 from django.utils.encoding import python_2_unicode_compatible
 from django.shortcuts import get_object_or_404
 
+from audit.models import BaseModel
 from roles.api import roles_init_new_repo, roles_update_repo
 from roles.permissions import RepoPermission
 
 log = logging.getLogger(__name__)
 
 
-class Course(models.Model):
+def static_asset_basepath(asset, filename):
+    """
+    Creates folder base path for given asset.
+
+    Callback API defined by:
+    https://docs.djangoproject.com/en/1.8/ref/models/fields/#django.db.models.FileField.upload_to
+    Args:
+        asset (StaticAsset): The model to create the name for.
+        filename (unicode): The subpath and filename of ``asset.asset``
+    Returns:
+        (unicode): forward slash separated path to use below
+            ``settings.MEDIA_ROOT``.
+    """
+    return 'assets/{org}/{course_number}/{run}/{filename}'.format(
+        org=asset.course.org,
+        course_number=asset.course.course_number,
+        run=asset.course.run,
+        filename=filename
+    )
+
+
+class Course(BaseModel):
     """
     A course on edX platform (MITx or residential).
     """
@@ -27,7 +49,6 @@ class Course(models.Model):
     org = models.TextField()
     course_number = models.TextField()
     run = models.TextField()
-    import_date = models.DateField(auto_now_add=True)
     imported_by = models.ForeignKey(User)
 
     class Meta:
@@ -35,13 +56,23 @@ class Course(models.Model):
         unique_together = ("repository", "org", "course_number", "run")
 
 
-class LearningResource(models.Model):
+class StaticAsset(BaseModel):
+    """
+    Holds static assets for a course (css, html, javascript, images, etc)
+    """
+    course = models.ForeignKey(Course)
+    learning_resources = models.ManyToManyField('LearningResource', blank=True)
+    asset = models.FileField(upload_to=static_asset_basepath)
+
+
+class LearningResource(BaseModel):
     """
     The units that compose an edX course:
     chapter, sequential, vertical, problem, video, html, etc.
     """
     course = models.ForeignKey(Course)
     learning_resource_type = models.ForeignKey('LearningResourceType')
+    static_assets = models.ManyToManyField(StaticAsset, blank=True)
     uuid = models.TextField()
     title = models.TextField()
     description = models.TextField()
@@ -57,7 +88,7 @@ class LearningResource(models.Model):
 
 
 @python_2_unicode_compatible
-class LearningResourceType(models.Model):
+class LearningResourceType(BaseModel):
     """
     Learning resource type:
     chapter, sequential, vertical, problem, video, html, etc.
@@ -68,7 +99,7 @@ class LearningResourceType(models.Model):
         return self.name
 
 
-class Repository(models.Model):
+class Repository(BaseModel):
     """
     A collection of learning resources
     that come from (usually tightly-related) courses.
@@ -76,7 +107,6 @@ class Repository(models.Model):
     name = models.CharField(max_length=256, unique=True)
     slug = models.SlugField(max_length=256, unique=True)
     description = models.TextField()
-    create_date = models.DateField(auto_now_add=True)
     created_by = models.ForeignKey(User)
 
     @transaction.atomic

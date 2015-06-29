@@ -3,5 +3,20 @@
   "version": "0.0.0",
   "dependencies": {
     "bower": "1.4.1"
+  },
+  "devDependencies": {
+    "jscs": "^1.13.1",
+    "jshint": "^2.8.0",
+    "karma": "^0.12.36",
+    "karma-cli": "0.0.4",
+    "karma-coverage": "^0.4.2",
+    "karma-phantomjs-launcher": "^0.2.0",
+    "karma-qunit": "^0.1.4",
+    "karma-requirejs": "^0.2.2",
+    "phantomjs": "^1.9.17",
+    "qunit": "^0.7.6",
+    "qunitjs": "^1.18.0",
+    "requirejs": "^2.1.18",
+    "coveralls": "~2.11.2"
   }
 }

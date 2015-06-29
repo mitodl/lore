@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -85,6 +85,7 @@ INSTALLED_APPS = (
     'compressor',
     'bootstrap3',
     'guardian',
+    'audit',
     'learningresources',
     'importer',
     'ui',
@@ -298,6 +299,12 @@ LOGGING = {
             'handlers': ['mail_admins'],
             'level': DJANGO_LOG_LEVEL,
             'propagate': True,
+        },
+        'urllib3': {
+            'level': 'INFO',
+        },
+        'elasticsearch': {
+            'level': 'INFO',
         },
     },
 }
