@@ -4,12 +4,14 @@ Controllers for REST app
 
 from __future__ import unicode_literals
 
+from django.http.response import Http404
 from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
     RetrieveUpdateDestroyAPIView,
+    RetrieveUpdateAPIView,
     RetrieveAPIView,
     RetrieveDestroyAPIView,
 )
@@ -31,22 +33,30 @@ from rest.serializers import (
     UserGroupSerializer,
     UserSerializer,
     GroupSerializer,
+    LearningResourceSerializer,
+    StaticAssetSerializer,
 )
 from rest.permissions import (
     AddRepoPermission,
+    AddEditMetadataPermission,
     ViewRepoPermission,
     ViewVocabularyPermission,
     ViewTermPermission,
     ManageTaxonomyPermission,
     ManageRepoMembersPermission,
+    ViewLearningResourcePermission,
+    ViewStaticAssetPermission,
 )
 from rest.util import CheckValidMemberParamMixin
-from learningresources.models import Repository
 from taxonomy.models import Vocabulary
+from learningresources.models import (
+    Repository,
+    LearningResource,
+    StaticAsset,
+)
 from learningresources.api import (
     get_repos,
 )
-from django.http.response import Http404
 
 
 # pylint: disable=too-many-ancestors
@@ -378,3 +388,72 @@ class RepoMemberGroupUserDetail(RepoMemberUserGroupDetail):
     REST for one user assigned to a group in a repository
     """
     serializer_class = UserSerializer
+
+
+class LearningResourceList(ListAPIView):
+    """REST list view for LearningResource"""
+    serializer_class = LearningResourceSerializer
+    lookup_field = 'id'
+    lookup_url_kwarg = 'lr_id'
+    permission_classes = (
+        ViewRepoPermission,
+        AddEditMetadataPermission,
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """Get queryset for a learning resource"""
+        return LearningResource.objects.filter(
+            course__repository__slug=self.kwargs['repo_slug']
+        )
+
+
+class LearningResourceDetail(RetrieveUpdateAPIView):
+    """REST detail view for LearningResource"""
+    serializer_class = LearningResourceSerializer
+    lookup_field = 'id'
+    lookup_url_kwarg = 'lr_id'
+    permission_classes = (
+        ViewLearningResourcePermission,
+        AddEditMetadataPermission,
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """Get queryset for a learning resource"""
+        return LearningResource.objects.filter(
+            id=self.kwargs['lr_id'])
+
+
+class StaticAssetList(ListAPIView):
+    """REST list view for StaticAsset"""
+    serializer_class = StaticAssetSerializer
+    permission_classes = (
+        ViewLearningResourcePermission,
+        IsAuthenticated
+    )
+    lookup_field = 'id'
+    lookup_url_kwarg = 'sa_id'
+
+    def get_queryset(self):
+        """Get queryset for static assets for a particular learning resource"""
+        return LearningResource.objects.get(
+            id=self.kwargs['lr_id']
+        ).static_assets.filter()
+
+
+class StaticAssetDetail(RetrieveAPIView):
+    """REST list view for StaticAsset"""
+    serializer_class = StaticAssetSerializer
+    permission_classes = (
+        ViewStaticAssetPermission,
+        IsAuthenticated
+    )
+    lookup_field = 'id'
+    lookup_url_kwarg = 'sa_id'
+
+    def get_queryset(self):
+        """Get queryset for static assets for a particular learning resource"""
+        return StaticAsset.objects.filter(
+            id=self.kwargs['sa_id']
+        )

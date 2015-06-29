@@ -136,37 +136,167 @@ Create a repository by providing its JSON representation.
 
 ## Group Learningresources
 
-## Learningresource Collection [/repositories/{repo_slug}/learningresources/{?learning_resource_type%5b%5d,course_id,xa_nr_views,page}]
+## Learningresource Collection [/repositories/{repo_slug}/learning_resources/{?type_name}]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
-    + learning_resource_type: `chapter` (string, optional) - types of learning resources
-    + course_id: (string, optional)
+    + type_name: `chapter` (string, optional) - type of learning resource
 
-### List learning resources [GET]
+### List Learningresources [GET]
 
 + Response 200 (application/json)
 
     + Body
 
-        [
-            {
-                "tbd": "tbd",
-            }
-        ]
+        {
+            "count": 139,
+            "next": "http://lore.mit.edu/api/v1/repositories/repo/learning_resources/?page=2",
+            "previous": null,
+            "results": [
+                {
+                    "id": 8,
+                    "learning_resource_type": "vertical",
+                    "static_assets": [],
+                    "title": "Getting Started",
+                    "description": "description",
+                    "content_xml": "<vertical ...",
+                    "materialized_path": "/course/chapter[2]/sequential[1]/vertical[1]",
+                    "url_path": "",
+                    "parent": 7,
+                    "copyright": "",
+                    "xa_nr_views": 0,
+                    "xa_nr_attempts": 0,
+                    "xa_avg_grade": 0.0,
+                    "xa_histogram_grade": 0.0,
+                    "terms": []
+                },
+                ...
+            ]
+        }
 
-## Learningresources  [/repositories/{repo_slug}/learningresources/{learningresource_id}/]
+## Learningresource  [/repositories/{repo_slug}/learning_resources/{learningresource_id}/]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
-    + learningresource_id: `1007` (number, required) - ID of the learningresource
+    + learningresource_id: `8` (number, required) - ID of the Learningresource
 
 ### View a Learningresource [GET]
 
 + Response 200 (application/json)
 
         {
-            "tbd": "tbd",
+            "id": 8,
+            "learning_resource_type": "vertical",
+            "static_assets": [],
+            "title": "Getting Started",
+            "description": "description",
+            "content_xml": "<vertical ...",
+            "materialized_path": "/course/chapter[2]/sequential[1]/vertical[1]",
+            "url_path": "",
+            "parent": 7,
+            "copyright": "",
+            "xa_nr_views": 0,
+            "xa_nr_attempts": 0,
+            "xa_avg_grade": 0.0,
+            "xa_histogram_grade": 0.0,
+            "terms": []
+        }
+
+### Partially Update a Learningresource [PATCH]
+
++ Request (application/json)
+
+        {
+            "description": "changed description"
+        }
+
++ Response 200 (application/json)
+
+        {
+            "id": 8,
+            "learning_resource_type": "vertical",
+            "static_assets": [],
+            "title": "Getting Started",
+            "description": "changed description",
+            "content_xml": "<vertical ...",
+            "materialized_path": "/course/chapter[2]/sequential[1]/vertical[1]",
+            "url_path": "",
+            "parent": 7,
+            "copyright": "",
+            "xa_nr_views": 0,
+            "xa_nr_attempts": 0,
+            "xa_avg_grade": 0.0,
+            "xa_histogram_grade": 0.0,
+            "terms": []
+        }
+
+### Update a Learningresource [PUT]
+
++ Request (application/json)
+
+        {
+            "description": "changed description",
+            "terms": []
+        }
+
++ Response 200 (application/json)
+
+        {
+            "id": 8,
+            "learning_resource_type": "vertical",
+            "static_assets": [],
+            "title": "Getting Started",
+            "description": "changed description",
+            "content_xml": "<vertical ...",
+            "materialized_path": "/course/chapter[2]/sequential[1]/vertical[1]",
+            "url_path": "",
+            "parent": 7,
+            "copyright": "",
+            "xa_nr_views": 0,
+            "xa_nr_attempts": 0,
+            "xa_avg_grade": 0.0,
+            "xa_histogram_grade": 0.0,
+            "terms": []
+        }
+
+## Group Staticassets
+
+## Staticassets Collection [/repositories/{repo_slug}/learning_resources/{learningresource_id}/static_assets/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + learningresource_id: `1` (number, required) - ID of the Learningresource
+
+### List All Staticassets [GET]
+
++ Response 200 (application/json)
+
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "id": 1,
+                    "asset": "assets/edX/DemoX/Demo_Course/L9_buckets.png"
+                }
+            ]
+        }
+
+## Staticasset [/repositories/{repo_slug}/learning_resources/{learningresource_id}/static_assets/{static_asset_id}/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + learningresource_id: `1` (number, required) - ID of the Learningresource
+    + static_asset_id: `1` (number, required) - ID of the Staticasset
+
+### View a Staticasset [GET]
+
++ Response 200 (application/json)
+
+        {
+            "id": 1,
+            "asset": "assets/edX/DemoX/Demo_Course/L9_buckets.png"
         }
 
 ## Group Vocabularies
@@ -267,7 +397,7 @@ Create a repository by providing its JSON representation.
             ]
         }
 
-### Partially update a Vocabulary [PATCH]
+### Partially Update a Vocabulary [PATCH]
 
 + Request (application/json)
 
@@ -389,7 +519,7 @@ Create a repository by providing its JSON representation.
             "weight": 1
         }
 
-### Partially update a Term [PATCH]
+### Partially Update a Term [PATCH]
 
 + Request (application/json)
 
@@ -406,7 +536,7 @@ Create a repository by providing its JSON representation.
             "weight": 2
         }
 
-### Update a term [PUT]
+### Update a Term [PUT]
 
 + Request (application/json)
 

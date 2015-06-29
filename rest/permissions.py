@@ -11,7 +11,11 @@ from rest_framework.permissions import (
     SAFE_METHODS,
 )
 
-from learningresources.models import Repository
+from learningresources.models import (
+    Repository,
+    LearningResource,
+    StaticAsset,
+)
 from learningresources.api import (
     get_repo,
     PermissionDenied,
@@ -130,3 +134,69 @@ class ManageRepoMembersPermission(BasePermission):
             return True
         return RepoPermission.manage_repo_users[0] in get_perms(
             request.user, repo)
+
+
+class AddEditMetadataPermission(BasePermission):
+    """Checks add_edit_metadata permission"""
+
+    def has_permission(self, request, view):
+        try:
+            repo = get_repo(view.kwargs['repo_slug'], request.user.id)
+        except NotFound:
+            raise Http404()
+        except PermissionDenied:
+            return False
+
+        if request.method in SAFE_METHODS:
+            return True
+
+        return (
+            RepoPermission.add_edit_metadata[0]
+            in get_perms(request.user, repo)
+        )
+
+
+class ViewLearningResourcePermission(ViewRepoPermission):
+    """
+    Checks that user has view_repo permission for the repository
+    and that that repo owns the LearningResource being requested.
+    """
+
+    def has_permission(self, request, view):
+        if not super(ViewLearningResourcePermission, self).has_permission(
+                request, view):
+            return False
+
+        repo_slug = view.kwargs['repo_slug']
+        lr_id = int(view.kwargs['lr_id'])
+
+        try:
+            LearningResource.objects.filter(
+                course__repository__slug=repo_slug).get(id=lr_id)
+        except LearningResource.DoesNotExist:
+            raise Http404()
+
+        return True
+
+
+class ViewStaticAssetPermission(ViewLearningResourcePermission):
+    """
+    Checks that user has view_repo permission for the repository
+    and that that repo owns the LearningResource being requested.
+    """
+
+    def has_permission(self, request, view):
+        if not super(ViewStaticAssetPermission, self).has_permission(
+                request, view):
+            return False
+
+        lr_id = int(view.kwargs['lr_id'])
+        sa_id = int(view.kwargs['sa_id'])
+
+        try:
+            StaticAsset.objects.filter(
+                learningresource__id=lr_id).get(id=sa_id)
+        except StaticAsset.DoesNotExist:
+            raise Http404()
+
+        return True
