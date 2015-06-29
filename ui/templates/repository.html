@@ -1,5 +1,5 @@
 {% extends "repo_base.html" %}
-{% load staticfiles %}
+{% load staticfiles compress %}
 {% block title %}Listing{% endblock %}
 {% block content %}
 
@@ -226,5 +226,12 @@
   </div>
 </div>
 {% include "includes/resource_panel.html" %}
-
+{% endblock %}
+{% block postcontent %}
+{{ block.super }}
+{% compress js %}
+<script type="text/javascript">
+  require(["listing"]);
+</script>
+{% endcompress %}
 {% endblock %}
