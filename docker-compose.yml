@@ -10,7 +10,8 @@ web:
   build: .
   command: >
     /bin/bash -c '
-    sleep 5;
+    sleep 3;
+    npm install --production;
     python manage.py migrate;
     python manage.py runserver 0.0.0.0:$PORT'
   volumes:
@@ -40,7 +41,7 @@ celery:
   image: lore_web
   command: >
     /bin/bash -c '
-    sleep 5;
+    sleep 3;
     celery -A lore worker -l debug'
   volumes_from:
     - web
