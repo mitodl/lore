@@ -26,7 +26,7 @@ define(['jquery', 'bootstrap', 'icheck', 'csrf'], function(jQuery) {
       $('.cd-panel').addClass('is-visible');
     });
 
-    // Handle "Copy to Clipboard"
+    // Handle "Select XML"
     $('.cd-panel #copy-textarea-xml').on('click', function(event) {
       event.preventDefault();
       $('.cd-panel .textarea-xml').select();
