@@ -29,10 +29,18 @@ ADD . /src
 WORKDIR /src
 RUN chown -R mitodl:mitodl /src
 
-# Install node packages and add to PATH
+# Link nodejs to node since npm expects node
 RUN ln -s /usr/bin/nodejs /usr/bin/node
-RUN npm install -g --prefix /node
-ENV PATH /node/lib/node_modules/lore/node_modules/.bin:$PATH
+
+# Install development packages globally for things like
+# bower.
+RUN mkdir /node
+ADD package.json /node/package.json
+RUN cd /node && npm install
+
+# Install productions deps for runtime items like jsx
+RUN npm install --production
+ENV PATH /src/node_modules/.bin:/node/node_modules/.bin:$PATH
 
 # Set pip cache folder, as it is breaking pip when it is on a shared volume
 ENV XDG_CACHE_HOME /tmp/.cache

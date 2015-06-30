@@ -10,17 +10,22 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['requirejs', 'qunit'],
+    // phantom-js doesn't support function.bind in 1.x so we need the shim
+    frameworks: ['phantomjs-shim', 'requirejs', 'qunit'],
 
     // list of files / patterns to load in the browser
     files: [
-      'ui/jstests/test-main.js',
+      'ui/jstests/test-listing.js',
       {
-        pattern: 'ui/static/ui/js/**/*.js',
+        pattern: 'ui/static/bower/react/react.js',
         included: false
       },
       {
-        pattern: 'ui/jstests/**/*.js',
+        pattern: 'ui/static/ui/js/**/*.js*',
+        included: false
+      },
+      {
+        pattern: 'ui/jstests/**/*.js*',
         included: false
       }
     ],
@@ -31,8 +36,16 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      'ui/static/ui/js/**/*.js': ['coverage'],
-      'ui/jstests/**/*.js': ['coverage']
+      '**/*.jsx': ['react'],
+      'ui/static/ui/js/**/*.js*': ['coverage'],
+      'ui/jstests/**/*.js*': ['coverage']
+    },
+
+    reactPreprocessor: {
+      transformPath: function(path) {
+        // need to override this since the default behavior is jsx -> js
+        return path;
+      }
     },
 
     // test results reporter to use

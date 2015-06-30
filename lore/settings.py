@@ -189,6 +189,7 @@ STATICFILES_DIRS = (
 )
 COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
+    ('text/jsx', 'node_modules/.bin/jsx < {infile} > {outfile}')
 )
 
 # Media and storage settings
