@@ -1,5 +1,6 @@
 define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
   'use strict';
+  var API_ROOT_VOCAB_URL;
 
   var TermComponent = React.createClass({
     render: function () {
@@ -18,20 +19,23 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
           <div className="panel-heading">
             <h4 className="panel-title">
               <a className="accordion-toggle" data-toggle="collapse"
-                 data-parent="#accordion" href="#collapse-drawer-2">
+                 data-parent="#accordion"
+                 href={'#collapse-' + this.props.vocabulary.slug}>
                 {this.props.vocabulary.name}
               </a>
             </h4>
           </div>
-          <div id="collapse-drawer-2"
+          <div id={'collapse-' + this.props.vocabulary.slug}
                className="panel-collapse collapse in">
             <div className="panel-body">
+              <ul>
+                {items}
+              </ul>
             </div>
           </div>
-        {items}
         <li>
           <div className="input-group">
-            <input type="text" className="form-control"
+            <input type="text" value={this.state.newTermLabel} className="form-control"
                    placeholder="Add new term..." onChange={this.updateAddTermText}/>
                   <span className="input-group-btn">
                   <a className="btn btn-white"
@@ -47,8 +51,7 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
       var thiz = this;
       $.ajax({
           type: "POST",
-          url: "/api/v1/repositories/" + this.props.repoSlug +
-          "/vocabularies/" + this.props.vocabulary.slug + "/terms/",
+          url: API_ROOT_VOCAB_URL + this.props.vocabulary.slug + "/terms/",
           data: JSON.stringify({
             label: this.state.newTermLabel,
             weight: 1
@@ -60,7 +63,7 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
         })
       .done(function(newTerm) {
           thiz.setState({
-            newTermLabel: "",
+            newTermLabel: null,
             terms: thiz.state.terms.concat([newTerm])
           });
         });
@@ -111,7 +114,8 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
   });
 
   return function (repoSlug) {
-    $.get("/api/v1/repositories/" + repoSlug + "/vocabularies/")
+    API_ROOT_VOCAB_URL = '/api/v1/repositories/' + repoSlug + '/vocabularies/'
+    $.get(API_ROOT_VOCAB_URL)
       .then(function (data) {
         var promises = _.map(data.results, function (vocabulary) {
           return $.get("/api/v1/repositories/" + repoSlug +
@@ -145,7 +149,7 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
       .then(function (vocabularies) {
         React.render(
           <AddTermsComponent vocabularies={vocabularies} repoSlug={repoSlug}/>,
-          document.getElementById('tab-taxonomies'));
+          $('#tab-taxonomies')[0]);
       });
   };
 
