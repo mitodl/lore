@@ -42,6 +42,7 @@ from rest.permissions import (
 )
 from rest.util import CheckValidMemberParamMixin
 from learningresources.models import Repository
+from taxonomy.models import Vocabulary
 from learningresources.api import (
     get_repos,
 )
@@ -104,9 +105,17 @@ class VocabularyList(ListCreateAPIView):
     )
 
     def get_queryset(self):
-        """Filter to vocabularies for a repository"""
-        return Repository.objects.get(
-            slug=self.kwargs['repo_slug']).vocabulary_set.order_by('id')
+        """Filter vocabularies by repository ownership and optionally
+        by learning resource type"""
+        queryset = Vocabulary.objects.filter(
+            repository__slug=self.kwargs['repo_slug']
+        )
+        learning_resource_type = self.request.query_params.get(
+            'type_name', None)
+        if learning_resource_type is not None:
+            queryset = queryset.filter(
+                learning_resource_types__name=learning_resource_type)
+        return queryset.order_by('id')
 
     def get_success_headers(self, data):
         """Add Location header for model create"""
