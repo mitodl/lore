@@ -4,12 +4,12 @@ Permission classes for REST views
 
 from __future__ import unicode_literals
 
+from django.http import Http404
+from guardian.shortcuts import get_perms
 from rest_framework.permissions import (
     BasePermission,
     SAFE_METHODS,
 )
-from django.http import Http404
-from guardian.shortcuts import get_perms
 
 from learningresources.models import Repository
 from learningresources.api import (
@@ -17,11 +17,11 @@ from learningresources.api import (
     PermissionDenied,
     NotFound,
 )
+from roles.permissions import RepoPermission
 from taxonomy.api import (
     get_vocabulary,
     get_term,
 )
-from roles.permissions import RepoPermission
 
 
 # pylint: disable=protected-access
@@ -114,3 +114,19 @@ class ManageTaxonomyPermission(BasePermission):
                 RepoPermission.manage_taxonomy[0]
                 in get_perms(request.user, repo)
             )
+
+
+class ManageRepoMembersPermission(BasePermission):
+    """Checks manage_repo_users permission"""
+
+    def has_permission(self, request, view):
+        try:
+            repo = get_repo(view.kwargs['repo_slug'], request.user.id)
+        except NotFound:
+            raise Http404()  # pragma: no cover
+        except PermissionDenied:
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        return RepoPermission.manage_repo_users[0] in get_perms(
+            request.user, repo)

@@ -28,3 +28,6 @@ class UserGroup(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash((self.username, self.group_type))
