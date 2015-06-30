@@ -38,13 +38,17 @@ module.exports = function(config) {
         included: false
       },
       {
-        pattern:'ui/jstests/**/*.jsx',
+        pattern: 'ui/jstests/**/*.jsx',
         included: false
       },
       {
         pattern: 'node_modules/jquery-mockjax/src/jquery.mockjax.js',
         included: false
-      }
+      },
+      {
+        pattern: 'node_modules/stacktrace-js/stacktrace.js',
+        included: false
+      },
     ],
 
     // list of files to exclude from coverage and testing

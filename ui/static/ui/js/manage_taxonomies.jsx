@@ -1,5 +1,5 @@
-define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
-  function (React, _, $) {
+define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
+  function (React, _, $, Utils) {
   'use strict';
   var API_ROOT_VOCAB_URL;
 
@@ -13,7 +13,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
   var VocabularyComponent = React.createClass({
     render: function () {
       var items = _.map(this.state.terms, function (term) {
-        return <TermComponent term={term} key={term.label} />;
+        return <TermComponent term={term} key={term.slug} />;
       });
 
       return <ul className="icheck-list">
@@ -278,47 +278,13 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
   return {
     'VocabularyComponent': VocabularyComponent,
     'loader' : function (repoSlug) {
-      API_ROOT_VOCAB_URL = '/api/v1/repositories/' + repoSlug +
-        '/vocabularies/';
-      $.get(API_ROOT_VOCAB_URL)
-        .then(function (data) {
-          var promises = _.map(data.results, function (vocabulary) {
-            return $.get("/api/v1/repositories/" + repoSlug +
-              "/vocabularies/" + vocabulary.slug + "/terms/")
-              .then(function (result) {
-                return {
-                  terms: result.results,
-                  vocabulary: vocabulary
-                };
-              }).fail(function (obj) {
-                throw obj;
-              });
-          });
-
-          return $.when.apply($, promises).then(function () {
-            var args;
-            if (promises.length === 1) {
-              args = [arguments[0]];
-            } else {
-              args = arguments;
-            }
-            return _.map(args, function (obj) {
-              var terms = obj.terms;
-              var vocabulary = obj.vocabulary;
-
-              return {
-                vocabulary: vocabulary,
-                terms: terms
-              };
-            });
-          });
-        })
-        .then(function (vocabularies) {
-          React.render(
-            <TaxonomyComponent vocabularies={vocabularies}
-                               repoSlug={repoSlug}/>,
-            $('#taxonomy-component')[0]);
-        });
+      Utils.getVocabulariesAndTerms(repoSlug).
+      then(function (vocabularies) {
+        React.render(
+          <TaxonomyComponent vocabularies={vocabularies}
+                             repoSlug={repoSlug}/>,
+          $('#taxonomy-component')[0]);
+      });
     }
   };
 

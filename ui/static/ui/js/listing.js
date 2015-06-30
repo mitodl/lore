@@ -1,6 +1,7 @@
 define(
-  ['jquery', 'setup_manage_taxonomies', 'facets', 'bootstrap', 'csrf'],
-  function($, setupManageTaxonomies, facets) {
+  ['jquery', 'setup_manage_taxonomies', 'facets',
+    'learning_resources', 'bootstrap', 'icheck', 'csrf'],
+  function($, setupManageTaxonomies, facets, LearningResources) {
     'use strict';
     facets.setupFacets(window);
     var EMAIL_EXTENSION = '@mit.edu';
@@ -80,26 +81,12 @@ define(
       //open the lateral panel
       $('.cd-btn').on('click', function(event) {
         event.preventDefault();
-        var url = $(this).attr('href');
-        var title = $(this).html();
-        var textarea = $('.cd-panel .textarea-xml');
-        $('.cd-panel header h1').html(title);
-
-        // Clear out text area while waiting for AJAX to return
-        textarea.val('');
-        $.ajax({url: url, dataType: 'text'}).done(function(data) {
-          $('.cd-panel .textarea-xml').val(data);
-        }).error(function() {
-          $('.cd-panel .textarea-xml').val('Unable to retrieve XML.');
-        });
+        var learningResourceId = $(event.target).attr(
+          "data-learningresource-id");
+        LearningResources.loader(repoSlug, learningResourceId, $("#tab-1")[0]);
         $('.cd-panel').addClass('is-visible');
       });
 
-      // Handle "Select XML"
-      $('.cd-panel #copy-textarea-xml').on('click', function(event) {
-        event.preventDefault();
-        $('.cd-panel .textarea-xml').select();
-      });
       //close the lateral panel
       $('.cd-panel').on('click', function(event) {
         if ($(event.target).is('.cd-panel') ||

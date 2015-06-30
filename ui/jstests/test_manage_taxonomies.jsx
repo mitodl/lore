@@ -1,8 +1,11 @@
 define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
-  'jquery_mockjax'], function(QUnit, $, ManageTaxonomies, React) {
+  'test_utils'],
+  function(QUnit, $, ManageTaxonomies, React, TestUtils) {
   'use strict';
 
   var VocabularyComponent = ManageTaxonomies.VocabularyComponent;
+  var waitForAjax = TestUtils.waitForAjax;
+
   var addTermResponse = {
     "id": 9,
     "slug": "aa",
@@ -20,14 +23,14 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
     "terms": [
       {
         "id": 1,
-        "slug": "ease",
-        "label": "ease",
+        "slug": "easy",
+        "label": "easy",
         "weight": 1
       },
       {
         "id": 2,
-        "slug": "ease2",
-        "label": "ease2",
+        "slug": "difficult",
+        "label": "difficult",
         "weight": 1
       }
     ]
@@ -39,45 +42,50 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
   }
   QUnit.module('Test taxonomies panel', {
     beforeEach: function() {
-      $.mockjax({
+      TestUtils.setup();
+      TestUtils.initMockjax({
         url: "/api/v1/repositories/*/vocabularies/*/terms/",
-        contentType: "application/json; charset=utf-8",
         responseText: addTermResponse,
-        responseTime: 0,
-        dataType: 'json'
+        type: "POST"
       });
-      $.ajaxSetup({async: false});
     },
     afterEach: function() {
-      $.mockjax.clear();
-      $.ajaxSetup({async: true});
+      TestUtils.cleanup();
     }
   });
+
   QUnit.test('Assert that VocabularyComponent renders properly',
     function(assert) {
       assert.ok(VocabularyComponent, "class object not found");
-      //assert.async();
-      var vocabularyComponentRendered = React.addons.TestUtils.
+
+      var done = assert.async();
+      var afterMount = function(component) {
+        var randomEvent = $.Event("keyup", {keyCode: 64});
+        var enterEvent = $.Event("keyup", {keyCode: 13});
+
+        component.onEnterPress(randomEvent);
+        assert.equal(component.state.terms.length, 2);
+
+        component.onEnterPress(enterEvent);
+        waitForAjax(1, function() {
+          assert.equal(component.state.terms.length, 3);
+          assert.equal(
+            addTermResponse.id,
+            component.state.terms[2].id);
+          done();
+        });
+      };
+
+      React.addons.TestUtils.
         renderIntoDocument(
           <VocabularyComponent
             vocabulary={vocabulary}
             terms={vocabulary.terms}
             reportError={reportError}
             repoSlug="repo"
+            ref={afterMount}
           />
         );
-      var randomEvent = $.Event("keyup", {keyCode: 64});
-      var eventEnter = $.Event("keyup", {keyCode: 13});
-
-      vocabularyComponentRendered.onEnterPress(randomEvent);
-      assert.equal(vocabularyComponentRendered.state.terms.length, 2);
-
-      vocabularyComponentRendered.onEnterPress(eventEnter);
-      assert.equal(vocabularyComponentRendered.state.terms.length, 3);
-      assert.equal(
-        addTermResponse.id,
-        vocabularyComponentRendered.state.terms[2].id
-      );
     }
   );
 });

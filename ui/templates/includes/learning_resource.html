@@ -26,7 +26,7 @@
       </div>
       <div class="tile-content">
         <h2>
-          <a href="{% url 'export' repo.slug result.object.id %}" class="cd-btn">
+          <a href="{% url 'export' repo.slug result.object.id %}" class="cd-btn" data-learningresource-id="{{ result.object.id }}">
             {% if result.object.title %}
             {{ result.object.title }}
             {% else %}

@@ -13,13 +13,24 @@ Object.keys(window.__karma__.files).forEach(function(file) {
 });
 
 var paths = {};
-for (var key in REQUIRE_PATHS) {
-  if (REQUIRE_PATHS.hasOwnProperty(key)) {
-    paths[key] = 'ui/static/bower/' + REQUIRE_PATHS[key];
+for (var requireKey in REQUIRE_PATHS) {
+  if (REQUIRE_PATHS.hasOwnProperty(requireKey)) {
+    paths[requireKey] = 'ui/static/bower/' + REQUIRE_PATHS[requireKey];
   }
 }
-paths.QUnit = 'node_modules/qunitjs/qunit/qunit';
-paths.jquery_mockjax = 'node_modules/jquery-mockjax/src/jquery.mockjax';
+
+// relative to project root
+var TESTING_PATHS = {
+  QUnit: 'node_modules/qunitjs/qunit/qunit',
+  jquery_mockjax: 'node_modules/jquery-mockjax/src/jquery.mockjax',
+  test_utils: 'ui/jstests/test-utils.jsx?noext',
+  stacktrace: 'node_modules/stacktrace-js/stacktrace',
+};
+for (var testingKey in TESTING_PATHS) {
+  if (TESTING_PATHS.hasOwnProperty(testingKey)) {
+    paths[testingKey] = TESTING_PATHS[testingKey];
+  }
+}
 
 require.config({
   // Karma serves files under /base, which is the basePath from your config file
