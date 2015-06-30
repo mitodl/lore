@@ -12,3 +12,5 @@ mock
 ipython
 urltools
 semantic_version
+# Have to do this temporarily as logilab-common 1.0.0 broke the build
+logilab-common<1.0.0
