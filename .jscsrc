@@ -1,4 +1,5 @@
 {
   "preset": "google",
-  "validateQuoteMarks": null
+  "validateQuoteMarks": null,
+  "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties"
 }
