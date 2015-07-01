@@ -1,4 +1,4 @@
-define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
+define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _) {
   'use strict';
   var API_ROOT_VOCAB_URL;
 
@@ -35,14 +35,15 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
           </div>
         <li>
           <div className="input-group">
-            <input type="text" value={this.state.newTermLabel} className="form-control"
-                   placeholder="Add new term..." onChange={this.updateAddTermText}/>
-                  <span className="input-group-btn">
-                  <a className="btn btn-white"
-                     type="button" onClick={this.handleAddTermClick}><i
-                    className="fa fa-plus-circle"
-                    ></i></a>
-                  </span>
+            <input type="text" value={this.state.newTermLabel}
+              className="form-control"
+              placeholder="Add new term..." onChange={this.updateAddTermText}/>
+              <span className="input-group-btn">
+                <a className="btn btn-white"
+                  type="button" onClick={this.handleAddTermClick}><i
+                  className="fa fa-plus-circle"
+                ></i></a>
+              </span>
           </div>
         </li>
       </ul>;
@@ -97,7 +98,7 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
         </div>
         <span style={{color: "red"}}>
           {this.state.errorText}
-          </span>
+        </span>
         {items}
       </div>;
 
@@ -110,6 +111,133 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
       return {
         errorText: ""
       };
+    }
+  });
+
+  var AddVocabulary = React.createClass({
+    mixins: [React.addons.LinkedStateMixin],
+    getInitialState: function() {
+      return {
+        name: '',
+        description: '',
+        vocabulary_type: 'm',
+        required: false,
+        weight: 2147483647
+      }
+    },
+    updateVocabularyType: function(e) {
+      this.setState({vocabulary_type: e.target.value});
+      e.target.isChecked = true;
+    },
+    submitForm: function(e) {
+      e.preventDefault();
+      var thiz = this;
+      var vocabularyData = {
+        name: this.state.name,
+        description: this.state.description,
+        vocabulary_type: this.state.vocabulary_type,
+        required: this.state.required,
+        weight: this.state.weight
+      }
+      $.ajax({
+          type: "POST",
+          url: API_ROOT_VOCAB_URL,
+          data: vocabularyData
+      }).fail(function(data) {
+        thiz.setState({errorMessage: 'There was a problem adding the Vocabulary'})
+        console.error(data);
+      }).done(function(data) {
+        // Reset state (and eventually update the vocab tab
+        thiz.props.updateParent(data);
+        thiz.replaceState(thiz.getInitialState());
+        // Switch to taxonomy panel and scroll to new vocab (bottom)
+        $('[href=#tab-taxonomies]').tab('show');
+        var scrollableDiv = $(
+          ".cd-panel-2 .cd-panel-container .cd-panel-content"
+        );
+        scrollableDiv.animate(
+          { scrollTop: scrollableDiv.prop('scrollHeight')},
+          500
+        );  
+      });
+    },
+    render: function() {
+      var repoSlug = this.props.repoSlug;
+      var errorBox = null
+      if(this.state['errorMessage'] !== undefined) {
+        errorBox = <div className="alert alert-danger alert-dismissible">
+                     {this.state.errorMessage}
+                   </div>
+      }
+      return (
+        <form className="form-horizontal" onSubmit={this.submitForm}>
+          {errorBox}
+          <p>
+            <input type="text" valueLink={this.linkState('name')}
+              className="form-control"
+              placeholder="Name" />
+          </p>
+          <p>
+          <input type="text" valueLink={this.linkState('description')}
+            className="form-control"
+            placeholder="Description"/>
+          </p>
+          <p>
+            <div className="radio">
+              <label htmlFor="managed_vocabulary_type">
+                <input id="managed_vocabulary_type" type="radio"
+                  name="vocabulary_type" value="m"
+                  onChange={this.updateVocabularyType} />
+                    Managed
+              </label>
+            </div>
+            <div className="radio">
+              <label htmlFor="managed_vocabulary_type">
+                <input id="free_vocabulary_type" type="radio"
+                  name="vocabulary_type" value="f"
+                  onChange={this.updateVocabularyType} />
+                    Tag Style (on the fly)
+              </label>
+            </div>
+          </p>
+          <p>
+            <button className="btn btn-lg btn-primary">Save</button>
+          </p>
+        </form>
+      )
+    }
+  });
+
+  var TaxonomyComponent = React.createClass({
+    getInitialState: function() {
+      return {
+        vocabularies: this.props.vocabularies
+      }
+    },
+    addVocabulary: function(vocab) {
+      // Wrap vocab in expected structure
+      var new_vocab = {
+        terms: [],
+        vocabulary: vocab
+      };
+      var vocabularies = this.state.vocabularies;
+      vocabularies.push(new_vocab);
+      this.setState({vocabularies: vocabularies});
+    },
+    render: function() {
+      return(
+        <div className="tab-content drawer-tab-content">
+          <div className="tab-pane active" id="tab-taxonomies">
+            <AddTermsComponent
+              vocabularies={this.state.vocabularies}
+              repoSlug={this.props.repoSlug}/>
+          </div>
+          <div className="tab-pane drawer-tab-content" id="tab-vocab">
+            <AddVocabulary updateParent={this.addVocabulary}
+              repoSlug={this.props.repoSlug}/>
+          </div>
+        </div>
+      )
     }
   });
 
@@ -148,8 +276,8 @@ define('setup_manage_taxonomies', ['react', 'lodash'], function (React, _) {
       })
       .then(function (vocabularies) {
         React.render(
-          <AddTermsComponent vocabularies={vocabularies} repoSlug={repoSlug}/>,
-          $('#tab-taxonomies')[0]);
+          <TaxonomyComponent vocabularies={vocabularies} repoSlug={repoSlug}/>,
+          $('#taxonomy-component')[0]);
       });
   };
 
