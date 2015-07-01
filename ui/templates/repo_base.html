@@ -10,8 +10,13 @@
       <li>
         <a href="#0" class="btn-taxonomies"><i class="fa fa-cogs"></i> Manage Taxonomies</a>
       </li>
-      {% endif %}
+    {% endif %}
       <input type="hidden" id="repo_slug" value="{{ repo.slug }}" />
+    {% if 'manage_repo_users' in perms_on_cur_repo %}
+      <li>
+        <a href="#repo-members" class="btn-members"><i class="fa fa-users"></i> Manage Members</a>
+      </li>
+    {% endif %}
   {% endblock %}
 
   {% block extranavbarright %}
