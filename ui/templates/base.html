@@ -86,15 +86,15 @@
     <div class="container">
     {% block content %}
     {% endblock %}
-    <footer>
+      <footer>
         <div class="container">
-            © 2015, Massachusetts Institute of Technology
-            <span class="links-footer">
-                <a href="">About LORE</a>
-                <a href="">Help</a>
-            </span>
+          © 2015, Massachusetts Institute of Technology
+          <span class="links-footer">
+            <a href="">About LORE</a>
+            <a href="">Help</a>
+          </span>
         </div>
-    </footer>
+      </footer>
     </div>
     {% compress js %}
     <script type="text/javascript"
@@ -117,6 +117,7 @@
           retina: "retina.js/dist/retina",
           react: "react/react",
           reactaddons: "react/react-with-addons",
+          lodash: "lodash/lodash",
           csrf: "../ui/js/csrf",
           listing: "../ui/js/listing"
         }
