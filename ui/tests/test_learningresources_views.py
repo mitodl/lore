@@ -188,6 +188,17 @@ class TestViews(LoreTestCase):
         self.assertTrue("This field is required." in body)
         self.assertTrue(Repository.objects.count() == 1)
 
+    def test_access_without_login(self):
+        """
+        Tests the repository page without login
+        """
+        self.logout()
+        response = self.client.get(self.repository_url, follow=True)
+        self.assertEqual(response.status_code, 200)
+        # we were redirected to login
+        self.assertEqual(len(response.redirect_chain), 2)
+        self.assertTrue(302 in response.redirect_chain[0])
+
     def test_export_good(self):
         """Get raw XML of something I should be allowed to see."""
         url = reverse("export", args=(self.repo.slug, self.resource.id))

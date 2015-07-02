@@ -220,7 +220,6 @@ class RepositoryView(FacetedSearchView):
         self.repo = [x for x in repos if x.slug == repo_slug][0]
         return super(RepositoryView, self).__call__(request)
 
-    @login_required
     def dispatch(self, *args, **kwargs):
         """Override for the purpose of having decorators in views.py"""
         super(RepositoryView, self).dispatch(*args, **kwargs)
