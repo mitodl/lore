@@ -61,7 +61,6 @@ class StaticAsset(BaseModel):
     Holds static assets for a course (css, html, javascript, images, etc)
     """
     course = models.ForeignKey(Course)
-    learning_resources = models.ManyToManyField('LearningResource', blank=True)
     asset = models.FileField(upload_to=static_asset_basepath)
 
 

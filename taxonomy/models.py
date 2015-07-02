@@ -19,7 +19,7 @@ class Vocabulary(BaseModel):
     MANAGED = "m"
     FREE_TAGGING = "f"
 
-    repository = models.ForeignKey(Repository, on_delete=models.PROTECT)
+    repository = models.ForeignKey(Repository)
     name = models.CharField(max_length=256)
     slug = models.CharField(max_length=256, unique=True)
     description = models.TextField(
@@ -63,7 +63,7 @@ class Vocabulary(BaseModel):
 
 class Term(BaseModel):
     """Model for term table"""
-    vocabulary = models.ForeignKey(Vocabulary, on_delete=models.PROTECT)
+    vocabulary = models.ForeignKey(Vocabulary)
     label = models.CharField(max_length=256)
     slug = models.CharField(max_length=256, unique=True)
     weight = models.IntegerField()

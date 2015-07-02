@@ -6,6 +6,8 @@ LORE
     :target: https://coveralls.io/r/mitodl/lore
 .. image:: https://img.shields.io/github/issues/mitodl/lore.svg
     :target: https://github.com/mitodl/lore/issues
+.. image:: https://img.shields.io/requires/github/mitodl/lore.svg
+    :target: https://requires.io/github/mitodl/lore/requirements
 .. image:: https://img.shields.io/badge/license-AGPLv3-blue.svg
     :target: https://github.com/mitodl/lore/blob/master/LICENSE
 

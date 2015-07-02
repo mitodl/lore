@@ -14,7 +14,7 @@ from django.contrib.auth.models import User, Permission
 
 from .base import RESTTestCase
 from roles.api import assign_user_to_repo_group
-from roles.permissions import GroupTypes
+from roles.permissions import GroupTypes, BaseGroupTypes
 
 
 class TestRestAuthorization(RESTTestCase):
@@ -480,3 +480,165 @@ class TestRestAuthorization(RESTTestCase):
                        expected_status=HTTP_403_FORBIDDEN)
         self.get_term(self.repo.slug, vocab_slug, term_slug,
                       expected_status=HTTP_403_FORBIDDEN)
+
+    def test_members_get(self):
+        """
+        Tests for members.
+        Get requests: an user can see members if has at least basic permissions
+        """
+        # add an user to all groups
+        for group_type in [GroupTypes.REPO_ADMINISTRATOR,
+                           GroupTypes.REPO_CURATOR, GroupTypes.REPO_AUTHOR]:
+            assign_user_to_repo_group(
+                self.user, self.repo, group_type)
+
+        self.logout()
+        # as anonymous
+        self.get_members(urlfor='base', repo_slug=self.repo.slug,
+                         expected_status=HTTP_403_FORBIDDEN)
+        # list of all groups for an user
+        self.get_members(urlfor='users', repo_slug=self.repo.slug,
+                         username=self.user.username,
+                         expected_status=HTTP_403_FORBIDDEN)
+        for group_type in BaseGroupTypes.all_base_groups():
+            # specific group for an user
+            self.get_members(urlfor='users', repo_slug=self.repo.slug,
+                             username=self.user.username,
+                             group_type=group_type,
+                             expected_status=HTTP_403_FORBIDDEN)
+            # list of all users for a group
+            self.get_members(urlfor='groups', repo_slug=self.repo.slug,
+                             group_type=group_type,
+                             expected_status=HTTP_403_FORBIDDEN)
+            # specific user for a group
+            self.get_members(urlfor='groups', repo_slug=self.repo.slug,
+                             username=self.user.username,
+                             group_type=group_type,
+                             expected_status=HTTP_403_FORBIDDEN)
+
+        # any kind of user in the repo groups can retrieve infos
+        for user in [self.author_user.username, self.curator_user.username,
+                     self.user.username]:
+            self.logout()
+            self.login(user)
+            # list of all groups for an user
+            self.get_members(urlfor='base', repo_slug=self.repo.slug)
+            # specific group for an user
+            self.get_members(urlfor='users', repo_slug=self.repo.slug,
+                             username=self.user.username)
+            for group_type in BaseGroupTypes.all_base_groups():
+                self.get_members(urlfor='users', repo_slug=self.repo.slug,
+                                 username=self.user.username,
+                                 group_type=group_type)
+                # list of all users for a group
+                self.get_members(urlfor='groups', repo_slug=self.repo.slug,
+                                 group_type=group_type)
+                # specific user for a group
+                self.get_members(urlfor='groups', repo_slug=self.repo.slug,
+                                 username=self.user.username,
+                                 group_type=group_type)
+
+    def test_members_create(self):
+        """
+        Tests for members.
+        Post requests: an user can create members only if s/he is admin
+        The only URLS where users can be assigned to group or vice versa are
+        /api/v1/repositories/<repo>/members/groups/<group_type>/users/
+        /api/v1/repositories/<repo>/members/users/<username>/groups/
+        """
+        self.logout()
+        mem_dict_user = {'group_type': 'administrators'}
+        mem_dict_groups = {'username': self.user_norepo.username}
+        # as anonymous
+        self.create_member(urlfor='users', repo_slug=self.repo.slug,
+                           mem_dict=mem_dict_user, username=self.user.username,
+                           expected_status=HTTP_403_FORBIDDEN)
+        for group_type in BaseGroupTypes.all_base_groups():
+            self.create_member(urlfor='groups', repo_slug=self.repo.slug,
+                               mem_dict=mem_dict_groups,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+        # as author
+        self.login(self.author_user.username)
+        self.create_member(urlfor='users', repo_slug=self.repo.slug,
+                           mem_dict=mem_dict_user, username=self.user.username,
+                           expected_status=HTTP_403_FORBIDDEN)
+        for group_type in BaseGroupTypes.all_base_groups():
+            self.create_member(urlfor='groups', repo_slug=self.repo.slug,
+                               mem_dict=mem_dict_groups,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+        # as curator
+        self.logout()
+        self.login(self.curator_user.username)
+        self.create_member(urlfor='users', repo_slug=self.repo.slug,
+                           mem_dict=mem_dict_user, username=self.user.username,
+                           expected_status=HTTP_403_FORBIDDEN)
+        for group_type in BaseGroupTypes.all_base_groups():
+            self.create_member(urlfor='groups', repo_slug=self.repo.slug,
+                               mem_dict=mem_dict_groups,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+        # as administrator
+        self.logout()
+        self.login(self.user.username)
+        self.create_member(urlfor='users', repo_slug=self.repo.slug,
+                           mem_dict=mem_dict_user, username=self.user.username)
+        for group_type in BaseGroupTypes.all_base_groups():
+            self.create_member(urlfor='groups', repo_slug=self.repo.slug,
+                               mem_dict=mem_dict_groups,
+                               group_type=group_type)
+
+    def test_members_delete(self):
+        """
+        Tests for members.
+        Delete requests: an user can delete members only if s/he is admin
+        The only URLS where users can be deleted from a group or vice versa are
+        /api/v1/repositories/<repo>/members/groups/<group_type>/users/<username>
+        /api/v1/repositories/<repo>/members/users/<username>/groups/<group_type>
+        """
+        for group_type in BaseGroupTypes.all_base_groups():
+            # as anonymous
+            self.logout()
+            self.delete_member(urlfor='users', repo_slug=self.repo.slug,
+                               username=self.user.username,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+            self.delete_member(urlfor='groups', repo_slug=self.repo.slug,
+                               username=self.user.username,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+            # as author
+            self.login(self.author_user.username)
+            self.delete_member(urlfor='users', repo_slug=self.repo.slug,
+                               username=self.user.username,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+            self.delete_member(urlfor='groups', repo_slug=self.repo.slug,
+                               username=self.user.username,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+            # as curator
+            self.logout()
+            self.login(self.curator_user.username)
+            self.delete_member(urlfor='users', repo_slug=self.repo.slug,
+                               username=self.user.username,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+            self.delete_member(urlfor='groups', repo_slug=self.repo.slug,
+                               username=self.user.username,
+                               group_type=group_type,
+                               expected_status=HTTP_403_FORBIDDEN)
+        # different loop because the actual deletion can impact the other tests
+        for group_type in BaseGroupTypes.all_base_groups():
+            # as administrator
+            # deleting a different username because deleting self from admin is
+            # a special case (handled in different tests)
+            self.logout()
+            self.login(self.user.username)
+            self.delete_member(urlfor='users', repo_slug=self.repo.slug,
+                               username=self.author_user.username,
+                               group_type=group_type)
+            self.delete_member(urlfor='groups', repo_slug=self.repo.slug,
+                               username=self.author_user.username,
+                               group_type=group_type)

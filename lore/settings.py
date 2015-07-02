@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -189,6 +189,7 @@ STATICFILES_DIRS = (
 )
 COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
+    ('text/jsx', 'node_modules/.bin/jsx < {infile} > {outfile}')
 )
 
 # Media and storage settings

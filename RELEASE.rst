@@ -1,6 +1,22 @@
 Release Notes
 -------------
 
+Version 0.3.0
+=============
+
+- Added UI to add and remove repository members.
+- Added form for adding new vocabularies.
+- Added manage taxonomies panel and button
+- REST for repo members
+- Implemented taxonomy model delete cascading.
+- Renamed "Copy to Clipboard" to "Select XML"
+- Setup JSX processing requirements.
+- Fixed mis-resolutioned learning resource type icons.
+- Converted several large HTML blocks into include files.
+- Switched from using main.js for everything to multiple modules.
+- Installed lodash.
+- Added CSRF jQuery initialization code.
+
 Version 0.2.0
 =============
 

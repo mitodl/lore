@@ -1,0 +1,41 @@
+<!-- Members Panel -->
+<div class="cd-panel-members from-right" 
+  data-members-url="{% url 'repo-members' repo.slug %}">
+  <header class="cd-panel-header">
+    <h1>Members for Repository: {{ repo.name }}</h1>
+    <a href="#0" class="cd-panel-close">Close</a>
+  </header>
+  <div class="cd-panel-container">
+    <div class="cd-panel-content">
+      <div id="members-alert"></div>
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-sm-7">
+              <div class="form-group">
+                <div class="input-group">
+                  <input type="text" name="members-username"
+                    placeholder="kerberos id" class="form-control">
+                  <div class="input-group-addon">@mit.edu</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <select class="form-control" name="members-group_type">
+                <option value="authors">Author</option>
+                <option value="curators">Curator</option>
+                <option value="administrators">Administrator</option>
+              </select>
+            </div>
+            <div class="col-sm-2">
+              <button class="btn btn-default cd-panel-members-add">
+                <i class="fa fa-plus"></i>
+              </button>
+            </div>
+         </div>
+       </div>
+       <div class="container-fluid" id="cd-panel-members-list"></div>
+    </div>
+    <!-- cd-panel-content -->
+  </div>
+  <!-- cd-panel-container -->
+</div>
