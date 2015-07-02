@@ -103,6 +103,8 @@
     <script type="text/requirejs"
       src="{% static "bower/requirejs/require.js" %}">
     </script>
+    <script type="text/javascript" src="{% static "ui/js/require_paths.js" %}">
+    </script>
     <script type="text/javascript">
       require.config({
         baseUrl: "{% static "bower"%}",
@@ -110,17 +112,7 @@
           "icheck": {"deps": ["jquery"]},
           "bootstrap": {"deps": ["jquery"]}
         },
-        paths: {
-          jquery: "jquery/dist/jquery",
-          bootstrap: "bootstrap/dist/js/bootstrap",
-          icheck: "icheck/icheck",
-          retina: "retina.js/dist/retina",
-          react: "react/react",
-          reactaddons: "react/react-with-addons",
-          lodash: "lodash/lodash",
-          csrf: "../ui/js/csrf",
-          listing: "../ui/js/listing"
-        }
+        paths: REQUIRE_PATHS
       });
     </script>
     {% endcompress %}
