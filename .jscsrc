@@ -1,5 +1,8 @@
 {
   "preset": "google",
   "validateQuoteMarks": null,
-  "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties"
+  "requireCamelCaseOrUpperCaseIdentifiers": "ignoreProperties",
+  "fileExtensions": [".js", ".jsx"],
+  "esprima": "esprima-fb",
+  "disallowSpacesInAnonymousFunctionExpression": null
 }
