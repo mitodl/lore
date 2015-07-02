@@ -22,23 +22,23 @@ define(
       var $dest = $(dest);
       for (var i = 0; i < userList.length; i++) {
         $dest.append(
-          '<div class="row">\n' +
-            '<div class="col-sm-7">\n' +
+          '<div class="row">' +
+            '<div class="col-sm-7">' +
               '<div class="cd-panel-members-list-username">' +
-                userList[i].username + EMAIL_EXTENSION + '</div>\n' +
+                userList[i].username + EMAIL_EXTENSION + '</div>' +
             '</div>\n' +
-            '<div class="col-sm-3">\n' +
+            '<div class="col-sm-3">' +
               '<div class="cd-panel-members-list-group_type">' +
-                formatGroupName(userList[i].group_type) + '</div>\n' +
+                formatGroupName(userList[i].group_type) + '</div>' +
             '</div>\n' +
-            '<div class="col-sm-2">\n' +
+            '<div class="col-sm-2">' +
               '<button ' +
                  'class="btn btn-default cd-panel-members-remove" ' +
                  'data-username="' + userList[i].username + '" ' +
-                 'data-group_type="' + userList[i].group_type + '">\n' +
-                 '<i class="fa fa-minus"></i>\n' +
-              '</button>\n' +
-            '</div>\n' +
+                 'data-group_type="' + userList[i].group_type + '">' +
+                 '<i class="fa fa-minus"></i>' +
+              '</button>' +
+            '</div>' +
           '</div>\n');
       }
     }
@@ -54,9 +54,9 @@ define(
       //reset all the classes
       $('#members-alert').html(
         '<div class="alert alert-' + mtype +
-            ' fade in out" data-alert="alert">\n' +
+            ' fade in out" data-alert="alert">' +
           '<a href="#" class="close" data-dismiss="alert" ' +
-            'aria-label="close">&times;</a>\n' + message + '\n' +
+            'aria-label="close">&times;</a>\n' + message +
         '</div>');
     }
 
