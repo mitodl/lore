@@ -7,8 +7,10 @@
   "devDependencies": {
     "bower": "1.4.1",
     "coveralls": "~2.11.2",
+    "esprima-fb": "^15001.1.0-dev-harmony-fb",
     "jscs": "^1.13.1",
     "jshint": "^2.8.0",
+    "jsxhint": "^0.15.1",
     "karma": "^0.12.36",
     "karma-cli": "0.0.4",
     "karma-coverage": "^0.4.2",

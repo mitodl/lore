@@ -1,4 +1,5 @@
-define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _) {
+define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
+  function (React, _, $) {
   'use strict';
   var API_ROOT_VOCAB_URL;
 
@@ -59,7 +60,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
           }),
           contentType: "application/json; charset=utf-8"
         }
-      ).fail(function(e) {
+      ).fail(function() {
           thiz.props.reportError("Error occurred while adding new term.");
         })
       .done(function(newTerm) {
@@ -73,13 +74,13 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
         });
     },
     updateAddTermText: function(e) {
-      this.setState({newTermLabel: e.target.value})
+      this.setState({newTermLabel: e.target.value});
     },
     getInitialState: function() {
       return {
         newTermLabel: "",
         terms: this.props.terms
-      }
+      };
     }
   });
 
@@ -128,7 +129,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
         vocabulary_type: 'm',
         required: false,
         weight: 2147483647
-      }
+      };
     },
     updateVocabularyType: function(e) {
       this.setState({vocabulary_type: e.target.value});
@@ -143,13 +144,15 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
         vocabulary_type: this.state.vocabulary_type,
         required: this.state.required,
         weight: this.state.weight
-      }
+      };
       $.ajax({
-          type: "POST",
-          url: API_ROOT_VOCAB_URL,
-          data: vocabularyData
+        type: "POST",
+        url: API_ROOT_VOCAB_URL,
+        data: vocabularyData
       }).fail(function(data) {
-        thiz.setState({errorMessage: 'There was a problem adding the Vocabulary'})
+        thiz.setState({
+          errorMessage: 'There was a problem adding the Vocabulary'
+        });
         console.error(data);
       }).done(function(data) {
         // Reset state (and eventually update the vocab tab
@@ -161,18 +164,17 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
           ".cd-panel-2 .cd-panel-container .cd-panel-content"
         );
         scrollableDiv.animate(
-          { scrollTop: scrollableDiv.prop('scrollHeight')},
+          {scrollTop: scrollableDiv.prop('scrollHeight')},
           500
-        );  
+        );
       });
     },
     render: function() {
-      var repoSlug = this.props.repoSlug;
-      var errorBox = null
-      if(this.state['errorMessage'] !== undefined) {
+      var errorBox = null;
+      if (this.state.errorMessage !== undefined) {
         errorBox = <div className="alert alert-danger alert-dismissible">
                      {this.state.errorMessage}
-                   </div>
+                   </div>;
       }
       return (
         <form className="form-horizontal" onSubmit={this.submitForm}>
@@ -209,7 +211,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
             <button className="btn btn-lg btn-primary">Save</button>
           </p>
         </form>
-      )
+      );
     }
   });
 
@@ -217,20 +219,20 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
     getInitialState: function() {
       return {
         vocabularies: this.props.vocabularies
-      }
+      };
     },
     addVocabulary: function(vocab) {
       // Wrap vocab in expected structure
-      var new_vocab = {
+      var newVocab = {
         terms: [],
         vocabulary: vocab
       };
       var vocabularies = this.state.vocabularies;
-      vocabularies.push(new_vocab);
+      vocabularies.push(newVocab);
       this.setState({vocabularies: vocabularies});
     },
     render: function() {
-      return(
+      return (
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
@@ -242,12 +244,12 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
               repoSlug={this.props.repoSlug}/>
           </div>
         </div>
-      )
+      );
     }
   });
 
   return function (repoSlug) {
-    API_ROOT_VOCAB_URL = '/api/v1/repositories/' + repoSlug + '/vocabularies/'
+    API_ROOT_VOCAB_URL = '/api/v1/repositories/' + repoSlug + '/vocabularies/';
     $.get(API_ROOT_VOCAB_URL)
       .then(function (data) {
         var promises = _.map(data.results, function (vocabulary) {
@@ -264,8 +266,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
           var args;
           if (promises.length === 1) {
             args = [arguments[0]];
-          }
-          else {
+          } else {
             args = arguments;
           }
           return _.map(args, function (obj) {
