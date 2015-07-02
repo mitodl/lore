@@ -92,8 +92,7 @@
       "require": false,
       "define": false,
       "module": false,
-      "process": false,
-      "REQUIRE_PATHS": false
+      "process": false
     }        // additional predefined global variables
 }
 

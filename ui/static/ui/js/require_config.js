@@ -9,7 +9,12 @@ var REQUIRE_PATHS = {
   reactaddons: "react/react-with-addons",
   lodash: "lodash/lodash",
   csrf: "../ui/js/csrf",
+  facets: "../ui/js/facets",
   listing: "../ui/js/listing",
   setup_manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext"
+};
+var SHIMS = {
+  "icheck": {"deps": ["jquery"]},
+  "bootstrap": {"deps": ["jquery"]}
 };
 /* jshint ignore:end */

@@ -60,6 +60,11 @@
 {% if 'manage_repo_users' in perms_on_cur_repo %}
   {% include "includes/members_panel.html" %}
 {% endif %}
+<!-- Modal -->
+<div class="modal fade" id="progress-modal" tabindex="-1" role="dialog" aria-labelledby="progressModal">
+  <div class="modal-dialog" role="document">
+  </div>
+</div>
 {% endblock %}
 {% block postcontent %}
 {{ block.super }}

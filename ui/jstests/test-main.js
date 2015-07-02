@@ -1,5 +1,7 @@
+/* global SHIMS */
+/* global REQUIRE_PATHS */
 var allFiles = [];
-var TEST_EXCLUDE_REGEXP = /(ui\/static\/bower\/)|(node_modules)|(test-main.js)|(require_paths.js)/i;
+var TEST_EXCLUDE_REGEXP = /(ui\/static\/bower\/)|(node_modules)|(test-main.js)|(require_config.js)/i;
 var JS_INCLUDE_REGEXP = /\.jsx?$/i;
 
 Object.keys(window.__karma__.files).forEach(function(file) {
@@ -24,6 +26,9 @@ require.config({
 
   // dynamically load all files
   deps: allFiles,
+
+  // Load up shims
+  shim: SHIMS,
 
   // paths for required libraries
   paths: paths,

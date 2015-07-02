@@ -15,7 +15,7 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'ui/static/ui/js/require_paths.js',
+      'ui/static/ui/js/require_config.js',
       'ui/jstests/test-main.js',
       {
         pattern: 'ui/static/bower/**/*.js',
@@ -75,7 +75,7 @@ module.exports = function(config) {
       dir: 'coverage/',
       reporters: [
         {
-          type: 'lcovonly',
+          type: 'lcov',
           subdir: '.',
           file: 'coverage-js.lcov'
         }
