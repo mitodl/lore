@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 
 from search.forms import SearchForm
 from ui.views import (
@@ -38,8 +39,10 @@ urlpatterns = [
     url(r'^repositories/new/$', create_repo, name='create_repo'),
     url(
         r'^repositories/(?P<repo_slug>[-\w]+)/$',
-        RepositoryView(
-            form_class=SearchForm, template="repository.html",
+        login_required(
+            RepositoryView(
+                form_class=SearchForm, template="repository.html",
+            )
         ),
         name='repositories'
     ),
