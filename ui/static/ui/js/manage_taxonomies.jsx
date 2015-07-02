@@ -67,6 +67,9 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
             newTermLabel: null,
             terms: thiz.state.terms.concat([newTerm])
           });
+
+          // clear errors
+          thiz.props.reportError(null);
         });
     },
     updateAddTermText: function(e) {
@@ -104,7 +107,9 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
 
     },
     reportError: function(msg) {
-      console.error(msg);
+      if (msg) {
+        console.error(msg);
+      }
       this.setState({errorText: msg});
     },
     getInitialState: function() {
