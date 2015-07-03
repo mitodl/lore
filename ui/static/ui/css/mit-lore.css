@@ -169,6 +169,13 @@ a {
 	margin:0 0 10px 0;
 }	
 
+.icheck-list li a span.min-width {
+	min-width: 30px;
+  	text-align: right;
+  	display: inline-block;
+	margin-right: 5px;
+}
+
 .icheck-list label {
 	font-weight:400;
 	font-size:14px;
