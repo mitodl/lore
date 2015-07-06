@@ -11,7 +11,10 @@ from rest_framework.status import (
     HTTP_405_METHOD_NOT_ALLOWED,
 )
 
-from learningresources.models import Repository
+from learningresources.models import (
+    Repository,
+    LearningResourceType,
+)
 from taxonomy.models import Vocabulary, Term
 
 from rest.serializers import (
@@ -259,6 +262,44 @@ class TestRest(RESTTestCase):
         self.get_vocabulary(
             other_repo_dict['slug'], vocab2_dict['slug']
         )
+
+    def test_vocabulary_filter_type(self):
+        """Test filtering learning resource types for vocabularies"""
+        self.create_vocabulary(self.repo.slug)
+
+        learning_resource_type = LearningResourceType.objects.first()
+
+        # in the future this should be handled within the API
+        Vocabulary.objects.first().learning_resource_types.add(
+            learning_resource_type
+        )
+
+        resp = self.client.get("{repo_base}{repo_slug}/vocabularies/".format(
+            repo_base=REPO_BASE,
+            repo_slug=self.repo.slug,
+        ))
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        self.assertEqual(1, as_json(resp)['count'])
+
+        resp = self.client.get(
+            "{repo_base}{repo_slug}"
+            "/vocabularies/?type_name={name}".format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                name=learning_resource_type.name,
+            ))
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        self.assertEqual(1, as_json(resp)['count'])
+
+        resp = self.client.get(
+            "{repo_base}{repo_slug}"
+            "/vocabularies/?type_name={name}".format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                name="missing",
+            ))
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        self.assertEqual(0, as_json(resp)['count'])
 
     def test_term(self):
         """Test REST access for term"""
