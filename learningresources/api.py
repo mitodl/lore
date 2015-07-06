@@ -6,8 +6,11 @@ apps don't tie functionality to internal implementation.
 from __future__ import unicode_literals
 
 import logging
+from os import walk, sep
+from os.path import join
 
 from django.contrib.auth.models import User
+from django.core.files import File
 from django.db import transaction
 
 from guardian.shortcuts import get_objects_for_user, get_perms
@@ -222,30 +225,71 @@ def get_resource(resource_id, user_id):
     return resource
 
 
-def create_static_asset(course_id, file_handle):
+def create_static_asset(course_id, handle):
     """
-    Create a static asset for a given course.
-
-    Warning:
-        This takes and open file handle and does not close it. You
-        will need to handle the opening and closing the
-        ``file_handle`` outside of this method.
-
-    Raises:
-        ValueError: If a closed handle is passed in
-
+    Create a static asset.
     Args:
-        course_id (int): Primary key of the Course to add the asset to.
-        file_handle (django.core.files.File):
-            An open file handle to save to the model.
-
+        course_id (int): learningresources.models.Course pk
+        handle (django.core.files.File): file handle
     Returns:
         learningresources.models.StaticAsset
     """
-    course = Course.objects.get(id=course_id)
     with transaction.atomic():
-        static_asset, _ = StaticAsset.objects.get_or_create(
-            course=course,
-            asset=file_handle
-        )
-    return static_asset
+        return StaticAsset.objects.create(course_id=course_id, asset=handle)
+
+
+def _subs_filename(subs_id, lang='en'):
+    """
+    Generate proper filename for storage.
+
+    Function copied from:
+    edx-platform/common/lib/xmodule/xmodule/video_module/transcripts_utils.py
+
+    Args:
+        subs_id (str): Subs id string
+        lang (str): Locale language (optional) default: en
+
+    Returns:
+        filename (str): Filename of subs file
+    """
+    if lang in ('en', "", None):
+        return u'subs_{0}.srt.sjson'.format(subs_id)
+    else:
+        return u'{0}_subs_{1}.srt.sjson'.format(lang, subs_id)
+
+
+def get_video_sub(xml):
+    """
+    Get subtitle IDs from <video> XML.
+
+    Args:
+        xml (lxml.etree): xml for a LearningResource
+    Returns:
+        sub string: subtitle string
+    """
+    subs = xml.xpath("@sub")
+    # It's not possible to have more than one.
+    if len(subs) == 0:
+        return ""
+    return _subs_filename(subs[0])
+
+
+def import_static_assets(course, path):
+    """
+    Upload all assets and create model records of them for a given
+    course and path.
+
+    Args:
+        course (learningresources.models.Course): Course to add assets to.
+        path (unicode): course specific path to extracted OLX tree.
+    Returns:
+        None
+    """
+    for root, _, files in walk(path):
+        for name in files:
+            with open(join(root, name), 'r') as open_file:
+                django_file = File(open_file)
+                # Remove base path from file name
+                name = join(root, name).replace(path + sep, '', 1)
+                django_file.name = name
+                create_static_asset(course.id, django_file)

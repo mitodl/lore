@@ -41,6 +41,27 @@ def static_asset_basepath(asset, filename):
     )
 
 
+def course_asset_basepath(course, filename):
+    """
+    Returns folder base path for given path.
+
+    Callback API defined by:
+    https://docs.djangoproject.com/en/1.8/ref/models/fields/#django.db.models.FileField.upload_to
+    Args:
+        course (Course): The model to create the name for.
+        filename (unicode): The subpath and filename of the asset.
+    Returns:
+        (unicode): forward slash separated path to use below
+            ``settings.MEDIA_ROOT``.
+    """
+    return 'assets/{org}/{course_number}/{run}/{filename}'.format(
+        org=course.org,
+        course_number=course.course_number,
+        run=course.run,
+        filename=filename
+    )
+
+
 class Course(BaseModel):
     """
     A course on edX platform (MITx or residential).

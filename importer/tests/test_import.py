@@ -4,10 +4,12 @@ Tests for LORE imports.
 
 from __future__ import unicode_literals
 
+from collections import namedtuple
 import os
 from shutil import rmtree
 from tempfile import mkstemp, mkdtemp
 import zipfile
+import logging
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -16,12 +18,16 @@ import mock
 from importer.api import (
     import_course_from_file,
     import_course_from_path,
-    import_static_assets
+    import_static_assets,
 )
 from importer.tasks import import_file
 from learningresources.api import get_resources
-from learningresources.models import Course, StaticAsset, static_asset_basepath
+from learningresources.models import (
+    Course, StaticAsset, static_asset_basepath, LearningResource,
+)
 from learningresources.tests.base import LoreTestCase
+
+log = logging.getLogger(__name__)
 
 
 class TestImportToy(LoreTestCase):
@@ -131,7 +137,7 @@ class TestImportToy(LoreTestCase):
         with mock.patch('importer.api.import_course') as mock_import:
             with mock.patch(
                 'importer.api.import_static_assets'
-            ) as mock_static:
+            ):
                 with mock.patch('importer.api.XBundle') as mock_bundle:
                     with mock.patch('importer.api.isdir') as mock_is_dir:
                         mock_import.return_value = True
@@ -140,10 +146,8 @@ class TestImportToy(LoreTestCase):
                             test_path, test_repo_id, test_user_id
                         )
                         mock_import.assert_called_with(
-                            mock_bundle(), test_repo_id, test_user_id
-                        )
-                        mock_static.assert_called_with(
-                            os.path.join(test_path, 'static'), True
+                            mock_bundle(), test_repo_id,
+                            test_user_id, os.path.join(test_path, "static"),
                         )
 
     def test_import_static_assets(self):
@@ -157,7 +161,7 @@ class TestImportToy(LoreTestCase):
         with open(os.path.join(temp_dir_path, basename), 'w') as temp:
             temp.write(file_contents)
         # All setup, now import
-        import_static_assets(temp_dir_path, self.course)
+        import_static_assets(self.course, temp_dir_path)
         assets = StaticAsset.objects.filter(course=self.course)
         self.assertEqual(assets.count(), 1)
         asset = assets[0]
@@ -187,7 +191,7 @@ class TestImportToy(LoreTestCase):
             temp.write(file_contents)
 
         # All setup, now import
-        import_static_assets(temp_dir_path, self.course)
+        import_static_assets(self.course, temp_dir_path)
         assets = StaticAsset.objects.filter(course=self.course)
         self.assertEqual(assets.count(), 1)
         asset = assets[0]
@@ -217,10 +221,60 @@ class TestImportToy(LoreTestCase):
         assets = StaticAsset.objects.filter(course=course)
         for asset in assets:
             self.addCleanup(default_storage.delete, asset.asset)
-        self.assertEqual(assets.count(), 2)
+        self.assertEqual(assets.count(), 3)
         for asset in assets:
             base_path = static_asset_basepath(asset, '')
             self.assertIn(
                 asset.asset.name.replace(base_path, ''),
-                ['test.txt', 'subdir/subtext.txt']
+                [
+                    'test.txt', 'subdir/subtext.txt',
+                    'subs_CCxmtcICYNc.srt.sjson'
+                ]
             )
+
+    def test_parse_static(self):
+        """
+        Parse the static assets in the sample course
+        """
+        def get_counts():
+            """Returns counts of resources, videos, and assets."""
+            counts = namedtuple("counts", "resources videos assets")
+            kwargs = {"course__course_number": "toy"}
+            resources = LearningResource.objects.filter(**kwargs).count()
+            assets = StaticAsset.objects.filter(**kwargs).count()
+            kwargs["learning_resource_type__name"] = "video"
+            videos = LearningResource.objects.filter(**kwargs).count()
+            return counts(resources, videos, assets)
+
+        # There should be nothing.
+        counts = get_counts()
+        self.assertTrue(counts.resources == 0)
+        self.assertTrue(counts.videos == 0)
+        self.assertTrue(counts.assets == 0)
+        # Import the course.
+        import_course_from_file(
+            self.get_course_single_tarball(),
+            self.repo.id, self.user.id
+        )
+        # There should be something.
+        counts = get_counts()
+        self.assertTrue(counts.resources == 5)
+        self.assertTrue(counts.videos == 2)
+        self.assertTrue(counts.assets == 3)
+        # Only one video in the course has subtitles.
+        self.assertTrue(
+            StaticAsset.objects.filter(
+                learningresource__course__id__isnull=False).count() == 1)
+
+        # There should be a single static asset.
+        course = Course.objects.all().order_by("-id")[0]  # latest course
+        videos = LearningResource.objects.filter(
+            learning_resource_type__name="video",
+            course__id=course.id
+        )
+        self.assertTrue(videos.count() == 2)
+        num_assets = sum([
+            video.static_assets.count()
+            for video in videos
+        ])
+        self.assertTrue(num_assets == 1)

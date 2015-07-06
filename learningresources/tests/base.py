@@ -5,6 +5,7 @@ test client.
 """
 from __future__ import unicode_literals
 
+import logging
 from os.path import abspath, dirname, join
 import shutil
 import subprocess
@@ -23,6 +24,8 @@ from learningresources.api import create_repo, create_course, create_resource
 from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes
+
+log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 class LoreTestCase(TestCase):
