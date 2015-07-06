@@ -8,7 +8,7 @@ from shutil import rmtree
 import logging
 from tempfile import mkdtemp
 from os.path import join, exists, isdir
-from os import listdir, walk, sep
+from os import listdir
 
 from archive import Archive, ArchiveException
 from django.core.files import File
@@ -17,10 +17,10 @@ from lxml import etree
 from xbundle import XBundle, DESCRIPTOR_TAGS
 
 from learningresources.api import (
-    create_course,
-    create_resource,
-    create_static_asset
+    create_course, create_resource, import_static_assets,
+    create_static_asset, get_video_sub,
 )
+from learningresources.models import StaticAsset, course_asset_basepath
 
 log = logging.getLogger(__name__)
 
@@ -93,14 +93,12 @@ def import_course_from_path(path, repo_id, user_id):
     """
     bundle = XBundle()
     bundle.import_from_directory(path)
-    course = import_course(bundle, repo_id, user_id)
     static_dir = join(path, 'static')
-    if isdir(static_dir):
-        import_static_assets(static_dir, course)
+    course = import_course(bundle, repo_id, user_id, static_dir)
     return course
 
 
-def import_course(bundle, repo_id, user_id):
+def import_course(bundle, repo_id, user_id, static_dir):
     """
     Import a course from an XBundle object.
 
@@ -108,6 +106,7 @@ def import_course(bundle, repo_id, user_id):
         bundle (xbundle.XBundle): Course as xbundle XML
         repo_id (int): Primary key of repository course belongs to
         user_id (int): Primary key of Django user doing the import
+        static_dir (unicode): location of static files
     Returns:
         learningresources.models.Course
     """
@@ -119,6 +118,7 @@ def import_course(bundle, repo_id, user_id):
         run=src.attrib["semester"],
         user_id=user_id,
     )
+    import_static_assets(course, static_dir)
     import_children(course, src, None)
     return course
 
@@ -142,92 +142,16 @@ def import_children(course, element, parent):
         content_xml=etree.tostring(element),
         mpath=mpath,
     )
+    if element.tag == "video":
+        subname = get_video_sub(element)
+        if subname != "":
+            assets = StaticAsset.objects.filter(
+                course__id=resource.course_id,
+                asset=course_asset_basepath(course, subname),
+            )
+            for asset in assets:
+                resource.static_assets.add(asset)
+
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
             import_children(course, child, resource)
-
-
-def import_static_assets(path, course):
-    """
-    Upload all assets and create model records of them for a given
-    course and path.
-
-    Args:
-        path (unicode): course specific path to extracted OLX tree.
-        course (learningresources.models.Course): Course to add assets to.
-    Returns:
-        None
-    """
-    for root, _, files in walk(path):
-        for name in files:
-            with open(join(root, name), 'r') as open_file:
-                django_file = File(open_file)
-                # Remove base path from file name
-                django_file.name = join(root, name).replace(path + sep, '', 1)
-                create_static_asset(course.id, django_file)
-
-
-def parse_static(learning_resource):
-    """
-    Parse static assets from LearningResource XML.
-
-    learning_resource_types can be 'html', 'problem', or 'video'.
-
-    Args:
-        learning_resource (LearningResource):
-
-    Returns:
-        List of green, slimy things
-    """
-    tree = etree.fromstring(learning_resource.content_xml)
-    # expecting only one sub attribute in video LR.
-    if learning_resource.learning_resource_type.name == "video":
-        sub = tree.xpath("/video/@sub")
-        # convert sub into filename
-        if len(sub) > 0:
-            filename = _subs_filename(sub)
-            log.info('subtitle filename is %s'.format(filename))
-
-    elif learning_resource.learning_resource_type.name == "html":
-        tree.xpath("/div/")
-
-    elif learning_resource.learning_resource_type.name == "problem":
-        pass
-
-
-def _subs_filename(subs_id, lang='en'):
-    """
-    Generate proper filename for storage.
-
-    Function copied from:
-    edx-platform/common/lib/xmodule/xmodule/video_module/transcripts_utils.py
-
-    Args:
-        subs_id (str): Subs id string
-        lang (str): Locale language (optional) default: en
-
-    Returns:
-        filename (str): Filename of subs file
-    """
-    if lang == 'en':
-        return u'subs_{0}.srt.sjson'.format(subs_id)
-    else:
-        return u'{0}_subs_{1}.srt.sjson'.format(lang, subs_id)
-
-
-def _parse_relative_asset_path(path):
-    """
-    Extract path to static asset file from relative edX path
-
-    Static assets whose location are relative to edX datastore such as
-    ``/c4x/edX/DemoX/asset/images_logic_gate_image.png`` can be
-    converted to a local path by extracting the portion of the path
-    after ``asset/``.
-
-    Args:
-        path (str):
-
-    Returns:
-        Path to asset relative to ``static`` directory
-    """
-    return path.split('/asset/')[1]

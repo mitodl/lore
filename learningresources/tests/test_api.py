@@ -5,11 +5,11 @@ Test api functions.
 from __future__ import unicode_literals
 
 import logging
-import tempfile
 
 from django.core.files import File
 from django.core.files.storage import default_storage
 from django.db.utils import IntegrityError
+import tempfile
 
 from learningresources.api import (
     create_course,
@@ -157,6 +157,13 @@ class TestRepoAPI(LoreTestCase):
         self.assertIn("description", ex.exception.args[0])
 
 
+def course_count():
+    """
+    Return number of courses in the database.
+    """
+    return Course.objects.count()
+
+
 class TestStaticAsset(LoreTestCase):
     """
     Verify the Python API for static assets.
@@ -185,10 +192,3 @@ class TestStaticAsset(LoreTestCase):
             with self.assertRaises(ValueError):
                 asset = create_static_asset(self.course.id, test_file)
         self.assertEqual(file_contents, asset.asset.read())
-
-
-def course_count():
-    """
-    Return number of courses in the database.
-    """
-    return Course.objects.count()
