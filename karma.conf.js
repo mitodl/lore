@@ -40,14 +40,6 @@ module.exports = function(config) {
       {
         pattern:'ui/jstests/**/*.jsx',
         included: false
-      },
-      {
-        pattern: 'node_modules/**/*.js',
-        included: false
-      },
-      {
-        pattern: 'node_modules/**/*.jsx',
-        included: false
       }
     ],
 
