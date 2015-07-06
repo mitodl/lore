@@ -64,26 +64,28 @@
         {% for resource_type in facets.fields.resource_type %}
         <li>
           <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=resource_type_exact:{{ resource_type.0|urlencode }}">        
-            {# Select image based on type #}
-            {% if resource_type.0 == 'chapter' %}
-            <img class="ic-custom"
-                 src="{% static "ui/images/ic-book.png" %}">
-            {% elif resource_type.0 == 'sequential' %}
-            <img class="ic-custom"
-                 src="{% static "ui/images/ic-sequential.png" %}">
-            {% elif resource_type.0 == 'vertical' %}
-            <img class="ic-custom"
-                 src="{% static "ui/images/ic-vertical.png" %}">
-            {% elif resource_type.0 == 'problem' %}
-            <img class="ic-custom"
-                 src="{% static "ui/images/ic-pieces.png" %}">
-            {% elif resource_type.0 == 'video' %}
-            <img class="ic-custom"
-                 src="{% static "ui/images/ic-video.png" %}">
-            {% else %}
-            <img class="ic-custom"
-                 src="{% static "ui/images/ic-code.png" %}">
-            {% endif %}                  
+            <span class="min-width">
+              {# Select image based on type #}
+              {% if resource_type.0 == 'chapter' %}
+              <img class="ic-custom"
+                   src="{% static "ui/images/ic-book.png" %}">
+              {% elif resource_type.0 == 'sequential' %}
+              <img class="ic-custom"
+                   src="{% static "ui/images/ic-sequential.png" %}">
+              {% elif resource_type.0 == 'vertical' %}
+              <img class="ic-custom"
+                   src="{% static "ui/images/ic-vertical.png" %}">
+              {% elif resource_type.0 == 'problem' %}
+              <img class="ic-custom"
+                   src="{% static "ui/images/ic-pieces.png" %}">
+              {% elif resource_type.0 == 'video' %}
+              <img class="ic-custom"
+                   src="{% static "ui/images/ic-video.png" %}">
+              {% else %}
+              <img class="ic-custom"
+                   src="{% static "ui/images/ic-code.png" %}">
+              {% endif %}
+            </span>
             {{ resource_type.0|title }}
           </a>
           <span class="badge">{{ resource_type.1 }}</span>
