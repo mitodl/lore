@@ -428,25 +428,10 @@ Create a repository by providing its JSON representation.
 
 Represents users / members of the repository
 
-## Member [/repositories/{repo_slug}/members/{member_id}/]
+## Members Collection [/repositories/{repo_slug}/members/]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
-    + member_id: `107` (number, required) - ID of the user in the system
-
-### View a Member [GET]
-
-+ Response 200 (application/json)
-
-        {
-            "tbd": "tbd"
-        }
-
-## Members Collection [/repositories/{repo_slug}/members/{?role_id}]
-
-+ Parameters
-    + repo_slug: `physics-1` (number, required) - ID of the Repository
-    + role_id: ID of the role this member belongs to
 
 
 ### List All Members [GET]
@@ -455,8 +440,159 @@ Represents users / members of the repository
 
     + Body
 
-            [
-                {
-                    "tbd": "tbd"
-                }
-            ]
+            {
+                "count": 4,
+                "next": null,
+                "previous": null,
+                "results": [
+                    {
+                        "username": "james",
+                        "group_type": "administrators"
+                    },
+                    {
+                        "username": "patricia",
+                        "group_type": "administrators"
+                    },
+                    {
+                        "username": "patricia",
+                        "group_type": "curators"
+                    },
+                    {
+                        "username": "linda",
+                        "group_type": "authors"
+                    }
+                ]
+            }
+
+## Groups For a Member [/repositories/{repo_slug}/members/users/{member_username}/groups/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + member_username: `patricia` (string, required) - username of the user in the system
+
+### View Groups For a Member [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "count": 2,
+                "next": null,
+                "previous": null,
+                "results": [
+                    {
+                        "group_type": "administrators"
+                    },
+                    {
+                        "group_type": "curators"
+                    }
+                ]
+            }
+
+### Add Group to a Member [POST]
++ Request (application/json)
+
+        {
+            "group_type": "curators"
+        }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Location: /api/v1/repositories/physics-1/members/users/james/groups/curators/
+
+    + Body
+
+        {
+            "group_type": "curators"
+        }
+
+
+## Group for a Member [/repositories/{repo_slug}/members/users/{member_username}/groups/{group_type}/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + member_username: `patricia` (string, required) - username of the user in the system
+    + group_type: `curators` (string, required) - group type for the user in the system
+
+### View a Group For a Member [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "group_type": "curators"
+            }
+
+### Delete a Group from a Member [DELETE]
+
++ Response 204 (application/json)
+
+## Members For a Group [/repositories/{repo_slug}/members/groups/{group_type}/users/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + group_type: `administrators` (string, required) - group type for the user in the system
+
+### View Members For a Group [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "count": 2,
+                "next": null,
+                "previous": null,
+                "results": [
+                    {
+                        "username": "james"
+                    },
+                    {
+                        "username": "patricia"
+                    }
+                ]
+            }
+
+### Add Member to a Group [POST]
++ Request (application/json)
+
+        {
+            "username": "james"
+        }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Location: /api/v1/repositories/physics-1/members/groups/administrators/users/james/
+
+    + Body
+
+        {
+            "username": "james"
+        }
+
+## Member for a Group [/repositories/{repo_slug}/members/groups/{group_type}/users/{member_username}/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + group_type: `administrators` (string, required) - group type for the user in the system
+    + member_username: `james` (string, required) - username of the user in the system
+
+### View a Member For a Group [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "username": "james"
+            }
+
+### Delete a Member from a Group [DELETE]
+
++ Response 204 (application/json)
