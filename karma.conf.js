@@ -77,6 +77,10 @@ module.exports = function(config) {
         {
           type: 'lcov',
           subdir: '.',
+        },
+        {
+          type: 'lcovonly',
+          subdir: '.',
           file: 'coverage-js.lcov'
         }
       ]
