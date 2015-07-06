@@ -37,8 +37,9 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
         <li>
           <div className="input-group">
             <input type="text" value={this.state.newTermLabel}
-              className="form-control"
-              placeholder="Add new term..." onChange={this.updateAddTermText}/>
+              className="form-control" onKeyUp={this.onEnterPress}
+              placeholder="Add new term..." onChange={this.updateAddTermText}
+              />
               <span className="input-group-btn">
                 <a className="btn btn-white"
                   type="button" onClick={this.handleAddTermClick}><i
@@ -49,8 +50,16 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
         </li>
       </ul>;
     },
+    onEnterPress: function(e) {
+      var code = (e.keyCode ? e.keyCode : e.which);
+      if (code === 13) { //Enter keycode
+        this.handleAddTermClick();
+      }
+    },
     handleAddTermClick: function() {
       var thiz = this;
+      API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/';
       $.ajax({
           type: "POST",
           url: API_ROOT_VOCAB_URL + this.props.vocabulary.slug + "/terms/",
@@ -81,7 +90,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
         newTermLabel: "",
         terms: this.props.terms
       };
-    }
+    },
   });
 
   var AddTermsComponent = React.createClass({
@@ -266,43 +275,51 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
     }
   });
 
-  return function (repoSlug) {
-    API_ROOT_VOCAB_URL = '/api/v1/repositories/' + repoSlug + '/vocabularies/';
-    $.get(API_ROOT_VOCAB_URL)
-      .then(function (data) {
-        var promises = _.map(data.results, function (vocabulary) {
-          return $.get("/api/v1/repositories/" + repoSlug +
-            "/vocabularies/" + vocabulary.slug + "/terms/")
-            .then(function (result) {
-              return {terms: result.results, vocabulary: vocabulary};
-            }).fail(function(obj) {
-              throw obj;
-            });
-        });
-
-        return $.when.apply($, promises).then(function () {
-          var args;
-          if (promises.length === 1) {
-            args = [arguments[0]];
-          } else {
-            args = arguments;
-          }
-          return _.map(args, function (obj) {
-            var terms = obj.terms;
-            var vocabulary = obj.vocabulary;
-
-            return {
-              vocabulary: vocabulary,
-              terms: terms
-            };
+  return {
+    'VocabularyComponent': VocabularyComponent,
+    'loader' : function (repoSlug) {
+      API_ROOT_VOCAB_URL = '/api/v1/repositories/' + repoSlug +
+        '/vocabularies/';
+      $.get(API_ROOT_VOCAB_URL)
+        .then(function (data) {
+          var promises = _.map(data.results, function (vocabulary) {
+            return $.get("/api/v1/repositories/" + repoSlug +
+              "/vocabularies/" + vocabulary.slug + "/terms/")
+              .then(function (result) {
+                return {
+                  terms: result.results,
+                  vocabulary: vocabulary
+                };
+              }).fail(function (obj) {
+                throw obj;
+              });
           });
+
+          return $.when.apply($, promises).then(function () {
+            var args;
+            if (promises.length === 1) {
+              args = [arguments[0]];
+            } else {
+              args = arguments;
+            }
+            return _.map(args, function (obj) {
+              var terms = obj.terms;
+              var vocabulary = obj.vocabulary;
+
+              return {
+                vocabulary: vocabulary,
+                terms: terms
+              };
+            });
+          });
+        })
+        .then(function (vocabularies) {
+          React.render(
+            <TaxonomyComponent vocabularies={vocabularies}
+                               repoSlug={repoSlug}/>,
+            $('#taxonomy-component')[0]);
         });
-      })
-      .then(function (vocabularies) {
-        React.render(
-          <TaxonomyComponent vocabularies={vocabularies} repoSlug={repoSlug}/>,
-          $('#taxonomy-component')[0]);
-      });
+    }
   };
 
 });

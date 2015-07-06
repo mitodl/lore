@@ -40,6 +40,10 @@ module.exports = function(config) {
       {
         pattern:'ui/jstests/**/*.jsx',
         included: false
+      },
+      {
+        pattern: 'node_modules/jquery-mockjax/src/jquery.mockjax.js',
+        included: false
       }
     ],
 
