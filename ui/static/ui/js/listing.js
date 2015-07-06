@@ -12,8 +12,7 @@ define(
     /* This is going to grow up to check whether
      * the name is a valid Kerberos account
      */
-    function isEmail(username) {
-      var email = username + EMAIL_EXTENSION;
+    function isEmail(email) {
       var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i;
       return regex.test(email);
     }
@@ -156,10 +155,17 @@ define(
         var groupType = $('select[name=\'members-group_type\']').val();
         // /api/v1/repositories/my-rep/members/groups/<group_type>/users/
         url += 'groups/' + groupType + '/users/';
-        if (!isEmail(username)) {
-          var message = '<strong>' + username + EMAIL_EXTENSION +
+        //test that username is not an email
+        if (isEmail(username)) {
+          var message = 'Please type only your username before the @';
+          showMembersAlert(message, 'warning');
+          return;
+        }
+        var email = username + EMAIL_EXTENSION;
+        if (!isEmail(email)) {
+          var emailMessage = '<strong>' + email +
             '</strong> does not seem to be a valid email';
-          showMembersAlert(message, 'danger');
+          showMembersAlert(emailMessage, 'danger');
           return;
         }
         $.ajax({
@@ -171,7 +177,7 @@ define(
           //reset the values
           resetUserGroupForm();
           //show alert
-          var message = '<strong>' + username + EMAIL_EXTENSION +
+          var message = '<strong>' + email +
             '</strong> added to group <strong>' +
             formatGroupName(groupType) + '</strong>';
           showMembersAlert(message);
@@ -180,7 +186,7 @@ define(
         })
         .error(function(data) {
           //show alert
-          var message = 'Error adding user ' + username + EMAIL_EXTENSION +
+          var message = 'Error adding user ' + email +
             ' to group ' + formatGroupName(groupType);
           message = message + '<br>' + data.responseJSON.username[0];
           showMembersAlert(message, 'danger');
@@ -191,6 +197,7 @@ define(
         var url = $('.cd-panel-members').data('members-url');
         var username = $(this).data('username');
         var groupType = $(this).data('group_type');
+        var email = username + EMAIL_EXTENSION;
         // /api/v1/repositories/my-rep/members/groups/<group_type>/users/<username>/
         url += 'groups/' + groupType + '/users/' + username + '/';
         $.ajax({
@@ -199,7 +206,7 @@ define(
         })
         .done(function() {
           //show alert
-          var message = '<strong>' + username + EMAIL_EXTENSION +
+          var message = '<strong>' + email +
             '</strong> deleted from group <strong>' +
             formatGroupName(groupType) + '</strong>';
           showMembersAlert(message);
@@ -209,7 +216,7 @@ define(
         .error(function(data) {
           //show alert
           var message = 'Error deleting user <strong>' +
-            username + EMAIL_EXTENSION + '</strong> from group <strong>' +
+          email + '</strong> from group <strong>' +
             formatGroupName(groupType) + '</strong>';
           try {
             message += '<br>' + data.responseJSON.detail;
