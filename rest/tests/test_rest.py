@@ -11,10 +11,12 @@ from rest_framework.status import (
     HTTP_405_METHOD_NOT_ALLOWED,
 )
 
+from importer.tasks import import_file
 from learningresources.models import (
     Repository,
     LearningResourceType,
 )
+from learningresources.api import get_resources
 from taxonomy.models import Vocabulary, Term
 
 from rest.serializers import (
@@ -583,9 +585,10 @@ class TestRest(RESTTestCase):
         self.assertEqual([TermSerializer(x).data
                           for x in expected[20:40]], terms['results'])
 
-    def test_immutable_fields(self):
-        """Test fields which are supposed to be immutable"""
-
+    # for some reason Pylint has issues with this name
+    # pylint: disable=invalid-name
+    def test_immutable_fields_repository(self):
+        """Test repository immutable fields"""
         repo_dict = {
             'id': -1,
             'slug': 'sluggy',
@@ -594,16 +597,23 @@ class TestRest(RESTTestCase):
             'date_created': "2015-01-01",
             'created_by': self.user_norepo.id,
         }
-        result = self.create_repository(repo_dict, skip_assert=True)
-        # these keys should be different since they are immutable or set by
-        # the serializer
-        self.assertNotEqual(repo_dict['id'], result['id'])
-        self.assertNotEqual(repo_dict['slug'], result['slug'])
-        self.assertNotEqual(repo_dict['date_created'], result['date_created'])
-        self.assertNotIn('created_by', result)
-        repository = Repository.objects.get(slug=result['slug'])
-        self.assertEqual(repository.created_by.id, self.user.id)
-        repo_dict = result
+
+        def assert_not_changed(new_dict):
+            """Check that fields have not changed"""
+            # These keys should be different since they are immutable or set by
+            # the serializer.
+            for field in ('id', 'slug', 'date_created'):
+                self.assertNotEqual(repo_dict[field], new_dict[field])
+
+            # created_by is set internally and should not show up in output.
+            self.assertNotIn('created_by', new_dict)
+            repository = Repository.objects.get(slug=new_dict['slug'])
+            self.assertEqual(repository.created_by.id, self.user.id)
+
+        assert_not_changed(self.create_repository(repo_dict, skip_assert=True))
+
+    def test_immutable_fields_vocabulary(self):
+        """Test immutable fields for vocabulary"""
 
         vocab_dict = {
             'id': -1,
@@ -615,17 +625,37 @@ class TestRest(RESTTestCase):
             'vocabulary_type': 'f',
             'repository': -9
         }
-        result = self.create_vocabulary(repo_dict['slug'], vocab_dict,
-                                        skip_assert=True)
-        # these keys should be different since they are immutable or set by
-        # the serializer
-        self.assertNotEqual(vocab_dict['id'], result['id'])
-        self.assertNotEqual(vocab_dict['slug'], result['slug'])
-        self.assertNotIn('repository', result)
-        vocabulary = Vocabulary.objects.get(slug=result['slug'])
-        self.assertEqual(repository.id, vocabulary.repository.id)
-        vocab_dict = result
 
+        def assert_not_changed(new_dict):
+            """Check that fields have not changed"""
+            # These keys should be different since they are immutable or set by
+            # the serializer.
+            for field in ('id', 'slug'):
+                self.assertNotEqual(vocab_dict[field], new_dict[field])
+
+            # repository is set internally and should not show up in output.
+            self.assertNotIn('repository', new_dict)
+            vocabulary = Vocabulary.objects.get(slug=new_dict['slug'])
+            self.assertEqual(self.repo.id, vocabulary.repository.id)
+
+        result = self.create_vocabulary(self.repo.slug, vocab_dict,
+                                        skip_assert=True)
+        assert_not_changed(result)
+        vocab_slug = result['slug']
+
+        result = self.patch_vocabulary(
+            self.repo.slug, vocab_slug, vocab_dict, skip_assert=True)
+        assert_not_changed(result)
+        vocab_slug = result['slug']
+
+        result = self.put_vocabulary(
+            self.repo.slug, vocab_slug, vocab_dict, skip_assert=True)
+        assert_not_changed(result)
+
+    def test_immutable_fields_term(self):
+        """Test immutable fields for term"""
+        vocab_slug = self.create_vocabulary(
+            self.repo.slug, skip_assert=True)['slug']
         term_dict = {
             'id': -1,
             'slug': 'sluggy',
@@ -633,17 +663,111 @@ class TestRest(RESTTestCase):
             "weight": 3000,
             "vocabulary": -1,
         }
+
+        def assert_not_changed(new_dict):
+            """Check that fields have not changed"""
+            # These keys should be different since they are immutable or set by
+            # the serializer.
+            for field in ('id', 'slug'):
+                self.assertNotEqual(term_dict[field], new_dict[field])
+
+            # vocabulary is set internally and should not show up in output.
+            self.assertNotIn('vocabulary', new_dict)
+            term = Term.objects.get(slug=new_dict['slug'])
+            self.assertEqual(vocab_slug, term.vocabulary.slug)
+
         result = self.create_term(
-            repo_dict['slug'], vocab_dict['slug'], term_dict,
-            skip_assert=True
+            self.repo.slug, vocab_slug, term_dict, skip_assert=True
         )
-        # these keys should be different since they are immutable or set by
-        # the serializer
-        self.assertNotEqual(term_dict['id'], result['id'])
-        self.assertNotEqual(term_dict['slug'], result['slug'])
-        self.assertNotIn('vocabulary', result)
-        term = Term.objects.get(slug=result['slug'])
-        self.assertEqual(vocabulary.id, term.vocabulary.id)
+        assert_not_changed(result)
+        term_slug = result['slug']
+
+        result = self.put_term(
+            self.repo.slug, vocab_slug, term_slug,
+            term_dict, skip_assert=True
+        )
+        assert_not_changed(result)
+        term_slug = result['slug']
+
+        result = self.patch_term(
+            self.repo.slug, vocab_slug, term_slug, term_dict, skip_assert=True
+        )
+        assert_not_changed(result)
+
+    def test_immutable_fields_learning_resource(self):
+        """Test immutable fields for term"""
+        resource = self.import_course_tarball(self.repo)
+        lr_id = resource.id
+
+        lr_dict = {
+            "id": 99,
+            "learning_resource_type": 4,
+            "static_assets": [3],
+            "title": "Getting Help",
+            "description": "description",
+            "content_xml": "...",
+            "materialized_path":
+                "/course/chapter[4]/sequential[1]/vertical[3]",
+            "url_path": "url_path",
+            "parent": 22,
+            "copyright": "copyright",
+            "xa_nr_views": 1,
+            "xa_nr_attempts": 2,
+            "xa_avg_grade": 3.0,
+            "xa_histogram_grade": 4.0,
+            "terms": []
+        }
+
+        def assert_not_changed(new_dict):
+            """Check that fields have not changed"""
+            # These keys should be different since they are immutable or set by
+            # the serializer.
+            fields = (
+                'id', 'learning_resource_type', 'static_assets', 'title',
+                'content_xml', 'materialized_path', 'url_path', 'parent',
+                'copyright', 'xa_nr_views', 'xa_nr_attempts', 'xa_avg_grade',
+                'xa_histogram_grade'
+            )
+            for field in fields:
+                self.assertNotEqual(lr_dict[field], new_dict[field])
+
+        assert_not_changed(
+            self.patch_learning_resource(self.repo.slug, lr_id, lr_dict,
+                                         skip_assert=True))
+        assert_not_changed(
+            self.put_learning_resource(self.repo.slug, lr_id, lr_dict,
+                                       skip_assert=True))
+
+    def test_missing_learning_resource(self):
+        """Test for an invalid learning resource id"""
+        repo_slug1 = self.repo.slug
+        resource1 = self.import_course_tarball(self.repo)
+        lr1_id = resource1.id
+
+        # import from a different course so it's not a duplicate course
+        zip_file = self.get_course_zip()
+        new_repo_dict = self.create_repository()
+        repo_slug2 = new_repo_dict['slug']
+        repo_id2 = new_repo_dict['id']
+        import_file(
+            zip_file, repo_id2, self.user.id)
+        resource2 = get_resources(repo_id2).first()
+        lr2_id = resource2.id
+
+        # repo_slug1 should own lr1_id and repo_slug2 should own lr2_id
+        self.get_learning_resource(repo_slug1, lr1_id)
+        self.get_learning_resource(repo_slug2, lr1_id,
+                                   expected_status=HTTP_404_NOT_FOUND)
+        self.get_learning_resource(repo_slug1, lr2_id,
+                                   expected_status=HTTP_404_NOT_FOUND)
+        self.get_learning_resource(repo_slug2, lr2_id)
+
+    def test_filefield_serialization(self):
+        """Make sure that URL output is turned off in settings"""
+        resource = self.import_course_tarball(self.repo)
+        static_assets = self.get_static_assets(
+            self.repo.slug, resource.id)['results']
+        self.assertFalse(static_assets[0]['asset'].startswith("http"))
 
     def test_root(self):
         """
@@ -675,3 +799,39 @@ class TestRest(RESTTestCase):
         self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
         resp = self.client.options(API_BASE)
         self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
+
+    def test_add_term_to_learning_resource(self):
+        """
+        Add a term to a learning resource via PATCH
+        """
+
+        resource = self.import_course_tarball(self.repo)
+        lr_id = resource.id
+
+        vocab1_slug = self.create_vocabulary(self.repo.slug)['slug']
+        supported_term_slug = self.create_term(
+            self.repo.slug, vocab1_slug)['slug']
+
+        # This should change soon but for now we can't set this via API
+        Vocabulary.objects.get(slug=vocab1_slug).learning_resource_types.add(
+            resource.learning_resource_type
+        )
+
+        vocab_dict = dict(self.DEFAULT_VOCAB_DICT)
+        vocab_dict['name'] += " changed"
+        vocab2_slug = self.create_vocabulary(
+            self.repo.slug, vocab_dict)['slug']
+        unsupported_term_slug = self.create_term(
+            self.repo.slug, vocab2_slug)['slug']
+
+        self.assertEqual([], self.get_learning_resource(
+            self.repo.slug, lr_id)['terms'])
+
+        self.patch_learning_resource(
+            self.repo.slug, lr_id, {"terms": [supported_term_slug]})
+        self.patch_learning_resource(
+            self.repo.slug, lr_id, {"terms": ["missing"]},
+            expected_status=HTTP_400_BAD_REQUEST)
+        self.patch_learning_resource(
+            self.repo.slug, lr_id, {"terms": [unsupported_term_slug]},
+            expected_status=HTTP_400_BAD_REQUEST)
