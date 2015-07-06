@@ -150,9 +150,25 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
         url: API_ROOT_VOCAB_URL,
         data: vocabularyData
       }).fail(function(data) {
-        thiz.setState({
-          errorMessage: 'There was a problem adding the Vocabulary'
-        });
+        var jsonData = data.responseJSON;
+        var i = 0;
+        if (jsonData.non_field_errors &&
+          jsonData.non_field_errors.length > 0) {
+          for (i = 0; i < jsonData.non_field_errors.length ; i++) {
+            if (jsonData.non_field_errors[i] ===
+              'The fields repository, name must make a unique set.') {
+              thiz.setState({
+                errorMessage: 'A Vocabulary named "' + vocabularyData.name +
+                  '" already exists. Please choose a different name.'
+              });
+              break;
+            }
+          }
+        } else {
+          thiz.setState({
+            errorMessage: 'There was a problem adding the Vocabulary.'
+          });
+        }
         console.error(data);
       }).done(function(data) {
         // Reset state (and eventually update the vocab tab
