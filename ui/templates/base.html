@@ -103,15 +103,12 @@
     <script type="text/requirejs"
       src="{% static "bower/requirejs/require.js" %}">
     </script>
-    <script type="text/javascript" src="{% static "ui/js/require_paths.js" %}">
+    <script type="text/javascript" src="{% static "ui/js/require_config.js" %}">
     </script>
     <script type="text/javascript">
       require.config({
         baseUrl: "{% static "bower"%}",
-        shim: {
-          "icheck": {"deps": ["jquery"]},
-          "bootstrap": {"deps": ["jquery"]}
-        },
+        shim: SHIMS,
         paths: REQUIRE_PATHS
       });
     </script>

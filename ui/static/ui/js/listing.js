@@ -1,8 +1,8 @@
 define(
-  ['jquery', 'setup_manage_taxonomies', 'bootstrap', 'icheck', 'csrf'],
-  function($, setupManageTaxonomies) {
+  ['jquery', 'setup_manage_taxonomies', 'facets', 'bootstrap', 'csrf'],
+  function($, setupManageTaxonomies, facets) {
     'use strict';
-
+    facets.setupFacets(window);
     var EMAIL_EXTENSION = '@mit.edu';
     function formatGroupName(string) {
       string = string.charAt(0).toUpperCase() + string.slice(1);
@@ -74,10 +74,7 @@ define(
     }
 
     $(document).ready(function() {
-      $('input.icheck-11').iCheck({
-        checkboxClass: 'icheckbox_square-blue',
-        radioClass: 'iradio_square-blue'
-      });
+
       $('[data-toggle=popover]').popover();
 
       //open the lateral panel

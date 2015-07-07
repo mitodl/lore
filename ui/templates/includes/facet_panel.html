@@ -1,6 +1,8 @@
 {% load static %}
 {% if facets.fields.course %}
-<div class="panel panel-default">
+
+<div id="facet-panel" data-current-queryset="{{ qs_prefix }}"
+     class="panel panel-default">
   <div class="panel-heading">
     <h4 class="panel-title">
       <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-1">
@@ -13,9 +15,12 @@
       <ul class="icheck-list">
         {% for course in facets.fields.course %}
         <li>
-          <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=course_exact:{{ course.0|urlencode }}">
-            {{ course.0 }}
-          </a>
+          <input id="check-run-{{ forloop.counter }}"
+                 tabindex="add" type="checkbox" class="icheck-11"
+                 data-facet-name="course_exact"
+                 data-facet-value="{{ course.0 }}"
+          >
+          <label for="check-course-{{ forloop.counter }}">{{ course.0 }}</label>
           <span class="badge">{{ course.1 }}</span>
         </li>
         {% endfor %}
@@ -38,9 +43,12 @@
       <ul class="icheck-list">
         {% for run in facets.fields.run %}
         <li>
-          <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=run_exact:{{ run.0|urlencode }}">
-            {{ run.0 }}
-          </a>
+          <input id="check-run-{{ forloop.counter }}"
+                 tabindex="add" type="checkbox" class="icheck-11"
+                 data-facet-name="run_exact"
+                 data-facet-value="{{ run.0 }}"
+          >
+          <label for="check-run-{{ forloop.counter }}">{{ run.0 }}</label>
           <span class="badge">{{ run.1 }}</span>
         </li>
         {% endfor %}
@@ -63,31 +71,36 @@
       <ul class="icheck-list">
         {% for resource_type in facets.fields.resource_type %}
         <li>
-          <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets=resource_type_exact:{{ resource_type.0|urlencode }}">        
-            <span class="min-width">
-              {# Select image based on type #}
-              {% if resource_type.0 == 'chapter' %}
-              <img class="ic-custom"
-                   src="{% static "ui/images/ic-book.png" %}">
-              {% elif resource_type.0 == 'sequential' %}
-              <img class="ic-custom"
-                   src="{% static "ui/images/ic-sequential.png" %}">
-              {% elif resource_type.0 == 'vertical' %}
-              <img class="ic-custom"
-                   src="{% static "ui/images/ic-vertical.png" %}">
-              {% elif resource_type.0 == 'problem' %}
-              <img class="ic-custom"
-                   src="{% static "ui/images/ic-pieces.png" %}">
-              {% elif resource_type.0 == 'video' %}
-              <img class="ic-custom"
-                   src="{% static "ui/images/ic-video.png" %}">
-              {% else %}
-              <img class="ic-custom"
-                   src="{% static "ui/images/ic-code.png" %}">
-              {% endif %}
-            </span>
-            {{ resource_type.0|title }}
-          </a>
+          <input id="check-type-{{ forloop.counter }}"
+              tabindex="add" type="checkbox" class="icheck-11"
+              data-facet-name="resource_type_exact"
+              data-facet-value="{{ resource_type.0 }}"
+          >
+          <span class="min-width">
+            {# Select image based on type #}
+            {% if resource_type.0 == 'chapter' %}
+            <img class="ic-custom"
+                 src="{% static "ui/images/ic-book.png" %}">
+            {% elif resource_type.0 == 'sequential' %}
+            <img class="ic-custom"
+                 src="{% static "ui/images/ic-sequential.png" %}">
+            {% elif resource_type.0 == 'vertical' %}
+            <img class="ic-custom"
+                 src="{% static "ui/images/ic-vertical.png" %}">
+            {% elif resource_type.0 == 'problem' %}
+            <img class="ic-custom"
+                 src="{% static "ui/images/ic-pieces.png" %}">
+            {% elif resource_type.0 == 'video' %}
+            <img class="ic-custom"
+                 src="{% static "ui/images/ic-video.png" %}">
+            {% else %}
+            <img class="ic-custom"
+                 src="{% static "ui/images/ic-code.png" %}">
+            {% endif %}
+          </span>
+          <label for="check-type-{{ forloop.counter }}">
+            {{ resource_type.0 }}
+          </label>
           <span class="badge">{{ resource_type.1 }}</span>
         </li>
         {% endfor %}

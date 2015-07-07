@@ -103,7 +103,9 @@ requirements file, just run ``tox``.
 The project also contains JavaScript tests which can be run using
 [Karma](karma-runner.github.io). ``tox`` will run the JavaScript tests
 after the Python tests. You can run only the JavaScript tests using
-``docker-compose run web tox -e js``.
+``docker-compose run web tox -e js``, or do continuous JavaScript
+testing with ``docker-compose -f docker-karma.yml up`` and connecting
+to port 9876 on your docker host.
 
 Continuous Testing
 ~~~~~~~~~~~~~~~~~~
