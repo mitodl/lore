@@ -3,6 +3,7 @@ Controllers for REST app
 """
 
 from __future__ import unicode_literals
+from operator import itemgetter
 
 from django.http.response import Http404
 from django.contrib.auth.models import User
@@ -18,6 +19,7 @@ from rest_framework.generics import (
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view
 
 from roles.permissions import GroupTypes, BaseGroupTypes
 from roles.api import (
@@ -57,6 +59,43 @@ from learningresources.models import (
 from learningresources.api import (
     get_repos,
 )
+
+
+def get_urls(raw_urls, list_urls=None, urlbase=''):
+    """
+    Recursively builds a list of all the urls in the current project and
+    the name of their associated view
+    """
+    list_urls = list_urls or []
+    for entry in raw_urls:
+        full_url = (urlbase + entry.regex.pattern).replace('^', '')
+        if '$' in full_url:
+            full_url = full_url[0: full_url.index("$")]
+
+        full_url = full_url.replace("(?P", "")
+        full_url = full_url.replace("[-\\w]+)", "")
+        full_url = full_url.replace("\\d+)", "")
+
+        if entry.callback:  # if it points to a view
+            list_urls.append({"api": full_url})
+        else:  # if it points to another urlconf, recur!
+            get_urls(entry.url_patterns, list_urls, full_url)
+
+    # sort alphabetically
+    list_urls.sort(key=itemgetter('api'))
+    return list_urls
+
+
+@api_view(('GET',))
+def index(request):
+    """
+    Root service , returns list of end points
+    """
+    import rest.urls as rest_urls
+    list_urls = get_urls(
+        rest_urls.urlpatterns, urlbase=request.path
+    )
+    return Response(list_urls)
 
 
 # pylint: disable=too-many-ancestors

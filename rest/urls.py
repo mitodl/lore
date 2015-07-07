@@ -22,6 +22,7 @@ from .views import (
     LearningResourceDetail,
     StaticAssetList,
     StaticAssetDetail,
+    index
 )
 
 REPOSITORY_MEMBERS_URL = r'^repositories/(?P<repo_slug>[-\w]+)/members/'
@@ -31,6 +32,7 @@ REPOSITORY_RESOURCE_URL = (
 )
 
 urlpatterns = [
+    url(r'^$', index),
     url(r'^api-auth/', include('rest_framework.urls',
                                namespace='rest_framework')),
     url(r'^repositories/$',
