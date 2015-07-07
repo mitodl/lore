@@ -15,7 +15,7 @@
       <ul class="icheck-list">
         {% for course in facets.fields.course %}
         <li>
-          <input id="check-run-{{ forloop.counter }}"
+          <input id="check-course-{{ forloop.counter }}"
                  tabindex="add" type="checkbox" class="icheck-11"
                  data-facet-name="course_exact"
                  data-facet-value="{{ course.0 }}"
