@@ -207,17 +207,19 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
           </p>
           <p>
             <div className="radio">
-              <label htmlFor="managed_vocabulary_type">
+              <label>
                 <input id="managed_vocabulary_type" type="radio"
                   name="vocabulary_type" value="m"
+                  checked={this.state.vocabulary_type === 'm'}
                   onChange={this.updateVocabularyType} />
                     Managed
               </label>
             </div>
             <div className="radio">
-              <label htmlFor="managed_vocabulary_type">
+              <label>
                 <input id="free_vocabulary_type" type="radio"
                   name="vocabulary_type" value="f"
+                  checked={this.state.vocabulary_type === 'f'}
                   onChange={this.updateVocabularyType} />
                     Tag Style (on the fly)
               </label>
