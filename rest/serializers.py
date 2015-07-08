@@ -192,7 +192,8 @@ class LearningResourceSerializer(ModelSerializer):
             if not term.vocabulary.learning_resource_types.filter(
                     name=resource_type.name).exists():
                 raise ValidationError(
-                    "Term {} is not supported for this learning resource")
+                    "Term {} is not supported "
+                    "for this learning resource".format(term.label))
         return terms
 
 
