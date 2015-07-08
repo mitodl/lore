@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: http://lore.mit.edu/
+HOST: http://lore.odl.mit.edu/
 
 # LORE
 
@@ -17,11 +17,11 @@ URL Structure is `https://{domain}/api/v1/{resource}/{resource_id}/`
 |`{resource}`  | The resource endpoint for a specific set of items in the system. |
 |`{resource_id}`  |The `resource_id` sets the unique identifier (name or numerical) for a specific item to reference. |
 
-*Example: `http://lore.mit.edu/api/v1/repositories/` will return a JSON representation of all repositories.*
+*Example: `http://lore.odl.mit.edu/api/v1/repositories/` will return a JSON representation of all repositories.*
 
-*Example: `http://lore.mit.edu/api/v1/repositories/physics-1/` will return a JSON representation of the repository with name "physics-1".*
+*Example: `http://lore.odl.mit.edu/api/v1/repositories/physics-1/` will return a JSON representation of the repository with name "physics-1".*
 
-*Example: `http://lore.mit.edu/api/v1/repositories/physics-1/learningresources/1007/` will return a JSON representation
+*Example: `http://lore.odl.mit.edu/api/v1/repositories/physics-1/learningresources/1007/` will return a JSON representation
 of the learning resource with ID=1007.*
 
 
@@ -61,7 +61,7 @@ The API uses basic or session-based authentication to authenticate users using t
 
 Requests that return multiple items accept a `?page` parameter.
 
-Example: `http://lore.mit.edu/api/v1/repositories/?page=2`
+Example: `http://lore.odl.mit.edu/api/v1/repositories/?page=2`
 
 Page numbering is 1-based. Omitting the `?page` parameter will return the first page. There are up to 20 results per page.
 
@@ -150,7 +150,7 @@ Create a repository by providing its JSON representation.
 
         {
             "count": 139,
-            "next": "http://lore.mit.edu/api/v1/repositories/repo/learning_resources/?page=2",
+            "next": "http://lore.odl.mit.edu/api/v1/repositories/repo/learning_resources/?page=2",
             "previous": null,
             "results": [
                 {
