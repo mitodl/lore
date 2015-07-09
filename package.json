@@ -23,6 +23,7 @@
     "qunit": "^0.7.6",
     "qunitjs": "^1.18.0",
     "requirejs": "^2.1.18",
-    "jsdocs": "~0.1.0"
+    "jsdocs": "~0.1.0",
+    "jquery-mockjax": "^2.0.1"
   }
 }

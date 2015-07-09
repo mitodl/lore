@@ -19,6 +19,7 @@ for (var key in REQUIRE_PATHS) {
   }
 }
 paths.QUnit = 'node_modules/qunitjs/qunit/qunit';
+paths.jquery_mockjax = 'node_modules/jquery-mockjax/src/jquery.mockjax';
 
 require.config({
   // Karma serves files under /base, which is the basePath from your config file

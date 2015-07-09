@@ -224,6 +224,6 @@ define(
       });
 
       var repoSlug = $("#repo_slug").val();
-      setupManageTaxonomies(repoSlug);
+      setupManageTaxonomies.loader(repoSlug);
     });
   });
