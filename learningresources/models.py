@@ -95,7 +95,7 @@ class LearningResource(BaseModel):
     static_assets = models.ManyToManyField(StaticAsset, blank=True)
     uuid = models.TextField()
     title = models.TextField()
-    description = models.TextField()
+    description = models.TextField(blank=True)
     content_xml = models.TextField()
     materialized_path = models.TextField()
     url_path = models.TextField()
