@@ -59,19 +59,21 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
       assert.ok(VocabularyComponent, "class object not found");
 
       var done = assert.async();
+
+      var addTermCalled = 0;
+      var addTerm = function() {
+        addTermCalled += 1;
+      };
+
       var afterMount = function(component) {
-        var randomEvent = $.Event("keyup", {keyCode: 64});
-        var enterEvent = $.Event("keyup", {keyCode: 13});
+        var node = React.findDOMNode(component);
+        var textbox = $(node).find("input")[0];
+        React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
+        assert.equal(addTermCalled, 0);
 
-        component.onEnterPress(randomEvent);
-        assert.equal(component.state.terms.length, 2);
-
-        component.onEnterPress(enterEvent);
+        React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
         waitForAjax(1, function() {
-          assert.equal(component.state.terms.length, 3);
-          assert.equal(
-            addTermResponse.id,
-            component.state.terms[2].id);
+          assert.equal(addTermCalled, 1);
           done();
         });
       };
@@ -82,6 +84,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             vocabulary={vocabulary}
             terms={vocabulary.terms}
             reportError={reportError}
+            addTerm={addTerm}
             repoSlug="repo"
             ref={afterMount}
           />

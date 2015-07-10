@@ -10,8 +10,9 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
   });
 
   var VocabularyComponent = React.createClass({
+    mixins: [React.addons.LinkedStateMixin],
     render: function () {
-      var items = _.map(this.state.terms, function (term) {
+      var items = _.map(this.props.terms, function (term) {
         return <TermComponent term={term} key={term.slug} />;
       });
 
@@ -35,9 +36,9 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           </div>
         <li>
           <div className="input-group">
-            <input type="text" value={this.state.newTermLabel}
-              className="form-control" onKeyUp={this.onEnterPress}
-              placeholder="Add new term..." onChange={this.updateAddTermText}
+            <input type="text" valueLink={this.linkState('newTermLabel')}
+              className="form-control" onKeyUp={this.onKeyUp}
+              placeholder="Add new term..."
               />
               <span className="input-group-btn">
                 <a className="btn btn-white"
@@ -49,9 +50,8 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         </li>
       </ul>;
     },
-    onEnterPress: function(e) {
-      var code = (e.keyCode ? e.keyCode : e.which);
-      if (code === 13) { //Enter keycode
+    onKeyUp: function(e) {
+      if (e.key === "Enter") {
         this.handleAddTermClick();
       }
     },
@@ -72,17 +72,14 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           thiz.props.reportError("Error occurred while adding new term.");
         })
       .done(function(newTerm) {
+          thiz.props.addTerm(thiz.props.vocabulary.slug, newTerm);
           thiz.setState({
-            newTermLabel: null,
-            terms: thiz.state.terms.concat([newTerm])
+            newTermLabel: null
           });
 
           // clear errors
           thiz.props.reportError(null);
         });
-    },
-    updateAddTermText: function(e) {
-      this.setState({newTermLabel: e.target.value});
     },
     getInitialState: function() {
       return {
@@ -95,14 +92,15 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
   var AddTermsComponent = React.createClass({
     render: function () {
       var repoSlug = this.props.repoSlug;
-      var reportError = this.reportError;
+      var thiz = this;
       var items = _.map(this.props.vocabularies, function (obj) {
         return <VocabularyComponent
           vocabulary={obj.vocabulary}
           terms={obj.terms}
           key={obj.vocabulary.slug}
           repoSlug={repoSlug}
-          reportError={reportError}
+          reportError={thiz.reportError}
+          addTerm={thiz.props.addTerm}
           />;
       });
       return <div className="panel-group lore-panel-group">
@@ -116,9 +114,6 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
 
     },
     reportError: function(msg) {
-      if (msg) {
-        console.error(msg);
-      }
       this.setState({errorText: msg});
     },
     getInitialState: function() {
@@ -298,13 +293,26 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
       vocabularies.push(newVocab);
       this.setState({vocabularies: vocabularies});
     },
+    addTerm: function(vocabSlug, newTerm) {
+      var vocabularies = _.map(this.state.vocabularies, function(tuple) {
+        if (tuple.vocabulary.slug === vocabSlug) {
+          return {
+            terms: tuple.terms.concat(newTerm),
+            vocabulary: tuple.vocabulary
+          };
+        }
+        return tuple;
+      });
+      this.setState({vocabularies: vocabularies});
+    },
     render: function() {
       return (
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
               vocabularies={this.state.vocabularies}
-              repoSlug={this.props.repoSlug} />
+              repoSlug={this.props.repoSlug}
+              addTerm={this.addTerm} />
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
             <AddVocabulary
