@@ -123,9 +123,12 @@
       <ul class="icheck-list">
         {% for term in vocab %}
         <li>
-          <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}selected_facets={{ name|urlencode }}_exact:{{ term.0|urlencode }}">
-            {{ term.0 }}
-          </a>
+          <input id="check-{{ name }}-{{ forloop.counter }}"
+                 tabindex="add" type="checkbox" class="icheck-11"
+                 data-facet-name="{{ name|urlencode }}_exact"
+                 data-facet-value="{{ term.0 }}"
+          >
+          <label for="check-{{ name }}-{{ forloop.counter }}">{{ term.0 }}</label>
           <span class="badge">{{ term.1 }}</span>
         </li>
         {% endfor %}
