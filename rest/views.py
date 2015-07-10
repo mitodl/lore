@@ -33,6 +33,7 @@ from rest.serializers import (
     UserGroupSerializer,
     UserSerializer,
     GroupSerializer,
+    LearningResourceTypeSerializer,
     LearningResourceSerializer,
     StaticAssetSerializer,
 )
@@ -51,6 +52,7 @@ from rest.util import CheckValidMemberParamMixin
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
+    LearningResourceType,
     LearningResource,
     StaticAsset,
 )
@@ -388,6 +390,12 @@ class RepoMemberGroupUserDetail(RepoMemberUserGroupDetail):
     REST for one user assigned to a group in a repository
     """
     serializer_class = UserSerializer
+
+
+class LearningResourceTypeList(ListAPIView):
+    """REST list view for LearningResourceType"""
+    serializer_class = LearningResourceTypeSerializer
+    queryset = LearningResourceType.objects.all()
 
 
 class LearningResourceList(ListAPIView):
