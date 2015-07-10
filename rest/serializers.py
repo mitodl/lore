@@ -197,7 +197,7 @@ class LearningResourceSerializer(ModelSerializer):
             'xa_histogram_grade',
             'terms',
         )
-        read_only_fields = tuple(set(fields) - {'description'})
+        read_only_fields = tuple(set(fields) - {'description', 'terms'})
 
     def validate_terms(self, terms):
         """
