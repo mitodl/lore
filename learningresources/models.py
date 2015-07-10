@@ -19,6 +19,13 @@ from roles.permissions import RepoPermission
 
 log = logging.getLogger(__name__)
 
+# defining the file path max length
+FILE_PATH_MAX_LENGTH = 900
+
+
+class FilePathLengthException(Exception):
+    """Custom Exception to handle long file paths"""
+
 
 def static_asset_basepath(asset, filename):
     """
@@ -82,7 +89,23 @@ class StaticAsset(BaseModel):
     Holds static assets for a course (css, html, javascript, images, etc)
     """
     course = models.ForeignKey(Course)
-    asset = models.FileField(upload_to=static_asset_basepath)
+    asset = models.FileField(
+        upload_to=static_asset_basepath,
+        max_length=FILE_PATH_MAX_LENGTH
+    )
+
+    def save(self, *args, **kwargs):
+        """
+        Handle file length properly
+        It seems that Django FileField does not enforce the length
+        """
+        if len(self.asset.name) > FILE_PATH_MAX_LENGTH:
+            raise FilePathLengthException(
+                'File path is more than {} characters long'.format(
+                    FILE_PATH_MAX_LENGTH
+                )
+            )
+        super(StaticAsset, self).save(*args, **kwargs)
 
 
 class LearningResource(BaseModel):
