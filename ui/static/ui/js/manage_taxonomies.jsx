@@ -51,8 +51,8 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery'],
       </ul>;
     },
     onEnterPress: function(e) {
-      var code = (e.keyCode ? e.keyCode : e.which);
-      if (code === 13) { //Enter keycode
+      if (e.key === "Enter") {
+        e.preventDefault();
         this.handleAddTermClick();
       }
     },
