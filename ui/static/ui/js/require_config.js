@@ -11,7 +11,9 @@ var REQUIRE_PATHS = {
   csrf: "../ui/js/csrf",
   facets: "../ui/js/facets",
   listing: "../ui/js/listing",
-  setup_manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext"
+  setup_manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
+  learning_resources: "../ui/js/learning_resources.jsx?noext",
+  utils: "../ui/js/utils.jsx?noext",
 };
 var SHIMS = {
   "icheck": {"deps": ["jquery"]},
