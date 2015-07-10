@@ -26,6 +26,7 @@ from learningresources.models import (
     Repository,
     LearningResource,
     StaticAsset,
+    LearningResourceType,
 )
 
 
@@ -62,6 +63,12 @@ class VocabularySerializer(ModelSerializer):
             Repository, slug=context['view'].kwargs['repo_slug']
         )
     ))
+    # not technically a slug but the name is unique so we can use it as a key
+    learning_resource_types = SlugRelatedField(
+        many=True,
+        slug_field="name",
+        queryset=LearningResourceType.objects.all()
+    )
 
     # django-rest-framework mistakenly assumes required=False
     # unless we override the behavior
@@ -79,6 +86,7 @@ class VocabularySerializer(ModelSerializer):
             'required',
             'weight',
             'repository',
+            'learning_resource_types',
         )
         read_only_fields = (
             'id',
@@ -151,6 +159,15 @@ class UserGroupSerializer(UserSerializer, GroupSerializer):
     """
     Serializer for username base_group_type association
     """
+
+
+class LearningResourceTypeSerializer(ModelSerializer):
+    """Serializer for LearningResourceType"""
+    class Meta:
+        # pylint: disable=missing-docstring
+        model = LearningResourceType
+        fields = ('name',)
+        read_only_fields = fields
 
 
 class LearningResourceSerializer(ModelSerializer):

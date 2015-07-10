@@ -20,6 +20,7 @@ from .views import (
     RepoMemberGroupUserDetail,
     LearningResourceList,
     LearningResourceDetail,
+    LearningResourceTypeList,
     StaticAssetList,
     StaticAssetDetail,
 )
@@ -95,4 +96,6 @@ urlpatterns = [
         r'(?P<lr_id>\d+)/static_assets/(?P<sa_id>\d+)/$',
         StaticAssetDetail.as_view(),
         name='static-asset-detail'),
+    url("^learning_resource_types/$", LearningResourceTypeList.as_view(),
+        name='learning-resource-type-list'),
 ]

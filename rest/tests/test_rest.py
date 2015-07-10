@@ -141,6 +141,7 @@ class TestRest(RESTTestCase):
             'required': True,
             'weight': 1000,
             'vocabulary_type': 'f',
+            'learning_resource_types': [],
         }
 
         # patch with missing slug
@@ -623,7 +624,8 @@ class TestRest(RESTTestCase):
             'required': True,
             'weight': 1000,
             'vocabulary_type': 'f',
-            'repository': -9
+            'repository': -9,
+            'learning_resource_types': [],
         }
 
         def assert_not_changed(new_dict):
@@ -835,3 +837,95 @@ class TestRest(RESTTestCase):
         self.patch_learning_resource(
             self.repo.slug, lr_id, {"terms": [unsupported_term_slug]},
             expected_status=HTTP_400_BAD_REQUEST)
+
+    def test_learning_resource_types(self):
+        """
+        Get from learning_resource_types
+        """
+        base_url = "{}learning_resource_types/".format(API_BASE)
+
+        resp = self.client.get(base_url)
+        self.assertEqual(HTTP_200_OK, resp.status_code)
+        types = as_json(resp)
+
+        self.assertEqual(sorted([lrt.name for lrt
+                                 in LearningResourceType.objects.all()]),
+                         sorted([t['name'] for t in types['results']]))
+
+        # nothing besides GET, OPTION, HEAD allowed
+        resp = self.client.options(base_url)
+        self.assertEqual(HTTP_200_OK, resp.status_code)
+        resp = self.client.head(base_url)
+        self.assertEqual(HTTP_200_OK, resp.status_code)
+        resp = self.client.post(base_url, {})
+        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
+        resp = self.client.patch(base_url, {})
+        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
+        resp = self.client.put(base_url, {})
+        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
+
+        # restricted to logged in users
+        self.logout()
+        resp = self.client.get(base_url)
+        self.assertEqual(HTTP_403_FORBIDDEN, resp.status_code)
+
+        # but otherwise unrestricted
+        self.login(self.user_norepo)
+        resp = self.client.get(base_url)
+        self.assertEqual(HTTP_200_OK, resp.status_code)
+        types = as_json(resp)
+
+        self.assertEqual(sorted([lrt.name for lrt
+                                 in LearningResourceType.objects.all()]),
+                         sorted([t['name'] for t in types['results']]))
+
+    def test_vocabulary_learning_resource_types(self):
+        """
+        Test learning_resource_types field on vocabularies
+        """
+        vocab_dict = self.create_vocabulary(self.repo.slug)
+        vocab_slug = vocab_dict['slug']
+        self.assertEqual([], vocab_dict['learning_resource_types'])
+
+        # PATCH invalid or missing type
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": ["chapter"]
+        }, expected_status=HTTP_400_BAD_REQUEST)
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": [""]
+        }, expected_status=HTTP_400_BAD_REQUEST)
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": None
+        }, expected_status=HTTP_400_BAD_REQUEST)
+
+        # duplicates are removed
+        result_dict = self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": ["example", "example"]
+        }, skip_assert=True)
+        self.assertEqual(["example"], result_dict['learning_resource_types'])
+
+        # we can make it empty again
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": []
+        })
+
+        # PUT works
+        vocab_copy = dict(self.DEFAULT_VOCAB_DICT)
+        vocab_copy['learning_resource_types'] = ['example']
+        self.put_vocabulary(self.repo.slug, vocab_slug, vocab_copy)
+
+        # test POST new vocabulary with invalid type
+        self.delete_vocabulary(self.repo.slug, vocab_slug)
+        vocab_copy['learning_resource_types'] = ['invalid']
+        self.create_vocabulary(self.repo.slug, vocab_copy,
+                               expected_status=HTTP_400_BAD_REQUEST)
+
+        # POST with valid type
+        vocab_copy['learning_resource_types'] = ['example']
+        vocab_slug = self.create_vocabulary(
+            self.repo.slug, vocab_copy)['slug']
+
+        self.assertEqual(
+            ['example'],
+            self.get_vocabulary(
+                self.repo.slug, vocab_slug)['learning_resource_types'])
