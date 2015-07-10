@@ -1,7 +1,6 @@
 define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
   function (React, _, $, Utils) {
   'use strict';
-  var API_ROOT_VOCAB_URL;
 
   var TermComponent = React.createClass({
     render: function () {
@@ -58,7 +57,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
     },
     handleAddTermClick: function() {
       var thiz = this;
-      API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+      var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
         '/vocabularies/';
       $.ajax({
           type: "POST",
@@ -135,29 +134,52 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
       return {
         name: '',
         description: '',
-        vocabulary_type: 'm',
-        required: false,
-        weight: 2147483647
+        vocabularyType: 'm',
+        learningResourceTypes: [],
       };
     },
+    updateLearningResourceType: function(e) {
+      var checkedType = e.target.value;
+
+      var newTypes;
+      if (e.target.checked) {
+        if (!_.includes(this.state.learningResourceTypes, checkedType)) {
+          newTypes = this.state.learningResourceTypes.concat([checkedType]);
+        } else {
+          // else already includes new type
+          console.error("Type " + checkedType + " is already selected");
+        }
+      } else {
+        newTypes = _.filter(this.state.learningResourceTypes, function(type) {
+          return type !== checkedType;
+        });
+      }
+
+      this.setState({learningResourceTypes: newTypes});
+    },
     updateVocabularyType: function(e) {
-      this.setState({vocabulary_type: e.target.value});
+      this.setState({vocabularyType: e.target.value});
       e.target.isChecked = true;
     },
     submitForm: function(e) {
+      var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/';
       e.preventDefault();
       var thiz = this;
       var vocabularyData = {
         name: this.state.name,
         description: this.state.description,
-        vocabulary_type: this.state.vocabulary_type,
-        required: this.state.required,
-        weight: this.state.weight
+        vocabulary_type: this.state.vocabularyType,
+        required: false,
+        weight: 2147483647,
+        learning_resource_types: this.state.learningResourceTypes,
       };
+
       $.ajax({
         type: "POST",
         url: API_ROOT_VOCAB_URL,
-        data: vocabularyData
+        data: JSON.stringify(vocabularyData),
+        contentType: "application/json"
       }).fail(function(data) {
         var jsonData = data.responseJSON;
         var i = 0;
@@ -196,11 +218,23 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
     },
     render: function() {
       var errorBox = null;
+      var thiz = this;
       if (this.state.errorMessage !== undefined) {
         errorBox = <div className="alert alert-danger alert-dismissible">
                      {this.state.errorMessage}
                    </div>;
       }
+
+      var checkboxes = _.map(this.props.learningResourceTypes, function(type) {
+        var checked = _.includes(thiz.state.learningResourceTypes, type);
+        return <li key={type}><label><input type="checkbox"
+                      value={type}
+                      checked={checked}
+                      onChange={thiz.updateLearningResourceType} />
+          {type}
+        </label></li>;
+      });
+
       return (
         <form className="form-horizontal" onSubmit={this.submitForm}>
           {errorBox}
@@ -215,11 +249,16 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
             placeholder="Description"/>
           </p>
           <p>
+            <ul>
+            {checkboxes}
+            </ul>
+          </p>
+          <p>
             <div className="radio">
               <label>
                 <input id="managed_vocabulary_type" type="radio"
                   name="vocabulary_type" value="m"
-                  checked={this.state.vocabulary_type === 'm'}
+                  checked={this.state.vocabularyType === 'm'}
                   onChange={this.updateVocabularyType} />
                     Managed
               </label>
@@ -228,7 +267,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
               <label>
                 <input id="free_vocabulary_type" type="radio"
                   name="vocabulary_type" value="f"
-                  checked={this.state.vocabulary_type === 'f'}
+                  checked={this.state.vocabularyType === 'f'}
                   onChange={this.updateVocabularyType} />
                     Tag Style (on the fly)
               </label>
@@ -245,7 +284,8 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
   var TaxonomyComponent = React.createClass({
     getInitialState: function() {
       return {
-        vocabularies: this.props.vocabularies
+        vocabularies: [],
+        learningResourceTypes: []
       };
     },
     addVocabulary: function(vocab) {
@@ -264,27 +304,50 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
               vocabularies={this.state.vocabularies}
-              repoSlug={this.props.repoSlug}/>
+              repoSlug={this.props.repoSlug} />
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
-            <AddVocabulary updateParent={this.addVocabulary}
+            <AddVocabulary
+              updateParent={this.addVocabulary}
+              learningResourceTypes={this.state.learningResourceTypes}
               repoSlug={this.props.repoSlug}/>
           </div>
         </div>
       );
+    },
+    componentDidMount: function() {
+      var thiz = this;
+
+      $.get("/api/v1/learning_resource_types/").then(function(results) {
+        if (!thiz.isMounted()) {
+          return;
+        }
+
+        var types = _.map(results.results, function(type) {
+          return type.name;
+        });
+
+        thiz.setState({learningResourceTypes: types});
+        Utils.getVocabulariesAndTerms(thiz.props.repoSlug).then(
+          function(vocabularies) {
+            if (!thiz.isMounted()) {
+              return;
+            }
+
+            thiz.setState({vocabularies: vocabularies});
+          }
+        );
+      });
+
     }
   });
 
   return {
     'VocabularyComponent': VocabularyComponent,
     'loader' : function (repoSlug) {
-      Utils.getVocabulariesAndTerms(repoSlug).
-      then(function (vocabularies) {
-        React.render(
-          <TaxonomyComponent vocabularies={vocabularies}
-                             repoSlug={repoSlug}/>,
-          $('#taxonomy-component')[0]);
-      });
+      React.render(
+        <TaxonomyComponent repoSlug={repoSlug}/>,
+        $('#taxonomy-component')[0]);
     }
   };
 
