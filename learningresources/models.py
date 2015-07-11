@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 
 # defining the file path max length
 FILE_PATH_MAX_LENGTH = 900
+STATIC_ASSET_BASEPATH = 'assets/{org}/{course_number}/{run}/'
 
 
 class FilePathLengthException(Exception):
@@ -40,7 +41,7 @@ def static_asset_basepath(asset, filename):
         (unicode): forward slash separated path to use below
             ``settings.MEDIA_ROOT``.
     """
-    return 'assets/{org}/{course_number}/{run}/{filename}'.format(
+    return (STATIC_ASSET_BASEPATH + '{filename}').format(
         org=asset.course.org,
         course_number=asset.course.course_number,
         run=asset.course.run,

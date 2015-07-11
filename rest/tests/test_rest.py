@@ -765,11 +765,11 @@ class TestRest(RESTTestCase):
         self.get_learning_resource(repo_slug2, lr2_id)
 
     def test_filefield_serialization(self):
-        """Make sure that URL output is turned off in settings"""
+        """Make sure that URL output is turned on in settings"""
         resource = self.import_course_tarball(self.repo)
         static_assets = self.get_static_assets(
             self.repo.slug, resource.id)['results']
-        self.assertFalse(static_assets[0]['asset'].startswith("http"))
+        self.assertTrue(static_assets[0]['asset'].startswith("http"))
 
     def test_root(self):
         """

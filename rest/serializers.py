@@ -17,6 +17,8 @@ from rest_framework.serializers import (
     ValidationError,
     StringRelatedField,
     SlugRelatedField,
+    FileField,
+    SerializerMethodField,
 )
 
 from rest.util import LambdaDefault, RequiredBooleanField
@@ -27,6 +29,7 @@ from learningresources.models import (
     LearningResource,
     StaticAsset,
     LearningResourceType,
+    STATIC_ASSET_BASEPATH
 )
 
 
@@ -217,14 +220,29 @@ class LearningResourceSerializer(ModelSerializer):
 class StaticAssetSerializer(ModelSerializer):
     """Serializer for StaticAsset"""
 
+    asset = FileField(use_url=True)
+    name = SerializerMethodField()
+
     class Meta:
         # pylint: disable=missing-docstring
         model = StaticAsset
         fields = (
             'id',
             'asset',
+            'name',
         )
         read_only_fields = (
             'id',
             'asset',
+            'name',
         )
+
+    @staticmethod
+    def get_name(static_asset_obj):
+        """Method to get the name of the asset"""
+        basepath = STATIC_ASSET_BASEPATH.format(
+            org=static_asset_obj.course.org,
+            course_number=static_asset_obj.course.course_number,
+            run=static_asset_obj.course.run,
+        )
+        return static_asset_obj.asset.name.replace(basepath, '')

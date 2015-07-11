@@ -4,10 +4,15 @@ Views for the all apps
 from __future__ import unicode_literals
 
 import logging
+import mimetypes
+import os
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.core.servers.basehttp import FileWrapper
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, StreamingHttpResponse
 from django.http.response import HttpResponseForbidden
 from django.shortcuts import (
     render,
@@ -21,7 +26,7 @@ from guardian.shortcuts import get_perms
 from learningresources.api import (
     get_repo, get_repos, get_resource, NotFound,
 )
-from learningresources.models import Repository
+from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes, RepoPermission
 from search import get_sqs
@@ -292,3 +297,25 @@ def export(request, repo_slug, resource_id):
         )
     except NotFound:
         raise Http404()
+
+
+@login_required
+def serve_media(request, media_path):
+    """
+    View to serve media files in case settings.DEFAULT_FILE_STORAGE
+    is django.core.files.storage.FileSystemStorage
+    """
+    # first check if the user has access to the file
+    file_path = os.path.join(settings.MEDIA_ROOT, media_path)
+    static_asset = get_object_or_404(StaticAsset, asset=media_path)
+    if (RepoPermission.view_repo[0] not in
+            get_perms(request.user, static_asset.course.repository)):
+        raise PermissionDenied()
+    filename = os.path.basename(file_path)
+    response = StreamingHttpResponse(
+        FileWrapper(open(file_path)),
+        content_type=mimetypes.guess_type(file_path)[0]
+    )
+    response['Content-Length'] = os.path.getsize(file_path)
+    response['Content-Disposition'] = "attachment; filename=%s" % filename
+    return response
