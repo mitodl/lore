@@ -26,6 +26,5 @@ class TestSearchView(SearchTestCase):
             new_repo,
             GroupTypes.REPO_ADMINISTRATOR
         )
-
         resp = self.client.get(reverse("repositories", args=(new_repo.slug,)))
         self.assertNotContains(resp, self.resource.title)

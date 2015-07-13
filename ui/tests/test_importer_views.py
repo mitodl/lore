@@ -7,11 +7,13 @@ from __future__ import unicode_literals
 import logging
 
 from django.core.files.storage import default_storage
+import mock
 
 from learningresources.models import LearningResource, Course
 from learningresources.tests.base import LoreTestCase
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.api import GroupTypes
+from ui.views import RepositoryView
 
 HTTP_OK = 200
 UNAUTHORIZED = 403
@@ -127,13 +129,13 @@ class TestViews(LoreTestCase):
     def test_upload_post(self):
         """POST upload page."""
         original_count = LearningResource.objects.count()
-        body = self.upload_test_file()
+        resp = self.upload_test_file()
         self.assertEqual(
             LearningResource.objects.count(),
             original_count + 5,
         )
         # We should have been redirected to the Listing page.
-        self.assertTrue('Listing</title>' in body)
+        self.assertContains(resp, 'Listing</title>')
 
     def test_upload_duplicate(self):
         """Gracefully inform the user."""
@@ -151,7 +153,7 @@ class TestViews(LoreTestCase):
                 {"course_file": post_file, "repository": self.repo.id},
                 follow=True
             )
-        return resp.content.decode("utf-8")
+        return resp
 
     def test_invalid_form(self):
         """Upload invalid form"""
@@ -159,7 +161,25 @@ class TestViews(LoreTestCase):
             self.import_url_slug,
             {}, follow=True
         )
-        self.assertTrue(resp.status_code == HTTP_OK)
-        body = resp.content.decode("utf-8")
-        log.debug(body)
-        self.assertTrue("This field is required." in body)
+        self.assertContains(resp, "This field is required.")
+
+    def test_wiped_index(self):
+        """
+        If the Elasticsearch index is erased, it caused a KeyError
+        when accessing the repository page until Django is restarted.
+        """
+        repo_view = RepositoryView()
+        repo_view.repo = self.repo
+        repo_view.request = mock.MagicMock()
+        with mock.patch('ui.views.get_perms') as _:
+            with mock.patch(
+                'ui.views.FacetedSearchView.extra_context'
+            ) as mocked_context:
+                no_fields = {'facets': {}}
+                with_fields = {'facets': {'fields': {'item': 'foo'}}}
+                mocked_context.return_value = no_fields
+                context = repo_view.extra_context()
+                self.assertEqual(no_fields, context)
+                mocked_context.return_value = with_fields
+                context = repo_view.extra_context()
+                self.assertEqual(context['repo'], self.repo)

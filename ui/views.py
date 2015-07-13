@@ -245,16 +245,17 @@ class RepositoryView(FacetedSearchView):
                 )
             qs_prefix = "?{0}&".format("&".join(qs_prefix))
 
-        context.update({
-            "repo": self.repo,
-            "perms_on_cur_repo": get_perms(self.request.user, self.repo),
-            "vocabularies": {
-                k: v
-                for k, v in context["facets"]["fields"].items()
-                if k in vocabularies
-            },
-            "qs_prefix": qs_prefix,
-        })
+        if "fields" in context["facets"]:
+            context.update({
+                "repo": self.repo,
+                "perms_on_cur_repo": get_perms(self.request.user, self.repo),
+                "vocabularies": {
+                    k: v
+                    for k, v in context["facets"]["fields"].items()
+                    if k in vocabularies
+                },
+                "qs_prefix": qs_prefix,
+            })
         return context
 
     def build_form(self, form_kwargs=None):
