@@ -195,6 +195,7 @@ COMPRESS_PRECOMPILERS = (
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
 MEDIA_ROOT = get_var('MEDIA_ROOT', '/tmp/')
+MEDIA_URL = '/media/'
 LORE_USE_S3 = get_var('LORE_USE_S3', False)
 AWS_ACCESS_KEY_ID = get_var('AWS_ACCESS_KEY_ID', False)
 AWS_SECRET_ACCESS_KEY = get_var('AWS_SECRET_ACCESS_KEY', False)

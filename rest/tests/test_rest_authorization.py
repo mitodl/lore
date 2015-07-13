@@ -4,6 +4,8 @@ Tests for REST authorization
 
 from __future__ import unicode_literals
 
+import os
+
 from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_403_FORBIDDEN,
@@ -760,6 +762,16 @@ class TestRestAuthorization(RESTTestCase):
         ).first()
         resource2.static_assets.add(static_asset2)
         lr2_id = resource2.id
+
+        # make sure the result for an asset contains a name and an url
+        resp = self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id)
+        self.assertTrue('asset' in resp)
+        self.assertTrue('name' in resp)
+        self.assertTrue(static_asset1.asset.url in resp['asset'])
+        self.assertEqual(
+            resp['name'],
+            os.path.basename(static_asset1.asset.name)
+        )
 
         # make sure static assets only show up in their proper places
         self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id)

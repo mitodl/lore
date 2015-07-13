@@ -4,11 +4,17 @@ Test the importer views to make sure they work.
 
 from __future__ import unicode_literals
 
+import imp
+import importlib
 import logging
+import os
 
+from django.conf import settings
+from django.core.files.storage import default_storage
 from django.core.urlresolvers import reverse
 
-from learningresources.models import Repository
+import ui.urls
+from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
 
@@ -27,6 +33,19 @@ class TestViews(LoreTestCase):
     def setUp(self):
         super(TestViews, self).setUp()
         self.repository_url = "/repositories/{0}/".format(self.repo.slug)
+        self.import_url_slug = "/repositories/{0}/import/".format(
+            self.repo.slug
+        )
+
+    def upload_test_file(self):
+        """Used multiple times in tests"""
+        with default_storage.open(self.get_course_zip(), "rb") as post_file:
+            resp = self.client.post(
+                self.import_url_slug,
+                {"course_file": post_file, "repository": self.repo.id},
+                follow=True
+            )
+        return resp.content.decode("utf-8")
 
     def test_get_home(self):
         """Home Page."""
@@ -237,3 +256,67 @@ class TestViews(LoreTestCase):
             self.course.course_number)
         resp = self.client.get(self.repository_url + querystring, follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
+
+    def test_serve_media(self):
+        """Hit serve media"""
+        self.assertEqual(
+            settings.DEFAULT_FILE_STORAGE,
+            'django.core.files.storage.FileSystemStorage'
+        )
+        # upload a course
+        self.upload_test_file()
+        self.assertEqual(len(StaticAsset.objects.all()), 3)
+        # take the url of a static asset
+        static_asset_url = StaticAsset.objects.all()[0].asset.url
+        # hit the view
+        resp = self.client.get(static_asset_url)
+        self.assertEqual(resp.status_code, HTTP_OK)
+        self.assertEqual(
+            resp.get('Content-Disposition'),
+            'attachment; filename={}'.format(
+                os.path.basename(static_asset_url)
+            )
+        )
+        # only the user with right to see the repo can access the file
+        self.logout()
+        self.login(self.user_norepo.username)
+        resp = self.client.get(static_asset_url)
+        self.assertEqual(resp.status_code, UNAUTHORIZED)
+        # login back with the original user
+        self.logout()
+        self.login(self.user.username)
+        # hit the view with a nonexistent file
+        resp = self.client.get('/media/fsdfs2837hwdudnks/foo.txt')
+        self.assertEqual(resp.status_code, NOT_FOUND)
+        # change the default file storage to S3
+        with self.settings(
+            DEFAULT_FILE_STORAGE=('storages.backends'
+                                  '.s3boto.S3BotoStorage')
+        ):
+            # force the reload of the urls
+            # python 2.7, 3.3 and 3.4 have different ways to reload modules
+            # 2.7 uses the builtin function reload
+            # 3.3 uses imp.reload
+            # 3.4 uses importlib.reload
+            try:
+                reload(ui.urls)  # pylint: disable=undefined-variable
+            # this is in case of python 3.4
+            except NameError:  # pragma: no cover
+                try:
+                    importlib.reload(ui.urls)
+                # this is in case of python 3.3
+                except AttributeError:  # pragma: no cover
+                    imp.reload(ui.urls)
+            # the view is not available any more
+            resp = self.client.get(static_asset_url)
+            self.assertEqual(resp.status_code, NOT_FOUND)
+        # force the reload of the urls again to be sure to have everything back
+        try:
+            reload(ui.urls)  # pylint: disable=undefined-variable
+        # this is in case of python 3.4
+        except NameError:  # pragma: no cover
+            try:
+                importlib.reload(ui.urls)
+            # this is in case of python 3.3
+            except AttributeError:  # pragma: no cover
+                imp.reload(ui.urls)
