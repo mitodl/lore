@@ -8,7 +8,7 @@
   "description": "Learning Objects Repository for Education",
   "license": "AGPLv3",
   "dependencies": {
-    "bootstrap": "~3.3.4",
+    "bootstrap": "~3.3.5",
     "requirejs": "~2.1.17",
     "icheck": "~1.0.2",
     "components-font-awesome": "~4.3.0",
