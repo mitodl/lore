@@ -219,6 +219,11 @@ else:
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 
+# Lore preview settings
+LORE_PREVIEW_BASE_URL = get_var(
+    'LORE_PREVIEW_BASE_URL', 'https://www.sandbox.edx.org/')
+
+
 # Configure e-mail settings
 EMAIL_HOST = get_var('LORE_EMAIL_HOST', 'localhost')
 EMAIL_PORT = get_var('LORE_EMAIL_PORT', 25)

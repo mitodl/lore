@@ -21,7 +21,7 @@ URL Structure is `https://{domain}/api/v1/{resource}/{resource_id}/`
 
 *Example: `http://lore.odl.mit.edu/api/v1/repositories/physics-1/` will return a JSON representation of the repository with name "physics-1".*
 
-*Example: `http://lore.odl.mit.edu/api/v1/repositories/physics-1/learningresources/1007/` will return a JSON representation
+*Example: `http://lore.odl.mit.edu/api/v1/repositories/physics-1/learning_resources/1007/` will return a JSON representation
 of the learning resource with ID=1007.*
 
 
@@ -168,7 +168,8 @@ Create a repository by providing its JSON representation.
                     "xa_nr_attempts": 0,
                     "xa_avg_grade": 0.0,
                     "xa_histogram_grade": 0.0,
-                    "terms": []
+                    "terms": [],
+                    "preview_url": "https://www.example.com/courses..."
                 },
                 ...
             ]
@@ -199,7 +200,8 @@ Create a repository by providing its JSON representation.
             "xa_nr_attempts": 0,
             "xa_avg_grade": 0.0,
             "xa_histogram_grade": 0.0,
-            "terms": []
+            "terms": [],
+            "preview_url": "https://www.example.com/courses..."
         }
 
 ### Partially Update a Learningresource [PATCH]
@@ -227,7 +229,8 @@ Create a repository by providing its JSON representation.
             "xa_nr_attempts": 0,
             "xa_avg_grade": 0.0,
             "xa_histogram_grade": 0.0,
-            "terms": []
+            "terms": [],
+            "preview_url": "https://www.example.com/courses..."
         }
 
 ### Update a Learningresource [PUT]
@@ -256,7 +259,8 @@ Create a repository by providing its JSON representation.
             "xa_nr_attempts": 0,
             "xa_avg_grade": 0.0,
             "xa_histogram_grade": 0.0,
-            "terms": []
+            "terms": [],
+            "preview_url": "https://www.example.com/courses..."
         }
 
 ## Group Staticassets

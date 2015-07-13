@@ -14,6 +14,7 @@ from rest_framework.status import (
 from importer.tasks import import_file
 from learningresources.models import (
     Repository,
+    LearningResource,
     LearningResourceType,
 )
 from learningresources.api import get_resources
@@ -697,7 +698,8 @@ class TestRest(RESTTestCase):
 
     def test_immutable_fields_learning_resource(self):
         """Test immutable fields for term"""
-        resource = self.import_course_tarball(self.repo)
+        self.import_course_tarball(self.repo)
+        resource = LearningResource.objects.first()
         lr_id = resource.id
 
         lr_dict = {
@@ -716,7 +718,8 @@ class TestRest(RESTTestCase):
             "xa_nr_attempts": 2,
             "xa_avg_grade": 3.0,
             "xa_histogram_grade": 4.0,
-            "terms": []
+            "terms": [],
+            "preview_url": "",
         }
 
         def assert_not_changed(new_dict):
@@ -727,7 +730,7 @@ class TestRest(RESTTestCase):
                 'id', 'learning_resource_type', 'static_assets', 'title',
                 'content_xml', 'materialized_path', 'url_path', 'parent',
                 'copyright', 'xa_nr_views', 'xa_nr_attempts', 'xa_avg_grade',
-                'xa_histogram_grade'
+                'xa_histogram_grade', 'preview_url'
             )
             for field in fields:
                 self.assertNotEqual(lr_dict[field], new_dict[field])
@@ -928,3 +931,29 @@ class TestRest(RESTTestCase):
             ['example'],
             self.get_vocabulary(
                 self.repo.slug, vocab_slug)['learning_resource_types'])
+
+    def test_preview_url(self):
+        """
+        Assert preview url behavior for learning resources
+        """
+        learning_resource = LearningResource.objects.first()
+        expected_jump_to_id_url = (
+            "https://www.sandbox.edx.org/courses/"
+            "test-org/infinity/Febtober/jump_to_id/url_name1"
+        )
+        self.assertEqual(
+            expected_jump_to_id_url,
+            learning_resource.get_preview_url()
+        )
+
+        resource_dict = self.get_learning_resource(
+            self.repo.slug, learning_resource.id)
+        self.assertEqual(
+            expected_jump_to_id_url, resource_dict['preview_url'])
+
+        learning_resource.url_name = None
+        self.assertEqual(
+            "https://www.sandbox.edx.org/courses/"
+            "test-org/infinity/Febtober/courseware",
+            learning_resource.get_preview_url()
+        )

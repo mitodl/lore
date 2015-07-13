@@ -65,7 +65,8 @@ class LoreTestCase(TestCase):
             resource_type=kwargs.get('resource_type') or "example",
             title=kwargs.get('title') or "other silly example",
             content_xml=kwargs.get('content_xml') or "<blah>other blah</blah>",
-            mpath=kwargs.get('mpath') or "/otherblah"
+            mpath=kwargs.get('mpath') or "/otherblah",
+            url_name=kwargs.get('url_name') or None
         )
         learn_res.xa_nr_views = kwargs.get('xa_nr_views', 0)
         learn_res.xa_nr_attempts = kwargs.get('xa_nr_attempts', 0)
@@ -92,7 +93,7 @@ class LoreTestCase(TestCase):
             user_id=self.user.id,
         )
         self.course = create_course(
-            org="test org",
+            org="test-org",
             repo_id=self.repo.id,
             course_number="infinity",
             run="Febtober",
@@ -105,6 +106,7 @@ class LoreTestCase(TestCase):
             title="silly example",
             content_xml="<blah>blah</blah>",
             mpath="/blah",
+            url_name="url_name1",
         )
 
         assign_user_to_repo_group(

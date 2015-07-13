@@ -186,6 +186,7 @@ class LearningResourceSerializer(ModelSerializer):
     learning_resource_type = StringRelatedField()
     terms = SlugRelatedField(
         many=True, slug_field='slug', queryset=Term.objects.all())
+    preview_url = SerializerMethodField()
 
     class Meta:
         # pylint: disable=missing-docstring
@@ -206,6 +207,7 @@ class LearningResourceSerializer(ModelSerializer):
             'xa_avg_grade',
             'xa_histogram_grade',
             'terms',
+            'preview_url',
         )
         read_only_fields = tuple(set(fields) - {'description', 'terms'})
 
@@ -222,6 +224,11 @@ class LearningResourceSerializer(ModelSerializer):
                     "Term {} is not supported "
                     "for this learning resource".format(term.label))
         return terms
+
+    @staticmethod
+    def get_preview_url(obj):
+        """Construct preview URL for learning resource"""
+        return obj.get_preview_url()
 
 
 class StaticAssetSerializer(ModelSerializer):

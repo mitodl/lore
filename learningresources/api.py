@@ -47,13 +47,14 @@ def create_course(org, repo_id, course_number, run, user_id):
 
     Args:
         org (unicode): Organization
+        repo_id (int): Repository id
         course_number (unicode): Course number
         run (unicode): Run
         user_id (int): Primary key of user creating the course
     Raises:
         ValueError: Duplicate course
     Returns:
-        course (learningresource.Course): The created course
+        course (learningresources.models.Course): The created course
 
     """
     # Check on unique values before attempting a get_or_create, because
@@ -65,7 +66,9 @@ def create_course(org, repo_id, course_number, run, user_id):
     if Course.objects.filter(**unique).exists():
         raise ValueError("Duplicate course")
     kwargs = {
-        "org": org, "course_number": course_number, "run": run,
+        "org": org,
+        "course_number": course_number,
+        "run": run,
         'imported_by_id': user_id,
         "repository_id": repo_id,
     }
@@ -75,20 +78,24 @@ def create_course(org, repo_id, course_number, run, user_id):
 
 
 # pylint: disable=too-many-arguments
-def create_resource(course, parent, resource_type, title, content_xml, mpath):
+def create_resource(
+        course, parent, resource_type, title, content_xml, mpath, url_name
+):
     """
     Create a learning resource.
 
     Args:
-        course (learningresources.Course): Course
-        parent (learningresources.LearningResource): Parent LearningResource
+        course (learningresources.models.Course): Course
+        parent (learningresources.models.LearningResource):
+            Parent LearningResource
         resource_type (unicode): Name of LearningResourceType
         title (unicode): Title of resource
         content_xml (unicode): XML
         mpath (unicode): Materialized path
-
+        url_name (unicode): Resource identifier
     Returns:
-        resource (learningresources.LearningResource): New LearningResource
+        resource (learningresources.models.LearningResource):
+            New LearningResource
     """
     params = {
         "course": course,
@@ -96,6 +103,7 @@ def create_resource(course, parent, resource_type, title, content_xml, mpath):
         "title": title,
         "content_xml": content_xml,
         "materialized_path": mpath,
+        "url_name": url_name,
     }
     if parent is not None:
         params["parent_id"] = parent.id

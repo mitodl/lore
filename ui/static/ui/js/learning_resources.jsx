@@ -87,6 +87,8 @@ define('learning_resources', [
             <a id="copy-textarea-xml" href="#"
                className="btn btn-white"
                onClick={this.selectXml}>Select XML</a>
+            <a className="btn btn-primary pull-left"
+               href={this.state.previewUrl} target="_blank">Preview</a>
           </p>
 
           {options}
@@ -160,12 +162,14 @@ define('learning_resources', [
         var learningResourceType = data.learning_resource_type;
         var description = data.description;
         var selectedTerms = data.terms;
+        var previewUrl = data.preview_url;
 
         thiz.setState({
           contentXml: contentXml,
           messageText: undefined,
           errorText: undefined,
-          description: description
+          description: description,
+          previewUrl: previewUrl,
         });
 
         Utils.getVocabulariesAndTerms(

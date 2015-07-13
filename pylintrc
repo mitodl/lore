@@ -5,6 +5,12 @@ const-rgx = (([A-Z_][A-Z0-9_]*)|(__.*__)|log|urlpatterns)$
 [TYPECHECK]
 generated-members =
     status_code
+ignored-classes=
+	six,
+	six.moves,
+ignored-modules=
+	six,
+	six.moves,
 
 [MESSAGES CONTROL]
 disable = no-member, old-style-class, no-init, too-few-public-methods, abstract-method
