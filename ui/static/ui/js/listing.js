@@ -1,7 +1,7 @@
 define(
   ['jquery', 'setup_manage_taxonomies', 'facets',
-    'learning_resources', 'bootstrap', 'icheck', 'csrf'],
-  function($, setupManageTaxonomies, facets, LearningResources) {
+    'learning_resources', 'static_assets', 'bootstrap', 'icheck', 'csrf'],
+  function($, setupManageTaxonomies, facets, LearningResources, StaticAssets) {
     'use strict';
     facets.setupFacets(window);
     var EMAIL_EXTENSION = '@mit.edu';
@@ -85,6 +85,7 @@ define(
           "data-learningresource-id");
         LearningResources.loader(repoSlug, learningResourceId, $("#tab-1")[0]);
         $('.cd-panel').addClass('is-visible');
+        StaticAssets.loader(repoSlug, learningResourceId, $("#tab-3")[0]);
       });
 
       //close the lateral panel
