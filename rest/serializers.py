@@ -72,6 +72,7 @@ class VocabularySerializer(ModelSerializer):
         slug_field="name",
         queryset=LearningResourceType.objects.all()
     )
+    terms = SerializerMethodField()
 
     # django-rest-framework mistakenly assumes required=False
     # unless we override the behavior
@@ -90,11 +91,17 @@ class VocabularySerializer(ModelSerializer):
             'weight',
             'repository',
             'learning_resource_types',
+            'terms',
         )
         read_only_fields = (
             'id',
             'slug',
         )
+
+    @staticmethod
+    def get_terms(obj):
+        """List of terms for vocabulary"""
+        return [TermSerializer(term).data for term in obj.term_set.all()]
 
 
 class TermSerializer(ModelSerializer):

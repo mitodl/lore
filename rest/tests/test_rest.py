@@ -520,15 +520,13 @@ class TestRest(RESTTestCase):
         """Test pagination for collections"""
 
         expected = [
-            self.create_vocabulary(
-                self.repo.slug,
-                {
-                    "name": "name{i}".format(i=i),
-                    "description": "description",
-                    "required": True,
-                    "vocabulary_type": Vocabulary.FREE_TAGGING,
-                    "weight": 1000,
-                }
+            Vocabulary.objects.create(
+                repository=self.repo,
+                name="name{i}".format(i=i),
+                description="description",
+                required=True,
+                vocabulary_type=Vocabulary.FREE_TAGGING,
+                weight=1000,
             ) for i in range(40)]
 
         resp = self.client.get(
@@ -626,13 +624,14 @@ class TestRest(RESTTestCase):
             'vocabulary_type': 'f',
             'repository': -9,
             'learning_resource_types': [],
+            'terms': [self.DEFAULT_TERM_DICT],
         }
 
         def assert_not_changed(new_dict):
             """Check that fields have not changed"""
             # These keys should be different since they are immutable or set by
             # the serializer.
-            for field in ('id', 'slug'):
+            for field in ('id', 'slug', 'terms'):
                 self.assertNotEqual(vocab_dict[field], new_dict[field])
 
             # repository is set internally and should not show up in output.
