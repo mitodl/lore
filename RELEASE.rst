@@ -13,8 +13,13 @@ Version 0.4.0
   vocabularies
 - Fixed bug with file path length in static assets
 - Added learning resource UI to edit description and terms
-- Upgraded several packages - Bootstrap - uwsgi - static3 - elasticsearch -
-  django-bootstrap - django-storages-redux
+- Upgraded several packages
+    - Bootstrap
+    - uwsgi
+    - static3
+    - elasticsearch
+    - django-bootstrap
+    - django-storages-redux
 - Added terms to the readonly list
 - Allowed blank descriptions for LearningResource model
 - Implemented Enter key to add taxonomy term and added test case to
@@ -25,12 +30,13 @@ Version 0.4.0
 - Fixed error message on unsupported terms in learning resource
 - Fixed facet checkboxes not showing in production
 - Fixed course/run highlight bug
-- Default checked radio button for Manage Taxonomies -&gt; Add Vocabulary
+- Default checked radio button for Manage Taxonomies -> Add Vocabulary
 - Fixed vertical alignment of taxonomy tabs
 - Fixed error message for duplicate vocabulary
 - Added docker container for javascript testing
-- Added checkboxes and ability to toggle facets - Added html coverage report
-  for javascript - Added shim configuration to karma test runner
+- Added checkboxes and ability to toggle facets
+- Added html coverage report for javascript
+- Added shim configuration to karma test runner
 - Implemented learning_resources API
 - Members REST API docs
 - Linked video transcripts to learning resources.
