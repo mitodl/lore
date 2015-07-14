@@ -107,6 +107,8 @@ after the Python tests. You can run only the JavaScript tests using
 testing with ``docker-compose -f docker-karma.yml up`` and connecting
 to port 9876 on your docker host.
 
+In addition to local testing, all commits are tested on travis-ci.org.
+
 Continuous Testing
 ~~~~~~~~~~~~~~~~~~
 
