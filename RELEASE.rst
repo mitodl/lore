@@ -1,6 +1,51 @@
 Release Notes
 -------------
 
+Version 0.4.0
+=============
+
+- Added view to serve static assets and modified REST API
+- Added fix and test for handling deleted Elasticsearch index.
+- Refactored manage_taxonomies.jsx and related tests
+- Sped up test discovery by removing node_modules from search
+- Added learning resource types to manage taxonomies UI
+- Added learning_resource_types API and learning_resource_types field for
+  vocabularies
+- Fixed bug with file path length in static assets
+- Added learning resource UI to edit description and terms
+- Upgraded several packages - Bootstrap - uwsgi - static3 - elasticsearch -
+  django-bootstrap - django-storages-redux
+- Added terms to the readonly list
+- Allowed blank descriptions for LearningResource model
+- Implemented Enter key to add taxonomy term and added test case to
+  fix coverage
+- Updated Django to 1.8.3
+- Correct LORE production URL in Apiary doc
+- Added checkbox styling to vocabulary/term facets
+- Fixed error message on unsupported terms in learning resource
+- Fixed facet checkboxes not showing in production
+- Fixed course/run highlight bug
+- Default checked radio button for Manage Taxonomies -&gt; Add Vocabulary
+- Fixed vertical alignment of taxonomy tabs
+- Fixed error message for duplicate vocabulary
+- Added docker container for javascript testing
+- Added checkboxes and ability to toggle facets - Added html coverage report
+  for javascript - Added shim configuration to karma test runner
+- Implemented learning_resources API
+- Members REST API docs
+- Linked video transcripts to learning resources.
+- Parse static assets from LearningResource
+- Removed unused patterns to limit memory use
+- fix css to make list vertical align
+- Installed JSXHint and configured JSCS to work with JSX files
+- Included JSX files in coverage results
+- Allow only usernames and not emails in the Members add input
+- Added test case, tested menulay all scenarios
+- Moved coverage CLI script to utils directory
+- Fixed buttons alignment problem in members panel.
+- Fixed error message behavior for manage taxonomies tab
+- Added ability to filter vocabularies by learning resource type
+
 Version 0.3.0
 =============
 
@@ -28,13 +73,13 @@ Version 0.2.0
   from the right side of the page.
 - Glyphs for learning resources types are displayed in the left side
   panel for facets.
-- LORE's RESTful web service documentation is available. 
+- LORE's RESTful web service documentation is available.
   (http://docs.lore.apiary.io)
 - Authorizations are in place for taxonomy endpoints in LORE's web
   service.
 - Relationships between learning resources and static assets are
   captured.
-- Roles app has additional features. 
+- Roles app has additional features.
 
 Other Changes
 *************
@@ -69,4 +114,4 @@ Version 0.1.0
 - Protected export view
 - Added faceted filtering
 - Added new manage repo users permission
-- Fixed repository listing page to only show results for a single repo. 
+- Fixed repository listing page to only show results for a single repo.
