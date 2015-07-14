@@ -23,30 +23,6 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
     "xa_histogram_grade": 0.0,
     "terms": ["required"]
   };
-  var vocabularyResponseDifficulty = {
-    "id": 1,
-    "slug": "difficulty",
-    "name": "difficulty",
-    "description": "Difficulty",
-    "vocabulary_type": "f",
-    "required": false,
-    "weight": 2147483647
-  };
-  var vocabularyResponsePrereq = {
-    "id": 1,
-    "slug": "prerequisite",
-    "name": "prerequisite",
-    "description": "Prerequisite",
-    "vocabulary_type": "m",
-    "required": false,
-    "weight": 2147483647
-  };
-  var vocabulariesResponse = {
-    "count": 2,
-    "next": null,
-    "previous": null,
-    "results": [vocabularyResponseDifficulty, vocabularyResponsePrereq]
-  };
   var termResponseEasy = {
     "id": 1,
     "slug": "easy",
@@ -59,23 +35,43 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
     "label": "hard",
     "weight": 1
   };
-  var difficultyTermsResponse = {
-    "count": 2,
-    "next": null,
-    "previous": null,
-    "results": [termResponseEasy, termResponseHard]
-  };
   var prereqTermsResponseRequired = {
     "id": 3,
     "slug": "required",
     "label": "required",
     "weight": 1
   };
-  var prereqTermsResponse = {
-    "count": 1,
+  var vocabularyResponsePrereq = {
+    "id": 1,
+    "slug": "prerequisite",
+    "name": "prerequisite",
+    "description": "Prerequisite",
+    "vocabulary_type": "m",
+    "required": false,
+    "weight": 2147483647,
+    "terms": [prereqTermsResponseRequired]
+  };
+  var vocabularyResponseDifficulty = {
+    "id": 1,
+    "slug": "difficulty",
+    "name": "difficulty",
+    "description": "Difficulty",
+    "vocabulary_type": "f",
+    "required": false,
+    "weight": 2147483647,
+    "terms": [termResponseEasy, termResponseHard]
+  };
+  var vocabulariesResponse = {
+    "count": 2,
     "next": null,
     "previous": null,
-    "results": [prereqTermsResponseRequired]
+    "results": [vocabularyResponseDifficulty, vocabularyResponsePrereq]
+  };
+  var difficultyTermsResponse = {
+    "count": 2,
+    "next": null,
+    "previous": null,
+    "results": [termResponseEasy, termResponseHard]
   };
 
   QUnit.module('Test learning resource panel', {
@@ -96,16 +92,6 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
         url: '/api/v1/repositories/repo/vocabularies/?type_name=course',
         type: 'GET',
         responseText: vocabulariesResponse
-      });
-      TestUtils.initMockjax({
-        url: '/api/v1/repositories/repo/vocabularies/difficulty/terms/',
-        type: 'GET',
-        responseText: difficultyTermsResponse
-      });
-      TestUtils.initMockjax({
-        url: '/api/v1/repositories/repo/vocabularies/prerequisite/terms/',
-        type: 'GET',
-        responseText: prereqTermsResponse
       });
     },
     afterEach: function() {
@@ -153,7 +139,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
 
       var afterMount = function(component) {
         // wait for calls to populate form
-        waitForAjax(4, function () {
+        waitForAjax(2, function () {
           // one vocabulary
           var $node = $(React.findDOMNode(component));
           var $vocabSelect = $node.find("select");
@@ -198,7 +184,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
 
       var afterMount = function(component) {
         // wait for calls to populate form
-        waitForAjax(4, function () {
+        waitForAjax(2, function () {
           var $node = $(React.findDOMNode(component));
 
           var saveButton = $node.find("button")[0];
@@ -226,7 +212,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
 
       var afterMount = function(component) {
         // wait for calls to populate form
-        waitForAjax(4, function () {
+        waitForAjax(2, function () {
           var $node = $(React.findDOMNode(component));
 
           $.mockjax.clear(thiz.learningResourcesPatchId);
@@ -309,34 +295,6 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
   );
 
   QUnit.test(
-    'An error should show up on AJAX failure while ' +
-    'getting terms',
-    function (assert) {
-      var done = assert.async();
-
-      TestUtils.replaceMockjax({
-        url: '/api/v1/repositories/repo/vocabularies/difficulty/terms/',
-        type: 'GET',
-        status: 400
-      });
-      var afterMount = function (component) {
-        // wait for calls to populate form
-        waitForAjax(4, function () {
-          assert.equal(component.state.errorText,
-            "Unable to read information about learning resource.");
-          assert.equal(component.state.messageText, undefined);
-
-          done();
-        });
-      };
-      React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
-        repoSlug="repo"
-        learningResourceId="1"
-        ref={afterMount}/>);
-    }
-  );
-
-  QUnit.test(
     'Textarea should be selected',
     function(assert) {
       var done = assert.async();
@@ -344,7 +302,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
         var $node = $(React.findDOMNode(component));
 
         // wait for calls to populate form
-        waitForAjax(4, function () {
+        waitForAjax(2, function () {
           var $selectLink = $node.find("#copy-textarea-xml");
           var textarea = $node.find(".textarea-xml")[0];
 
