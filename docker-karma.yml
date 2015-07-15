@@ -1,0 +1,7 @@
+karma:
+  image: lore_web
+  ports:
+    - "9876:9876"
+  command: tox -e js -- --no-single --no-single-run --auto-watch
+  volumes:
+    - .:/src

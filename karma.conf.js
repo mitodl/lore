@@ -15,30 +15,55 @@ module.exports = function(config) {
 
     // list of files / patterns to load in the browser
     files: [
-      'ui/jstests/test-listing.js',
+      'ui/static/ui/js/require_config.js',
+      'ui/jstests/test-main.js',
       {
-        pattern: 'ui/static/bower/react/react.js',
+        pattern: 'ui/static/bower/**/*.js',
         included: false
       },
       {
-        pattern: 'ui/static/ui/js/**/*.js*',
+        pattern: 'ui/static/bower/**/*.jsx',
         included: false
       },
       {
-        pattern: 'ui/jstests/**/*.js*',
+        pattern: 'ui/static/ui/**/*.js',
         included: false
-      }
+      },
+      {
+        pattern: 'ui/static/ui/**/*.jsx',
+        included: false
+      },
+      {
+        pattern: 'ui/jstests/**/*.js',
+        included: false
+      },
+      {
+        pattern: 'ui/jstests/**/*.jsx',
+        included: false
+      },
+      {
+        pattern: 'node_modules/jquery-mockjax/src/jquery.mockjax.js',
+        included: false
+      },
+      {
+        pattern: 'node_modules/stacktrace-js/stacktrace.js',
+        included: false
+      },
     ],
 
-    // list of files to exclude
-    exclude: [],
+    // list of files to exclude from coverage and testing
+    exclude: [
+      "ui/static/ui/js/listing.js",
+      "ui/static/ui/js/csrf.js"
+    ],
 
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      '**/*.jsx': ['react'],
-      'ui/static/ui/js/**/*.js*': ['coverage'],
-      'ui/jstests/**/*.js*': ['coverage']
+      'ui/static/ui/**/*.jsx': ['react', 'coverage'],
+      'ui/jstests/**/*.jsx': ['react', 'coverage'],
+      'ui/static/ui/**/*.js': ['coverage'],
+      'ui/jstests/**/*.js': ['coverage']
     },
 
     reactPreprocessor: {
@@ -57,6 +82,10 @@ module.exports = function(config) {
     coverageReporter: {
       dir: 'coverage/',
       reporters: [
+        {
+          type: 'lcov',
+          subdir: '.',
+        },
         {
           type: 'lcovonly',
           subdir: '.',

@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.3.0'
+VERSION = '0.4.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -195,6 +195,7 @@ COMPRESS_PRECOMPILERS = (
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
 MEDIA_ROOT = get_var('MEDIA_ROOT', '/tmp/')
+MEDIA_URL = '/media/'
 LORE_USE_S3 = get_var('LORE_USE_S3', False)
 AWS_ACCESS_KEY_ID = get_var('AWS_ACCESS_KEY_ID', False)
 AWS_SECRET_ACCESS_KEY = get_var('AWS_SECRET_ACCESS_KEY', False)
@@ -314,7 +315,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'PAGE_SIZE': 20
+    'PAGE_SIZE': 20,
+    'UPLOADED_FILES_USE_URL': False,
 }
 
 # Celery

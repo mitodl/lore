@@ -16,14 +16,16 @@ Including another URLconf
 
 from __future__ import unicode_literals
 
+from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.contrib.auth.decorators import login_required
 
 from search.forms import SearchForm
 from ui.views import (
     welcome, create_repo, export,
     upload, edit_vocabulary, create_vocabulary,
-    RepositoryView,
+    RepositoryView, serve_media
 )
 import rest.urls as rest_urls
 import cas.urls as cas_urls
@@ -38,8 +40,10 @@ urlpatterns = [
     url(r'^repositories/new/$', create_repo, name='create_repo'),
     url(
         r'^repositories/(?P<repo_slug>[-\w]+)/$',
-        RepositoryView(
-            form_class=SearchForm, template="repository.html",
+        login_required(
+            RepositoryView(
+                form_class=SearchForm, template="repository.html",
+            )
         ),
         name='repositories'
     ),
@@ -57,3 +61,11 @@ urlpatterns = [
         edit_vocabulary,
         name="edit_vocabulary"),
 ]
+
+if (settings.DEFAULT_FILE_STORAGE ==
+        'django.core.files.storage.FileSystemStorage'):
+    urlpatterns.append(
+        url(r'^media/(?P<media_path>.+)$',
+            serve_media,
+            name='media')
+    )

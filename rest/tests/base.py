@@ -11,8 +11,11 @@ from rest_framework.status import (
     HTTP_204_NO_CONTENT,
 )
 from rest_framework.reverse import reverse
+from django.db.models import Count
 
+from importer.tasks import import_file
 from learningresources.tests.base import LoreTestCase
+from learningresources.api import get_resources
 
 API_BASE = '/api/v1/'
 REPO_BASE = '/api/v1/repositories/'
@@ -41,10 +44,27 @@ class RESTTestCase(LoreTestCase):
         'required': True,
         'weight': 1000,
         'vocabulary_type': 'f',
+        'learning_resource_types': [],
     }
     DEFAULT_TERM_DICT = {
         'label': 'term label',
         'weight': 1000,
+    }
+    DEFAULT_LR_DICT = {
+        "learning_resource_type": -1,
+        "static_assets": [],
+        "title": "Getting Help",
+        "description": "x",
+        "content_xml": "<vertical />",
+        "materialized_path":
+            "/course/chapter[4]/sequential[1]/vertical[3]",
+        "url_path": "",
+        "parent": 93,
+        "copyright": "",
+        "xa_nr_views": 0,
+        "xa_nr_attempts": 0,
+        "xa_avg_grade": 0.0,
+        "xa_histogram_grade": 0.0
     }
 
     def assert_options_head(self, url, expected_status):
@@ -454,3 +474,121 @@ class RESTTestCase(LoreTestCase):
         url = self.build_members_url(urlfor, repo_slug, username, group_type)
         resp = self.client.delete(url)
         self.assertEqual(resp.status_code, expected_status)
+
+    def get_learning_resources(self, repo_slug, expected_status=HTTP_200_OK):
+        """Get learning resources"""
+        url = '{repo_base}{repo_slug}/learning_resources/'.format(
+            repo_base=REPO_BASE,
+            repo_slug=repo_slug,
+        )
+        self.assert_options_head(url, expected_status=expected_status)
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if resp.status_code == HTTP_200_OK:
+            return as_json(resp)
+
+    def get_learning_resource(self, repo_slug, learning_resource_id,
+                              expected_status=HTTP_200_OK):
+        """Get a learning resource"""
+        url = '{repo_base}{repo_slug}/learning_resources/{lr_id}/'.format(
+            repo_base=REPO_BASE,
+            repo_slug=repo_slug,
+            lr_id=learning_resource_id,
+        )
+        self.assert_options_head(url, expected_status=expected_status)
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if resp.status_code == HTTP_200_OK:
+            return as_json(resp)
+
+    def patch_learning_resource(
+            self, repo_slug, learning_resource_id, lr_dict,
+            expected_status=HTTP_200_OK, skip_assert=False):
+        """Update a learning resource"""
+        resp = self.client.patch(
+            '{repo_base}{repo_slug}/'
+            'learning_resources/{lr_id}/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                lr_id=learning_resource_id
+            ),
+            json.dumps(lr_dict),
+            content_type='application/json',
+        )
+        self.assertEqual(expected_status, resp.status_code)
+        if resp.status_code == HTTP_200_OK:
+            result_dict = as_json(resp)
+            if not skip_assert:
+                for key, value in lr_dict.items():
+                    self.assertEqual(value, result_dict[key])
+            return result_dict
+
+    def put_learning_resource(
+            self, repo_slug, learning_resource_id, lr_dict,
+            expected_status=HTTP_200_OK, skip_assert=False):
+        """Update a learning resource"""
+        resp = self.client.put(
+            '{repo_base}{repo_slug}/'
+            'learning_resources/{lr_id}/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                lr_id=learning_resource_id
+            ),
+            json.dumps(lr_dict),
+            content_type='application/json',
+        )
+        self.assertEqual(expected_status, resp.status_code)
+        if resp.status_code == HTTP_200_OK:
+            result_dict = as_json(resp)
+            if not skip_assert:
+                for key, value in lr_dict.items():
+                    self.assertEqual(value, result_dict[key])
+            return result_dict
+
+    def get_static_assets(self, repo_slug, learning_resource_id,
+                          expected_status=HTTP_200_OK):
+        """Get static assets for learning resource"""
+        url = (
+            '{repo_base}{repo_slug}/'
+            'learning_resources/{lr_id}/static_assets/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                lr_id=learning_resource_id,
+            )
+        )
+        self.assert_options_head(url, expected_status=expected_status)
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if resp.status_code == HTTP_200_OK:
+            return as_json(resp)
+
+    def get_static_asset(self, repo_slug, learning_resource_id,
+                         static_asset_id,
+                         expected_status=HTTP_200_OK):
+        """Get a static asset"""
+        url = (
+            '{repo_base}{repo_slug}/learning_resources/{lr_id}/'
+            'static_assets/{sa_id}/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                lr_id=learning_resource_id,
+                sa_id=static_asset_id,
+            )
+        )
+        self.assert_options_head(url, expected_status=expected_status)
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if resp.status_code == HTTP_200_OK:
+            return as_json(resp)
+
+    def import_course_tarball(self, repo):
+        """
+        Import course.xml into repo and return first LearningResource
+        which has any StaticAssets
+        """
+        tarball_file = self.get_course_single_tarball()
+        import_file(
+            tarball_file, self.repo.id, self.user.id)
+        return get_resources(repo.id).annotate(
+            count_assets=Count('static_assets')
+        ).filter(count_assets__gt=0).first()

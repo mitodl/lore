@@ -6,6 +6,10 @@ redis:
   image: redis
   ports:
     - "6379"
+elastic:
+  image: elasticsearch
+  ports:
+    - "9200"
 web:
   build: .
   command: >
@@ -58,7 +62,3 @@ celery:
     - db
     - elastic
     - redis
-elastic:
-  image: elasticsearch
-  ports:
-    - "9200"

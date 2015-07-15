@@ -4,6 +4,8 @@ Tests for REST authorization
 
 from __future__ import unicode_literals
 
+import os
+
 from rest_framework.status import (
     HTTP_400_BAD_REQUEST,
     HTTP_403_FORBIDDEN,
@@ -12,11 +14,14 @@ from rest_framework.status import (
 )
 from django.contrib.auth.models import User, Permission
 
-from .base import RESTTestCase
+from rest.tests.base import RESTTestCase, REPO_BASE
+from learningresources.api import get_resources
+from learningresources.models import StaticAsset
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes, BaseGroupTypes
 
 
+# pylint: disable=too-many-public-methods
 class TestRestAuthorization(RESTTestCase):
     """
     Tests for REST authorization
@@ -476,6 +481,7 @@ class TestRestAuthorization(RESTTestCase):
                       expected_status=HTTP_403_FORBIDDEN)
 
         # as anonymous
+        self.logout()
         self.get_terms(self.repo.slug, vocab_slug,
                        expected_status=HTTP_403_FORBIDDEN)
         self.get_term(self.repo.slug, vocab_slug, term_slug,
@@ -642,3 +648,222 @@ class TestRestAuthorization(RESTTestCase):
             self.delete_member(urlfor='groups', repo_slug=self.repo.slug,
                                username=self.author_user.username,
                                group_type=group_type)
+
+    def test_resource_get(self):
+        """Test retrieve learning resource"""
+        self.assertEqual(
+            1, self.get_learning_resources(self.repo.slug)['count'])
+
+        resource = self.import_course_tarball(self.repo)
+        lr_id = resource.id
+
+        # author_user has view_repo permissions
+        self.logout()
+        self.login(self.author_user.username)
+        self.assertEqual(
+            6, self.get_learning_resources(self.repo.slug)['count'])
+        self.get_learning_resource(self.repo.slug, lr_id)
+
+        # user_norepo has no view_repo permission
+        self.logout()
+        self.login(self.user_norepo.username)
+        self.get_learning_resources(
+            self.repo.slug, expected_status=HTTP_403_FORBIDDEN)
+        self.get_learning_resource(
+            self.repo.slug, lr_id, expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.get_learning_resources(
+            self.repo.slug, expected_status=HTTP_403_FORBIDDEN)
+        self.get_learning_resource(
+            self.repo.slug, lr_id, expected_status=HTTP_403_FORBIDDEN)
+
+    def test_resource_post(self):
+        """Test create learning resource"""
+        resp = self.client.post(
+            '{repo_base}{repo_slug}/learning_resources/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+            ),
+            self.DEFAULT_LR_DICT
+        )
+        self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_resource_delete(self):
+        """Test delete learning resource"""
+        resource = self.import_course_tarball(self.repo)
+        lr_id = resource.id
+
+        resp = self.client.delete(
+            '{repo_base}{repo_slug}/learning_resources/{lr_id}/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                lr_id=lr_id,
+            ),
+            self.DEFAULT_LR_DICT
+        )
+        self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_resource_put_patch(self):
+        """Test update learning resource"""
+        resource = self.import_course_tarball(self.repo)
+        lr_id = resource.id
+
+        new_description_dict = {"description": "new description"}
+
+        # as curator who has add_edit_metadata permission
+        self.logout()
+        self.login(self.curator_user.username)
+        self.patch_learning_resource(
+            self.repo.slug, lr_id, new_description_dict
+        )
+        new_description_dict['description'] += "_"
+        new_description_dict['terms'] = []
+        self.put_learning_resource(
+            self.repo.slug, lr_id, new_description_dict
+        )
+
+        # author does have add_edit_metadata permission
+        self.logout()
+        self.login(self.author_user.username)
+        new_description_dict['description'] += "_"
+        self.patch_learning_resource(
+            self.repo.slug, lr_id, new_description_dict
+        )
+        new_description_dict['description'] += "_"
+        self.put_learning_resource(
+            self.repo.slug, lr_id, new_description_dict
+        )
+
+        # as anonymous
+        self.logout()
+        new_description_dict['description'] += "_"
+        self.patch_learning_resource(
+            self.repo.slug, lr_id, new_description_dict,
+            expected_status=HTTP_403_FORBIDDEN
+        )
+        self.put_learning_resource(
+            self.repo.slug, lr_id, new_description_dict,
+            expected_status=HTTP_403_FORBIDDEN
+        )
+
+    def test_static_assets_get(self):
+        """Test for getting static assets from learning_resources"""
+        resource1 = self.import_course_tarball(self.repo)
+        static_asset1 = resource1.static_assets.first()
+        lr1_id = resource1.id
+
+        # add a second StaticAsset to another learning resource
+        static_asset2 = StaticAsset.objects.exclude(
+            id=static_asset1.id).first()
+        resource2 = get_resources(self.repo.id).exclude(
+            id=resource1.id
+        ).first()
+        resource2.static_assets.add(static_asset2)
+        lr2_id = resource2.id
+
+        # make sure the result for an asset contains a name and an url
+        resp = self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id)
+        self.assertTrue('asset' in resp)
+        self.assertTrue('name' in resp)
+        self.assertTrue(static_asset1.asset.url in resp['asset'])
+        self.assertEqual(
+            resp['name'],
+            os.path.basename(static_asset1.asset.name)
+        )
+
+        # make sure static assets only show up in their proper places
+        self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id)
+        self.assertEqual(
+            1, self.get_static_assets(self.repo.slug, lr1_id)['count'])
+        self.get_static_asset(self.repo.slug, lr1_id, static_asset2.id,
+                              expected_status=HTTP_404_NOT_FOUND)
+        self.get_static_asset(self.repo.slug, lr2_id, static_asset1.id,
+                              expected_status=HTTP_404_NOT_FOUND)
+        self.get_static_asset(self.repo.slug, lr2_id, static_asset2.id)
+        self.assertEqual(
+            1, self.get_static_assets(self.repo.slug, lr2_id)['count'])
+
+        # author_user has view_repo permissions
+        self.logout()
+        self.login(self.author_user.username)
+        self.assertEqual(
+            1, self.get_static_assets(self.repo.slug, lr1_id)['count'])
+        self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id)
+
+        # user_norepo has no view_repo permission
+        self.logout()
+        self.login(self.user_norepo.username)
+        self.get_static_assets(self.repo.slug, lr1_id,
+                               expected_status=HTTP_403_FORBIDDEN)
+        self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id,
+                              expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.get_static_assets(self.repo.slug, lr1_id,
+                               expected_status=HTTP_403_FORBIDDEN)
+        self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id,
+                              expected_status=HTTP_403_FORBIDDEN)
+
+    def test_static_assets_create(self):
+        """Test for creating static assets from learning_resources"""
+        lr_id = get_resources(self.repo.id).first().id
+        resp = self.client.post(
+            '{repo_base}{repo_slug}/learning_resources/'
+            '{lr_id}/static_assets/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                lr_id=lr_id,
+            ),
+            self.DEFAULT_LR_DICT
+        )
+        self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_static_assets_put_patch(self):
+        """Test for updating static assets from learning_resources"""
+        resource = self.import_course_tarball(self.repo)
+        static_asset = resource.static_assets.first()
+        lr_id = resource.id
+
+        resp = self.client.put(
+            '{repo_base}{repo_slug}/learning_resources/'
+            '{lr_id}/static_assets/{sa_id}/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                lr_id=lr_id,
+                sa_id=static_asset.id,
+            ),
+            self.DEFAULT_LR_DICT
+        )
+        self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
+        resp = self.client.patch(
+            '{repo_base}{repo_slug}/learning_resources/'
+            '{lr_id}/static_assets/{sa_id}/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                lr_id=lr_id,
+                sa_id=static_asset.id,
+            ),
+            self.DEFAULT_LR_DICT
+        )
+        self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_static_assets_delete(self):
+        """Test for deleting static assets from learning_resources"""
+        resource = self.import_course_tarball(self.repo)
+        static_asset = resource.static_assets.first()
+        lr_id = resource.id
+
+        resp = self.client.delete(
+            '{repo_base}{repo_slug}/learning_resources/'
+            '{lr_id}/static_assets/{sa_id}/'.format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                lr_id=lr_id,
+                sa_id=static_asset.id,
+            ),
+            self.DEFAULT_LR_DICT
+        )
+        self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)

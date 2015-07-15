@@ -7,8 +7,12 @@
   "devDependencies": {
     "bower": "1.4.1",
     "coveralls": "~2.11.2",
+    "esprima-fb": "^15001.1.0-dev-harmony-fb",
+    "jquery-mockjax": "^2.0.1",
     "jscs": "^1.13.1",
+    "jsdocs": "~0.1.0",
     "jshint": "^2.8.0",
+    "jsxhint": "^0.15.1",
     "karma": "^0.12.36",
     "karma-cli": "0.0.4",
     "karma-coverage": "^0.4.2",
@@ -20,6 +24,7 @@
     "phantomjs": "^1.9.17",
     "qunit": "^0.7.6",
     "qunitjs": "^1.18.0",
-    "requirejs": "^2.1.18"
+    "requirejs": "^2.1.18",
+    "stacktrace-js": "^0.6.4"
   }
 }

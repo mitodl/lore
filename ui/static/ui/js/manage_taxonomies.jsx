@@ -1,6 +1,6 @@
-define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _) {
+define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
+  function (React, _, $, Utils) {
   'use strict';
-  var API_ROOT_VOCAB_URL;
 
   var TermComponent = React.createClass({
     render: function () {
@@ -10,9 +10,10 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
   });
 
   var VocabularyComponent = React.createClass({
+    mixins: [React.addons.LinkedStateMixin],
     render: function () {
-      var items = _.map(this.state.terms, function (term) {
-        return <TermComponent term={term} key={term.label} />;
+      var items = _.map(this.props.terms, function (term) {
+        return <TermComponent term={term} key={term.slug} />;
       });
 
       return <ul className="icheck-list">
@@ -35,9 +36,10 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
           </div>
         <li>
           <div className="input-group">
-            <input type="text" value={this.state.newTermLabel}
-              className="form-control"
-              placeholder="Add new term..." onChange={this.updateAddTermText}/>
+            <input type="text" valueLink={this.linkState('newTermLabel')}
+              className="form-control" onKeyUp={this.onKeyUp}
+              placeholder="Add new term..."
+              />
               <span className="input-group-btn">
                 <a className="btn btn-white"
                   type="button" onClick={this.handleAddTermClick}><i
@@ -48,8 +50,15 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
         </li>
       </ul>;
     },
+    onKeyUp: function(e) {
+      if (e.key === "Enter") {
+        this.handleAddTermClick();
+      }
+    },
     handleAddTermClick: function() {
       var thiz = this;
+      var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/';
       $.ajax({
           type: "POST",
           url: API_ROOT_VOCAB_URL + this.props.vocabulary.slug + "/terms/",
@@ -59,38 +68,39 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
           }),
           contentType: "application/json; charset=utf-8"
         }
-      ).fail(function(e) {
+      ).fail(function() {
           thiz.props.reportError("Error occurred while adding new term.");
         })
       .done(function(newTerm) {
+          thiz.props.addTerm(thiz.props.vocabulary.slug, newTerm);
           thiz.setState({
-            newTermLabel: null,
-            terms: thiz.state.terms.concat([newTerm])
+            newTermLabel: null
           });
+
+          // clear errors
+          thiz.props.reportError(null);
         });
-    },
-    updateAddTermText: function(e) {
-      this.setState({newTermLabel: e.target.value})
     },
     getInitialState: function() {
       return {
         newTermLabel: "",
         terms: this.props.terms
-      }
-    }
+      };
+    },
   });
 
   var AddTermsComponent = React.createClass({
     render: function () {
       var repoSlug = this.props.repoSlug;
-      var reportError = this.reportError;
+      var thiz = this;
       var items = _.map(this.props.vocabularies, function (obj) {
         return <VocabularyComponent
           vocabulary={obj.vocabulary}
           terms={obj.terms}
           key={obj.vocabulary.slug}
           repoSlug={repoSlug}
-          reportError={reportError}
+          reportError={thiz.reportError}
+          addTerm={thiz.props.addTerm}
           />;
       });
       return <div className="panel-group lore-panel-group">
@@ -104,7 +114,6 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
 
     },
     reportError: function(msg) {
-      console.error(msg);
       this.setState({errorText: msg});
     },
     getInitialState: function() {
@@ -120,31 +129,72 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
       return {
         name: '',
         description: '',
-        vocabulary_type: 'm',
-        required: false,
-        weight: 2147483647
+        vocabularyType: 'm',
+        learningResourceTypes: [],
+      };
+    },
+    updateLearningResourceType: function(e) {
+      var checkedType = e.target.value;
+
+      var newTypes;
+      if (e.target.checked) {
+        if (!_.includes(this.state.learningResourceTypes, checkedType)) {
+          newTypes = this.state.learningResourceTypes.concat([checkedType]);
+        } else {
+          // else already includes new type
+          console.error("Type " + checkedType + " is already selected");
+        }
+      } else {
+        newTypes = _.filter(this.state.learningResourceTypes, function(type) {
+          return type !== checkedType;
+        });
       }
+
+      this.setState({learningResourceTypes: newTypes});
     },
     updateVocabularyType: function(e) {
-      this.setState({vocabulary_type: e.target.value});
+      this.setState({vocabularyType: e.target.value});
       e.target.isChecked = true;
     },
     submitForm: function(e) {
+      var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/';
       e.preventDefault();
       var thiz = this;
       var vocabularyData = {
         name: this.state.name,
         description: this.state.description,
-        vocabulary_type: this.state.vocabulary_type,
-        required: this.state.required,
-        weight: this.state.weight
-      }
+        vocabulary_type: this.state.vocabularyType,
+        required: false,
+        weight: 2147483647,
+        learning_resource_types: this.state.learningResourceTypes,
+      };
+
       $.ajax({
-          type: "POST",
-          url: API_ROOT_VOCAB_URL,
-          data: vocabularyData
+        type: "POST",
+        url: API_ROOT_VOCAB_URL,
+        data: JSON.stringify(vocabularyData),
+        contentType: "application/json"
       }).fail(function(data) {
-        thiz.setState({errorMessage: 'There was a problem adding the Vocabulary'})
+        var jsonData = data.responseJSON;
+        var i = 0;
+        if (jsonData.non_field_errors &&
+          jsonData.non_field_errors.length > 0) {
+          for (i = 0; i < jsonData.non_field_errors.length ; i++) {
+            if (jsonData.non_field_errors[i] ===
+              'The fields repository, name must make a unique set.') {
+              thiz.setState({
+                errorMessage: 'A Vocabulary named "' + vocabularyData.name +
+                  '" already exists. Please choose a different name.'
+              });
+              break;
+            }
+          }
+        } else {
+          thiz.setState({
+            errorMessage: 'There was a problem adding the Vocabulary.'
+          });
+        }
         console.error(data);
       }).done(function(data) {
         // Reset state (and eventually update the vocab tab
@@ -156,19 +206,30 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
           ".cd-panel-2 .cd-panel-container .cd-panel-content"
         );
         scrollableDiv.animate(
-          { scrollTop: scrollableDiv.prop('scrollHeight')},
+          {scrollTop: scrollableDiv.prop('scrollHeight')},
           500
-        );  
+        );
       });
     },
     render: function() {
-      var repoSlug = this.props.repoSlug;
-      var errorBox = null
-      if(this.state['errorMessage'] !== undefined) {
+      var errorBox = null;
+      var thiz = this;
+      if (this.state.errorMessage !== undefined) {
         errorBox = <div className="alert alert-danger alert-dismissible">
                      {this.state.errorMessage}
-                   </div>
+                   </div>;
       }
+
+      var checkboxes = _.map(this.props.learningResourceTypes, function(type) {
+        var checked = _.includes(thiz.state.learningResourceTypes, type);
+        return <li key={type}><label><input type="checkbox"
+                      value={type}
+                      checked={checked}
+                      onChange={thiz.updateLearningResourceType} />
+          {type}
+        </label></li>;
+      });
+
       return (
         <form className="form-horizontal" onSubmit={this.submitForm}>
           {errorBox}
@@ -183,18 +244,25 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
             placeholder="Description"/>
           </p>
           <p>
+            <ul>
+            {checkboxes}
+            </ul>
+          </p>
+          <p>
             <div className="radio">
-              <label htmlFor="managed_vocabulary_type">
+              <label>
                 <input id="managed_vocabulary_type" type="radio"
                   name="vocabulary_type" value="m"
+                  checked={this.state.vocabularyType === 'm'}
                   onChange={this.updateVocabularyType} />
                     Managed
               </label>
             </div>
             <div className="radio">
-              <label htmlFor="managed_vocabulary_type">
+              <label>
                 <input id="free_vocabulary_type" type="radio"
                   name="vocabulary_type" value="f"
+                  checked={this.state.vocabularyType === 'f'}
                   onChange={this.updateVocabularyType} />
                     Tag Style (on the fly)
               </label>
@@ -204,81 +272,91 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash'], function (React, _)
             <button className="btn btn-lg btn-primary">Save</button>
           </p>
         </form>
-      )
+      );
     }
   });
 
   var TaxonomyComponent = React.createClass({
     getInitialState: function() {
       return {
-        vocabularies: this.props.vocabularies
-      }
+        vocabularies: [],
+        learningResourceTypes: []
+      };
     },
     addVocabulary: function(vocab) {
       // Wrap vocab in expected structure
-      var new_vocab = {
+      var newVocab = {
         terms: [],
         vocabulary: vocab
       };
       var vocabularies = this.state.vocabularies;
-      vocabularies.push(new_vocab);
+      vocabularies.push(newVocab);
+      this.setState({vocabularies: vocabularies});
+    },
+    addTerm: function(vocabSlug, newTerm) {
+      var vocabularies = _.map(this.state.vocabularies, function(tuple) {
+        if (tuple.vocabulary.slug === vocabSlug) {
+          return {
+            terms: tuple.terms.concat(newTerm),
+            vocabulary: tuple.vocabulary
+          };
+        }
+        return tuple;
+      });
       this.setState({vocabularies: vocabularies});
     },
     render: function() {
-      return(
+      return (
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
               vocabularies={this.state.vocabularies}
-              repoSlug={this.props.repoSlug}/>
+              repoSlug={this.props.repoSlug}
+              addTerm={this.addTerm} />
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
-            <AddVocabulary updateParent={this.addVocabulary}
+            <AddVocabulary
+              updateParent={this.addVocabulary}
+              learningResourceTypes={this.state.learningResourceTypes}
               repoSlug={this.props.repoSlug}/>
           </div>
         </div>
-      )
+      );
+    },
+    componentDidMount: function() {
+      var thiz = this;
+
+      $.get("/api/v1/learning_resource_types/").then(function(results) {
+        if (!thiz.isMounted()) {
+          return;
+        }
+
+        var types = _.map(results.results, function(type) {
+          return type.name;
+        });
+
+        thiz.setState({learningResourceTypes: types});
+        Utils.getVocabulariesAndTerms(thiz.props.repoSlug).then(
+          function(vocabularies) {
+            if (!thiz.isMounted()) {
+              return;
+            }
+
+            thiz.setState({vocabularies: vocabularies});
+          }
+        );
+      });
+
     }
   });
 
-  return function (repoSlug) {
-    API_ROOT_VOCAB_URL = '/api/v1/repositories/' + repoSlug + '/vocabularies/'
-    $.get(API_ROOT_VOCAB_URL)
-      .then(function (data) {
-        var promises = _.map(data.results, function (vocabulary) {
-          return $.get("/api/v1/repositories/" + repoSlug +
-            "/vocabularies/" + vocabulary.slug + "/terms/")
-            .then(function (result) {
-              return {terms: result.results, vocabulary: vocabulary};
-            }).fail(function(obj) {
-              throw obj;
-            });
-        });
-
-        return $.when.apply($, promises).then(function () {
-          var args;
-          if (promises.length === 1) {
-            args = [arguments[0]];
-          }
-          else {
-            args = arguments;
-          }
-          return _.map(args, function (obj) {
-            var terms = obj.terms;
-            var vocabulary = obj.vocabulary;
-
-            return {
-              vocabulary: vocabulary,
-              terms: terms
-            };
-          });
-        });
-      })
-      .then(function (vocabularies) {
-        React.render(
-          <TaxonomyComponent vocabularies={vocabularies} repoSlug={repoSlug}/>,
-          $('#taxonomy-component')[0]);
-      });
+  return {
+    'VocabularyComponent': VocabularyComponent,
+    'loader' : function (repoSlug) {
+      React.render(
+        <TaxonomyComponent repoSlug={repoSlug}/>,
+        $('#taxonomy-component')[0]);
+    }
   };
 
 });

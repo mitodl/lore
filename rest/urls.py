@@ -18,9 +18,18 @@ from .views import (
     RepoMemberUserList,
     RepoMemberUserGroupDetail,
     RepoMemberGroupUserDetail,
+    LearningResourceList,
+    LearningResourceDetail,
+    LearningResourceTypeList,
+    StaticAssetList,
+    StaticAssetDetail,
 )
 
 REPOSITORY_MEMBERS_URL = r'^repositories/(?P<repo_slug>[-\w]+)/members/'
+REPOSITORY_VOCAB_URL = r'^repositories/(?P<repo_slug>[-\w]+)/vocabularies/'
+REPOSITORY_RESOURCE_URL = (
+    r'^repositories/(?P<repo_slug>[-\w]+)/learning_resources/'
+)
 
 urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls',
@@ -31,19 +40,17 @@ urlpatterns = [
     url(r'^repositories/(?P<repo_slug>[-\w]+)/$',
         RepositoryDetail.as_view(),
         name='repository-detail'),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/vocabularies/$',
+    url(REPOSITORY_VOCAB_URL + r'$',
         VocabularyList.as_view(),
         name='vocabulary-list'),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'vocabularies/(?P<vocab_slug>[-\w]+)/$',
+    url(REPOSITORY_VOCAB_URL + r'(?P<vocab_slug>[-\w]+)/$',
         VocabularyDetail.as_view(),
         name='vocabulary-detail'),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'vocabularies/(?P<vocab_slug>[-\w]+)/terms/$',
+    url(REPOSITORY_VOCAB_URL + r'(?P<vocab_slug>[-\w]+)/terms/$',
         TermList.as_view(),
         name='term-list'),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'vocabularies/(?P<vocab_slug>[-\w]+)/terms/(?P<term_slug>[-\w]+)/$',
+    url(REPOSITORY_VOCAB_URL +
+        r'(?P<vocab_slug>[-\w]+)/terms/(?P<term_slug>[-\w]+)/$',
         TermDetail.as_view(),
         name='term-detail'),
     # Section for repository group members
@@ -76,4 +83,19 @@ urlpatterns = [
         RepoMemberUserGroupDetail.as_view(),
         name='repo-members-user-group-detail'
     ),
+    url(REPOSITORY_RESOURCE_URL + r'$',
+        LearningResourceList.as_view(),
+        name='learning-resource-list'),
+    url(REPOSITORY_RESOURCE_URL + r'(?P<lr_id>\d+)/$',
+        LearningResourceDetail.as_view(),
+        name='learning-resource-detail'),
+    url(REPOSITORY_RESOURCE_URL + r'(?P<lr_id>\d+)/static_assets/$',
+        StaticAssetList.as_view(),
+        name='static-asset-list'),
+    url(REPOSITORY_RESOURCE_URL +
+        r'(?P<lr_id>\d+)/static_assets/(?P<sa_id>\d+)/$',
+        StaticAssetDetail.as_view(),
+        name='static-asset-detail'),
+    url("^learning_resource_types/$", LearningResourceTypeList.as_view(),
+        name='learning-resource-type-list'),
 ]

@@ -169,10 +169,17 @@ a {
 	margin:0 0 10px 0;
 }	
 
+.icheck-list li span.min-width {
+	min-width: 38px;
+	text-align: center;
+	display: inline-block;
+}
+
 .icheck-list label {
 	font-weight:400;
 	font-size:14px;
 	margin:0 0 0 4px;
+	display: inline;
 }
 
 .icheck-list label img {

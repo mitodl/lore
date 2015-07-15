@@ -1,8 +1,9 @@
 define(
-  ['jquery', 'setup_manage_taxonomies', 'bootstrap', 'icheck', 'csrf'],
-  function($, setupManageTaxonomies) {
+  ['jquery', 'setup_manage_taxonomies', 'facets',
+    'learning_resources', 'bootstrap', 'icheck', 'csrf'],
+  function($, setupManageTaxonomies, facets, LearningResources) {
     'use strict';
-
+    facets.setupFacets(window);
     var EMAIL_EXTENSION = '@mit.edu';
     function formatGroupName(string) {
       string = string.charAt(0).toUpperCase() + string.slice(1);
@@ -12,8 +13,7 @@ define(
     /* This is going to grow up to check whether
      * the name is a valid Kerberos account
      */
-    function isEmail(username) {
-      var email = username + EMAIL_EXTENSION;
+    function isEmail(email) {
       var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i;
       return regex.test(email);
     }
@@ -22,23 +22,23 @@ define(
       var $dest = $(dest);
       for (var i = 0; i < userList.length; i++) {
         $dest.append(
-          '<div class="row">\n' +
-            '<div class="col-sm-7">\n' +
+          '<div class="row">' +
+            '<div class="col-sm-7">' +
               '<div class="cd-panel-members-list-username">' +
-                userList[i].username + EMAIL_EXTENSION + '</div>\n' +
+                userList[i].username + EMAIL_EXTENSION + '</div>' +
             '</div>\n' +
-            '<div class="col-sm-3">\n' +
+            '<div class="col-sm-3">' +
               '<div class="cd-panel-members-list-group_type">' +
-                formatGroupName(userList[i].group_type) + '</div>\n' +
+                formatGroupName(userList[i].group_type) + '</div>' +
             '</div>\n' +
-            '<div class="col-sm-2">\n' +
+            '<div class="col-sm-2">' +
               '<button ' +
                  'class="btn btn-default cd-panel-members-remove" ' +
                  'data-username="' + userList[i].username + '" ' +
-                 'data-group_type="' + userList[i].group_type + '">\n' +
-                 '<i class="fa fa-minus"></i>\n' +
-              '</button>\n' +
-            '</div>\n' +
+                 'data-group_type="' + userList[i].group_type + '">' +
+                 '<i class="fa fa-minus"></i>' +
+              '</button>' +
+            '</div>' +
           '</div>\n');
       }
     }
@@ -54,9 +54,9 @@ define(
       //reset all the classes
       $('#members-alert').html(
         '<div class="alert alert-' + mtype +
-            ' fade in out" data-alert="alert">\n' +
+            ' fade in out" data-alert="alert">' +
           '<a href="#" class="close" data-dismiss="alert" ' +
-            'aria-label="close">&times;</a>\n' + message + '\n' +
+            'aria-label="close">&times;</a>\n' + message +
         '</div>');
     }
 
@@ -75,35 +75,18 @@ define(
     }
 
     $(document).ready(function() {
-      $('input.icheck-11').iCheck({
-        checkboxClass: 'icheckbox_square-blue',
-        radioClass: 'iradio_square-blue'
-      });
+
       $('[data-toggle=popover]').popover();
 
       //open the lateral panel
       $('.cd-btn').on('click', function(event) {
         event.preventDefault();
-        var url = $(this).attr('href');
-        var title = $(this).html();
-        var textarea = $('.cd-panel .textarea-xml');
-        $('.cd-panel header h1').html(title);
-
-        // Clear out text area while waiting for AJAX to return
-        textarea.val('');
-        $.ajax({url: url, dataType: 'text'}).done(function(data) {
-          $('.cd-panel .textarea-xml').val(data);
-        }).error(function() {
-          $('.cd-panel .textarea-xml').val('Unable to retrieve XML.');
-        });
+        var learningResourceId = $(event.target).attr(
+          "data-learningresource-id");
+        LearningResources.loader(repoSlug, learningResourceId, $("#tab-1")[0]);
         $('.cd-panel').addClass('is-visible');
       });
 
-      // Handle "Select XML"
-      $('.cd-panel #copy-textarea-xml').on('click', function(event) {
-        event.preventDefault();
-        $('.cd-panel .textarea-xml').select();
-      });
       //close the lateral panel
       $('.cd-panel').on('click', function(event) {
         if ($(event.target).is('.cd-panel') ||
@@ -156,10 +139,17 @@ define(
         var groupType = $('select[name=\'members-group_type\']').val();
         // /api/v1/repositories/my-rep/members/groups/<group_type>/users/
         url += 'groups/' + groupType + '/users/';
-        if (!isEmail(username)) {
-          var message = '<strong>' + username + EMAIL_EXTENSION +
+        //test that username is not an email
+        if (isEmail(username)) {
+          var message = 'Please type only your username before the @';
+          showMembersAlert(message, 'warning');
+          return;
+        }
+        var email = username + EMAIL_EXTENSION;
+        if (!isEmail(email)) {
+          var emailMessage = '<strong>' + email +
             '</strong> does not seem to be a valid email';
-          showMembersAlert(message, 'danger');
+          showMembersAlert(emailMessage, 'danger');
           return;
         }
         $.ajax({
@@ -171,7 +161,7 @@ define(
           //reset the values
           resetUserGroupForm();
           //show alert
-          var message = '<strong>' + username + EMAIL_EXTENSION +
+          var message = '<strong>' + email +
             '</strong> added to group <strong>' +
             formatGroupName(groupType) + '</strong>';
           showMembersAlert(message);
@@ -180,7 +170,7 @@ define(
         })
         .error(function(data) {
           //show alert
-          var message = 'Error adding user ' + username + EMAIL_EXTENSION +
+          var message = 'Error adding user ' + email +
             ' to group ' + formatGroupName(groupType);
           message = message + '<br>' + data.responseJSON.username[0];
           showMembersAlert(message, 'danger');
@@ -191,6 +181,7 @@ define(
         var url = $('.cd-panel-members').data('members-url');
         var username = $(this).data('username');
         var groupType = $(this).data('group_type');
+        var email = username + EMAIL_EXTENSION;
         // /api/v1/repositories/my-rep/members/groups/<group_type>/users/<username>/
         url += 'groups/' + groupType + '/users/' + username + '/';
         $.ajax({
@@ -199,7 +190,7 @@ define(
         })
         .done(function() {
           //show alert
-          var message = '<strong>' + username + EMAIL_EXTENSION +
+          var message = '<strong>' + email +
             '</strong> deleted from group <strong>' +
             formatGroupName(groupType) + '</strong>';
           showMembersAlert(message);
@@ -209,7 +200,7 @@ define(
         .error(function(data) {
           //show alert
           var message = 'Error deleting user <strong>' +
-            username + EMAIL_EXTENSION + '</strong> from group <strong>' +
+          email + '</strong> from group <strong>' +
             formatGroupName(groupType) + '</strong>';
           try {
             message += '<br>' + data.responseJSON.detail;
@@ -220,6 +211,6 @@ define(
       });
 
       var repoSlug = $("#repo_slug").val();
-      setupManageTaxonomies(repoSlug);
+      setupManageTaxonomies.loader(repoSlug);
     });
   });

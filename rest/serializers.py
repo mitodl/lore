@@ -15,12 +15,22 @@ from rest_framework.serializers import (
     CharField,
     ChoiceField,
     ValidationError,
+    StringRelatedField,
+    SlugRelatedField,
+    FileField,
+    SerializerMethodField,
 )
 
-from learningresources.models import Repository
 from rest.util import LambdaDefault, RequiredBooleanField
 from roles.permissions import BaseGroupTypes
 from taxonomy.models import Vocabulary, Term
+from learningresources.models import (
+    Repository,
+    LearningResource,
+    StaticAsset,
+    LearningResourceType,
+    STATIC_ASSET_BASEPATH
+)
 
 
 class RepositorySerializer(ModelSerializer):
@@ -56,6 +66,13 @@ class VocabularySerializer(ModelSerializer):
             Repository, slug=context['view'].kwargs['repo_slug']
         )
     ))
+    # not technically a slug but the name is unique so we can use it as a key
+    learning_resource_types = SlugRelatedField(
+        many=True,
+        slug_field="name",
+        queryset=LearningResourceType.objects.all()
+    )
+    terms = SerializerMethodField()
 
     # django-rest-framework mistakenly assumes required=False
     # unless we override the behavior
@@ -73,11 +90,18 @@ class VocabularySerializer(ModelSerializer):
             'required',
             'weight',
             'repository',
+            'learning_resource_types',
+            'terms',
         )
         read_only_fields = (
             'id',
             'slug',
         )
+
+    @staticmethod
+    def get_terms(obj):
+        """List of terms for vocabulary"""
+        return [TermSerializer(term).data for term in obj.term_set.all()]
 
 
 class TermSerializer(ModelSerializer):
@@ -145,3 +169,87 @@ class UserGroupSerializer(UserSerializer, GroupSerializer):
     """
     Serializer for username base_group_type association
     """
+
+
+class LearningResourceTypeSerializer(ModelSerializer):
+    """Serializer for LearningResourceType"""
+    class Meta:
+        # pylint: disable=missing-docstring
+        model = LearningResourceType
+        fields = ('name',)
+        read_only_fields = fields
+
+
+class LearningResourceSerializer(ModelSerializer):
+    """Serializer for LearningResource"""
+
+    learning_resource_type = StringRelatedField()
+    terms = SlugRelatedField(
+        many=True, slug_field='slug', queryset=Term.objects.all())
+
+    class Meta:
+        # pylint: disable=missing-docstring
+        model = LearningResource
+        fields = (
+            'id',
+            'learning_resource_type',
+            'static_assets',
+            'title',
+            'description',
+            'content_xml',
+            'materialized_path',
+            'url_path',
+            'parent',
+            'copyright',
+            'xa_nr_views',
+            'xa_nr_attempts',
+            'xa_avg_grade',
+            'xa_histogram_grade',
+            'terms',
+        )
+        read_only_fields = tuple(set(fields) - {'description', 'terms'})
+
+    def validate_terms(self, terms):
+        """
+        Validate that this LearningResource's learning_resource_type
+        is supported by the vocabulary of each term being added
+        """
+        resource_type = self.instance.learning_resource_type
+        for term in terms:
+            if not term.vocabulary.learning_resource_types.filter(
+                    name=resource_type.name).exists():
+                raise ValidationError(
+                    "Term {} is not supported "
+                    "for this learning resource".format(term.label))
+        return terms
+
+
+class StaticAssetSerializer(ModelSerializer):
+    """Serializer for StaticAsset"""
+
+    asset = FileField(use_url=True)
+    name = SerializerMethodField()
+
+    class Meta:
+        # pylint: disable=missing-docstring
+        model = StaticAsset
+        fields = (
+            'id',
+            'asset',
+            'name',
+        )
+        read_only_fields = (
+            'id',
+            'asset',
+            'name',
+        )
+
+    @staticmethod
+    def get_name(static_asset_obj):
+        """Method to get the name of the asset"""
+        basepath = STATIC_ASSET_BASEPATH.format(
+            org=static_asset_obj.course.org,
+            course_number=static_asset_obj.course.course_number,
+            run=static_asset_obj.course.run,
+        )
+        return static_asset_obj.asset.name.replace(basepath, '')

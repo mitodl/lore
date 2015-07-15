@@ -19,6 +19,14 @@ from roles.permissions import RepoPermission
 
 log = logging.getLogger(__name__)
 
+# defining the file path max length
+FILE_PATH_MAX_LENGTH = 900
+STATIC_ASSET_BASEPATH = 'assets/{org}/{course_number}/{run}/'
+
+
+class FilePathLengthException(Exception):
+    """Custom Exception to handle long file paths"""
+
 
 def static_asset_basepath(asset, filename):
     """
@@ -33,10 +41,31 @@ def static_asset_basepath(asset, filename):
         (unicode): forward slash separated path to use below
             ``settings.MEDIA_ROOT``.
     """
-    return 'assets/{org}/{course_number}/{run}/{filename}'.format(
+    return (STATIC_ASSET_BASEPATH + '{filename}').format(
         org=asset.course.org,
         course_number=asset.course.course_number,
         run=asset.course.run,
+        filename=filename
+    )
+
+
+def course_asset_basepath(course, filename):
+    """
+    Returns folder base path for given path.
+
+    Callback API defined by:
+    https://docs.djangoproject.com/en/1.8/ref/models/fields/#django.db.models.FileField.upload_to
+    Args:
+        course (Course): The model to create the name for.
+        filename (unicode): The subpath and filename of the asset.
+    Returns:
+        (unicode): forward slash separated path to use below
+            ``settings.MEDIA_ROOT``.
+    """
+    return 'assets/{org}/{course_number}/{run}/{filename}'.format(
+        org=course.org,
+        course_number=course.course_number,
+        run=course.run,
         filename=filename
     )
 
@@ -61,7 +90,23 @@ class StaticAsset(BaseModel):
     Holds static assets for a course (css, html, javascript, images, etc)
     """
     course = models.ForeignKey(Course)
-    asset = models.FileField(upload_to=static_asset_basepath)
+    asset = models.FileField(
+        upload_to=static_asset_basepath,
+        max_length=FILE_PATH_MAX_LENGTH
+    )
+
+    def save(self, *args, **kwargs):
+        """
+        Handle file length properly
+        It seems that Django FileField does not enforce the length
+        """
+        if len(self.asset.name) > FILE_PATH_MAX_LENGTH:
+            raise FilePathLengthException(
+                'File path is more than {} characters long'.format(
+                    FILE_PATH_MAX_LENGTH
+                )
+            )
+        super(StaticAsset, self).save(*args, **kwargs)
 
 
 class LearningResource(BaseModel):
@@ -74,7 +119,7 @@ class LearningResource(BaseModel):
     static_assets = models.ManyToManyField(StaticAsset, blank=True)
     uuid = models.TextField()
     title = models.TextField()
-    description = models.TextField()
+    description = models.TextField(blank=True)
     content_xml = models.TextField()
     materialized_path = models.TextField()
     url_path = models.TextField()
