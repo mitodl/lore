@@ -15,7 +15,7 @@ from django.conf import settings
 
 log = logging.getLogger(__name__)
 
-async = Celery('lore')  # pylint: disable=invalid-name
+async = Celery('lore')
 
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.

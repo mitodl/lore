@@ -19,6 +19,7 @@ from rest_framework.serializers import (
     SlugRelatedField,
     FileField,
     SerializerMethodField,
+    IntegerField,
 )
 
 from rest.util import LambdaDefault, RequiredBooleanField
@@ -222,12 +223,12 @@ class LearningResourceSerializer(ModelSerializer):
                     name=resource_type.name).exists():
                 raise ValidationError(
                     "Term {} is not supported "
-                    "for this learning resource".format(term.label))
+                    "for this LearningResource".format(term.label))
         return terms
 
     @staticmethod
     def get_preview_url(obj):
-        """Construct preview URL for learning resource"""
+        """Construct preview URL for LearningResource."""
         return obj.get_preview_url()
 
 
@@ -260,3 +261,8 @@ class StaticAssetSerializer(ModelSerializer):
             run=static_asset_obj.course.run,
         )
         return static_asset_obj.asset.name.replace(basepath, '')
+
+
+class LearningResourceExportSerializer(Serializer):
+    """Serializer for exporting id for LearningResource."""
+    id = IntegerField()

@@ -13,6 +13,7 @@ from rest_framework.status import (
 from rest_framework.reverse import reverse
 from django.db.models import Count
 from django.contrib.auth.models import User, Permission
+from django.shortcuts import get_object_or_404
 
 from importer.tasks import import_file
 from learningresources.tests.base import LoreTestCase
@@ -479,7 +480,7 @@ class RESTTestCase(LoreTestCase):
         self.assertEqual(resp.status_code, expected_status)
 
     def get_learning_resources(self, repo_slug, expected_status=HTTP_200_OK):
-        """Get learning resources"""
+        """Get LearningResources."""
         url = '{repo_base}{repo_slug}/learning_resources/'.format(
             repo_base=REPO_BASE,
             repo_slug=repo_slug,
@@ -492,7 +493,7 @@ class RESTTestCase(LoreTestCase):
 
     def get_learning_resource(self, repo_slug, learning_resource_id,
                               expected_status=HTTP_200_OK):
-        """Get a learning resource"""
+        """Get a LearningResource."""
         url = '{repo_base}{repo_slug}/learning_resources/{lr_id}/'.format(
             repo_base=REPO_BASE,
             repo_slug=repo_slug,
@@ -507,7 +508,7 @@ class RESTTestCase(LoreTestCase):
     def patch_learning_resource(
             self, repo_slug, learning_resource_id, lr_dict,
             expected_status=HTTP_200_OK, skip_assert=False):
-        """Update a learning resource"""
+        """Update a LearningResource."""
         resp = self.client.patch(
             '{repo_base}{repo_slug}/'
             'learning_resources/{lr_id}/'.format(
@@ -529,7 +530,7 @@ class RESTTestCase(LoreTestCase):
     def put_learning_resource(
             self, repo_slug, learning_resource_id, lr_dict,
             expected_status=HTTP_200_OK, skip_assert=False):
-        """Update a learning resource"""
+        """Update a LearningResource."""
         resp = self.client.put(
             '{repo_base}{repo_slug}/'
             'learning_resources/{lr_id}/'.format(
@@ -550,7 +551,7 @@ class RESTTestCase(LoreTestCase):
 
     def get_static_assets(self, repo_slug, learning_resource_id,
                           expected_status=HTTP_200_OK):
-        """Get static assets for learning resource"""
+        """Get static assets for LearningResource."""
         url = (
             '{repo_base}{repo_slug}/'
             'learning_resources/{lr_id}/static_assets/'.format(
@@ -568,7 +569,7 @@ class RESTTestCase(LoreTestCase):
     def get_static_asset(self, repo_slug, learning_resource_id,
                          static_asset_id,
                          expected_status=HTTP_200_OK):
-        """Get a static asset"""
+        """Get a StaticAsset."""
         url = (
             '{repo_base}{repo_slug}/learning_resources/{lr_id}/'
             'static_assets/{sa_id}/'.format(
@@ -587,7 +588,7 @@ class RESTTestCase(LoreTestCase):
     def import_course_tarball(self, repo):
         """
         Import course.xml into repo and return first LearningResource
-        which has any StaticAssets
+        which has any StaticAssets.
         """
         tarball_file = self.get_course_single_tarball()
         import_file(
@@ -595,6 +596,130 @@ class RESTTestCase(LoreTestCase):
         return get_resources(repo.id).annotate(
             count_assets=Count('static_assets')
         ).filter(count_assets__gt=0).first()
+
+    def get_learning_resource_exports(self, repo_slug, username=None,
+                                      expected_status=HTTP_200_OK):
+        """
+        Get ids for LearningResource exports.
+        """
+        if username is None:
+            user_id = self.client.session['_auth_user_id']
+            username = get_object_or_404(User, id=user_id).username
+
+        url = (
+            "{repo_base}{repo_slug}/"
+            "learning_resource_exports/{username}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                username=username,
+            )
+        )
+        self.assert_options_head(url, expected_status=expected_status)
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            return as_json(resp)
+
+    def delete_learning_resource_exports(self, repo_slug, username=None,
+                                         expected_status=HTTP_204_NO_CONTENT):
+        """
+        Delete all exports in shopping cart for this repo.
+        """
+        if username is None:
+            user_id = self.client.session['_auth_user_id']
+            username = get_object_or_404(User, id=user_id).username
+
+        url = (
+            "{repo_base}{repo_slug}/"
+            "learning_resource_exports/{username}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                username=username,
+            )
+        )
+        resp = self.client.delete(url)
+        self.assertEqual(expected_status, resp.status_code)
+
+    def get_learning_resource_export(self, repo_slug, learning_resource_id,
+                                     username=None,
+                                     expected_status=HTTP_200_OK):
+        """
+        Get id for LearningResource export.
+        """
+        if username is None:
+            user_id = self.client.session['_auth_user_id']
+            username = get_object_or_404(User, id=user_id).username
+
+        url = (
+            "{repo_base}{repo_slug}/"
+            "learning_resource_exports/{username}/{lr_id}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                username=username,
+                lr_id=learning_resource_id,
+            )
+        )
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            return as_json(resp)
+
+    def delete_learning_resource_export(self, repo_slug, learning_resource_id,
+                                        username=None,
+                                        expected_status=HTTP_204_NO_CONTENT):
+        """
+        Delete one export in shopping cart for this repo.
+        """
+        if username is None:
+            user_id = self.client.session['_auth_user_id']
+            username = get_object_or_404(User, id=user_id).username
+
+        url = (
+            "{repo_base}{repo_slug}/"
+            "learning_resource_exports/{username}/{lr_id}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                username=username,
+                lr_id=learning_resource_id,
+            )
+        )
+        resp = self.client.delete(url)
+        self.assertEqual(expected_status, resp.status_code)
+
+    def create_learning_resource_export(self, repo_slug, input_dict,
+                                        username=None,
+                                        expected_status=HTTP_201_CREATED,
+                                        skip_assert=False):
+        """
+        Add a LearningResource to shopping cart to be exported.
+        """
+        if username is None:
+            user_id = self.client.session['_auth_user_id']
+            username = get_object_or_404(User, id=user_id).username
+
+        url = (
+            "{repo_base}{repo_slug}/"
+            "learning_resource_exports/{username}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                username=username,
+            )
+        )
+        resp = self.client.post(url, input_dict)
+        self.assertEqual(expected_status, resp.status_code)
+        if resp.status_code == HTTP_201_CREATED:
+            result_dict = as_json(resp)
+            if not skip_assert:
+                for key, value in input_dict.items():
+                    self.assertEqual(value, result_dict[key])
+            self.assertIn(reverse(
+                'learning-resource-export-detail', kwargs={
+                    'repo_slug': repo_slug,
+                    'username': username,
+                    'lr_id': result_dict['id'],
+                }
+            ), resp['Location'])
+            return result_dict
 
 
 class RESTAuthTestCase(RESTTestCase):

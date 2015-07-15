@@ -14,6 +14,7 @@ var REQUIRE_PATHS = {
   setup_manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
   learning_resources: "../ui/js/learning_resources.jsx?noext",
   static_assets: "../ui/js/static_assets.jsx?noext",
+  lr_exports: "../ui/js/lr_exports.jsx?noext",
   utils: "../ui/js/utils.jsx?noext",
 };
 var SHIMS = {

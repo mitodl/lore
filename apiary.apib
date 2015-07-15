@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: http://lore.odl.mit.edu/
+HOST: http://lore.odl.mit.edu/api/v1/
 
 # LORE
 
@@ -134,15 +134,16 @@ Create a repository by providing its JSON representation.
             "create_date": "2015-06-22"
         }
 
-## Group Learningresources
+## Group LearningResources
 
-## Learningresource Collection [/repositories/{repo_slug}/learning_resources/{?type_name}]
+## LearningResource Collection [/repositories/{repo_slug}/learning_resources/{?type_name}]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
     + type_name: `chapter` (string, optional) - type of learning resource
+    + ids: `1,9` (string, optional) - comma separated list of LearningResource ids. Will filter out LearningResources not in this list.
 
-### List Learningresources [GET]
+### List LearningResources [GET]
 
 + Response 200 (application/json)
 
@@ -175,13 +176,13 @@ Create a repository by providing its JSON representation.
             ]
         }
 
-## Learningresource  [/repositories/{repo_slug}/learning_resources/{learningresource_id}/]
+## LearningResource  [/repositories/{repo_slug}/learning_resources/{learningresource_id}/]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
-    + learningresource_id: `8` (number, required) - ID of the Learningresource
+    + learningresource_id: `8` (number, required) - ID of the LearningResource
 
-### View a Learningresource [GET]
+### View a LearningResource [GET]
 
 + Response 200 (application/json)
 
@@ -204,7 +205,7 @@ Create a repository by providing its JSON representation.
             "preview_url": "https://www.example.com/courses..."
         }
 
-### Partially Update a Learningresource [PATCH]
+### Partially Update a LearningResource [PATCH]
 
 + Request (application/json)
 
@@ -233,7 +234,7 @@ Create a repository by providing its JSON representation.
             "preview_url": "https://www.example.com/courses..."
         }
 
-### Update a Learningresource [PUT]
+### Update a LearningResource [PUT]
 
 + Request (application/json)
 
@@ -263,15 +264,80 @@ Create a repository by providing its JSON representation.
             "preview_url": "https://www.example.com/courses..."
         }
 
-## Group Staticassets
+## Group LearningResourceExports
 
-## Staticassets Collection [/repositories/{repo_slug}/learning_resources/{learningresource_id}/static_assets/]
+List of LearningResources to be exported. This is stored per user and is deleted on logout.
+
+## LearningResourceExport Collection [/repositories/{repo_slug}/learning_resource_exports/{username}/]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
-    + learningresource_id: `1` (number, required) - ID of the Learningresource
+    + username: `sarah` (string, required) - owner of exports (must be logged in user)
 
-### List All Staticassets [GET]
+### List LearningResourceExports [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "id": 13
+                }
+            ]
+        }
+
+### Delete LearningResourceExports [DELETE]
+
+Clears the export list for this repository.
+
++ Response 204 (application/json)
+
+### Add a LearningResource ID to Export list [POST]
+
++ Request (application/json)
+
+        {
+            "id": 15
+        }
+
++ Response 201 (application/json)
+
+        {
+            "id": 15
+        }
+
+## LearningResourceExport [/repositories/{repo_slug}/learning_resource_exports/{username}/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + username: `sarah` (string, required) - owner of exports (must be logged in user)
+
+### View a LearningResourceExport [GET]
+
++ Response 200 (application/json)
+
+        {
+            "id": 13
+        }
+
+### Delete an ID from the LearningResource export list [DELETE]
+
++ Response 204 (application/json)
+
+## Group StaticAssets
+
+## StaticAssets Collection [/repositories/{repo_slug}/learning_resources/{learningresource_id}/static_assets/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + learningresource_id: `1` (number, required) - ID of the LearningResource
+
+### List All StaticAssets [GET]
 
 + Response 200 (application/json)
 
@@ -287,14 +353,14 @@ Create a repository by providing its JSON representation.
             ]
         }
 
-## Staticasset [/repositories/{repo_slug}/learning_resources/{learningresource_id}/static_assets/{static_asset_id}/]
+## StaticAsset [/repositories/{repo_slug}/learning_resources/{learningresource_id}/static_assets/{static_asset_id}/]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
-    + learningresource_id: `1` (number, required) - ID of the Learningresource
-    + static_asset_id: `1` (number, required) - ID of the Staticasset
+    + learningresource_id: `1` (number, required) - ID of the LearningResource
+    + static_asset_id: `1` (number, required) - ID of the StaticAsset
 
-### View a Staticasset [GET]
+### View a StaticAsset [GET]
 
 + Response 200 (application/json)
 

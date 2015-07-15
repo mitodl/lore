@@ -53,4 +53,16 @@
       </div>
     </div>
   </div>
+  <div class="col-md-2 col-export">
+    <a class="link-export" href="#" data-learningresource-id="{{ result.object.id }}"
+       {% if result.object.id in exports %}
+         data-selected="true"
+       {% else %}
+         data-selected="false"
+       {% endif %}
+      >
+    <i></i>
+      Export
+    </a>
+  </div>
 </div>

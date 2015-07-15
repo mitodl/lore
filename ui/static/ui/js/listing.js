@@ -1,9 +1,9 @@
-define(
-  ['jquery', 'setup_manage_taxonomies', 'facets',
+define('listing',
+  ['jquery', 'lodash', 'setup_manage_taxonomies', 'facets',
     'learning_resources', 'static_assets', 'utils',
-    'bootstrap', 'icheck', 'csrf'],
-  function($, setupManageTaxonomies, facets, LearningResources, StaticAssets,
-  Utils) {
+    'lr_exports', 'bootstrap', 'icheck', 'csrf'],
+  function($, _, setupManageTaxonomies, facets, LearningResources, StaticAssets,
+  Utils, Exports) {
     'use strict';
     facets.setupFacets(window);
     var EMAIL_EXTENSION = '@mit.edu';
@@ -114,6 +114,24 @@ define(
         }
       });
 
+      // Open exports panel.
+      var loggedInUsername = $("#export_button").data("logged-in-user");
+
+      $('#export_button').on('click', function(event) {
+        event.preventDefault();
+        $('.cd-panel-exports').addClass('is-visible');
+        Exports.loader(repoSlug, loggedInUsername, $("#exports_content")[0]);
+      });
+
+      // Close exports panel.
+      $('.cd-panel-exports').on('click', function(event) {
+        if ($(event.target).is('.cd-panel-exports') ||
+            $(event.target).is('.cd-panel-close')) {
+          $('.cd-panel-exports').removeClass('is-visible');
+          event.preventDefault();
+        }
+      });
+
       //open the lateral panel for members
       $('.btn-members').on('click', function(event) {
         event.preventDefault();
@@ -211,6 +229,73 @@ define(
           catch (err) {}
           showMembersAlert(message, 'danger');
         });
+      });
+
+      var updateCheckDisplay = function(node) {
+        if ($(node).data("selected")) {
+          $(node).find("i").attr("class", "fa fa-check");
+        } else {
+          $(node).find("i").attr("class", "fa fa-arrow-right");
+        }
+      };
+
+      /**
+       * Update export count badge.
+       *
+       * @param {number} direction Add this value to
+       * the existing count before rendering.
+       */
+      var updateExportCount = function(direction) {
+        var oldCount = $("#export_button").data("export-count");
+        var newCount = oldCount + direction;
+
+        $("#export_button .badge").remove();
+        if (newCount > 0) {
+          var $badge = $("<span class='badge' />");
+          $badge.append(_.escape(newCount));
+          $("#export_button").append($badge);
+        }
+        $("#export_button").data("export-count", newCount);
+      };
+      _.each($(".link-export"), function(node) {
+        updateCheckDisplay(node);
+      });
+      updateExportCount(0);
+
+      // Set up click handlers for export links.
+      $(".link-export").click(function(event) {
+        event.preventDefault();
+
+        var learningResourceId = $(this).data("learningresource-id");
+        var selected = $(this).data("selected") === true;
+        $(this).data("selected", !selected);
+
+        if (selected) {
+          // Remove an item from export cart.
+          $.ajax({
+            type: "DELETE",
+            url: "/api/v1/repositories/" + repoSlug +
+            "/learning_resource_exports/" + loggedInUsername + "/" +
+            learningResourceId + "/"
+          }).fail(function() {
+            // Revert export count change.
+            updateExportCount(1);
+          });
+          updateExportCount(-1);
+        } else {
+          // Add an item to export cart.
+          $.post("/api/v1/repositories/" + repoSlug +
+            "/learning_resource_exports/" + loggedInUsername + "/",
+            {
+              id: learningResourceId
+            }).fail(function () {
+              // Revert export count change.
+              updateExportCount(-1);
+            });
+          updateExportCount(1);
+        }
+
+        updateCheckDisplay(this);
       });
 
       var repoSlug = $("#repo_slug").val();

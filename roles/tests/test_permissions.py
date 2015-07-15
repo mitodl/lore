@@ -18,7 +18,7 @@ class TestRolePermission(TestCase):
     """
     Tests for the permissions
     """
-    # pylint: disable=invalid-name, protected-access
+    # pylint: disable=protected-access
     def test_base_group_types(self):
         """
         Checks basic repo group types

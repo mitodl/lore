@@ -48,6 +48,10 @@
       {% endif %}
     </div>
     <div class="col-md-7 text-right"></div>
+    <div class="col-md-5"></div>
+    <div class="col-md-7 text-right">
+      <button id="export_button" class="btn btn-primary" type="button" data-export-count="{{ exports|length }}" data-logged-in-user="{{ request.user.username }}">Export </button>
+    </div>
   </div>
   {% for result in page.object_list %}
     {% include "includes/learning_resource.html" %}
@@ -77,6 +81,7 @@
 {% if 'manage_repo_users' in perms_on_cur_repo %}
   {% include "includes/members_panel.html" %}
 {% endif %}
+{% include "includes/exports_panel.html" %}
 <!-- Modal -->
 <div class="modal fade" id="progress-modal" tabindex="-1" role="dialog" aria-labelledby="progressModal">
   <div class="modal-dialog" role="document">
@@ -94,6 +99,9 @@
 </script>
 <script type="text/jsx"
         src="{% static "ui/js/static_assets.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/lr_exports.jsx" %}">
 </script>
 <script type="text/javascript">
   require(["listing"]);

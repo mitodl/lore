@@ -23,12 +23,17 @@ from .views import (
     LearningResourceTypeList,
     StaticAssetList,
     StaticAssetDetail,
+    LearningResourceExportList,
+    LearningResourceExportDetail,
 )
 
 REPOSITORY_MEMBERS_URL = r'^repositories/(?P<repo_slug>[-\w]+)/members/'
 REPOSITORY_VOCAB_URL = r'^repositories/(?P<repo_slug>[-\w]+)/vocabularies/'
 REPOSITORY_RESOURCE_URL = (
     r'^repositories/(?P<repo_slug>[-\w]+)/learning_resources/'
+)
+REPOSITORY_EXPORTS_URL = (
+    r'^repositories/(?P<repo_slug>[-\w]+)/learning_resource_exports/'
 )
 
 urlpatterns = [
@@ -96,6 +101,12 @@ urlpatterns = [
         r'(?P<lr_id>\d+)/static_assets/(?P<sa_id>\d+)/$',
         StaticAssetDetail.as_view(),
         name='static-asset-detail'),
+    url(REPOSITORY_EXPORTS_URL + r'(?P<username>[-\w]+)/$',
+        LearningResourceExportList.as_view(),
+        name='learning-resource-export-list'),
+    url(REPOSITORY_EXPORTS_URL + r'(?P<username>[-\w]+)/(?P<lr_id>\d+)/$',
+        LearningResourceExportDetail.as_view(),
+        name='learning-resource-export-detail'),
     url("^learning_resource_types/$", LearningResourceTypeList.as_view(),
         name='learning-resource-type-list'),
 ]

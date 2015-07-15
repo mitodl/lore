@@ -240,7 +240,9 @@ class RepositoryView(FacetedSearchView):
                     self.sortby),
                 "all": LoreSortingFields.all_sorting_options_but(
                     self.sortby)
-            }
+            },
+            "exports": self.request.session.get(
+                'learning_resource_exports', {}).get(self.repo.slug, [])
         })
         return context
 

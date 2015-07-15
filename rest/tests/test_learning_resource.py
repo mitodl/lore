@@ -1,5 +1,5 @@
 """
-REST tests for learning resources and static assets
+REST tests for LearningResources and static assets
 """
 
 from __future__ import unicode_literals
@@ -24,15 +24,17 @@ from learningresources.api import get_resources
 from learningresources.models import (
     LearningResource,
     LearningResourceType,
+    Repository,
 )
 from importer.tasks import import_file
 from taxonomy.models import Vocabulary
+from roles.permissions import GroupTypes
+from roles.api import assign_user_to_repo_group
 
 
-# pylint: disable=invalid-name
 class TestLearningResource(RESTTestCase):
     """
-    REST tests for learning resources and static assets
+    REST tests for LearningResources and StaticAssets
     """
 
     def test_immutable_fields_learning_resource(self):
@@ -81,7 +83,7 @@ class TestLearningResource(RESTTestCase):
                                        skip_assert=True))
 
     def test_missing_learning_resource(self):
-        """Test for an invalid learning resource id"""
+        """Test for an invalid LearningResource id."""
         repo_slug1 = self.repo.slug
         resource1 = self.import_course_tarball(self.repo)
         lr1_id = resource1.id
@@ -104,8 +106,37 @@ class TestLearningResource(RESTTestCase):
                                    expected_status=HTTP_404_NOT_FOUND)
         self.get_learning_resource(repo_slug2, lr2_id)
 
+    def test_learning_resource_filter(self):
+        """Test for filtering LearningResources by ids."""
+
+        def get_filtered(ids, expected_status=HTTP_200_OK):
+            """Return list of LearningResources in shopping cart."""
+            url_base = "{repo_base}{repo_slug}/learning_resources/".format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+            )
+            resp = self.client.get("{url_base}?id={ids}".format(
+                url_base=url_base,
+                ids=",".join([str(s) for s in ids])
+            ))
+            self.assertEqual(expected_status, resp.status_code)
+            if expected_status == HTTP_200_OK:
+                return sorted([x['id'] for x in as_json(resp)['results']])
+
+        self.import_course_tarball(self.repo)
+        self.assertEqual([], get_filtered([]))
+        get_filtered(["not-a-number"],
+                     expected_status=HTTP_400_BAD_REQUEST)
+        self.assertEqual([], get_filtered([-1]))
+
+        all_ids = list(get_resources(
+            self.repo.id).values_list('id', flat=True))
+        self.assertEqual(sorted(all_ids), get_filtered(all_ids))
+        self.assertEqual(
+            sorted(all_ids[:5]), get_filtered(all_ids[:5]))
+
     def test_filefield_serialization(self):
-        """Make sure that URL output is turned on in settings"""
+        """Make sure that URL output is turned on in settings."""
         resource = self.import_course_tarball(self.repo)
         static_assets = self.get_static_assets(
             self.repo.slug, resource.id)['results']
@@ -113,7 +144,7 @@ class TestLearningResource(RESTTestCase):
 
     def test_add_term_to_learning_resource(self):
         """
-        Add a term to a learning resource via PATCH
+        Add a term to a LearningResource via PATCH.
         """
 
         resource = self.import_course_tarball(self.repo)
@@ -149,7 +180,7 @@ class TestLearningResource(RESTTestCase):
 
     def test_learning_resource_types(self):
         """
-        Get from learning_resource_types
+        Get from learning_resource_types.
         """
         base_url = "{}learning_resource_types/".format(API_BASE)
 
@@ -190,7 +221,7 @@ class TestLearningResource(RESTTestCase):
 
     def test_preview_url(self):
         """
-        Assert preview url behavior for learning resources
+        Assert preview url behavior for LearningResources.
         """
         learning_resource = LearningResource.objects.first()
         expected_jump_to_id_url = (
@@ -214,15 +245,88 @@ class TestLearningResource(RESTTestCase):
             learning_resource.get_preview_url()
         )
 
+    def test_learning_resource_exports_invalid_methods(self):
+        """
+        Test invalid methods for session-based shopping cart
+        for LearningResource exports.
+        """
 
-# pylint: disable=too-many-ancestors
+        collection_url = (
+            "{repo_base}{repo_slug}/learning_resource_exports/{user}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                user=self.user.username
+            )
+        )
+        lr_id = LearningResource.objects.first().id
+        detail_url = (
+            "{repo_base}{repo_slug}/learning_resource_exports/"
+            "{user}/{lr_id}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                user=self.user.username,
+                lr_id=lr_id,
+            )
+        )
+
+        # PUT and PATCH not supported
+        resp = self.client.patch(collection_url, {})
+        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
+        resp = self.client.put(collection_url, {})
+        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
+        resp = self.client.patch(detail_url, {})
+        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
+        resp = self.client.put(detail_url, {})
+        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
+
+        # POST not supported on detail url
+        resp = self.client.post(detail_url, {})
+        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
+
+    def test_learning_resource_exports_anonymous(self):
+        """Make sure anonymous users are forbidden."""
+        lr_id = get_resources(self.repo.id).first().id
+        self.logout()
+
+        self.get_learning_resource_export(
+            self.repo.slug, lr_id, username="sarah",
+            expected_status=HTTP_403_FORBIDDEN)
+        self.get_learning_resource_exports(
+            self.repo.slug, username="sarah",
+            expected_status=HTTP_403_FORBIDDEN)
+        self.create_learning_resource_export(
+            self.repo.slug, {"id": lr_id}, username="sarah",
+            expected_status=HTTP_403_FORBIDDEN)
+        self.delete_learning_resource_export(
+            self.repo.slug, lr_id,
+            username="sarah",
+            expected_status=HTTP_403_FORBIDDEN)
+        self.delete_learning_resource_exports(
+            self.repo.slug, username="sarah",
+            expected_status=HTTP_403_FORBIDDEN)
+
+    def test_learning_resource_exports_not_a_number(self):
+        """
+        Don't cause 500 error for non-numeric ids.
+        """
+        lr_id = "notanumber"
+
+        self.get_learning_resource_export(
+            self.repo.slug, lr_id, expected_status=HTTP_404_NOT_FOUND)
+        self.create_learning_resource_export(
+            self.repo.slug, {"id": lr_id},
+            expected_status=HTTP_400_BAD_REQUEST)
+        self.delete_learning_resource_export(
+            self.repo.slug, lr_id, expected_status=HTTP_404_NOT_FOUND)
+
+
 class TestLearningResourceAuthorization(RESTAuthTestCase):
     """
-    REST tests for authorization of learning resources and static assets
+    REST tests for authorization of LearningResources and static assets.
     """
 
     def test_resource_get(self):
-        """Test retrieve learning resource"""
+        """Test retrieve LearningResource."""
         self.assertEqual(
             1, self.get_learning_resources(self.repo.slug)['count'])
 
@@ -254,7 +358,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
             self.repo.slug, lr_id, expected_status=HTTP_403_FORBIDDEN)
 
     def test_resource_post(self):
-        """Test create learning resource"""
+        """Test create LearningResource."""
         resp = self.client.post(
             '{repo_base}{repo_slug}/learning_resources/'.format(
                 repo_base=REPO_BASE,
@@ -265,7 +369,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
         self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_resource_delete(self):
-        """Test delete learning resource"""
+        """Test delete LearningResource."""
         resource = self.import_course_tarball(self.repo)
         lr_id = resource.id
 
@@ -280,7 +384,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
         self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_resource_put_patch(self):
-        """Test update learning resource"""
+        """Test update LearningResource."""
         resource = self.import_course_tarball(self.repo)
         lr_id = resource.id
 
@@ -323,7 +427,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
         )
 
     def test_static_assets_get(self):
-        """Test for getting static assets from learning_resources"""
+        """Test for getting StaticAssets from LearningResources."""
         def get_resource_with_asset(type_name):
             """
             Get a LearningResource with a StaticAsset.
@@ -344,7 +448,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
         static_asset2 = resource2.static_assets.first()
         lr1_id = resource1.id
 
-        # add a second StaticAsset to another learning resource
+        # add a second StaticAsset to another LearningResource
         resource2.static_assets.add(static_asset2)
         lr2_id = resource2.id
         # make sure the result for an asset contains a name and an url
@@ -392,7 +496,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
                               expected_status=HTTP_403_FORBIDDEN)
 
     def test_static_assets_create(self):
-        """Test for creating static assets from learning_resources"""
+        """Test for creating StaticAsset from learning_resources."""
         lr_id = get_resources(self.repo.id).first().id
         resp = self.client.post(
             '{repo_base}{repo_slug}/learning_resources/'
@@ -406,7 +510,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
         self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_static_assets_put_patch(self):
-        """Test for updating static assets from learning_resources"""
+        """Test for updating StaticAssets from learning_resources."""
         resource = self.import_course_tarball(self.repo)
         static_asset = resource.static_assets.first()
         lr_id = resource.id
@@ -435,7 +539,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
         self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
 
     def test_static_assets_delete(self):
-        """Test for deleting static assets from learning_resources"""
+        """Test for deleting StaticAssets from learning_resources."""
         resource = self.import_course_tarball(self.repo)
         static_asset = resource.static_assets.first()
         lr_id = resource.id
@@ -451,3 +555,147 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
             self.DEFAULT_LR_DICT
         )
         self.assertEqual(resp.status_code, HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_learning_resource_exports(self):
+        """Test for creating LearningResource ids in session shopping cart."""
+
+        # set up our data
+        self.logout()
+        self.login(self.add_repo_user)
+
+        repo_slug1 = self.repo.slug
+        repo_slug2 = self.create_repository()['slug']
+        repo2 = Repository.objects.get(slug=repo_slug2)
+
+        # 'add_repo_user' will be able to see both repos
+        assign_user_to_repo_group(
+            self.add_repo_user, self.repo, GroupTypes.REPO_ADMINISTRATOR)
+        self.import_course_tarball(repo2)
+
+        repo1_lrid1 = get_resources(self.repo.id).all()[0].id
+        repo2_lrid1 = get_resources(repo2.id).all()[0].id
+        repo2_lrid2 = get_resources(repo2.id).all()[1].id
+
+        self.logout()
+        self.login(self.user)
+
+        # make sure we start with an empty shopping cart
+        self.assertEqual([],
+                         self.get_learning_resource_exports(
+                             repo_slug1)['results'])
+        self.create_learning_resource_export(self.repo.slug, {
+            'id': repo1_lrid1
+        })
+        self.assertEqual([{'id': repo1_lrid1}],
+                         self.get_learning_resource_exports(
+                             repo_slug1)['results'])
+
+        # user doesn't have access to repo2
+        self.get_learning_resource_exports(
+            repo_slug2, expected_status=HTTP_403_FORBIDDEN)
+
+        self.logout()
+        self.login(self.add_repo_user)
+
+        # make sure that session is not shared between users
+        # user has an id in repo1 but add_repo_user does not
+        self.assertEqual([], self.get_learning_resource_exports(
+            repo_slug1
+        )['results'])
+
+        # don't store duplicates
+        self.create_learning_resource_export(repo_slug1, {"id": repo1_lrid1})
+        self.create_learning_resource_export(repo_slug1, {"id": repo1_lrid1})
+        self.assertEqual(
+            [{"id": repo1_lrid1}],
+            self.get_learning_resource_exports(
+                repo_slug1
+            )['results'])
+
+        # make sure export ids are confined to their own repos
+        self.create_learning_resource_export(repo_slug2, {
+            'id': repo2_lrid1
+        })
+        # not affected by POST in previous line
+        self.assertEqual([{'id': repo1_lrid1}],
+                         self.get_learning_resource_exports(
+                             repo_slug1)['results'])
+        # contains the new item
+        self.assertEqual([{'id': repo2_lrid1}],
+                         self.get_learning_resource_exports(
+                             repo_slug2)['results'])
+
+        # make sure we can't add export ids that don't belong to the repo
+        self.create_learning_resource_export(repo_slug1, {
+            'id': repo2_lrid1
+        }, expected_status=HTTP_403_FORBIDDEN)
+
+        # make sure detail view will 404 if out of bounds
+        self.assertEqual(repo1_lrid1, self.get_learning_resource_export(
+            repo_slug1, repo1_lrid1)['id'])
+        self.get_learning_resource_export(
+            repo_slug1, repo2_lrid1,
+            expected_status=HTTP_404_NOT_FOUND)
+        self.get_learning_resource_export(
+            repo_slug2, repo1_lrid1,
+            expected_status=HTTP_404_NOT_FOUND)
+        self.assertEqual(repo2_lrid1, self.get_learning_resource_export(
+            repo_slug2, repo2_lrid1)['id'])
+
+        self.create_learning_resource_export(repo_slug2, {"id": repo2_lrid1})
+        self.create_learning_resource_export(repo_slug2, {"id": repo2_lrid2})
+
+        # finally, delete all of the things
+        self.assertEqual(
+            2, self.get_learning_resource_exports(repo_slug2)['count'])
+        self.delete_learning_resource_exports(repo_slug2)
+        self.assertEqual(
+            0, self.get_learning_resource_exports(repo_slug2)['count'])
+
+        # make sure deleting an empty list doesn't cause problems
+        self.delete_learning_resource_exports(repo_slug2)
+        self.assertEqual(
+            0, self.get_learning_resource_exports(repo_slug2)['count'])
+
+        # repo1 is unaffected
+        self.assertEqual(
+            1, self.get_learning_resource_exports(repo_slug1)['count'])
+        self.delete_learning_resource_export(repo_slug1, repo1_lrid1)
+        self.get_learning_resource_export(
+            repo_slug1, repo1_lrid1, expected_status=HTTP_404_NOT_FOUND)
+
+        self.logout()
+        self.login(self.user)
+
+        # Populate shopping cart one more time.
+        self.create_learning_resource_export(repo_slug1, {"id": repo1_lrid1})
+
+        self.logout()
+        self.login(self.user)
+
+        # After logout and login session was cleared
+        self.assertEqual(
+            0, self.get_learning_resource_exports(repo_slug1)['count'])
+
+    def test_export_with_incorrect_username(self):
+        """Make sure we enforce the username in the URL."""
+        resp = self.client.get(
+            "{repo_base}{repo_slug}/learning_resource_exports/missing/".format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+            ))
+        self.assertEqual(HTTP_403_FORBIDDEN, resp.status_code)
+
+        resource = self.repo.course_set.first().learningresource_set.first()
+        self.create_learning_resource_export(self.repo.slug, {
+            "id": resource.id
+        })
+        resp = self.client.get(
+            "{repo_base}{repo_slug}/learning_resource_exports/missing/"
+            "{lr_id}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                lr_id=resource.id,
+            )
+        )
+        self.assertEqual(HTTP_403_FORBIDDEN, resp.status_code)

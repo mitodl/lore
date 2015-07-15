@@ -26,7 +26,6 @@ from taxonomy.models import Vocabulary, Term
 from learningresources.models import LearningResourceType
 
 
-# pylint: disable=invalid-name
 class TestVocabulary(RESTTestCase):
     """
     REST tests relating to vocabularies and terms
@@ -601,7 +600,6 @@ class TestVocabulary(RESTTestCase):
                 self.repo.slug, vocab_slug)['learning_resource_types'])
 
 
-# pylint: disable=too-many-ancestors
 class TestVocabularyAuthorization(RESTAuthTestCase):
     """
     Tests relating to term and vocabulary authorization
