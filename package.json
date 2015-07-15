@@ -16,6 +16,7 @@
     "karma": "^0.12.36",
     "karma-cli": "0.0.4",
     "karma-coverage": "^0.4.2",
+    "karma-htmlfile-reporter": "^0.2.1",
     "karma-phantomjs-launcher": "^0.2.0",
     "karma-phantomjs-shim": "~1.0.0",
     "karma-qunit": "^0.1.4",
