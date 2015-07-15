@@ -287,7 +287,7 @@ def import_static_assets(course, path):
     """
     for root, _, files in walk(path):
         for name in files:
-            with open(join(root, name), 'r') as open_file:
+            with open(join(root, name), 'rb') as open_file:
                 django_file = File(open_file)
                 # Remove base path from file name
                 name = join(root, name).replace(path + sep, '', 1)

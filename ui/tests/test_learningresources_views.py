@@ -265,7 +265,7 @@ class TestViews(LoreTestCase):
         )
         # upload a course
         self.upload_test_file()
-        self.assertEqual(len(StaticAsset.objects.all()), 3)
+        self.assertEqual(len(StaticAsset.objects.all()), 5)
         # take the url of a static asset
         static_asset_url = StaticAsset.objects.all()[0].asset.url
         # hit the view
