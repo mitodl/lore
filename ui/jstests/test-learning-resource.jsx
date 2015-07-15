@@ -61,11 +61,17 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
     "weight": 2147483647,
     "terms": [termResponseEasy, termResponseHard]
   };
-  var vocabulariesResponse = {
-    "count": 2,
-    "next": null,
+  var vocabulariesResponseFirst = {
+    "count": 1,
+    "next": "/api/v1/repositories/repo/vocabularies/?type_name=course&page=2",
     "previous": null,
-    "results": [vocabularyResponseDifficulty, vocabularyResponsePrereq]
+    "results": [vocabularyResponseDifficulty]
+  };
+  var vocabulariesResponseSecond = {
+    "count": 1,
+    "next": null,
+    "previous": "/api/v1/repositories/repo/vocabularies/?type_name=course",
+    "results": [vocabularyResponsePrereq]
   };
   var difficultyTermsResponse = {
     "count": 2,
@@ -91,7 +97,12 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
       TestUtils.initMockjax({
         url: '/api/v1/repositories/repo/vocabularies/?type_name=course',
         type: 'GET',
-        responseText: vocabulariesResponse
+        responseText: vocabulariesResponseFirst
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/repo/vocabularies/?type_name=course&page=2',
+        type: 'GET',
+        responseText: vocabulariesResponseSecond
       });
     },
     afterEach: function() {
@@ -139,7 +150,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
 
       var afterMount = function(component) {
         // wait for calls to populate form
-        waitForAjax(2, function () {
+        waitForAjax(3, function () {
           // one vocabulary
           var $node = $(React.findDOMNode(component));
           var $vocabSelect = $node.find("select");
@@ -184,7 +195,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
 
       var afterMount = function(component) {
         // wait for calls to populate form
-        waitForAjax(2, function () {
+        waitForAjax(3, function () {
           var $node = $(React.findDOMNode(component));
 
           var saveButton = $node.find("button")[0];
@@ -212,7 +223,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
 
       var afterMount = function(component) {
         // wait for calls to populate form
-        waitForAjax(2, function () {
+        waitForAjax(3, function () {
           var $node = $(React.findDOMNode(component));
 
           $.mockjax.clear(thiz.learningResourcesPatchId);
@@ -302,7 +313,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
         var $node = $(React.findDOMNode(component));
 
         // wait for calls to populate form
-        waitForAjax(2, function () {
+        waitForAjax(3, function () {
           var $selectLink = $node.find("#copy-textarea-xml");
           var textarea = $node.find(".textarea-xml")[0];
 

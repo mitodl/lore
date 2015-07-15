@@ -326,12 +326,13 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
     componentDidMount: function() {
       var thiz = this;
 
-      $.get("/api/v1/learning_resource_types/").then(function(results) {
+      Utils.getCollection("/api/v1/learning_resource_types/").then(
+        function(learningResourceTypes) {
         if (!thiz.isMounted()) {
           return;
         }
 
-        var types = _.map(results.results, function(type) {
+        var types = _.map(learningResourceTypes, function(type) {
           return type.name;
         });
 

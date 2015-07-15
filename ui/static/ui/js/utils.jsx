@@ -1,6 +1,30 @@
 define("utils", ["jquery", "lodash"], function ($, _) {
   'use strict';
+
+  /**
+   * Get a collection from the REST API
+   * @param {string} url The URL of the collection (may be part way through)
+   * @param {array} [previousItems] If defined, the items previously collected
+   * @returns {Promise} A promise evaluting to the array of items
+   * in the collection
+   */
+  var _getCollection = function(url, previousItems) {
+    if (previousItems === undefined) {
+      previousItems = [];
+    }
+
+    return $.get(url).then(function (results) {
+      if (results.next !== null) {
+        return _getCollection(
+          results.next, previousItems.concat(results.results));
+      }
+
+      return previousItems.concat(results.results);
+    });
+  };
+
   return {
+    getCollection: _getCollection,
     /**
      * Get vocabularies and terms from API
      * @param {string} repoSlug Repository slug
@@ -13,11 +37,11 @@ define("utils", ["jquery", "lodash"], function ($, _) {
         url += "?type_name=" + encodeURI(learningResourceType);
       }
 
-      return $.get(url).then(function(results) {
-        return _.map(results.results, function(result) {
+      return _getCollection(url).then(function(vocabs) {
+        return _.map(vocabs, function(vocab) {
           return {
-            vocabulary: result,
-            terms: result.terms
+            vocabulary: vocab,
+            terms: vocab.terms
           };
         });
       });
