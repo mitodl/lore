@@ -10,14 +10,12 @@ import uuid
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.forms import (
-    Form, FileField, ValidationError, ModelForm, TextInput,
-    CheckboxSelectMultiple, RadioSelect,
+    Form, FileField, ValidationError, ModelForm,
 )
 from django.db import transaction
 
 from importer.tasks import import_file
 from learningresources.models import Course, Repository
-from taxonomy.models import Vocabulary
 
 log = logging.getLogger(__name__)
 
@@ -103,25 +101,3 @@ class RepositoryForm(ModelForm):
         repo.created_by = user
         repo.save()
         return repo
-
-
-class VocabularyForm(ModelForm):
-    """
-    Form for the Vocabulary object.
-    """
-
-    class Meta:
-        # pylint: disable=missing-docstring
-        model = Vocabulary
-
-        fields = [
-            'name',
-            'description',
-            'learning_resource_types',
-            'vocabulary_type'
-        ]
-        widgets = {
-            'name': TextInput(),
-            'learning_resource_types': CheckboxSelectMultiple(),
-            'vocabulary_type': RadioSelect(),
-        }
