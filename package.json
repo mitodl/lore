@@ -22,7 +22,6 @@
     "karma-react-preprocessor": "0.0.4",
     "karma-requirejs": "^0.2.2",
     "phantomjs": "^1.9.17",
-    "qunit": "^0.7.6",
     "qunitjs": "^1.18.0",
     "requirejs": "^2.1.18",
     "stacktrace-js": "^0.6.4"
