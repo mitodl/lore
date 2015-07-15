@@ -89,6 +89,11 @@ module.exports = function(config) {
           type: 'lcovonly',
           subdir: '.',
           file: 'coverage-js.lcov'
+        },
+        {
+          type: 'text-summary',
+          subdir: '.',
+          file: 'text-summary.txt'
         }
       ]
     },
