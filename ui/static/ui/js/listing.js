@@ -1,7 +1,9 @@
 define(
   ['jquery', 'setup_manage_taxonomies', 'facets',
-    'learning_resources', 'static_assets', 'bootstrap', 'icheck', 'csrf'],
-  function($, setupManageTaxonomies, facets, LearningResources, StaticAssets) {
+    'learning_resources', 'static_assets', 'utils',
+    'bootstrap', 'icheck', 'csrf'],
+  function($, setupManageTaxonomies, facets, LearningResources, StaticAssets,
+  Utils) {
     'use strict';
     facets.setupFacets(window);
     var EMAIL_EXTENSION = '@mit.edu';
@@ -64,11 +66,11 @@ define(
       //retrieve all the members
       var url = $('.cd-panel-members').data('members-url');
       $('#cd-panel-members-list').empty();
-      $.ajax({url: url})
-        .done(function(data) {
-          formatUserGroups(data.results, '#cd-panel-members-list');
+      Utils.getCollection(url)
+        .done(function(results) {
+          formatUserGroups(results, '#cd-panel-members-list');
         })
-        .error(function() {
+        .fail(function() {
           var message = 'Unable to retrieve list of members.';
           showMembersAlert(message, 'danger');
         });
@@ -169,7 +171,7 @@ define(
           //retrieve the members lists
           showUpdateAllMembers();
         })
-        .error(function(data) {
+        .fail(function(data) {
           //show alert
           var message = 'Error adding user ' + email +
             ' to group ' + formatGroupName(groupType);
@@ -198,7 +200,7 @@ define(
           //retrieve the members lists
           showUpdateAllMembers();
         })
-        .error(function(data) {
+        .fail(function(data) {
           //show alert
           var message = 'Error deleting user <strong>' +
           email + '</strong> from group <strong>' +

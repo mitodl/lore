@@ -1,5 +1,5 @@
 define('static_assets', [
-  'reactaddons', 'jquery', 'lodash'], function (React, $, _) {
+  'reactaddons', 'jquery', 'lodash', 'utils'], function (React, $, _, Utils) {
   'use strict';
 
   var StaticAssetsPanel = React.createClass({
@@ -11,17 +11,17 @@ define('static_assets', [
     componentDidMount: function () {
       var thiz = this;
 
-      $.get("/api/v1/repositories/" + this.props.repoSlug +
+      Utils.getCollection("/api/v1/repositories/" + this.props.repoSlug +
           "/learning_resources/" +
           this.props.learningResourceId + "/static_assets/")
-          .done(function (data) {
+          .done(function (assets) {
             if (!thiz.isMounted()) {
               // In time AJAX call happens component may become unmounted
               return;
             }
 
             thiz.setState({
-              results: data.results
+              results: assets
             });
           })
           .fail(function () {
