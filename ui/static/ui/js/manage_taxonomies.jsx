@@ -83,8 +83,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
     },
     getInitialState: function() {
       return {
-        newTermLabel: "",
-        terms: this.props.terms
+        newTermLabel: ""
       };
     },
   });
