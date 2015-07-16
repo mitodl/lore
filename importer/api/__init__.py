@@ -4,6 +4,7 @@ Import OLX data into LORE.
 
 from __future__ import unicode_literals
 
+from bs4 import BeautifulSoup
 from shutil import rmtree
 import logging
 from tempfile import mkdtemp
@@ -142,6 +143,7 @@ def import_children(course, element, parent):
         content_xml=etree.tostring(element),
         mpath=mpath,
     )
+    target = "/static/"
     if element.tag == "video":
         subname = get_video_sub(element)
         if subname != "":
@@ -151,6 +153,30 @@ def import_children(course, element, parent):
             )
             for asset in assets:
                 resource.static_assets.add(asset)
+    else:
+        # Recursively find all sub-elements, looking for anything which
+        # refers to /static/. Then make the association between the
+        # LearningResource and StaticAsset if the StaticAsset exists.
+        # This is like doing soup.findAll("a") and checking for whether
+        # "/static/" is in the href, which would work but also requires
+        # more code to check for link, img, iframe, script, and others,
+        # and within those, check for href or src existing.
+        soup = BeautifulSoup(etree.tostring(element), 'lxml')
+        for child in soup.findAll():
+            for _, val in child.attrs.items():
+                try:
+                    if val.startswith(target):
+                        path = val[len(target):]
+                        try:
+                            asset = StaticAsset.objects.get(
+                                course__id=resource.course_id,
+                                asset=course_asset_basepath(course, path),
+                            )
+                            resource.static_assets.add(asset)
+                        except StaticAsset.DoesNotExist:
+                            continue
+                except AttributeError:
+                    continue  # not a string
 
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
