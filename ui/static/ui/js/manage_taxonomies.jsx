@@ -289,8 +289,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         vocabulary: vocab
       };
       var vocabularies = this.state.vocabularies;
-      vocabularies.push(newVocab);
-      this.setState({vocabularies: vocabularies});
+      this.setState({vocabularies: vocabularies.concat([newVocab])});
     },
     addTerm: function(vocabSlug, newTerm) {
       var vocabularies = _.map(this.state.vocabularies, function(tuple) {
