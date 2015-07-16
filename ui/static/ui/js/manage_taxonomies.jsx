@@ -221,12 +221,20 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
 
       var checkboxes = _.map(this.props.learningResourceTypes, function(type) {
         var checked = _.includes(thiz.state.learningResourceTypes, type);
-        return <li key={type}><label><input type="checkbox"
-                      value={type}
-                      checked={checked}
-                      onChange={thiz.updateLearningResourceType} />
-          {type}
-        </label></li>;
+        return (
+            <li key={type}>
+              <div className="checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    value={type}
+                    checked={checked}
+                    onChange={thiz.updateLearningResourceType} />
+                  {type}
+                </label>
+              </div>
+            </li>
+        );
       });
 
       return (
@@ -243,7 +251,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
             placeholder="Description"/>
           </p>
           <p>
-            <ul>
+            <ul className="icheck-list">
             {checkboxes}
             </ul>
           </p>
