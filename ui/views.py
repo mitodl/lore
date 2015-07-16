@@ -30,6 +30,7 @@ from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes, RepoPermission
 from search import get_sqs
+from search.sorting import LoreSortingFields
 from taxonomy.models import Vocabulary
 from ui.forms import UploadForm, RepositoryForm
 
@@ -136,6 +137,14 @@ class RepositoryView(FacetedSearchView):
         if repo_slug not in set([x.slug for x in repos]):
             return HttpResponseForbidden("unauthorized")
         self.repo = [x for x in repos if x.slug == repo_slug][0]
+        # get sorting from params if it's there
+        sortby = dict(request.GET.copy()).get('sortby', [])
+        if (len(sortby) > 0 and
+                sortby[0] in LoreSortingFields.all_sorting_fields()):
+            self.sortby = sortby[0]
+        else:
+            # default value
+            self.sortby = LoreSortingFields.DEFAULT_SORTING_FIELD
         return super(RepositoryView, self).__call__(request)
 
     def dispatch(self, *args, **kwargs):
@@ -152,6 +161,9 @@ class RepositoryView(FacetedSearchView):
         # something like ?page=2&page=3&page=4.
         if "page" in params:
             params.pop("page")
+        # for the same reason I remove the sorting
+        if "sortby" in params:
+            params.pop("sortby")
         if len(params) > 0:
             qs_prefix = []
             for key in params.keys():
@@ -175,6 +187,12 @@ class RepositoryView(FacetedSearchView):
                     if k in vocabularies
                 },
                 "qs_prefix": qs_prefix,
+                "sorting_options": {
+                    "current": LoreSortingFields.get_sorting_option(
+                        self.sortby),
+                    "all": LoreSortingFields.all_sorting_options_but(
+                        self.sortby)
+                }
             })
         return context
 
@@ -188,6 +206,7 @@ class RepositoryView(FacetedSearchView):
         if form_kwargs is None:
             form_kwargs = {}
         form_kwargs["repo_slug"] = self.repo.slug
+        form_kwargs["sortby"] = self.sortby
         return super(RepositoryView, self).build_form(form_kwargs)
 
 

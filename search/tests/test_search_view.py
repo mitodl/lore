@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Tests for repostitory listing view search."""
+from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 

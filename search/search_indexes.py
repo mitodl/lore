@@ -38,6 +38,10 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     # page because that page is always for a single repository.
     repository = indexes.CharField(faceted=True)
 
+    nr_views = indexes.IntegerField(model_attr="xa_nr_views")
+    nr_attempts = indexes.IntegerField(model_attr="xa_nr_attempts")
+    avg_grade = indexes.FloatField(model_attr="xa_avg_grade")
+
     def get_model(self):
         """Return the model for which this configures indexing."""
         return LearningResource

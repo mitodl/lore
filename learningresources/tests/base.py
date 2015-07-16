@@ -57,6 +57,22 @@ class LoreTestCase(TestCase):
         if return_body:
             return resp.content.decode("utf-8")
 
+    def create_resource(self, **kwargs):
+        """Creates a learning resource with extra fields"""
+        learn_res = create_resource(
+            course=self.course,
+            parent=None,
+            resource_type=kwargs.get('resource_type') or "example",
+            title=kwargs.get('title') or "other silly example",
+            content_xml=kwargs.get('content_xml') or "<blah>other blah</blah>",
+            mpath=kwargs.get('mpath') or "/otherblah"
+        )
+        learn_res.xa_nr_views = kwargs.get('xa_nr_views', 0)
+        learn_res.xa_nr_attempts = kwargs.get('xa_nr_attempts', 0)
+        learn_res.xa_avg_grade = kwargs.get('xa_avg_grade', 0)
+        learn_res.save()
+        return learn_res
+
     def setUp(self):
         """set up"""
         super(LoreTestCase, self).setUp()
