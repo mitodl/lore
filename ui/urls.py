@@ -24,8 +24,7 @@ from django.contrib.auth.decorators import login_required
 from search.forms import SearchForm
 from ui.views import (
     welcome, create_repo, export,
-    upload, edit_vocabulary, create_vocabulary,
-    RepositoryView, serve_media
+    upload, RepositoryView, serve_media
 )
 import rest.urls as rest_urls
 import cas.urls as cas_urls
@@ -53,13 +52,6 @@ urlpatterns = [
         name='export'),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/vocabularies/$',
-        create_vocabulary,
-        name="create_vocabulary"),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'vocabularies/(?P<vocab_slug>[-\w]+)/$',
-        edit_vocabulary,
-        name="edit_vocabulary"),
 ]
 
 if (settings.DEFAULT_FILE_STORAGE ==
