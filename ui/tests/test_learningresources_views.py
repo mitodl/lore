@@ -55,6 +55,8 @@ class TestViews(LoreTestCase):
         body = self.assert_status_code("/", HTTP_OK, return_body=True)
         self.assertTrue("<title>MIT - LORE </title>" in body)
         self.assertTrue('>Create repository</a>' in body)
+        self.assertFalse('Request permission to create '
+                         'repositories</a>' in body)
 
     def test_get_home_norepo(self):
         """Home Page with no authorization to create repositories"""
@@ -67,6 +69,8 @@ class TestViews(LoreTestCase):
         self.assertTrue("<title>MIT - LORE </title>" in body)
         self.assertFalse('<a href="/lore/create_repo/">'
                          'Create repository</a>' in body)
+        self.assertTrue('Request permission to create '
+                        'repositories</a>' in body)
 
     def test_create_repo_post(self):
         """Create repo."""
