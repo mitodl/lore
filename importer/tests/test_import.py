@@ -286,9 +286,10 @@ class TestImportToy(LoreTestCase):
         ).distinct()
         self.assertEqual(htmls.count(), 1)
         self.assertEqual(
-            [asset.asset for asset in htmls[0].static_assets.all()],
-            [
+            sorted([
+                asset.asset.name for asset in htmls[0].static_assets.all()]),
+            sorted([
                 "assets/edX/toy/TT_2012_Fall/essays_x250.png",
                 "assets/edX/toy/TT_2012_Fall/webGLDemo.css",
-            ]
+            ])
         )
