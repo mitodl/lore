@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Tests for search engine indexing."""
 
 from learningresources.tests.base import LoreTestCase
@@ -20,7 +21,7 @@ class SearchTestCase(LoreTestCase):
             Term.objects.create(
                 vocabulary_id=self.vocabulary.id, label=label, weight=1
             )
-            for label in ("easy", "medium", "difficult")
+            for label in ("easy", "medium", "very difficult", "ancòra")
         ]
 
     def count_results(self, query):

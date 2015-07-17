@@ -167,8 +167,10 @@ class RepositoryView(FacetedSearchView):
             context.update({
                 "repo": self.repo,
                 "perms_on_cur_repo": get_perms(self.request.user, self.repo),
+                # Add a non-slug version to the context for display. This
+                # turns a "two-tuple" into a "three-tuple."
                 "vocabularies": {
-                    k: v
+                    k: [x + (x[0].replace("_", " "),) for x in v]
                     for k, v in context["facets"]["fields"].items()
                     if k in vocabularies
                 },

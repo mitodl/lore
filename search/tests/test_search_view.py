@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Tests for repostitory listing view search."""
 
 from django.core.urlresolvers import reverse
@@ -28,3 +29,14 @@ class TestSearchView(SearchTestCase):
         )
         resp = self.client.get(reverse("repositories", args=(new_repo.slug,)))
         self.assertNotContains(resp, self.resource.title)
+
+    def test_terms_with_spaces(self):
+        """
+        Terms with spaces should show up in facet list correctly.
+        """
+        for term in self.terms:
+            self.resource.terms.add(term)
+        resp = self.client.get(reverse("repositories", args=(self.repo.slug,)))
+        self.assertContains(resp, "easy")
+        self.assertContains(resp, "ancòra")
+        self.assertContains(resp, "very difficult")
