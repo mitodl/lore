@@ -86,15 +86,23 @@ class TestViews(LoreTestCase):
         body = resp.content.decode("utf-8")
         self.assertTrue(repo_name in body)
 
-    def test_listing_unauthorized(self):
-        """View listing page."""
-        # Not authorized to view this repository...
-        body = self.assert_status_code(
+    def test_listing_not_found(self):
+        """View listing page, but repo does not exist."""
+        self.assert_status_code(
             "/repositories/99/",
+            NOT_FOUND,
+            return_body=True
+        )
+
+    def test_listing_unauthorized(self):
+        """View listing page, but not authorized to view this repository."""
+        self.logout()
+        self.login(self.USERNAME_NO_REPO)
+        self.assert_status_code(
+            self.repository_url,
             UNAUTHORIZED,
             return_body=True
         )
-        self.assertTrue("unauthorized" in body)
 
     def test_listing_importcourse_perms(self):
         """
