@@ -12,10 +12,13 @@ from rest_framework.status import (
 )
 from rest_framework.reverse import reverse
 from django.db.models import Count
+from django.contrib.auth.models import User, Permission
 
 from importer.tasks import import_file
 from learningresources.tests.base import LoreTestCase
 from learningresources.api import get_resources
+from roles.api import assign_user_to_repo_group
+from roles.permissions import GroupTypes
 
 API_BASE = '/api/v1/'
 REPO_BASE = '/api/v1/repositories/'
@@ -588,7 +591,38 @@ class RESTTestCase(LoreTestCase):
         """
         tarball_file = self.get_course_single_tarball()
         import_file(
-            tarball_file, self.repo.id, self.user.id)
+            tarball_file, repo.id, self.user.id)
         return get_resources(repo.id).annotate(
             count_assets=Count('static_assets')
         ).filter(count_assets__gt=0).first()
+
+
+class RESTAuthTestCase(RESTTestCase):
+    """REST tests for authorization"""
+
+    def setUp(self):
+        super(RESTAuthTestCase, self).setUp()
+
+        # add_repo_user is another user with add_repo permission but who
+        # does not have access to self.repo
+        self.add_repo_user = User.objects.create_user(
+            username="creator_user", password=self.PASSWORD
+        )
+        add_repo_perm = Permission.objects.get(codename=self.ADD_REPO_PERM)
+        self.add_repo_user.user_permissions.add(add_repo_perm)
+
+        # curator_user doesn't have add_repo but have view_repo permission on
+        # self.repo
+        self.curator_user = User.objects.create_user(
+            username="curator_user", password=self.PASSWORD
+        )
+        assign_user_to_repo_group(
+            self.curator_user, self.repo, GroupTypes.REPO_CURATOR)
+
+        # author_user doesn't have manage_taxonomy permission
+        self.author_user = User.objects.create_user(
+            username="author_user", password=self.PASSWORD
+        )
+        assign_user_to_repo_group(
+            self.author_user, self.repo, GroupTypes.REPO_AUTHOR
+        )
