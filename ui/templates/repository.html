@@ -29,7 +29,24 @@
 </div>
 <div class="col-md-9 col-results">
   <div class="row grid-row-top">
-    <div class="col-md-5"></div>
+    <div class="col-md-5">
+      {% if page.object_list %}
+      <!-- Split button -->
+      <span>Sort by</span>
+      <div class="btn-group">
+        <button type="button" class="btn btn-default">{{ sorting_options.current.1 }}</button>
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span class="caret"></span>
+          <span class="sr-only">Toggle Dropdown</span>
+        </button>
+        <ul class="dropdown-menu">
+          {% for sorting_option in sorting_options.all %}
+          <li><a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}sortby={{ sorting_option.0 }}">{{ sorting_option.1 }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
     <div class="col-md-7 text-right"></div>
   </div>
   {% for result in page.object_list %}
@@ -42,12 +59,12 @@
     <div class="lore-pagination">
       {% if page.has_other_pages %}
       {% if page.has_previous %}
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}page={{ page.previous_page_number }}">
+      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}page={{ page.previous_page_number }}&sortby={{ sorting_options.current.0 }}">
         <i class="fa fa-angle-left"></i>
       </a>
       {% endif %}
       {% if page.has_next %}
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix}}page={{ page.next_page_number }}">
+      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix}}page={{ page.next_page_number }}&sortby={{ sorting_options.current.0 }}">
         <i class="fa fa-angle-right"></i>
       </a>
       {% endif %}

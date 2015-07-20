@@ -17,6 +17,7 @@ import ui.urls
 from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
+from search.sorting import LoreSortingFields
 
 from learningresources.tests.base import LoreTestCase
 
@@ -260,6 +261,57 @@ class TestViews(LoreTestCase):
             self.course.course_number)
         resp = self.client.get(self.repository_url + querystring, follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
+
+    def test_listing_with_sorting(self):
+        """
+        Hit the listing with sorting and test that the current sorting
+        changes in the interface.
+        The actual sorting of results is tested in search.tests.test_indexing
+        """
+        url = self.repository_url + "?sortby={0}"
+        base_sorting_str = ('<button type="button" '
+                            'class="btn btn-default">{0}</button>')
+        # test no sort type
+        body = self.assert_status_code(
+            self.repository_url,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertIn(
+            base_sorting_str.format(
+                LoreSortingFields.get_sorting_option(
+                    LoreSortingFields.DEFAULT_SORTING_FIELD
+                )[1]
+            ),
+            body
+        )
+        # test all the allowed sort types
+        for sort_option in LoreSortingFields.all_sorting_options():
+            sort_url = url.format(sort_option[0])
+            body = self.assert_status_code(
+                sort_url,
+                HTTP_OK,
+                return_body=True
+            )
+            self.assertIn(
+                base_sorting_str.format(sort_option[1]),
+                body
+            )
+        # test sorting by not allowed sort type
+        url_not_allowed_sort_type = url.format('foo_field')
+        body = self.assert_status_code(
+            url_not_allowed_sort_type,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertIn(
+            base_sorting_str.format(
+                LoreSortingFields.get_sorting_option(
+                    LoreSortingFields.DEFAULT_SORTING_FIELD
+                )[1]
+            ),
+            body
+        )
 
     def test_serve_media(self):
         """Hit serve media"""

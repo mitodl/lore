@@ -1,7 +1,7 @@
 {% load static %}
 {% if facets.fields.course %}
 
-<div id="facet-panel" data-current-queryset="{{ qs_prefix }}"
+<div id="facet-panel" data-current-queryset="{{ qs_prefix }}sortby={{ sorting_options.current.0 }}&"
      class="panel panel-default">
   <div class="panel-heading">
     <h4 class="panel-title">

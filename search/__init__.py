@@ -1,6 +1,8 @@
 """
 Import bits of the 'search' app which must be there when Django starts.
 """
+from __future__ import unicode_literals
+
 from haystack.query import SearchQuerySet
 
 from search import signals
