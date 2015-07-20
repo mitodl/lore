@@ -222,9 +222,11 @@ define('learning_resources', [
     VocabularyOption: VocabularyOption,
     LearningResourcePanel: LearningResourcePanel,
     loader: function (repoSlug, learningResourceId, container) {
+      // Unmount and remount the component to ensure that its state
+      // is always up to date with the rest of the app.
+      React.unmountComponentAtNode(container);
       React.render(<LearningResourcePanel
         repoSlug={repoSlug} learningResourceId={learningResourceId}
-        key={[repoSlug, learningResourceId]}
         />, container);
     }
   };
