@@ -87,9 +87,12 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         """
         prepared = super(LearningResourceIndex, self).prepare(obj)
         for vocab in Vocabulary.objects.all():
-            # Values with spaces do not work, so we use the slug.
+            # Values with spaces do not work, so replace them with underscores.
+            # Slugify doesn't work because it adds hypens, which are also
+            # split by Elasticsearch.
             terms = [
-                term.label for term in obj.terms.filter(vocabulary_id=vocab.id)
+                term.label.replace(" ", "_")
+                for term in obj.terms.filter(vocabulary_id=vocab.id)
             ]
             prepared[vocab.slug] = terms
             # for faceted "_exact" in URL

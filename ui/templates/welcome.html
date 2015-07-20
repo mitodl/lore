@@ -3,7 +3,12 @@
     <div class="section-header">
         <div class="row">
             <div class="col-md-2 col-md-offset-5">{% if perms.learningresources.add_repository %}<a href="{% url 'create_repo' %}" role="button"
-                                                     class="btn btn-primary btn-large">Create repository</a>{% endif %}</div>
+                                                     class="btn btn-primary btn-large">Create repository</a>
+                {% else %}
+                    <a href="mailto:{{ support_email }}?subject=[LORE-app]Request%20permission%20to%20create%20repositories" role="button"
+                       class="btn btn-primary btn-large">Request permission to create repositories</a>
+                {% endif %}
+            </div>
         </div>
     </div>
 

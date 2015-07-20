@@ -30,6 +30,7 @@ log = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 class LoreTestCase(TestCase):
     """Handle often-needed things in tests."""
+    # pylint: disable=too-many-instance-attributes
     USERNAME = 'test'
     PASSWORD = 'test'
     USERNAME_NO_REPO = 'test2'
@@ -95,7 +96,8 @@ class LoreTestCase(TestCase):
             self.repo,
             GroupTypes.REPO_ADMINISTRATOR
         )
-
+        self.toy_resource_count = 18  # Resources in toy course.
+        self.toy_asset_count = 5  # Static assets in toy course.
         self.client = Client()
 
         self.login(username=self.USERNAME)

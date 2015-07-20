@@ -31,99 +31,9 @@ from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes, RepoPermission
 from search import get_sqs
 from taxonomy.models import Vocabulary
-from ui.forms import UploadForm, VocabularyForm, RepositoryForm
+from ui.forms import UploadForm, RepositoryForm
 
 log = logging.getLogger(__name__)
-
-
-@login_required
-def create_vocabulary(request, repo_slug):
-    """
-    Show form to create a new vocabulary
-    """
-    form = VocabularyForm()
-
-    repository = get_object_or_404(Repository, slug=repo_slug)
-
-    if request.method == "POST":
-        form = VocabularyForm(request.POST)
-
-        form.instance.repository = repository
-        form.instance.required = False
-        form.instance.weight = 1000
-        if form.is_valid():
-            form.save()
-            return redirect(
-                'edit_vocabulary',
-                vocab_slug=form.instance.slug,
-                repo_slug=repo_slug,
-            )
-
-        return render(
-            request,
-            "vocabulary.html",
-            {
-                'form': form,
-                'repo_slug': repo_slug,
-            }
-        )
-
-    return render(
-        request,
-        "vocabulary.html",
-        {
-            'form': form,
-            'repo_slug': repo_slug,
-        }
-    )
-
-
-@login_required
-def edit_vocabulary(request, repo_slug, vocab_slug):
-    """
-    Show form to edit an existing vocabulary
-    """
-    vocabulary = get_object_or_404(Vocabulary, slug=vocab_slug)
-    form = VocabularyForm(instance=vocabulary)
-
-    repository = get_object_or_404(Repository, slug=repo_slug)
-    form.instance.repository = repository
-    form.instance.required = False
-    form.instance.weight = 1000
-
-    if request.method == "POST":
-        form = VocabularyForm(request.POST, instance=vocabulary)
-
-        form.instance.repository = repository
-        form.instance.required = False
-        form.instance.weight = 1000
-        if form.is_valid():
-            form.save()
-            return redirect(
-                'edit_vocabulary',
-                vocab_slug=form.instance.slug,
-                repo_slug=repo_slug,
-            )
-
-        return render(
-            request,
-            "vocabulary.html",
-            {
-                'form': form,
-                'vocab_slug': vocab_slug,
-                'repo_slug': repo_slug,
-            }
-        )
-
-    return render(
-        request,
-        "vocabulary.html",
-        {
-            'form': form,
-            'vocab_slug': vocab_slug,
-            'repo_slug': repo_slug,
-        }
-    )
 
 
 @login_required
@@ -173,7 +83,10 @@ def welcome(request):
     return render(
         request,
         "welcome.html",
-        {"repos": get_repos(request.user.id)}
+        {
+            "repos": get_repos(request.user.id),
+            "support_email": settings.EMAIL_SUPPORT,
+        }
     )
 
 
@@ -254,8 +167,10 @@ class RepositoryView(FacetedSearchView):
             context.update({
                 "repo": self.repo,
                 "perms_on_cur_repo": get_perms(self.request.user, self.repo),
+                # Add a non-slug version to the context for display. This
+                # turns a "two-tuple" into a "three-tuple."
                 "vocabularies": {
-                    k: v
+                    k: [x + (x[0].replace("_", " "),) for x in v]
                     for k, v in context["facets"]["fields"].items()
                     if k in vocabularies
                 },

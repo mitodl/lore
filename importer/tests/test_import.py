@@ -66,7 +66,7 @@ class TestImportToy(LoreTestCase):
         import_course_from_file(self.course_zip, self.repo.id, self.user.id)
         self.assertEqual(
             get_resources(self.repo.id).count(),
-            resource_count + 5)
+            resource_count + self.toy_resource_count)
         self.assertEqual(
             Course.objects.count(),
             course_count + 1,
@@ -221,14 +221,15 @@ class TestImportToy(LoreTestCase):
         assets = StaticAsset.objects.filter(course=course)
         for asset in assets:
             self.addCleanup(default_storage.delete, asset.asset)
-        self.assertEqual(assets.count(), 3)
+        self.assertEqual(assets.count(), self.toy_asset_count)
         for asset in assets:
             base_path = static_asset_basepath(asset, '')
             self.assertIn(
                 asset.asset.name.replace(base_path, ''),
                 [
                     'test.txt', 'subdir/subtext.txt',
-                    'subs_CCxmtcICYNc.srt.sjson'
+                    'subs_CCxmtcICYNc.srt.sjson',
+                    'essays_x250.png', 'webGLDemo.css',
                 ]
             )
 
@@ -248,9 +249,9 @@ class TestImportToy(LoreTestCase):
 
         # There should be nothing.
         counts = get_counts()
-        self.assertTrue(counts.resources == 0)
-        self.assertTrue(counts.videos == 0)
-        self.assertTrue(counts.assets == 0)
+        self.assertEqual(counts.resources, 0)
+        self.assertEqual(counts.videos, 0)
+        self.assertEqual(counts.assets, 0)
         # Import the course.
         import_course_from_file(
             self.get_course_single_tarball(),
@@ -258,13 +259,9 @@ class TestImportToy(LoreTestCase):
         )
         # There should be something.
         counts = get_counts()
-        self.assertTrue(counts.resources == 5)
-        self.assertTrue(counts.videos == 2)
-        self.assertTrue(counts.assets == 3)
-        # Only one video in the course has subtitles.
-        self.assertTrue(
-            StaticAsset.objects.filter(
-                learningresource__course__id__isnull=False).count() == 1)
+        self.assertEqual(counts.resources, self.toy_resource_count)
+        self.assertEqual(counts.videos, 2)
+        self.assertEqual(counts.assets, self.toy_asset_count)
 
         # There should be a single static asset.
         course = Course.objects.all().order_by("-id")[0]  # latest course
@@ -277,4 +274,22 @@ class TestImportToy(LoreTestCase):
             video.static_assets.count()
             for video in videos
         ])
+        # Only one video in the course has subtitles.
         self.assertTrue(num_assets == 1)
+
+        # The course has an HTML block with two static assets; a CSS
+        # file and an image.
+        htmls = LearningResource.objects.filter(
+            course__course_number='toy',
+            learning_resource_type__name="html",
+            static_assets__id__isnull=False,
+        ).distinct()
+        self.assertEqual(htmls.count(), 1)
+        self.assertEqual(
+            sorted([
+                asset.asset.name for asset in htmls[0].static_assets.all()]),
+            sorted([
+                "assets/edX/toy/TT_2012_Fall/essays_x250.png",
+                "assets/edX/toy/TT_2012_Fall/webGLDemo.css",
+            ])
+        )

@@ -1,6 +1,8 @@
-define("test_utils", ["jquery", "stacktrace", "lodash",
-  "jquery_mockjax"], function($, printStackTrace, _) {
+define("test_utils", ["jquery", "stacktrace", "lodash", "QUnit",
+  "jquery_mockjax"], function($, printStackTrace, _, QUnit) {
   'use strict';
+
+  QUnit.config.testTimeout = 5000;
 
   /**
    * Number of AJAX calls intercepted by mockjax

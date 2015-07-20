@@ -1,6 +1,24 @@
 Release Notes
 -------------
 
+Version 0.5.0
+=============
+
+- Fixed display of vocabulary terms containing spaces.
+- Fixed comparison of FileFields to strings.
+- Fixed typo in search hint
+- Added bootstrap style to vocabularly learning type checkboxes Closes #337
+- Changed search box description
+- Fixed mutating of this.state which is forbidden
+- Added static file parsing to HTML elements.
+- Removed vocabulary forms since we are doing this via REST API and React instead
+- Reported code coverage for javascript on the command line
+- Added function to obtain collections
+- Set QUnit timeout to fix test error reporting
+- Added HTML reporting of javascript tests
+- Added panel for static assets
+- Added link to request create repository permission
+
 Version 0.4.0
 =============
 

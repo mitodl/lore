@@ -132,7 +132,7 @@ class TestViews(LoreTestCase):
         resp = self.upload_test_file()
         self.assertEqual(
             LearningResource.objects.count(),
-            original_count + 5,
+            original_count + self.toy_resource_count,
         )
         # We should have been redirected to the Listing page.
         self.assertContains(resp, 'Listing</title>')

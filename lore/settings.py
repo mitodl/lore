@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -225,6 +225,7 @@ EMAIL_PORT = get_var('LORE_EMAIL_PORT', 25)
 EMAIL_HOST_USER = get_var('LORE_EMAIL_USER', '')
 EMAIL_HOST_PASSWORD = get_var('LORE_EMAIL_PASSWORD', '')
 EMAIL_USE_TLS = get_var('LORE_EMAIL_TLS', False)
+EMAIL_SUPPORT = get_var('LORE_SUPPORT_EMAIL', 'support@example.com')
 DEFAULT_FROM_EMAIL = get_var('LORE_FROM_EMAIL', 'webmaster@localhost')
 
 # e-mail configurable admins

@@ -10,7 +10,7 @@
         <input
            id="id_q" name="q" type="search"
            class="form-control input-lg input-search col-md-12"
-           placeholder="Search..."
+           placeholder="Search for terms in learning resource titles, descriptions or content..."
            {% if form.q.value %}value="{{ form.q.value }}"{% endif %}
          >
         <span class="input-group-btn">
@@ -74,6 +74,9 @@
 </script>
 <script type="text/jsx"
         src="{% static "ui/js/learning_resources.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/static_assets.jsx" %}">
 </script>
 <script type="text/javascript">
   require(["listing"]);

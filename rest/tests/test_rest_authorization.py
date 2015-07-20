@@ -4,6 +4,7 @@ Tests for REST authorization
 
 from __future__ import unicode_literals
 
+import logging
 import os
 
 from rest_framework.status import (
@@ -16,9 +17,10 @@ from django.contrib.auth.models import User, Permission
 
 from rest.tests.base import RESTTestCase, REPO_BASE
 from learningresources.api import get_resources
-from learningresources.models import StaticAsset
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes, BaseGroupTypes
+
+log = logging.getLogger(__name__)
 
 
 # pylint: disable=too-many-public-methods
@@ -661,7 +663,9 @@ class TestRestAuthorization(RESTTestCase):
         self.logout()
         self.login(self.author_user.username)
         self.assertEqual(
-            6, self.get_learning_resources(self.repo.slug)['count'])
+            1 + self.toy_resource_count,
+            self.get_learning_resources(self.repo.slug)['count']
+        )
         self.get_learning_resource(self.repo.slug, lr_id)
 
         # user_norepo has no view_repo permission
@@ -750,19 +754,29 @@ class TestRestAuthorization(RESTTestCase):
 
     def test_static_assets_get(self):
         """Test for getting static assets from learning_resources"""
-        resource1 = self.import_course_tarball(self.repo)
+        def get_resource_with_asset(type_name):
+            """
+            Get a LearningResource with a StaticAsset.
+            """
+            for resource in get_resources(self.repo.id):
+                if (resource.learning_resource_type.name != type_name or
+                        resource.static_assets.count() == 0):
+                    continue
+                return resource
+        self.import_course_tarball(self.repo)
+        # Most static assets within a course will be associated with multiple
+        # resources due to the hierarchy. For the test course, we know that
+        # there is no overlap between the html and video, making them
+        # suitable for this test.
+        resource1 = get_resource_with_asset("html")
+        resource2 = get_resource_with_asset("video")
         static_asset1 = resource1.static_assets.first()
+        static_asset2 = resource2.static_assets.first()
         lr1_id = resource1.id
 
         # add a second StaticAsset to another learning resource
-        static_asset2 = StaticAsset.objects.exclude(
-            id=static_asset1.id).first()
-        resource2 = get_resources(self.repo.id).exclude(
-            id=resource1.id
-        ).first()
         resource2.static_assets.add(static_asset2)
         lr2_id = resource2.id
-
         # make sure the result for an asset contains a name and an url
         resp = self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id)
         self.assertTrue('asset' in resp)
@@ -776,7 +790,7 @@ class TestRestAuthorization(RESTTestCase):
         # make sure static assets only show up in their proper places
         self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id)
         self.assertEqual(
-            1, self.get_static_assets(self.repo.slug, lr1_id)['count'])
+            2, self.get_static_assets(self.repo.slug, lr1_id)['count'])
         self.get_static_asset(self.repo.slug, lr1_id, static_asset2.id,
                               expected_status=HTTP_404_NOT_FOUND)
         self.get_static_asset(self.repo.slug, lr2_id, static_asset1.id,
@@ -789,7 +803,7 @@ class TestRestAuthorization(RESTTestCase):
         self.logout()
         self.login(self.author_user.username)
         self.assertEqual(
-            1, self.get_static_assets(self.repo.slug, lr1_id)['count'])
+            2, self.get_static_assets(self.repo.slug, lr1_id)['count'])
         self.get_static_asset(self.repo.slug, lr1_id, static_asset1.id)
 
         # user_norepo has no view_repo permission
