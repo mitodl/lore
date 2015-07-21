@@ -108,28 +108,28 @@
     </div>
   </div>
 </div>
-{% for name, vocab in vocabularies.items %}
-{% if vocab %}
+{% for vocab, terms in vocabularies.items %}
+{% if terms %}
 <div class="panel panel-default">
   <div class="panel-heading">
     <h4 class="panel-title">
       <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#collapse-vocab-{{ forloop.counter }}">
-        {{ name|title }}
+        {{ vocab.1|title }}
       </a>
     </h4>
   </div>
   <div id="collapse-vocab-{{ forloop.counter }}" class="panel-collapse collapse in">
     <div class="panel-body">
       <ul class="icheck-list">
-        {% for term in vocab %}
+        {% for term in terms %}
         <li>
-          <input id="check-{{ name }}-{{ forloop.counter }}"
+          <input id="check-{{ vocab.0 }}-{{ forloop.counter }}"
                  tabindex="add" type="checkbox" class="icheck-11"
-                 data-facet-name="{{ name|urlencode }}_exact"
+                 data-facet-name="{{ vocab.0 }}_exact"
                  data-facet-value="{{ term.0 }}"
           >
-          <label for="check-{{ name }}-{{ forloop.counter }}">{{ term.2 }}</label>
-          <span class="badge">{{ term.1 }}</span>
+          <label for="check-{{ vocab.0 }}-{{ forloop.counter }}">{{ term.1 }}</label>
+          <span class="badge">{{ term.2 }}</span>
         </li>
         {% endfor %}
       </ul>

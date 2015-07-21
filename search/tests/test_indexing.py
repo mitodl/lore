@@ -23,13 +23,13 @@ class TestIndexing(SearchTestCase):
         """
         term = self.terms[0]
         self.assertTrue(self.count_faceted_results(
-            self.vocabulary.name, term.label) == 0)
+            self.vocabulary.id, term.id) == 0)
         self.resource.terms.add(term)
         self.assertTrue(self.count_faceted_results(
-            self.vocabulary.name, term.label) == 1)
+            self.vocabulary.id, term.id) == 1)
         self.resource.terms.remove(term)
         self.assertTrue(self.count_faceted_results(
-            self.vocabulary.name, term.label) == 0)
+            self.vocabulary.id, term.id) == 0)
 
     def test_strip_xml(self):
         """Indexed content_xml should have XML stripped."""

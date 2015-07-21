@@ -91,16 +91,13 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         """
         prepared = super(LearningResourceIndex, self).prepare(obj)
         for vocab in Vocabulary.objects.all():
-            # Values with spaces do not work, so replace them with underscores.
-            # Slugify doesn't work because it adds hypens, which are also
-            # split by Elasticsearch.
-            terms = [
-                term.label.replace(" ", "_")
-                for term in obj.terms.filter(vocabulary_id=vocab.id)
-            ]
-            prepared[vocab.slug] = terms
+            # Use the integer primary keys as index values. This saves space,
+            # and also avoids all issues dealing with "special" characters.
+            terms = set(obj.terms.filter(vocabulary_id=vocab.id).values_list(
+                'id', flat=True))
+            prepared[vocab.id] = terms
             # for faceted "_exact" in URL
-            prepared[vocab.slug + "_exact"] = terms  # for faceted "exact"
+            prepared["{0}_exact".format(vocab.id)] = terms
         return prepared
 
     def prepare_repository(self, obj):  # pylint: disable=no-self-use
