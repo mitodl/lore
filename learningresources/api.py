@@ -79,7 +79,8 @@ def create_course(org, repo_id, course_number, run, user_id):
 
 # pylint: disable=too-many-arguments
 def create_resource(
-        course, parent, resource_type, title, content_xml, mpath, url_name
+        course, parent, resource_type, title, content_xml, mpath, url_name,
+        dpath
 ):
     """
     Create a learning resource.
@@ -93,6 +94,8 @@ def create_resource(
         content_xml (unicode): XML
         mpath (unicode): Materialized path
         url_name (unicode): Resource identifier
+        dpath (unicode): Description path
+
     Returns:
         resource (learningresources.models.LearningResource):
             New LearningResource
@@ -104,6 +107,7 @@ def create_resource(
         "content_xml": content_xml,
         "materialized_path": mpath,
         "url_name": url_name,
+        "description_path": dpath,
     }
     if parent is not None:
         params["parent_id"] = parent.id
@@ -301,3 +305,41 @@ def import_static_assets(course, path):
                 name = join(root, name).replace(path + sep, '', 1)
                 django_file.name = name
                 create_static_asset(course.id, django_file)
+
+
+def join_description_paths(*args):
+    """
+    Helper function to format the description path.
+    Args:
+        args (unicode): description path
+    Returns:
+        unicode: Formatted dpath
+    """
+    return ' / '.join([dpath for dpath in args if dpath != ''])
+
+
+def update_description_path(resource, force_parent_update=False):
+    """
+    Updates the specified learning resource description path
+    based on the current title and the parent's description path
+    Args:
+        resource (learningresources.models.LearningResource): LearningResource
+        force_parent_update (boolean): force parent update
+    Returns:
+        None
+    """
+    description_path = ''
+    if resource.parent is None:
+        description_path = join_description_paths(resource.title)
+    else:
+        # if the parent doesn't have a description_path update first the parent
+        if resource.parent.description_path == '' or force_parent_update:
+            update_description_path(resource.parent, force_parent_update)
+        # the current description path is
+        # the parent's one plus the current title
+        description_path = join_description_paths(
+            resource.parent.description_path,
+            resource.title
+        )
+    resource.description_path = description_path
+    resource.save()

@@ -9,12 +9,13 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('learningresources', '0007_remove_old_date_fields'),
+        ('learningresources', '0011_learningresource_url_name'),
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='staticasset',
-            name='learning_resources',
+        migrations.AddField(
+            model_name='learningresource',
+            name='description_path',
+            field=models.TextField(blank=True),
         ),
     ]
