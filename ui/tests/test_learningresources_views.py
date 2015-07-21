@@ -28,6 +28,7 @@ NOT_FOUND = 404
 log = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-public-methods
 class TestViews(LoreTestCase):
     """Hit each view."""
 
@@ -376,3 +377,12 @@ class TestViews(LoreTestCase):
             # this is in case of python 3.3
             except AttributeError:  # pragma: no cover
                 imp.reload(ui.urls)
+
+    def test_preview_url(self):
+        """Test that preview url shows up correctly"""
+        resp = self.client.get(self.repository_url, follow=True)
+        self.assertIn(
+            '<a href="https://www.sandbox.edx.org/courses/test-org/'
+            'infinity/Febtober/jump_to_id/url_name1" '
+            'target="_blank">Preview</a>',
+            resp.content.decode('utf-8'))
