@@ -117,10 +117,57 @@ define('listing',
       // Open exports panel.
       var loggedInUsername = $("#export_button").data("logged-in-user");
 
+      /**
+       * Update checkmark on a link node
+       */
+      var updateCheckDisplay = function(node) {
+        if ($(node).data("selected")) {
+          $(node).find("i").attr("class", "fa fa-check");
+        } else {
+          $(node).find("i").attr("class", "fa fa-arrow-right");
+        }
+      };
+
+      /**
+       * Update export count badge.
+       *
+       * @param {number} direction Add this value to
+       * the existing count before rendering.
+       */
+      var updateExportCount = function(direction) {
+        var oldCount = $("#export_button").data("export-count");
+        var newCount = oldCount + direction;
+
+        $("#export_button .badge").remove();
+        if (newCount > 0) {
+          var $badge = $("<span class='badge' />");
+          $badge.append(_.escape(newCount));
+          $("#export_button").append($badge);
+        }
+        $("#export_button").data("export-count", newCount);
+      };
+
+      /**
+       * Clears exports on page. Assumes DELETE to clear on server already
+       * happened.
+       */
+      var clearExports = function() {
+        // Reset badge count.
+        $("#export_button").data("export-count", 0);
+        $("#export_button .badge").remove();
+
+        // Reset links.
+        _.each($(".link-export"), function(link) {
+          $(link).data("selected", false);
+          updateCheckDisplay(link);
+        });
+      };
+
       $('#export_button').on('click', function(event) {
         event.preventDefault();
         $('.cd-panel-exports').addClass('is-visible');
-        Exports.loader(repoSlug, loggedInUsername, $("#exports_content")[0]);
+        Exports.loader(repoSlug, loggedInUsername, clearExports,
+          $("#exports_content")[0]);
       });
 
       // Close exports panel.
@@ -231,32 +278,7 @@ define('listing',
         });
       });
 
-      var updateCheckDisplay = function(node) {
-        if ($(node).data("selected")) {
-          $(node).find("i").attr("class", "fa fa-check");
-        } else {
-          $(node).find("i").attr("class", "fa fa-arrow-right");
-        }
-      };
-
-      /**
-       * Update export count badge.
-       *
-       * @param {number} direction Add this value to
-       * the existing count before rendering.
-       */
-      var updateExportCount = function(direction) {
-        var oldCount = $("#export_button").data("export-count");
-        var newCount = oldCount + direction;
-
-        $("#export_button .badge").remove();
-        if (newCount > 0) {
-          var $badge = $("<span class='badge' />");
-          $badge.append(_.escape(newCount));
-          $("#export_button").append($badge);
-        }
-        $("#export_button").data("export-count", newCount);
-      };
+      // Initialize export display from server data.
       _.each($(".link-export"), function(node) {
         updateCheckDisplay(node);
       });

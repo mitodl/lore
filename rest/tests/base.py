@@ -26,7 +26,7 @@ REPO_BASE = '/api/v1/repositories/'
 
 
 def as_json(resp):
-    """Get JSON from response"""
+    """Get JSON from response."""
     return json.loads(resp.content.decode('utf-8'))
 
 
@@ -73,7 +73,7 @@ class RESTTestCase(LoreTestCase):
     }
 
     def assert_options_head(self, url, expected_status):
-        """Assert OPTIONS and HEAD"""
+        """Assert OPTIONS and HEAD."""
         resp = self.client.options(url)
         self.assertEqual(expected_status, resp.status_code)
         if expected_status == HTTP_200_OK:
@@ -87,7 +87,7 @@ class RESTTestCase(LoreTestCase):
         self.assertEqual(expected_status, resp.status_code)
 
     def get_repositories(self, expected_status=HTTP_200_OK):
-        """Get list of repositories"""
+        """Get list of repositories."""
         url = REPO_BASE
         self.assert_options_head(url, expected_status=expected_status)
         resp = self.client.get(url)
@@ -98,7 +98,7 @@ class RESTTestCase(LoreTestCase):
     def create_repository(self, repo_dict=DEFAULT_REPO_DICT,
                           expected_status=HTTP_201_CREATED,
                           skip_assert=False):
-        """Helper function to create repository"""
+        """Helper function to create repository."""
 
         resp = self.client.post(REPO_BASE, repo_dict)
         self.assertEqual(expected_status, resp.status_code)
@@ -118,7 +118,7 @@ class RESTTestCase(LoreTestCase):
 
     def patch_repository(self, repo_slug, repo_dict,
                          expected_status=HTTP_200_OK, skip_assert=False):
-        """Update a repository"""
+        """Update a repository."""
         resp = self.client.patch(
             '{repo_base}{repo_slug}/'.format(
                 repo_slug=repo_slug,
@@ -137,7 +137,7 @@ class RESTTestCase(LoreTestCase):
 
     def put_repository(self, repo_slug, repo_dict,
                        expected_status=HTTP_200_OK, skip_assert=False):
-        """Replace a repository"""
+        """Replace a repository."""
         resp = self.client.put(
             '{repo_base}{repo_slug}/'.format(
                 repo_slug=repo_slug,
@@ -156,7 +156,7 @@ class RESTTestCase(LoreTestCase):
             return result_dict
 
     def get_repository(self, repo_slug, expected_status=HTTP_200_OK):
-        """Get a repository"""
+        """Get a repository."""
         url = '{repo_base}{slug}/'.format(
             slug=repo_slug,
             repo_base=REPO_BASE,
@@ -170,7 +170,7 @@ class RESTTestCase(LoreTestCase):
 
     def delete_repository(self, repo_slug,
                           expected_status=HTTP_204_NO_CONTENT):
-        """Delete a repository"""
+        """Delete a repository."""
         resp = self.client.delete('{repo_base}{slug}/'.format(
             slug=repo_slug,
             repo_base=REPO_BASE,
@@ -178,7 +178,7 @@ class RESTTestCase(LoreTestCase):
         self.assertEqual(expected_status, resp.status_code)
 
     def get_vocabularies(self, repo_slug, expected_status=HTTP_200_OK):
-        """Get list of vocabularies"""
+        """Get list of vocabularies."""
         url = '{repo_base}{slug}/vocabularies/'.format(
             slug=repo_slug,
             repo_base=REPO_BASE,
@@ -192,7 +192,7 @@ class RESTTestCase(LoreTestCase):
     def create_vocabulary(self, repo_slug, vocab_dict=DEFAULT_VOCAB_DICT,
                           expected_status=HTTP_201_CREATED,
                           skip_assert=False):
-        """Create a new vocabulary"""
+        """Create a new vocabulary."""
         resp = self.client.post(
             '{repo_base}{slug}/vocabularies/'.format(
                 slug=repo_slug,
@@ -216,7 +216,7 @@ class RESTTestCase(LoreTestCase):
 
     def patch_vocabulary(self, repo_slug, vocab_slug, vocab_dict,
                          expected_status=HTTP_200_OK, skip_assert=False):
-        """Update a vocabulary"""
+        """Update a vocabulary."""
         resp = self.client.patch(
             '{repo_base}{repo_slug}/'
             'vocabularies/{vocab_slug}/'.format(
@@ -237,7 +237,7 @@ class RESTTestCase(LoreTestCase):
 
     def put_vocabulary(self, repo_slug, vocab_slug, vocab_dict,
                        expected_status=HTTP_200_OK, skip_assert=False):
-        """Replace a vocabulary"""
+        """Replace a vocabulary."""
         resp = self.client.put(
             '{repo_base}{repo_slug}/'
             'vocabularies/{vocab_slug}/'.format(
@@ -258,7 +258,7 @@ class RESTTestCase(LoreTestCase):
 
     def get_vocabulary(self, repo_slug, vocab_slug,
                        expected_status=HTTP_200_OK):
-        """Get a vocabulary"""
+        """Get a vocabulary."""
         url = '{repo_base}{repo_slug}/vocabularies/{vocab_slug}/'.format(
             repo_slug=repo_slug,
             vocab_slug=vocab_slug,
@@ -272,7 +272,7 @@ class RESTTestCase(LoreTestCase):
 
     def delete_vocabulary(self, repo_slug, vocab_slug,
                           expected_status=HTTP_204_NO_CONTENT):
-        """Delete a vocabulary"""
+        """Delete a vocabulary."""
         resp = self.client.delete(
             '{repo_base}{repo_slug}/'
             'vocabularies/{vocab_slug}/'.format(
@@ -285,7 +285,7 @@ class RESTTestCase(LoreTestCase):
 
     def get_terms(self, repo_slug, vocab_slug,
                   expected_status=HTTP_200_OK):
-        """Get list of terms"""
+        """Get list of terms."""
         url = '{repo_base}{repo_slug}/vocabularies/{vocab_slug}/terms/'.format(
             repo_slug=repo_slug,
             vocab_slug=vocab_slug,
@@ -299,7 +299,7 @@ class RESTTestCase(LoreTestCase):
 
     def create_term(self, repo_slug, vocab_slug, term_dict=DEFAULT_TERM_DICT,
                     expected_status=HTTP_201_CREATED, skip_assert=False):
-        """Create a new vocabulary"""
+        """Create a new vocabulary."""
         resp = self.client.post(
             '{repo_base}{repo_slug}/'
             'vocabularies/{vocab_slug}/terms/'.format(
@@ -326,7 +326,7 @@ class RESTTestCase(LoreTestCase):
 
     def patch_term(self, repo_slug, vocab_slug, term_slug, term_dict,
                    expected_status=HTTP_200_OK, skip_assert=False):
-        """Update a term"""
+        """Update a term."""
         resp = self.client.patch(
             '{repo_base}{repo_slug}/'
             'vocabularies/{vocab_slug}/'
@@ -349,7 +349,7 @@ class RESTTestCase(LoreTestCase):
 
     def put_term(self, repo_slug, vocab_slug, term_slug, term_dict,
                  expected_status=HTTP_200_OK, skip_assert=False):
-        """Replace a term"""
+        """Replace a term."""
         resp = self.client.put(
             '{repo_base}{repo_slug}/'
             'vocabularies/{vocab_slug}/'
@@ -372,7 +372,7 @@ class RESTTestCase(LoreTestCase):
 
     def get_term(self, repo_slug, vocab_slug, term_slug,
                  expected_status=HTTP_200_OK):
-        """Get a term"""
+        """Get a term."""
         url = (
             '{repo_base}{repo_slug}/'
             'vocabularies/{vocab_slug}/terms/{term_slug}/'.format(
@@ -390,7 +390,7 @@ class RESTTestCase(LoreTestCase):
 
     def delete_term(self, repo_slug, vocab_slug, term_slug,
                     expected_status=HTTP_204_NO_CONTENT):
-        """Delete a term"""
+        """Delete a term."""
         resp = self.client.delete(
             '{repo_base}{repo_slug}/'
             'vocabularies/{vocab_slug}/'
@@ -437,7 +437,7 @@ class RESTTestCase(LoreTestCase):
                     username=None, group_type=None,
                     expected_status=HTTP_200_OK,
                     skip_options_head_test=False):
-        """Get members"""
+        """Get members."""
         url = self.build_members_url(urlfor, repo_slug, username, group_type)
         if not skip_options_head_test:
             self.assert_options_head(url, expected_status=expected_status)
@@ -722,9 +722,62 @@ class RESTTestCase(LoreTestCase):
             ), resp['Location'])
             return result_dict
 
+    def get_learning_resource_export_tasks(self, repo_slug,
+                                           expected_status=HTTP_200_OK):
+        """
+        Helper method to retrieve export tasks for the user. Should be only
+        one.
+        """
+        url = (
+            '/api/v1/repositories/{repo_slug}/'
+            'learning_resource_export_tasks/'.format(
+                repo_slug=repo_slug,
+            )
+        )
+        self.assert_options_head(url, expected_status)
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            result = as_json(resp)
+            # Currently we only allow one task at a time.
+            self.assertLessEqual(result['count'], 1)
+            return result
+
+    def get_learning_resource_export_task(self, repo_slug, task_id,
+                                          expected_status=HTTP_200_OK):
+        """
+        Helper method to retrieve export task for the user.
+        """
+        resp = self.client.get(
+            '/api/v1/repositories/{repo_slug}/'
+            'learning_resource_export_tasks/{task_id}/'.format(
+                repo_slug=repo_slug,
+                task_id=task_id,
+            )
+        )
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            return as_json(resp)
+
+    def create_learning_resource_export_task(self, repo_slug,
+                                             expected_status=HTTP_201_CREATED):
+        """
+        Helper method to create a task for the user to export a tarball of
+        LearningResources.
+        """
+        resp = self.client.post(
+            '/api/v1/repositories/{repo_slug}/'
+            'learning_resource_export_tasks/'.format(
+                repo_slug=repo_slug,
+            )
+        )
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_201_CREATED:
+            return as_json(resp)
+
 
 class RESTAuthTestCase(RESTTestCase):
-    """REST tests for authorization"""
+    """REST tests for authorization."""
 
     def setUp(self):
         super(RESTAuthTestCase, self).setUp()
