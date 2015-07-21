@@ -5,6 +5,8 @@ Learning resources data model
 from __future__ import unicode_literals
 
 import logging
+# pylint currently has a bug which incorrectly flags this as an error
+import six.moves.urllib.parse as urllib_parse  # pylint: disable=import-error
 
 from django.db import models
 from django.db import transaction
@@ -16,6 +18,7 @@ from django.shortcuts import get_object_or_404
 from audit.models import BaseModel
 from roles.api import roles_init_new_repo, roles_update_repo
 from roles.permissions import RepoPermission
+from lore.settings import LORE_PREVIEW_BASE_URL
 
 log = logging.getLogger(__name__)
 
@@ -129,6 +132,33 @@ class LearningResource(BaseModel):
     xa_nr_attempts = models.IntegerField(default=0)
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
+    url_name = models.TextField(null=True)
+
+    def get_preview_url(self):
+        """Create a preview URL."""
+        key = "{org}/{course}/{run}".format(
+            org=self.course.org,
+            course=self.course.course_number,
+            run=self.course.run,
+        )
+
+        if self.url_name is not None:
+            url_format = 'courses/{key}/jump_to_id/{preview_id}'
+            return LORE_PREVIEW_BASE_URL + urllib_parse.quote(
+                url_format.format(
+                    base_url=LORE_PREVIEW_BASE_URL,
+                    key=key,
+                    preview_id=self.url_name,
+                )
+            )
+        else:
+            url_format = 'courses/{key}/courseware'
+            return LORE_PREVIEW_BASE_URL + urllib_parse.quote(
+                url_format.format(
+                    base_url=LORE_PREVIEW_BASE_URL,
+                    key=key,
+                )
+            )
 
 
 @python_2_unicode_compatible

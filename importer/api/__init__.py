@@ -92,7 +92,9 @@ def import_course_from_path(path, repo_id, user_id):
     Returns:
         course (learningresources.Course)
     """
-    bundle = XBundle()
+    bundle = XBundle(
+        keep_urls=True, keep_studio_urls=True, preserve_url_name=True
+    )
     bundle.import_from_directory(path)
     static_dir = join(path, 'static')
     course = import_course(bundle, repo_id, user_id, static_dir)
@@ -112,6 +114,7 @@ def import_course(bundle, repo_id, user_id, static_dir):
         learningresources.models.Course
     """
     src = bundle.course
+
     course = create_course(
         org=src.attrib["org"],
         repo_id=repo_id,
@@ -130,9 +133,10 @@ def import_children(course, element, parent):
     of an XML tree.
 
     Args:
-        course (learningresources.Course): Course
+        course (learningresources.models.Course): Course
         element (lxml.etree): XML element within xbundle
-        parent (learningresources.LearningResource): Parent LearningResource
+        parent (learningresources.models.LearningResource):
+            Parent LearningResource
     Returns:
         None
     """
@@ -142,6 +146,7 @@ def import_children(course, element, parent):
         title=element.attrib.get("display_name", "MISSING"),
         content_xml=etree.tostring(element),
         mpath=mpath,
+        url_name=element.attrib.get("url_name", None),
     )
     target = "/static/"
     if element.tag == "video":
