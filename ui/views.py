@@ -31,7 +31,7 @@ from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes, RepoPermission
 from search import get_sqs
 from search.sorting import LoreSortingFields
-from taxonomy.models import Vocabulary
+from taxonomy.models import Vocabulary, Term
 from ui.forms import UploadForm, RepositoryForm
 
 log = logging.getLogger(__name__)
@@ -123,6 +123,58 @@ def create_repo(request):
     )
 
 
+def get_vocabularies(facets):
+    """
+    Parse facet information for the template.
+    It will return a dictionary that looks like this:
+
+    {
+        (u'13', u'difficulty'): [(38, u'medium', 23), (17, u'hard', 19)],
+        (u'15', u'prerequisite'): [(44, u'yes', 23)]
+    }
+
+    The keys are tuples with Vocabulary ID and name for the key,
+    and a list of tuples containing id, label, and count for the terms.
+
+    This is for ease-of-use in the template, where the integer primary keys
+    are used for search links and the names/labels are used for display.
+
+    Args:
+        facets (dict): facet ID with terms & term counts
+    Returns:
+        vocabularies (dict): dict of vocab info to term info
+    """
+
+    if "fields" not in facets:
+        return {}
+    vocab_ids = []
+    term_ids = []
+    for vocab_id, counts in facets["fields"].items():
+        if not vocab_id.isdigit():
+            continue
+        vocab_ids.append(int(vocab_id))
+        for term_id, count in counts:
+            term_ids.append(term_id)
+
+    vocabs = {
+        x: y for x, y in Vocabulary.objects.filter(
+            id__in=vocab_ids).values_list('id', 'name')
+    }
+    terms = {
+        x: y for x, y in Term.objects.filter(
+            id__in=term_ids).values_list('id', 'label')
+    }
+    vocabularies = {}
+    for vocabulary_id, term_data in facets["fields"].items():
+        if not vocabulary_id.isdigit():
+            continue
+        vocab = (vocabulary_id, vocabs[int(vocabulary_id)])
+        vocabularies[vocab] = []
+        for t_id, count in term_data:
+            vocabularies[vocab].append((t_id, terms[int(t_id)], count))
+    return vocabularies
+
+
 class RepositoryView(FacetedSearchView):
     """Subclass of haystack.views.FacetedSearchView"""
 
@@ -154,7 +206,6 @@ class RepositoryView(FacetedSearchView):
     def extra_context(self):
         """Add to the context."""
         context = super(RepositoryView, self).extra_context()
-        vocabularies = Vocabulary.objects.all().values_list("slug", flat=True)
         params = dict(self.request.GET.copy())
         qs_prefix = "?"
         # Chop out page number so we don't end up with
@@ -175,25 +226,18 @@ class RepositoryView(FacetedSearchView):
                 )
             qs_prefix = "?{0}&".format("&".join(qs_prefix))
 
-        if "fields" in context["facets"]:
-            context.update({
-                "repo": self.repo,
-                "perms_on_cur_repo": get_perms(self.request.user, self.repo),
-                # Add a non-slug version to the context for display. This
-                # turns a "two-tuple" into a "three-tuple."
-                "vocabularies": {
-                    k: [x + (x[0].replace("_", " "),) for x in v]
-                    for k, v in context["facets"]["fields"].items()
-                    if k in vocabularies
-                },
-                "qs_prefix": qs_prefix,
-                "sorting_options": {
-                    "current": LoreSortingFields.get_sorting_option(
-                        self.sortby),
-                    "all": LoreSortingFields.all_sorting_options_but(
-                        self.sortby)
-                }
-            })
+        context.update({
+            "repo": self.repo,
+            "perms_on_cur_repo": get_perms(self.request.user, self.repo),
+            "vocabularies": get_vocabularies(context["facets"]),
+            "qs_prefix": qs_prefix,
+            "sorting_options": {
+                "current": LoreSortingFields.get_sorting_option(
+                    self.sortby),
+                "all": LoreSortingFields.all_sorting_options_but(
+                    self.sortby)
+            }
+        })
         return context
 
     def build_form(self, form_kwargs=None):
