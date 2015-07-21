@@ -1,6 +1,7 @@
 """
-Unit tests for REST api
+REST tests relating to vocabularies and terms
 """
+
 from __future__ import unicode_literals
 
 from rest_framework.status import (
@@ -11,114 +12,25 @@ from rest_framework.status import (
     HTTP_405_METHOD_NOT_ALLOWED,
 )
 
-from importer.tasks import import_file
-from learningresources.models import (
-    Repository,
-    LearningResource,
-    LearningResourceType,
+from rest.tests.base import (
+    RESTAuthTestCase,
+    RESTTestCase,
+    REPO_BASE,
+    as_json,
 )
-from learningresources.api import get_resources
-from taxonomy.models import Vocabulary, Term
-
 from rest.serializers import (
-    RepositorySerializer,
     VocabularySerializer,
     TermSerializer,
 )
-from .base import (
-    RESTTestCase,
-    REPO_BASE,
-    API_BASE,
-    as_json,
-)
+from taxonomy.models import Vocabulary, Term
+from learningresources.models import LearningResourceType
 
 
-class TestRest(RESTTestCase):
+# pylint: disable=invalid-name
+class TestVocabulary(RESTTestCase):
     """
-    REST test
+    REST tests relating to vocabularies and terms
     """
-
-    def test_repositories(self):
-        """
-        Test for Repository
-        """
-        repositories = self.get_repositories()
-        self.assertEqual(1, repositories['count'])
-
-        self.create_repository()
-        repositories = self.get_repositories()
-        self.assertEqual(2, repositories['count'])
-        repo_slug = repositories['results'][1]['slug']
-
-        # test PUT and PATCH
-        input_dict = {
-            'name': 'name',
-            'description': 'description',
-        }
-        input_dict_changed = {
-            'name': 'name',
-            'description': 'changed description',
-        }
-
-        # patch with missing slug
-        self.patch_repository(
-            "missing", {'name': 'rename'},
-            expected_status=HTTP_404_NOT_FOUND
-        )
-
-        self.patch_repository(
-            repo_slug, {'name': 'rename'},
-            expected_status=HTTP_405_METHOD_NOT_ALLOWED)
-
-        # put with missing slug
-        self.put_repository("missing slug", input_dict,
-                            expected_status=HTTP_404_NOT_FOUND)
-
-        self.put_repository(
-            repo_slug, input_dict,
-            expected_status=HTTP_405_METHOD_NOT_ALLOWED)
-
-        # verify change of data
-        self.put_repository(
-            repo_slug, input_dict_changed,
-            expected_status=HTTP_405_METHOD_NOT_ALLOWED)
-
-        # never created a duplicate
-        self.assertEqual(2, Repository.objects.count())
-
-        # call to verify HTTP_OK
-        self.get_repository(repo_slug)
-
-        # delete a repository
-        self.delete_repository(repo_slug,
-                               expected_status=HTTP_405_METHOD_NOT_ALLOWED)
-
-        repositories = self.get_repositories()
-        self.assertEqual(2, repositories['count'])
-
-        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
-        vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(1, vocabularies['count'])
-
-        self.delete_repository(self.repo.slug,
-                               expected_status=HTTP_405_METHOD_NOT_ALLOWED)
-
-        self.delete_vocabulary(self.repo.slug, vocab_slug)
-
-        vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(0, vocabularies['count'])
-
-        self.delete_repository(self.repo.slug,
-                               expected_status=HTTP_405_METHOD_NOT_ALLOWED)
-
-        self.get_repositories()
-        self.get_repository("missing", expected_status=HTTP_404_NOT_FOUND)
-
-        # as anonymous
-        self.logout()
-        self.get_repositories(expected_status=HTTP_403_FORBIDDEN)
-        self.get_repository("missing", expected_status=HTTP_403_FORBIDDEN)
-
     def test_vocabularies(self):
         """
         Test for Vocabulary
@@ -485,38 +397,6 @@ class TestRest(RESTTestCase):
                       expected_status=HTTP_404_NOT_FOUND)
         self.get_term(self.repo.slug, vocab2_slug, term2_slug)
 
-    def test_repository_pagination(self):
-        """Test pagination for collections"""
-
-        expected = [
-            self.create_repository(
-                {
-                    'name': "name{i}".format(i=i),
-                    "description": "description"
-                }
-            ) for i in range(40)]
-
-        repositories = self.get_repositories()
-
-        # 40 we created + self.repo
-        self.assertEqual(41, repositories['count'])
-        self.assertEqual(
-            [RepositorySerializer(
-                Repository.objects.get(id=x['id'])).data
-             for x in expected[:19]],
-            repositories['results'][1:20])
-
-        resp = self.client.get(
-            '{repo_base}?page=2'.format(
-                repo_base=REPO_BASE,
-            ))
-        self.assertEqual(HTTP_200_OK, resp.status_code)
-        repositories = as_json(resp)
-        self.assertEqual(41, repositories['count'])
-        self.assertEqual(
-            [RepositorySerializer(Repository.objects.get(id=x['id'])).data
-             for x in expected[19:39]], repositories['results'])
-
     def test_vocabulary_pagination(self):
         """Test pagination for collections"""
 
@@ -584,33 +464,6 @@ class TestRest(RESTTestCase):
         self.assertEqual(40, terms['count'])
         self.assertEqual([TermSerializer(x).data
                           for x in expected[20:40]], terms['results'])
-
-    # for some reason Pylint has issues with this name
-    # pylint: disable=invalid-name
-    def test_immutable_fields_repository(self):
-        """Test repository immutable fields"""
-        repo_dict = {
-            'id': -1,
-            'slug': 'sluggy',
-            'name': 'other name',
-            'description': 'description',
-            'date_created': "2015-01-01",
-            'created_by': self.user_norepo.id,
-        }
-
-        def assert_not_changed(new_dict):
-            """Check that fields have not changed"""
-            # These keys should be different since they are immutable or set by
-            # the serializer.
-            for field in ('id', 'slug', 'date_created'):
-                self.assertNotEqual(repo_dict[field], new_dict[field])
-
-            # created_by is set internally and should not show up in output.
-            self.assertNotIn('created_by', new_dict)
-            repository = Repository.objects.get(slug=new_dict['slug'])
-            self.assertEqual(repository.created_by.id, self.user.id)
-
-        assert_not_changed(self.create_repository(repo_dict, skip_assert=True))
 
     def test_immutable_fields_vocabulary(self):
         """Test immutable fields for vocabulary"""
@@ -696,191 +549,6 @@ class TestRest(RESTTestCase):
         )
         assert_not_changed(result)
 
-    def test_immutable_fields_learning_resource(self):
-        """Test immutable fields for term"""
-        self.import_course_tarball(self.repo)
-        resource = LearningResource.objects.first()
-        lr_id = resource.id
-
-        lr_dict = {
-            "id": 99,
-            "learning_resource_type": 4,
-            "static_assets": [3],
-            "title": "Getting Help",
-            "description": "description",
-            "content_xml": "...",
-            "materialized_path":
-                "/course/chapter[4]/sequential[1]/vertical[3]",
-            "url_path": "url_path",
-            "parent": 22,
-            "copyright": "copyright",
-            "xa_nr_views": 1,
-            "xa_nr_attempts": 2,
-            "xa_avg_grade": 3.0,
-            "xa_histogram_grade": 4.0,
-            "terms": [],
-            "preview_url": "",
-        }
-
-        def assert_not_changed(new_dict):
-            """Check that fields have not changed"""
-            # These keys should be different since they are immutable or set by
-            # the serializer.
-            fields = (
-                'id', 'learning_resource_type', 'static_assets', 'title',
-                'content_xml', 'materialized_path', 'url_path', 'parent',
-                'copyright', 'xa_nr_views', 'xa_nr_attempts', 'xa_avg_grade',
-                'xa_histogram_grade', 'preview_url'
-            )
-            for field in fields:
-                self.assertNotEqual(lr_dict[field], new_dict[field])
-
-        assert_not_changed(
-            self.patch_learning_resource(self.repo.slug, lr_id, lr_dict,
-                                         skip_assert=True))
-        assert_not_changed(
-            self.put_learning_resource(self.repo.slug, lr_id, lr_dict,
-                                       skip_assert=True))
-
-    def test_missing_learning_resource(self):
-        """Test for an invalid learning resource id"""
-        repo_slug1 = self.repo.slug
-        resource1 = self.import_course_tarball(self.repo)
-        lr1_id = resource1.id
-
-        # import from a different course so it's not a duplicate course
-        zip_file = self.get_course_zip()
-        new_repo_dict = self.create_repository()
-        repo_slug2 = new_repo_dict['slug']
-        repo_id2 = new_repo_dict['id']
-        import_file(
-            zip_file, repo_id2, self.user.id)
-        resource2 = get_resources(repo_id2).first()
-        lr2_id = resource2.id
-
-        # repo_slug1 should own lr1_id and repo_slug2 should own lr2_id
-        self.get_learning_resource(repo_slug1, lr1_id)
-        self.get_learning_resource(repo_slug2, lr1_id,
-                                   expected_status=HTTP_404_NOT_FOUND)
-        self.get_learning_resource(repo_slug1, lr2_id,
-                                   expected_status=HTTP_404_NOT_FOUND)
-        self.get_learning_resource(repo_slug2, lr2_id)
-
-    def test_filefield_serialization(self):
-        """Make sure that URL output is turned on in settings"""
-        resource = self.import_course_tarball(self.repo)
-        static_assets = self.get_static_assets(
-            self.repo.slug, resource.id)['results']
-        self.assertTrue(static_assets[0]['asset'].startswith("http"))
-
-    def test_root(self):
-        """
-        Test root of API
-        """
-        resp = self.client.get(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.post(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.head(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.patch(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.put(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.options(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-
-        self.logout()
-        resp = self.client.get(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.post(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.head(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.patch(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.put(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-        resp = self.client.options(API_BASE)
-        self.assertEqual(HTTP_404_NOT_FOUND, resp.status_code)
-
-    def test_add_term_to_learning_resource(self):
-        """
-        Add a term to a learning resource via PATCH
-        """
-
-        resource = self.import_course_tarball(self.repo)
-        lr_id = resource.id
-
-        vocab1_slug = self.create_vocabulary(self.repo.slug)['slug']
-        supported_term_slug = self.create_term(
-            self.repo.slug, vocab1_slug)['slug']
-
-        # This should change soon but for now we can't set this via API
-        Vocabulary.objects.get(slug=vocab1_slug).learning_resource_types.add(
-            resource.learning_resource_type
-        )
-
-        vocab_dict = dict(self.DEFAULT_VOCAB_DICT)
-        vocab_dict['name'] += " changed"
-        vocab2_slug = self.create_vocabulary(
-            self.repo.slug, vocab_dict)['slug']
-        unsupported_term_slug = self.create_term(
-            self.repo.slug, vocab2_slug)['slug']
-
-        self.assertEqual([], self.get_learning_resource(
-            self.repo.slug, lr_id)['terms'])
-
-        self.patch_learning_resource(
-            self.repo.slug, lr_id, {"terms": [supported_term_slug]})
-        self.patch_learning_resource(
-            self.repo.slug, lr_id, {"terms": ["missing"]},
-            expected_status=HTTP_400_BAD_REQUEST)
-        self.patch_learning_resource(
-            self.repo.slug, lr_id, {"terms": [unsupported_term_slug]},
-            expected_status=HTTP_400_BAD_REQUEST)
-
-    def test_learning_resource_types(self):
-        """
-        Get from learning_resource_types
-        """
-        base_url = "{}learning_resource_types/".format(API_BASE)
-
-        resp = self.client.get(base_url)
-        self.assertEqual(HTTP_200_OK, resp.status_code)
-        types = as_json(resp)
-
-        self.assertEqual(sorted([lrt.name for lrt
-                                 in LearningResourceType.objects.all()]),
-                         sorted([t['name'] for t in types['results']]))
-
-        # nothing besides GET, OPTION, HEAD allowed
-        resp = self.client.options(base_url)
-        self.assertEqual(HTTP_200_OK, resp.status_code)
-        resp = self.client.head(base_url)
-        self.assertEqual(HTTP_200_OK, resp.status_code)
-        resp = self.client.post(base_url, {})
-        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
-        resp = self.client.patch(base_url, {})
-        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
-        resp = self.client.put(base_url, {})
-        self.assertEqual(HTTP_405_METHOD_NOT_ALLOWED, resp.status_code)
-
-        # restricted to logged in users
-        self.logout()
-        resp = self.client.get(base_url)
-        self.assertEqual(HTTP_403_FORBIDDEN, resp.status_code)
-
-        # but otherwise unrestricted
-        self.login(self.user_norepo)
-        resp = self.client.get(base_url)
-        self.assertEqual(HTTP_200_OK, resp.status_code)
-        types = as_json(resp)
-
-        self.assertEqual(sorted([lrt.name for lrt
-                                 in LearningResourceType.objects.all()]),
-                         sorted([t['name'] for t in types['results']]))
-
     def test_vocabulary_learning_resource_types(self):
         """
         Test learning_resource_types field on vocabularies
@@ -932,28 +600,290 @@ class TestRest(RESTTestCase):
             self.get_vocabulary(
                 self.repo.slug, vocab_slug)['learning_resource_types'])
 
-    def test_preview_url(self):
-        """
-        Assert preview url behavior for learning resources
-        """
-        learning_resource = LearningResource.objects.first()
-        expected_jump_to_id_url = (
-            "https://www.sandbox.edx.org/courses/"
-            "test-org/infinity/Febtober/jump_to_id/url_name1"
-        )
-        self.assertEqual(
-            expected_jump_to_id_url,
-            learning_resource.get_preview_url()
+
+# pylint: disable=too-many-ancestors
+class TestVocabularyAuthorization(RESTAuthTestCase):
+    """
+    Tests relating to term and vocabulary authorization
+    """
+    def test_vocabulary_create(self):
+        """Test create vocabulary"""
+        self.logout()
+        self.login(self.curator_user.username)
+
+        self.create_vocabulary(self.repo.slug)
+        self.assertEqual(1, self.get_vocabularies(self.repo.slug)['count'])
+
+        # login as author which doesn't have manage_taxonomy permissions
+        self.logout()
+        self.login(self.author_user.username)
+
+        vocab_dict = dict(self.DEFAULT_VOCAB_DICT)
+        vocab_dict['name'] = 'other_name'  # prevent name collision
+
+        # author does not have create access
+        self.create_vocabulary(
+            self.repo.slug, vocab_dict,
+            expected_status=HTTP_403_FORBIDDEN
         )
 
-        resource_dict = self.get_learning_resource(
-            self.repo.slug, learning_resource.id)
-        self.assertEqual(
-            expected_jump_to_id_url, resource_dict['preview_url'])
+        # make sure at least view_repo is needed
+        self.logout()
+        self.login(self.user_norepo.username)
 
-        learning_resource.url_name = None
-        self.assertEqual(
-            "https://www.sandbox.edx.org/courses/"
-            "test-org/infinity/Febtober/courseware",
-            learning_resource.get_preview_url()
+        self.create_vocabulary(self.repo.slug, vocab_dict,
+                               expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.create_vocabulary(self.repo.slug, vocab_dict,
+                               expected_status=HTTP_403_FORBIDDEN)
+
+    def test_vocabulary_put_patch(self):
+        """Test update vocabulary"""
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+
+        self.logout()
+        self.login(self.curator_user.username)
+
+        self.patch_vocabulary(self.repo.slug, vocab_slug,
+                              self.DEFAULT_VOCAB_DICT)
+        self.put_vocabulary(self.repo.slug, vocab_slug,
+                            self.DEFAULT_VOCAB_DICT)
+
+        # login as author which doesn't have manage_taxonomy permissions
+        self.logout()
+        self.login(self.author_user.username)
+
+        self.patch_vocabulary(self.repo.slug, vocab_slug,
+                              self.DEFAULT_VOCAB_DICT,
+                              expected_status=HTTP_403_FORBIDDEN)
+        self.put_vocabulary(self.repo.slug, vocab_slug,
+                            self.DEFAULT_VOCAB_DICT,
+                            expected_status=HTTP_403_FORBIDDEN)
+
+        # make sure at least view_repo is needed
+        self.logout()
+        self.login(self.user_norepo.username)
+        self.patch_vocabulary(self.repo.slug, vocab_slug,
+                              self.DEFAULT_VOCAB_DICT,
+                              expected_status=HTTP_403_FORBIDDEN)
+        self.put_vocabulary(self.repo.slug, vocab_slug,
+                            self.DEFAULT_VOCAB_DICT,
+                            expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.patch_vocabulary(self.repo.slug, vocab_slug,
+                              self.DEFAULT_VOCAB_DICT,
+                              expected_status=HTTP_403_FORBIDDEN)
+        self.put_vocabulary(self.repo.slug, vocab_slug,
+                            self.DEFAULT_VOCAB_DICT,
+                            expected_status=HTTP_403_FORBIDDEN)
+
+    def test_vocabulary_delete(self):
+        """Test delete vocabulary"""
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+
+        # login as author which doesn't have manage_taxonomy permissions
+        self.logout()
+        self.login(self.author_user.username)
+
+        self.delete_vocabulary(self.repo.slug, vocab_slug,
+                               expected_status=HTTP_403_FORBIDDEN)
+
+        # curator does have manage_taxonomy permissions
+        self.logout()
+        self.login(self.curator_user.username)
+        self.delete_vocabulary(self.repo.slug, vocab_slug)
+
+        # vocab is missing
+        self.create_term(self.repo.slug, vocab_slug,
+                         expected_status=HTTP_404_NOT_FOUND)
+        self.delete_vocabulary(self.repo.slug, vocab_slug,
+                               expected_status=HTTP_404_NOT_FOUND)
+
+        # recreate vocab so we can delete it
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+
+        # author has view_repo but delete not allowed
+        self.logout()
+        self.login(self.author_user.username)
+        self.delete_vocabulary(self.repo.slug, vocab_slug,
+                               expected_status=HTTP_403_FORBIDDEN)
+
+        # make sure at least view_repo is needed
+        self.logout()
+        self.login(self.user_norepo.username)
+
+        self.delete_vocabulary(self.repo.slug, vocab_slug,
+                               expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.delete_vocabulary(self.repo.slug, vocab_slug,
+                               expected_status=HTTP_403_FORBIDDEN)
+
+    def test_vocabulary_get(self):
+        """Test get vocabulary and vocabularies"""
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+
+        # author_user has view_repo permissions
+        self.logout()
+        self.login(self.author_user.username)
+        self.assertEqual(1, self.get_vocabularies(self.repo.slug)['count'])
+        self.get_vocabulary(self.repo.slug, vocab_slug)
+
+        # user_norepo has no view_repo permission
+        self.logout()
+        self.login(self.user_norepo.username)
+        self.get_vocabularies(
+            self.repo.slug, expected_status=HTTP_403_FORBIDDEN)
+        self.get_vocabulary(self.repo.slug, vocab_slug,
+                            expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.get_vocabularies(
+            self.repo.slug, expected_status=HTTP_403_FORBIDDEN)
+        self.get_vocabulary(self.repo.slug, vocab_slug,
+                            expected_status=HTTP_403_FORBIDDEN)
+
+    def test_term_create(self):
+        """Test create term"""
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+
+        # curator has manage_taxonomy permission
+        self.logout()
+        self.login(self.curator_user.username)
+
+        self.create_term(self.repo.slug, vocab_slug)
+        self.assertEqual(1, self.get_terms(
+            self.repo.slug, vocab_slug)['count'])
+
+        # login as author which doesn't have manage_taxonomy permissions
+        self.logout()
+        self.login(self.author_user.username)
+
+        term_dict = dict(self.DEFAULT_TERM_DICT)
+        term_dict['label'] = 'other_name'  # prevent name collision
+
+        # author does not have create access
+        self.create_term(
+            self.repo.slug, vocab_slug, term_dict,
+            expected_status=HTTP_403_FORBIDDEN
         )
+
+        # make sure at least view_repo is needed
+        self.logout()
+        self.login(self.user_norepo.username)
+        self.create_term(
+            self.repo.slug, vocab_slug, term_dict,
+            expected_status=HTTP_403_FORBIDDEN
+        )
+
+        # as anonymous
+        self.logout()
+        self.create_term(
+            self.repo.slug, vocab_slug, term_dict,
+            expected_status=HTTP_403_FORBIDDEN
+        )
+
+    def test_term_put_patch(self):
+        """Test update term"""
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+        term_slug = self.create_term(self.repo.slug, vocab_slug)['slug']
+
+        self.logout()
+        self.login(self.curator_user.username)
+
+        self.patch_term(self.repo.slug, vocab_slug, term_slug,
+                        self.DEFAULT_TERM_DICT)
+        self.put_term(self.repo.slug, vocab_slug, term_slug,
+                      self.DEFAULT_TERM_DICT)
+
+        # login as author which doesn't have manage_taxonomy permissions
+        self.logout()
+        self.login(self.author_user.username)
+
+        self.patch_term(self.repo.slug, vocab_slug, term_slug,
+                        self.DEFAULT_TERM_DICT,
+                        expected_status=HTTP_403_FORBIDDEN)
+        self.put_term(self.repo.slug, vocab_slug, term_slug,
+                      self.DEFAULT_TERM_DICT,
+                      expected_status=HTTP_403_FORBIDDEN)
+
+        # make sure at least view_repo is needed
+        self.logout()
+        self.login(self.user_norepo.username)
+
+        self.patch_term(self.repo.slug, vocab_slug, term_slug,
+                        self.DEFAULT_TERM_DICT,
+                        expected_status=HTTP_403_FORBIDDEN)
+        self.put_term(self.repo.slug, vocab_slug, term_slug,
+                      self.DEFAULT_TERM_DICT,
+                      expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.patch_term(self.repo.slug, vocab_slug, term_slug,
+                        self.DEFAULT_TERM_DICT,
+                        expected_status=HTTP_403_FORBIDDEN)
+        self.put_term(self.repo.slug, vocab_slug, term_slug,
+                      self.DEFAULT_TERM_DICT,
+                      expected_status=HTTP_403_FORBIDDEN)
+
+    def test_term_delete(self):
+        """Test delete term"""
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+        term_slug = self.create_term(self.repo.slug, vocab_slug)['slug']
+
+        # login as author which doesn't have manage_taxonomy permissions
+        self.logout()
+        self.login(self.author_user.username)
+
+        self.delete_term(self.repo.slug, vocab_slug, term_slug,
+                         expected_status=HTTP_403_FORBIDDEN)
+
+        # curator does have manage_taxonomy permissions
+        self.logout()
+        self.login(self.curator_user.username)
+        self.delete_term(self.repo.slug, vocab_slug, term_slug)
+
+        # make sure at least view_repo is needed
+        self.logout()
+        self.login(self.user_norepo.username)
+        self.delete_term(self.repo.slug, vocab_slug, term_slug,
+                         expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.delete_term(self.repo.slug, vocab_slug, term_slug,
+                         expected_status=HTTP_403_FORBIDDEN)
+
+    def test_term_get(self):
+        """Test retrieve term"""
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+        term_slug = self.create_term(self.repo.slug, vocab_slug)['slug']
+
+        # author_user has view_repo permissions
+        self.logout()
+        self.login(self.author_user.username)
+        self.assertEqual(1, self.get_terms(
+            self.repo.slug, vocab_slug)['count'])
+        self.get_term(self.repo.slug, vocab_slug, term_slug)
+
+        # user_norepo has no view_repo permission
+        self.logout()
+        self.login(self.user_norepo.username)
+        self.get_terms(self.repo.slug, vocab_slug,
+                       expected_status=HTTP_403_FORBIDDEN)
+        self.get_term(self.repo.slug, vocab_slug, term_slug,
+                      expected_status=HTTP_403_FORBIDDEN)
+
+        # as anonymous
+        self.logout()
+        self.get_terms(self.repo.slug, vocab_slug,
+                       expected_status=HTTP_403_FORBIDDEN)
+        self.get_term(self.repo.slug, vocab_slug, term_slug,
+                      expected_status=HTTP_403_FORBIDDEN)
