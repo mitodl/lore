@@ -722,6 +722,59 @@ class RESTTestCase(LoreTestCase):
             ), resp['Location'])
             return result_dict
 
+    def get_learning_resource_export_tasks(self, repo_slug,
+                                           expected_status=HTTP_200_OK):
+        """
+        Helper method to retrieve export tasks for the user. Should be only
+        one.
+        """
+        url = (
+            '/api/v1/repositories/{repo_slug}/'
+            'learning_resource_export_tasks/'.format(
+                repo_slug=repo_slug,
+            )
+        )
+        self.assert_options_head(url, expected_status)
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            result = as_json(resp)
+            # Currently we only allow one task at a time.
+            self.assertLessEqual(result['count'], 1)
+            return result
+
+    def get_learning_resource_export_task(self, repo_slug, task_id,
+                                          expected_status=HTTP_200_OK):
+        """
+        Helper method to retrieve export task for the user.
+        """
+        resp = self.client.get(
+            '/api/v1/repositories/{repo_slug}/'
+            'learning_resource_export_tasks/{task_id}/'.format(
+                repo_slug=repo_slug,
+                task_id=task_id,
+            )
+        )
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            return as_json(resp)
+
+    def create_learning_resource_export_task(self, repo_slug,
+                                             expected_status=HTTP_201_CREATED):
+        """
+        Helper method to create a task for the user to export a tarball of
+        LearningResources.
+        """
+        resp = self.client.post(
+            '/api/v1/repositories/{repo_slug}/'
+            'learning_resource_export_tasks/'.format(
+                repo_slug=repo_slug,
+            )
+        )
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_201_CREATED:
+            return as_json(resp)
+
 
 class RESTAuthTestCase(RESTTestCase):
     """REST tests for authorization"""

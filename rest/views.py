@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 from django.http.response import Http404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
+from django.core.files.storage import default_storage
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
@@ -20,7 +21,10 @@ from rest_framework.generics import (
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.permissions import IsAuthenticated
+from celery.states import FAILURE, SUCCESS, REVOKED
+from celery.result import AsyncResult
 
+from exporter.tasks import export_resources
 from roles.permissions import GroupTypes, BaseGroupTypes
 from roles.api import (
     assign_user_to_repo_group,
@@ -38,6 +42,7 @@ from rest.serializers import (
     LearningResourceTypeSerializer,
     LearningResourceSerializer,
     LearningResourceExportSerializer,
+    LearningResourceExportTaskSerializer,
     StaticAssetSerializer,
 )
 from rest.permissions import (
@@ -66,6 +71,7 @@ from learningresources.api import (
 )
 
 EXPORTS_KEY = 'learning_resource_exports'
+EXPORT_TASK_KEY = 'learning_resource_export_tasks'
 
 
 class RepositoryList(ListCreateAPIView):
@@ -593,3 +599,145 @@ class LearningResourceExportDetail(RetrieveDestroyAPIView):
                 self.request.session.modified = True
         except KeyError:
             raise Http404
+
+
+def create_task_result_dict(task):
+    """
+    Convert initial data we put in session to dict for REST API.
+    This will use the id to look up current data about task to return
+    to user.
+
+    Args:
+        task (dict): Initial data about task stored in session.
+    Returns:
+        dict: Current data about task.
+    """
+    initial_state = task['initial_state']
+    task_id = task['id']
+
+    state = "processing"
+    url = ""
+    # initial_state is a workaround for EagerResult used in testing.
+    # In production initial_state should usually be pending.
+    if initial_state == SUCCESS:
+        state = "success"
+        url = task['url']
+    elif initial_state == FAILURE or initial_state == REVOKED:
+        state = "failure"
+    else:
+        result = AsyncResult(task_id)
+
+        if result.successful():
+            state = "success"
+        elif result.failed():
+            state = "failure"
+
+        if result.successful():
+            url = default_storage.url(result.get())
+
+    return {
+        "id": task_id,
+        "status": state,
+        "url": url
+    }
+
+
+class LearningResourceExportTaskList(ListCreateAPIView):
+    """
+    View for export tasks for a user.
+    """
+    serializer_class = LearningResourceExportTaskSerializer
+    permission_classes = (
+        ViewRepoPermission,
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """Get tasks for this user."""
+        repo_slug = self.kwargs['repo_slug']
+        try:
+            tasks = self.request.session[EXPORT_TASK_KEY][repo_slug]
+        except KeyError:
+            tasks = {}
+
+        return [create_task_result_dict(task) for task in tasks.values()]
+
+    def post(self, request, *args, **kwargs):
+        """
+        Create a new export task for this user.
+
+        Note that this also cancels and clears any old tasks for the user,
+        so there should be only one task in the list at any time.
+
+        The export list will be left alone. Once the list is exported
+        the client may DELETE the export list as a separate REST call.
+        """
+
+        repo_slug = self.kwargs['repo_slug']
+        try:
+            exports = self.request.session[EXPORTS_KEY][repo_slug]
+        except KeyError:
+            exports = []
+
+        # Cancel any old tasks.
+        old_tasks = self.request.session.get(
+            EXPORT_TASK_KEY, {}).get(repo_slug, {})
+        for task_id in old_tasks.keys():
+            AsyncResult(task_id).revoke()
+
+        # Clear task list.
+        if EXPORT_TASK_KEY not in self.request.session:
+            self.request.session[EXPORT_TASK_KEY] = {}
+        self.request.session[EXPORT_TASK_KEY][repo_slug] = {}
+
+        learning_resources = LearningResource.objects.filter(
+            id__in=exports).all()
+        result = export_resources.delay(
+            learning_resources, self.request.user.username)
+
+        if result.successful():
+            url = default_storage.url(result.get())
+        else:
+            url = ""
+
+        # Put new task in session.
+        self.request.session[EXPORT_TASK_KEY][repo_slug][result.id] = {
+            "id": result.id,
+            "initial_state": result.state,
+            "url": url
+        }
+        self.request.session.modified = True
+
+        return Response(
+            {"id": result.id},
+            status=status.HTTP_201_CREATED
+        )
+
+
+class LearningResourceExportTaskDetail(RetrieveAPIView):
+    """
+    Detail view for a user's export tasks.
+    """
+    serializer_class = LearningResourceExportTaskSerializer
+    permission_classes = (
+        ViewRepoPermission,
+        IsAuthenticated,
+    )
+
+    def get_object(self):
+        """
+        Retrieve current information about an export task.
+        """
+        try:
+            task_id = self.kwargs['task_id']
+        except ValueError:
+            raise Http404
+
+        repo_slug = self.kwargs['repo_slug']
+        try:
+            initial_dict = self.request.session[
+                EXPORT_TASK_KEY][repo_slug][task_id]
+        except KeyError:
+            raise Http404
+
+        return create_task_result_dict(initial_dict)

@@ -24,7 +24,7 @@ from django.contrib.auth.decorators import login_required
 from search.forms import SearchForm
 from ui.views import (
     welcome, create_repo,
-    upload, RepositoryView, serve_media
+    upload, RepositoryView, serve_static_assets, serve_resource_exports
 )
 import rest.urls as rest_urls
 import cas.urls as cas_urls
@@ -53,7 +53,12 @@ urlpatterns = [
 if (settings.DEFAULT_FILE_STORAGE ==
         'django.core.files.storage.FileSystemStorage'):
     urlpatterns.append(
-        url(r'^media/(?P<media_path>.+)$',
-            serve_media,
+        url(r'^media/assets/(?P<path>.+)$',
+            serve_static_assets,
+            name='media')
+    )
+    urlpatterns.append(
+        url(r'^media/resource_exports/(?P<path>.+)$',
+            serve_resource_exports,
             name='media')
     )

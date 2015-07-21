@@ -281,3 +281,10 @@ class StaticAssetSerializer(ModelSerializer):
 class LearningResourceExportSerializer(Serializer):
     """Serializer for exporting id for LearningResource."""
     id = IntegerField()
+
+
+class LearningResourceExportTaskSerializer(Serializer):
+    """Serializer for export tasks for LearningResource"""
+    id = CharField()
+    status = CharField()
+    url = CharField()

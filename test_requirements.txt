@@ -1,5 +1,6 @@
 # Core project/common application testing requirements
 
+django-celery
 pytest
 pytest-pep8
 # logilab-common is only necessary because pylint's dependency chain will
