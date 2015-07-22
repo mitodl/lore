@@ -4,8 +4,6 @@ Test the importer views to make sure they work.
 
 from __future__ import unicode_literals
 
-import imp
-import importlib
 import logging
 import os
 
@@ -18,6 +16,7 @@ from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
 from search.sorting import LoreSortingFields
+from six.moves import reload_module  # pylint: disable=import-error
 
 from learningresources.tests.base import LoreTestCase
 
@@ -358,33 +357,12 @@ class TestViews(LoreTestCase):
             DEFAULT_FILE_STORAGE=('storages.backends'
                                   '.s3boto.S3BotoStorage')
         ):
-            # force the reload of the urls
-            # python 2.7, 3.3 and 3.4 have different ways to reload modules
-            # 2.7 uses the builtin function reload
-            # 3.3 uses imp.reload
-            # 3.4 uses importlib.reload
-            try:
-                reload(ui.urls)  # pylint: disable=undefined-variable
-            # this is in case of python 3.4
-            except NameError:  # pragma: no cover
-                try:
-                    importlib.reload(ui.urls)
-                # this is in case of python 3.3
-                except AttributeError:  # pragma: no cover
-                    imp.reload(ui.urls)
+            reload_module(ui.urls)
             # the view is not available any more
             resp = self.client.get(static_asset_url)
             self.assertEqual(resp.status_code, NOT_FOUND)
         # force the reload of the urls again to be sure to have everything back
-        try:
-            reload(ui.urls)  # pylint: disable=undefined-variable
-        # this is in case of python 3.4
-        except NameError:  # pragma: no cover
-            try:
-                importlib.reload(ui.urls)
-            # this is in case of python 3.3
-            except AttributeError:  # pragma: no cover
-                imp.reload(ui.urls)
+        reload_module(ui.urls)
 
     def test_preview_url(self):
         """Test that preview url shows up correctly"""
