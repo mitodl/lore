@@ -45,7 +45,12 @@ ENV PATH /src/node_modules/.bin:/node/node_modules/.bin:$PATH
 # Set pip cache folder, as it is breaking pip when it is on a shared volume
 ENV XDG_CACHE_HOME /tmp/.cache
 
-EXPOSE 8070
+# Gather static
+RUN ./manage.py collectstatic --noinput
 
 USER mitodl
-CMD uwsgi uwsgi.ini
+
+# Set and expose port for uwsgi config
+EXPOSE 8070
+ENV PORT 8070
+CMD if [ -n "$WORKER" ]; then celery -A lore worker; else uwsgi uwsgi.ini; fi
