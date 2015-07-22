@@ -13,7 +13,6 @@ from django.core.exceptions import PermissionDenied
 from django.core.servers.basehttp import FileWrapper
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, Http404, StreamingHttpResponse
-from django.http.response import HttpResponseForbidden
 from django.shortcuts import (
     render,
     redirect,
@@ -24,7 +23,11 @@ from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import get_perms
 
 from learningresources.api import (
-    get_repo, get_repos, get_resource, NotFound,
+    get_repo,
+    get_repos,
+    get_resource,
+    NotFound,
+    PermissionDenied as LorePermissionDenied,
 )
 from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group
@@ -182,13 +185,15 @@ class RepositoryView(FacetedSearchView):
     # We need the extra kwarg.
     def __call__(self, request, repo_slug):
         # Get arguments from the URL
-        # pylint: disable=attribute-defined-outside-init
         # It's a subclass of an external class, so we don't have
         # repo_slug in __init__.
-        repos = get_repos(request.user.id)
-        if repo_slug not in set([x.slug for x in repos]):
-            return HttpResponseForbidden("unauthorized")
-        self.repo = [x for x in repos if x.slug == repo_slug][0]
+        # pylint: disable=attribute-defined-outside-init
+        try:
+            self.repo = get_repo(repo_slug, request.user.id)
+        except NotFound:
+            raise Http404()
+        except LorePermissionDenied:
+            raise PermissionDenied('unauthorized')
         # get sorting from params if it's there
         sortby = dict(request.GET.copy()).get('sortby', [])
         if (len(sortby) > 0 and
