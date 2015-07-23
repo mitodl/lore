@@ -36,12 +36,12 @@ class Vocabulary(BaseModel):
         help_text=_("Should terms be created in advance or on the fly?")
     )
     weight = models.IntegerField()
-
     learning_resource_types = models.ManyToManyField(
         LearningResourceType,
         related_name="vocabularies",
         help_text=_("Resource types this vocabulary applies to")
     )
+    multi_terms = models.BooleanField(default=False)
 
     class Meta:
         # pylint: disable=missing-docstring

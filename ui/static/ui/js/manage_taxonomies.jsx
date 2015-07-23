@@ -133,6 +133,7 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         description: '',
         vocabularyType: 'm',
         learningResourceTypes: [],
+        multiTerms: false,
       };
     },
     updateLearningResourceType: function(e) {
@@ -158,6 +159,9 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
       this.setState({vocabularyType: e.target.value});
       e.target.isChecked = true;
     },
+    updateMultiTerms: function(e) {
+      this.setState({multiTerms: e.target.checked});
+    },
     submitForm: function(e) {
       var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
         '/vocabularies/';
@@ -170,6 +174,7 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         required: false,
         weight: 2147483647,
         learning_resource_types: this.state.learningResourceTypes,
+        multi_terms: this.state.multiTerms
       };
 
       $.ajax({
@@ -272,6 +277,17 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
                   checked={this.state.vocabularyType === 'f'}
                   onChange={this.updateVocabularyType} />
                     Tag Style (on the fly)
+              </label>
+            </div>
+          </p>
+          <p>
+            <div className="checkbox">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={this.state.multiTerms}
+                  onChange={thiz.updateMultiTerms} />
+                Allow multiple terms per learning resource
               </label>
             </div>
           </p>
