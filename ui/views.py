@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.servers.basehttp import FileWrapper
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, Http404, StreamingHttpResponse
+from django.http import Http404, StreamingHttpResponse
 from django.shortcuts import (
     render,
     redirect,
@@ -25,7 +25,6 @@ from guardian.shortcuts import get_perms
 from learningresources.api import (
     get_repo,
     get_repos,
-    get_resource,
     NotFound,
     PermissionDenied as LorePermissionDenied,
 )
@@ -257,30 +256,6 @@ class RepositoryView(FacetedSearchView):
         form_kwargs["repo_slug"] = self.repo.slug
         form_kwargs["sortby"] = self.sortby
         return super(RepositoryView, self).build_form(form_kwargs)
-
-
-# pylint: disable=unused-argument
-# repo_slug argument will be used by the decorator to protect the view
-@login_required
-@permission_required_or_403(
-    # pylint: disable=protected-access
-    # the following string is "learningresources.import_course"
-    # (unless the Repository model has been moved)
-    '{}.{}'.format(
-        Repository._meta.app_label,
-        RepoPermission.view_repo[0]
-    ),
-    (Repository, 'slug', 'repo_slug')
-)
-def export(request, repo_slug, resource_id):
-    """Dump LearningResource as XML"""
-    try:
-        return HttpResponse(
-            get_resource(resource_id, request.user.id).content_xml,
-            content_type='text/xml'
-        )
-    except NotFound:
-        raise Http404()
 
 
 @login_required
