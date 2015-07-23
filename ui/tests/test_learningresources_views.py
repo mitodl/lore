@@ -9,7 +9,6 @@ import os
 
 from django.conf import settings
 from django.core.files.storage import default_storage
-from django.core.urlresolvers import reverse
 
 import ui.urls
 from learningresources.models import Repository, StaticAsset
@@ -230,28 +229,6 @@ class TestViews(LoreTestCase):
         # we were redirected to login
         self.assertEqual(len(response.redirect_chain), 2)
         self.assertTrue(302 in response.redirect_chain[0])
-
-    def test_export_good(self):
-        """Get raw XML of something I should be allowed to see."""
-        url = reverse("export", args=(self.repo.slug, self.resource.id))
-        resp = self.client.get(url, follow=True)
-        body = resp.content.decode("utf-8")
-        self.assertTrue(resp.status_code == HTTP_OK)
-        self.assertTrue(self.resource.content_xml in body)
-
-    def test_export_no_permission(self):
-        """Get raw XML of something I should not be allowed to see."""
-        url = reverse("export", args=(self.repo.slug, self.resource.id))
-        self.logout()
-        self.login(self.USERNAME_NO_REPO)
-        resp = self.client.get(url, follow=True)
-        self.assertTrue(resp.status_code == UNAUTHORIZED)
-
-    def test_export_nonexistent(self):
-        """Get raw XML of something than does not exist."""
-        url = reverse("export", args=(self.repo.slug, 999999))
-        resp = self.client.get(url, follow=True)
-        self.assertTrue(resp.status_code == NOT_FOUND)
 
     def test_repo_url(self):
         """Hit repo site normally."""

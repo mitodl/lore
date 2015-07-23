@@ -23,7 +23,7 @@ from django.contrib.auth.decorators import login_required
 
 from search.forms import SearchForm
 from ui.views import (
-    welcome, create_repo, export,
+    welcome, create_repo,
     upload, RepositoryView, serve_media
 )
 import rest.urls as rest_urls
@@ -46,10 +46,6 @@ urlpatterns = [
         ),
         name='repositories'
     ),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'learningresources/(?P<resource_id>\d+)/$',
-        export,
-        name='export'),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),
 ]
