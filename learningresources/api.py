@@ -307,6 +307,19 @@ def import_static_assets(course, path):
                 create_static_asset(course.id, django_file)
 
 
+def update_xanalytics(data):
+    """
+    Update xanalytics fields for a LearningResource.
+    Args:
+        data (dict): dict from JSON file from xanalytics
+    """
+    for rec in data["module_medata"]:
+        resource_key = rec.pop("module_id")
+        LearningResource.objects.filter(
+            uuid=resource_key
+        ).update(**rec)
+
+
 def join_description_paths(*args):
     """
     Helper function to format the description path.

@@ -13,3 +13,4 @@ ipdb
 ipython
 urltools
 semantic_version
+responses

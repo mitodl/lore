@@ -348,3 +348,4 @@ HAYSTACK_CONNECTIONS = {
     }
 }
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+XANALYTICS_URL = get_var('XANALYTICS_URL', "")
