@@ -125,6 +125,7 @@ class LearningResource(BaseModel):
     description = models.TextField(blank=True)
     content_xml = models.TextField()
     materialized_path = models.TextField()
+    description_path = models.TextField(blank=True)
     url_path = models.TextField()
     parent = models.ForeignKey('self', null=True, blank=True)
     copyright = models.TextField()

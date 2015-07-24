@@ -15,6 +15,7 @@ def transfer_datetimes(apps, schema_editor):
     Repository = apps.get_model("learningresources", "Repository")
     Repository.objects.all().update(date_created=F("create_date"))
 
+
 class Migration(migrations.Migration):
 
     dependencies = [

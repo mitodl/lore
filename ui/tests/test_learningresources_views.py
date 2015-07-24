@@ -298,6 +298,18 @@ class TestViews(LoreTestCase):
             body
         )
 
+    def test_description_path(self):
+        """Tests that the description path is in the listing page"""
+        dpath_html = '<span class="meta-item">{0}</span>'.format(
+            self.resource.description_path
+        )
+        body = self.assert_status_code(
+            self.repository_url,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertIn(dpath_html, body)
+
     def test_serve_media(self):
         """Hit serve media"""
         self.assertEqual(
