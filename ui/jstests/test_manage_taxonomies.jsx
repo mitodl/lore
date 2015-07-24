@@ -892,6 +892,20 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             checkboxCourse,
             {target: {value: 'course', checked: true}}
           );
+          TestUtils.replaceMockjax({
+            url: "/api/v1/repositories/repo/vocabularies/",
+            type: "POST",
+            responseText: {
+              "id": 2,
+              "slug": "test-a",
+              "name": "TestA",
+              "description": "TestA",
+              "vocabulary_type": "m",
+              "required": false,
+              "weight": 1,
+              "terms": []
+            }
+          });
           React.addons.TestUtils.Simulate.submit(formNode);
           waitForAjax(1, function() {
             assert.equal(
