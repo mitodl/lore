@@ -177,8 +177,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
       }).fail(function(data) {
         var jsonData = data.responseJSON;
         var i = 0;
-        if (jsonData.non_field_errors &&
-          jsonData.non_field_errors.length > 0) {
+        if (jsonData && jsonData.non_field_errors) {
           for (i = 0; i < jsonData.non_field_errors.length ; i++) {
             if (jsonData.non_field_errors[i] ===
               'The fields repository, name must make a unique set.') {
@@ -341,7 +340,6 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         var types = _.map(learningResourceTypes, function(type) {
           return type.name;
         });
-
         thiz.setState({learningResourceTypes: types});
         Utils.getVocabulariesAndTerms(thiz.props.repoSlug).then(
           function(vocabularies) {
@@ -353,12 +351,15 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           }
         );
       });
-
     }
   });
 
   return {
     'VocabularyComponent': VocabularyComponent,
+    'TermComponent': TermComponent,
+    'AddTermsComponent': AddTermsComponent,
+    'AddVocabulary': AddVocabulary,
+    'TaxonomyComponent': TaxonomyComponent,
     'loader' : function (repoSlug) {
       React.render(
         <TaxonomyComponent repoSlug={repoSlug}/>,
