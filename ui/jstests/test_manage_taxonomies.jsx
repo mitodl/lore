@@ -1,4 +1,4 @@
-define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
+define(['QUnit', 'jquery', 'manage_taxonomies', 'reactaddons',
   'test_utils'],
   function(QUnit, $, ManageTaxonomies, React, TestUtils) {
   'use strict';
@@ -936,6 +936,15 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
           ref={afterMount}
         />
       );
+    }
+  );
+
+  QUnit.test("Test that ManageTaxonomies.loader renders into div",
+    function(assert) {
+      var container = document.createElement("div");
+      assert.equal(0, $(container).find("input").size());
+      ManageTaxonomies.loader("repo", container);
+      assert.equal(4, $(container).find("input").size());
     }
   );
 });
