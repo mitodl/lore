@@ -167,17 +167,19 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
           // we need to update the value first ourselves
           $vocabSelect[0].value = "hard";
           React.addons.TestUtils.Simulate.change($vocabSelect[0]);
-          assert.equal($terms1Select[0].selected, false);
-          assert.equal($terms1Select[1].selected, false);
-          assert.equal($terms1Select[2].selected, true);
+          component.forceUpdate(function() {
+            assert.equal($terms1Select[0].selected, false);
+            assert.equal($terms1Select[1].selected, false);
+            assert.equal($terms1Select[2].selected, true);
 
-          // make sure second vocab (which has a default value) is set properly
-          var $terms2Select = $($vocabSelect[1]).find("option");
-          assert.equal($terms2Select.size(), 2);
-          assert.equal($terms2Select[0].selected, false);
-          assert.equal($terms2Select[1].selected, true);
+            // make sure second vocab (which has a default value) is set properly
+            var $terms2Select = $($vocabSelect[1]).find("option");
+            assert.equal($terms2Select.size(), 2);
+            assert.equal($terms2Select[0].selected, false);
+            assert.equal($terms2Select[1].selected, true);
 
-          done();
+            done();
+          });
         });
       };
 
@@ -201,8 +203,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
           var saveButton = $node.find("button")[0];
           React.addons.TestUtils.Simulate.click(saveButton);
           waitForAjax(1, function() {
-            assert.equal(component.state.errorText, undefined);
-            assert.equal(component.state.messageText,
+            assert.equal(component.state.message,
               "Form saved successfully!");
             done();
           });
@@ -235,8 +236,10 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
           var saveButton = $node.find("button")[0];
           React.addons.TestUtils.Simulate.click(saveButton);
           waitForAjax(1, function() {
-            assert.equal(component.state.errorText, "Unable to save form");
-            assert.equal(component.state.messageText, undefined);
+            assert.deepEqual(
+              component.state.message,
+              {error: "Unable to save form"}
+            );
             done();
           });
         });
@@ -263,9 +266,10 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(1, function () {
-          assert.equal(component.state.errorText,
-            "Unable to read information about learning resource.");
-          assert.equal(component.state.messageText, undefined);
+          assert.deepEqual(
+            component.state.message,
+            {error: "Unable to read information about learning resource."}
+          );
 
           done();
         });
@@ -291,9 +295,10 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(2, function () {
-          assert.equal(component.state.errorText,
-            "Unable to read information about learning resource.");
-          assert.equal(component.state.messageText, undefined);
+          assert.deepEqual(
+            component.state.message,
+            {error: "Unable to read information about learning resource."}
+          );
 
           done();
         });

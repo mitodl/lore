@@ -2,6 +2,8 @@ define('static_assets', [
   'reactaddons', 'jquery', 'lodash', 'utils'], function (React, $, _, Utils) {
   'use strict';
 
+  var StatusBox = Utils.StatusBox;
+
   var StaticAssetsPanel = React.createClass({
     getInitialState: function() {
       return {
@@ -26,25 +28,13 @@ define('static_assets', [
           })
           .fail(function () {
             thiz.setState({
-              errorText: "Unable to read information about static assets.",
-              messageText: undefined
+              message: {
+                error: "Unable to read information about static assets."
+              }
             });
           });
     },
     render: function () {
-      var errorBox = null;
-      if (this.state.errorText !== undefined) {
-        errorBox = <div className="alert alert-danger alert-dismissible">
-          {this.state.errorText}
-        </div>;
-      }
-      var messageBox = null;
-      if (this.state.messageText !== undefined) {
-        messageBox = <div className="alert alert-success alert-dismissible">
-          {this.state.messageText}
-          </div>;
-      }
-
       var staticAssets = _.map(this.state.results, function (asset) {
         return <li className="list-group-item" key={asset.asset}>
             <a href={asset.asset}>{asset.name}</a>
@@ -52,8 +42,7 @@ define('static_assets', [
       });
 
       return <div>
-        {errorBox}
-        {messageBox}
+        <StatusBox message={this.state.message} />
         <ul className="list-group">
           {staticAssets}
         </ul>

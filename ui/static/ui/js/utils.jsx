@@ -1,4 +1,4 @@
-define("utils", ["jquery", "lodash"], function ($, _) {
+define("utils", ["jquery", "lodash", "reactaddons"], function ($, _, React) {
   'use strict';
 
   /**
@@ -23,6 +23,34 @@ define("utils", ["jquery", "lodash"], function ($, _) {
     });
   };
 
+  /**
+   * Component for message divs. This takes one property. Use like:
+   *   <StatusBox message={{error: "Error message"}} />
+   * or for a regular message:
+   *   <StatusBox message="Hello, world!" />
+   */
+  var StatusBox = React.createClass({
+    render: function() {
+      if (!this.props || !this.props.message) {
+        return null;
+      }
+
+      if (this.props.message.error !== undefined) {
+        return <div className="alert alert-danger alert-dismissible">
+          {this.props.message.error}
+        </div>;
+      }
+
+      if (this.props.message !== undefined) {
+        return <div className="alert alert-success alert-dismissible">
+          {this.props.message}
+          </div>;
+      }
+
+      return null;
+    }
+  });
+
   return {
     getCollection: _getCollection,
     /**
@@ -45,6 +73,7 @@ define("utils", ["jquery", "lodash"], function ($, _) {
           };
         });
       });
-    }
+    },
+    StatusBox: StatusBox
   };
 });

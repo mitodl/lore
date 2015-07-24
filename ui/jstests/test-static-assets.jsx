@@ -92,13 +92,9 @@ define(['QUnit', 'jquery', 'static_assets', 'reactaddons',
         });
         var afterMount = function(component) {
           waitForAjax(1, function() {
-            assert.equal(
-              component.state.errorText,
-              "Unable to read information about static assets."
-            );
-            assert.equal(
-              component.state.messageText,
-              undefined
+            assert.deepEqual(
+              component.state.message,
+              {error: "Unable to read information about static assets."}
             );
             var $node = $(React.findDOMNode(component));
             var $vocabSelect = $node.find("div.alert");
