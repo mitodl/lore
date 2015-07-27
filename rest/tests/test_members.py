@@ -585,7 +585,6 @@ class TestMembers(RESTTestCase):
         self.assert_users_count(admins=1)
 
 
-# pylint: disable=too-many-ancestors
 class TestMembersAuthorization(RESTAuthTestCase):
     """Tests for member authorization via REST"""
 

@@ -34,7 +34,7 @@ define("utils", ["jquery", "lodash"], function ($, _) {
     getVocabulariesAndTerms: function (repoSlug, learningResourceType) {
       var url = '/api/v1/repositories/' + repoSlug + '/vocabularies/';
       if (learningResourceType) {
-        url += "?type_name=" + encodeURI(learningResourceType);
+        url += "?type_name=" + encodeURIComponent(learningResourceType);
       }
 
       return _getCollection(url).then(function(vocabs) {

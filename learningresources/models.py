@@ -84,7 +84,7 @@ class Course(BaseModel):
     imported_by = models.ForeignKey(User)
 
     class Meta:
-        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        # pylint: disable=missing-docstring,too-few-public-methods
         unique_together = ("repository", "org", "course_number", "run")
 
 

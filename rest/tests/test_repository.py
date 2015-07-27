@@ -22,7 +22,6 @@ from rest.serializers import RepositorySerializer
 from learningresources.models import Repository
 
 
-# pylint: disable=invalid-name
 class TestRepository(RESTTestCase):
     """Repository REST tests"""
 
@@ -165,7 +164,6 @@ class TestRepository(RESTTestCase):
         assert_not_changed(self.create_repository(repo_dict, skip_assert=True))
 
 
-# pylint: disable=too-many-ancestors
 class TestRepositoryAuthorization(RESTAuthTestCase):
     """Repository authorization REST tests"""
 

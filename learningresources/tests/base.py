@@ -30,7 +30,7 @@ from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes
 
-log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+log = logging.getLogger(__name__)
 
 
 class LoreTestCase(TestCase):
