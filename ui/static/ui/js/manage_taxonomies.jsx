@@ -2,6 +2,8 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
   function (React, _, $, Utils) {
   'use strict';
 
+  var StatusBox = Utils.StatusBox;
+
   var TermComponent = React.createClass({
     render: function () {
       return <li><label
@@ -69,7 +71,9 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           contentType: "application/json; charset=utf-8"
         }
       ).fail(function() {
-          thiz.props.reportError("Error occurred while adding new term.");
+          thiz.props.reportMessage({
+            error: "Error occurred while adding new term."
+          });
         })
       .done(function(newTerm) {
           thiz.props.addTerm(thiz.props.vocabulary.slug, newTerm);
@@ -78,7 +82,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           });
 
           // clear errors
-          thiz.props.reportError(null);
+          thiz.props.reportMessage(null);
         });
     },
     getInitialState: function() {
@@ -98,26 +102,24 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           terms={obj.terms}
           key={obj.vocabulary.slug}
           repoSlug={repoSlug}
-          reportError={thiz.reportError}
+          reportMessage={thiz.reportMessage}
           addTerm={thiz.props.addTerm}
           />;
       });
       return <div className="panel-group lore-panel-group">
         <div className="panel panel-default">
         </div>
-        <span style={{color: "red"}}>
-          {this.state.errorText}
-        </span>
+        <StatusBox message={this.state.message} />
         {items}
       </div>;
 
     },
-    reportError: function(msg) {
-      this.setState({errorText: msg});
+    reportMessage: function(message) {
+      this.setState({message: message});
     },
     getInitialState: function() {
       return {
-        errorText: ""
+        message: undefined
       };
     }
   });
@@ -182,15 +184,19 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
             if (jsonData.non_field_errors[i] ===
               'The fields repository, name must make a unique set.') {
               thiz.setState({
-                errorMessage: 'A Vocabulary named "' + vocabularyData.name +
+                message: {
+                  error: 'A Vocabulary named "' + vocabularyData.name +
                   '" already exists. Please choose a different name.'
+                }
               });
               break;
             }
           }
         } else {
           thiz.setState({
-            errorMessage: 'There was a problem adding the Vocabulary.'
+            message: {
+              error: 'There was a problem adding the Vocabulary.'
+            }
           });
         }
         console.error(data);
@@ -210,13 +216,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
       });
     },
     render: function() {
-      var errorBox = null;
       var thiz = this;
-      if (this.state.errorMessage !== undefined) {
-        errorBox = <div className="alert alert-danger alert-dismissible">
-                     {this.state.errorMessage}
-                   </div>;
-      }
 
       var checkboxes = _.map(this.props.learningResourceTypes, function(type) {
         var checked = _.includes(thiz.state.learningResourceTypes, type);
@@ -238,7 +238,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
 
       return (
         <form className="form-horizontal" onSubmit={this.submitForm}>
-          {errorBox}
+          <StatusBox message={this.state.message} />
           <p>
             <input type="text" valueLink={this.linkState('name')}
               className="form-control"

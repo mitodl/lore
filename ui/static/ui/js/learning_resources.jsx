@@ -1,6 +1,9 @@
 define('learning_resources', [
-  'reactaddons', 'jquery', 'lodash', 'utils'], function (React, $, _, Utils) {
+  'reactaddons', 'jquery', 'lodash', 'utils'], function (
+  React, $, _, Utils) {
   'use strict';
+
+  var StatusBox = Utils.StatusBox;
 
   var VocabularyOption = React.createClass({
     render: function () {
@@ -63,22 +66,9 @@ define('learning_resources', [
           />;
       });
 
-      var errorBox = null;
-      if (this.state.errorText !== undefined) {
-        errorBox = <div className="alert alert-danger alert-dismissible">
-          {this.state.errorText}
-        </div>;
-      }
-      var messageBox = null;
-      if (this.state.messageText !== undefined) {
-        messageBox = <div className="alert alert-success alert-dismissible">
-          {this.state.messageText}
-          </div>;
-      }
       return <div>
         <form className="form-horizontal">
-          {errorBox}
-          {messageBox}
+          <StatusBox message={this.state.message} />
           <textarea className="form-control textarea-xml"
                     valueLink={this.linkState('contentXml')}
             />
@@ -137,13 +127,11 @@ define('learning_resources', [
         data: JSON.stringify(data)
       }).done(function () {
         thiz.setState({
-          errorText: undefined,
-          messageText: "Form saved successfully!"
+          message: "Form saved successfully!"
         });
       }).fail(function () {
         thiz.setState({
-          errorText: "Unable to save form",
-          messageText: undefined
+          message: {error: "Unable to save form"}
         });
       });
     },
@@ -166,8 +154,7 @@ define('learning_resources', [
 
         thiz.setState({
           contentXml: contentXml,
-          messageText: undefined,
-          errorText: undefined,
+          message: undefined,
           description: description,
           previewUrl: previewUrl,
         });
@@ -201,15 +188,17 @@ define('learning_resources', [
           });
         }).fail(function () {
           thiz.setState({
-            errorText: "Unable to read information about learning resource.",
-            messageText: undefined
+            message: {
+              error: "Unable to read information about learning resource."
+            }
           });
         });
 
       }).fail(function () {
           thiz.setState({
-            errorText: "Unable to read information about learning resource.",
-            messageText: undefined
+            message: {
+              error: "Unable to read information about learning resource."
+            }
           });
         });
     },

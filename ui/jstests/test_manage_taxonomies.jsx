@@ -225,7 +225,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
       var addTerm = function() {
         addTermCalled += 1;
       };
-      var reportError = function() {};
+      var reportMessage = function() {};
       var afterMount = function(component) {
         var node = React.findDOMNode(component);
         var textbox = $(node).find("input")[0];
@@ -282,7 +282,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
           <VocabularyComponent
             vocabulary={vocabulary}
             terms={vocabulary.terms}
-            reportError={reportError}
+            reportMessage={reportMessage}
             addTerm={addTerm}
             repoSlug="repo"
             ref={afterMount}
@@ -305,12 +305,12 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         "terms": []
       };
       var addTermCalled = 0;
-      var errorMessage;
+      var message;
       var addTerm = function() {
         addTermCalled += 1;
       };
-      var reportError = function(msg) {
-        errorMessage = msg;
+      var reportMessage = function(msg) {
+        message = msg;
       };
       var afterMount = function(component) {
         // wait for calls to populate form
@@ -319,9 +319,10 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
         waitForAjax(1, function () {
           assert.equal(addTermCalled, 0);
-          assert.equal(//Error is caused by a 400 status code
-            errorMessage,
-            "Error occurred while adding new term."
+          // Error is caused by a 400 status code
+          assert.deepEqual(
+            message,
+            {error: "Error occurred while adding new term."}
           );
           done();
         });
@@ -331,7 +332,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
           <VocabularyComponent
             vocabulary={vocabulary}
             terms={vocabulary.terms}
-            reportError={reportError}
+            reportMessage={reportMessage}
             addTerm={addTerm}
             repoSlug="repo"
             ref={afterMount}
@@ -353,18 +354,18 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
       var addTermCalled = 0;
       var afterMount = function(component) {
         assert.equal(
-         component.state.errorText,
-          ''
+          component.state.message,
+          undefined
         );
         assertAddTermCommon(assert, component);
         //test error message
-        component.reportError(
-          "Error occurred while adding new term."
-        );
+        component.reportMessage({
+          error: "Error occurred while adding new term."
+        });
         component.forceUpdate(function() {
-          assert.equal(
-            component.state.errorText,
-            'Error occurred while adding new term.'
+          assert.deepEqual(
+            component.state.message,
+            {error: 'Error occurred while adding new term.'}
           );
           var inputGroup = React.addons.TestUtils.
             findRenderedDOMComponentWithClass(
@@ -668,9 +669,10 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         );
         React.addons.TestUtils.Simulate.submit(formNode);
         waitForAjax(1, function() {
-          assert.equal(//Error is caused by a 400 status code
-            component.state.errorMessage,
-            "There was a problem adding the Vocabulary."
+          // Error is caused by a 400 status code
+          assert.deepEqual(
+            component.state.message,
+            {error: "There was a problem adding the Vocabulary."}
           );
           done();
         });
@@ -728,10 +730,13 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         );
         React.addons.TestUtils.Simulate.submit(formNode);
         waitForAjax(1, function() {
-          assert.equal(//Error is caused by a 400 status code
-            component.state.errorMessage,
-            'A Vocabulary named "" already exists.' +
-            ' Please choose a different name.'
+          // Error is caused by a 400 status code
+          assert.deepEqual(
+            component.state.message,
+            {
+              error: 'A Vocabulary named "" already exists.' +
+              ' Please choose a different name.'
+            }
           );
           done();
         });
