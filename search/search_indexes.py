@@ -42,6 +42,15 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     nr_attempts = indexes.IntegerField(model_attr="xa_nr_attempts")
     avg_grade = indexes.FloatField(model_attr="xa_avg_grade")
 
+    lid = indexes.IntegerField(model_attr="id", indexed=False)
+    title = indexes.CharField(model_attr="title", indexed=False)
+    description = indexes.CharField(model_attr="description", indexed=False)
+    description_path = indexes.CharField(
+        model_attr="description_path",
+        indexed=False,
+    )
+    preview_url = indexes.CharField(indexed=False)
+
     def get_model(self):
         """Return the model for which this configures indexing."""
         return LearningResource
@@ -72,6 +81,10 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_run(self, obj):  # pylint: disable=no-self-use
         """Define what goes into the "run" index."""
         return obj.course.run
+
+    def prepare_preview_url(self, obj):  # pylint: disable=no-self-use
+        """Define what goes into the "run" index."""
+        return obj.get_preview_url()
 
     @staticmethod
     def prepare_course(obj):

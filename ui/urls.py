@@ -42,6 +42,7 @@ urlpatterns = [
         login_required(
             RepositoryView(
                 form_class=SearchForm, template="repository.html",
+                load_all=False,
             )
         ),
         name='repositories'
