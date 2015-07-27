@@ -18,7 +18,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         return <TermComponent term={term} key={term.slug} />;
       });
 
-      return <ul className="icheck-list">
+      return <div className="panel panel-default">
           <div className="panel-heading">
             <h4 className="panel-title">
               <a className="accordion-toggle" data-toggle="collapse"
@@ -31,26 +31,27 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           <div id={'collapse-' + this.props.vocabulary.slug}
                className="panel-collapse collapse in">
             <div className="panel-body">
-              <ul>
+              <ul className="icheck-list">
                 {items}
+                <li>
+                  <div className="input-group">
+                    <input type="text"
+                           valueLink={this.linkState('newTermLabel')}
+                      className="form-control" onKeyUp={this.onKeyUp}
+                      placeholder="Add new term..."
+                      />
+                      <span className="input-group-btn">
+                        <a className="btn btn-white"
+                          type="button" onClick={this.handleAddTermClick}><i
+                          className="fa fa-plus-circle"
+                        ></i></a>
+                      </span>
+                  </div>
+                </li>
               </ul>
             </div>
           </div>
-        <li>
-          <div className="input-group">
-            <input type="text" valueLink={this.linkState('newTermLabel')}
-              className="form-control" onKeyUp={this.onKeyUp}
-              placeholder="Add new term..."
-              />
-              <span className="input-group-btn">
-                <a className="btn btn-white"
-                  type="button" onClick={this.handleAddTermClick}><i
-                  className="fa fa-plus-circle"
-                ></i></a>
-              </span>
-          </div>
-        </li>
-      </ul>;
+      </div>;
     },
     onKeyUp: function(e) {
       if (e.key === "Enter") {

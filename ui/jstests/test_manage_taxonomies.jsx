@@ -63,7 +63,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         devItems,
         'li'
     );
-    assert.equal(itemList.length, 2);
+    assert.equal(itemList.length, 3);
     return devItems;
   }
   QUnit.module('Test taxonomies panel', {
@@ -251,7 +251,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             devItems,
             'li'
         );
-        assert.equal(itemList.length, 2);
+        assert.equal(itemList.length, 3);
         //test enter text in input text
         var inputNode = React.addons.TestUtils.
           findRenderedDOMComponentWithTag(
