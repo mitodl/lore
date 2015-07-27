@@ -265,11 +265,11 @@ define('listing',
       // Set up click handlers for export links.
       $(".link-export").click(function(event) {
         event.preventDefault();
+        var node = this;
+        var $node = $(node);
 
-        var learningResourceId = $(this).data("learningresource-id");
-        var selected = $(this).data("selected") === true;
-        $(this).data("selected", !selected);
-
+        var learningResourceId = $node.data("learningresource-id");
+        var selected = $node.data("selected") === true;
         if (selected) {
           // Remove an item from export cart.
           $.ajax({
@@ -277,25 +277,22 @@ define('listing',
             url: "/api/v1/repositories/" + repoSlug +
             "/learning_resource_exports/" + loggedInUsername + "/" +
             learningResourceId + "/"
-          }).fail(function() {
-            // Revert export count change.
-            updateExportCount(1);
+          }).then(function() {
+            updateExportCount(-1);
+            $node.data("selected", false);
+            updateCheckDisplay(node);
           });
-          updateExportCount(-1);
         } else {
           // Add an item to export cart.
           $.post("/api/v1/repositories/" + repoSlug +
-            "/learning_resource_exports/" + loggedInUsername + "/",
-            {
-              id: learningResourceId
-            }).fail(function () {
-              // Revert export count change.
-              updateExportCount(-1);
-            });
-          updateExportCount(1);
+            "/learning_resource_exports/" + loggedInUsername + "/", {
+            id: learningResourceId
+          }).then(function () {
+            updateExportCount(1);
+            $node.data("selected", true);
+            updateCheckDisplay(node);
+          });
         }
-
-        updateCheckDisplay(this);
       });
 
       var repoSlug = $("#repo_slug").val();
