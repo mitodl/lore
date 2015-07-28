@@ -1,34 +1,63 @@
 define('learning_resources', [
-  'reactaddons', 'jquery', 'lodash', 'utils'], function (
+  'reactaddons', 'jquery', 'lodash', 'utils', 'select2'], function (
   React, $, _, Utils) {
   'use strict';
 
   var StatusBox = Utils.StatusBox;
 
   var VocabularyOption = React.createClass({
-    render: function () {
+    applySelect2: function () {
+      //this function can be used only if the component has been mounted
       var options = _.map(this.props.terms, function (term) {
-        return <option key={term.slug}
-                       value={term.slug}>
-          {term.label}
-        </option>;
+        return {
+          id: term.slug,
+          text: term.label
+        };
       });
-
+      var thiz = this;
+      var isMultiTerms = this.props.vocabulary.multi_terms;
+      //not allowing the clear for the multi terms dropdown
+      var allowClear = !isMultiTerms;
+      //apply select2 to the right elements
+      $(React.findDOMNode(this)).find('select').select2({
+        multiple: isMultiTerms,
+        data: options,
+        placeholder: "Select a value for " + this.props.vocabulary.name,
+        allowClear: allowClear,
+        theme: "bootstrap",
+      })
+      .val(this.props.selectedTerms)
+      .trigger('change')
+      .on('change', function () {
+        var selectValues = [].concat($(this).val());
+        //if there are single select dropdowns, .val() can return null
+        selectValues = _.filter(selectValues, function(value) {
+          return value !== null;
+        });
+        thiz.props.updateTerms(thiz.props.vocabulary.slug, selectValues);
+      });
+    },
+    render: function () {
       return <div className="form-group">
         <label className="col-sm-6 control-label">
         {this.props.vocabulary.name}
           </label>
         <div className="col-sm-6">
-          <select className="form-control" value={this.props.selectedTerm}
-            onChange={this.handleChange}>
-            <option key="" value=""></option>
-            {options}
+          <select className="form-control">
           </select>
         </div>
       </div>;
     },
-    handleChange: function(e) {
-      this.props.updateTerm(this.props.vocabulary.slug, e.target.value);
+    componentDidMount: function() {
+      this.applySelect2();
+    },
+    componentDidChange: function() {
+      this.applySelect2();
+    },
+    componentWillChange: function() {
+      //before react applies the changes need to detach the event handler
+      //from the select node
+      $(React.findDOMNode(this)).find('select').off('change');
     }
   });
 
@@ -38,14 +67,14 @@ define('learning_resources', [
       var thiz = this;
       var vocabulariesAndTerms = this.state.vocabulariesAndTerms;
       var options = _.map(vocabulariesAndTerms, function (pair) {
-        var updateTerm = function(vocabSlug, newTermSlug) {
+        var updateTerms = function(vocabSlug, newTermsSlug) {
           var newVocabulariesAndTerms = _.map(vocabulariesAndTerms,
             function(tuple) {
               if (vocabSlug === tuple.vocabulary.slug) {
                 return {
                   vocabulary: tuple.vocabulary,
                   terms: tuple.terms,
-                  selectedTerm: newTermSlug
+                  selectedTerms: newTermsSlug
                 };
               } else {
                 return tuple;
@@ -60,9 +89,9 @@ define('learning_resources', [
         return <VocabularyOption
           vocabulary={pair.vocabulary}
           terms={pair.terms}
-          selectedTerm={pair.selectedTerm}
+          selectedTerms={pair.selectedTerms}
           key={pair.vocabulary.slug}
-          updateTerm={updateTerm}
+          updateTerms={updateTerms}
           />;
       });
 
@@ -108,12 +137,9 @@ define('learning_resources', [
       var thiz = this;
 
       var terms = _.map(this.state.vocabulariesAndTerms, function (tuple) {
-          return tuple.selectedTerm;
+          return tuple.selectedTerms;
         });
-      terms = _.filter(terms, function(selectedTerm) {
-        return selectedTerm;
-      });
-
+      terms = _.flatten(terms);
       var data = {
         terms: terms,
         description: this.state.description
@@ -159,7 +185,6 @@ define('learning_resources', [
           description: description,
           previewUrl: previewUrl,
         });
-
         Utils.getVocabulariesAndTerms(
           thiz.props.repoSlug, learningResourceType)
           .then(function (results) {
@@ -172,15 +197,14 @@ define('learning_resources', [
             function(tuple) {
               var vocabulary = tuple.vocabulary;
               var terms = tuple.terms;
-
-              var selectedTerm = _.result(_.find(terms, function(term) {
-                return _.includes(selectedTerms, term.slug);
-              }), 'slug');
-
+              var selectedTermsInVocab = _.pluck(
+                _.filter(terms, function(term) {
+                  return _.includes(selectedTerms, term.slug);
+                }), 'slug');
               return {
                 vocabulary: vocabulary,
                 terms: terms,
-                selectedTerm: selectedTerm
+                selectedTerms: selectedTermsInVocab
               };
             });
 
