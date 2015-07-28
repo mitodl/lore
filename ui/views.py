@@ -305,7 +305,7 @@ def serve_resource_exports(request, path):
 
     filename = os.path.basename(file_path)
     response = HttpResponse(
-        FileWrapper(open(file_path)),
+        FileWrapper(open(file_path, 'rb')),
         content_type=mimetypes.guess_type(file_path)[0]
     )
     response['Content-Length'] = os.path.getsize(file_path)
