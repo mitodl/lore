@@ -93,6 +93,7 @@ class VocabularySerializer(ModelSerializer):
             'repository',
             'learning_resource_types',
             'terms',
+            'multi_terms',
         )
         read_only_fields = (
             'id',
@@ -214,16 +215,30 @@ class LearningResourceSerializer(ModelSerializer):
 
     def validate_terms(self, terms):
         """
-        Validate that this LearningResource's learning_resource_type
-        is supported by the vocabulary of each term being added
+        Validate that
+        1- this LearningResource's learning_resource_type
+           is supported by the vocabulary of each term being added
+        2- There are no multiple terms belonging to a vocabulary with
+           "multi_term" field set to False
         """
         resource_type = self.instance.learning_resource_type
+        vocabulary_cache = {}
         for term in terms:
             if not term.vocabulary.learning_resource_types.filter(
                     name=resource_type.name).exists():
                 raise ValidationError(
                     "Term {} is not supported "
                     "for this LearningResource".format(term.label))
+            if not term.vocabulary.multi_terms:
+                vocabulary_cache.setdefault(
+                    term.vocabulary.id, []).append(term.id)
+                if len(vocabulary_cache[term.vocabulary.id]) > 1:
+                    raise ValidationError(
+                        "Vocabulary {0} can have only one term "
+                        "assigned to the same LearningResource".format(
+                            term.vocabulary.name
+                        )
+                    )
         return terms
 
     @staticmethod

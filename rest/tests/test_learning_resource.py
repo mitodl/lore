@@ -177,6 +177,39 @@ class TestLearningResource(RESTTestCase):
         self.patch_learning_resource(
             self.repo.slug, lr_id, {"terms": [unsupported_term_slug]},
             expected_status=HTTP_400_BAD_REQUEST)
+        new_term_dict = dict(self.DEFAULT_TERM_DICT)
+        new_term_dict.update(label='term label 2')
+        # create another term for the supported vocabulary
+        supported_term_slug_2 = self.create_term(
+            self.repo.slug,
+            vocab1_slug,
+            term_dict=new_term_dict
+        )['slug']
+        # trying to add the both terms to the learning resource will result
+        # in a bad request
+        self.patch_learning_resource(
+            self.repo.slug,
+            lr_id,
+            {"terms": [supported_term_slug, supported_term_slug_2]},
+            expected_status=HTTP_400_BAD_REQUEST
+        )
+        # but if the vocabulary is modified to accept multiple terms
+        new_vocab_dict = dict(self.DEFAULT_VOCAB_DICT)
+        new_vocab_dict.update(multi_terms=True)
+        self.patch_vocabulary(
+            repo_slug=self.repo.slug,
+            vocab_slug=vocab1_slug,
+            vocab_dict=new_vocab_dict
+        )
+        Vocabulary.objects.get(slug=vocab1_slug).learning_resource_types.add(
+            resource.learning_resource_type
+        )
+        # adding two terms will be fine
+        self.patch_learning_resource(
+            self.repo.slug,
+            lr_id,
+            {"terms": [supported_term_slug, supported_term_slug_2]}
+        )
 
     def test_learning_resource_types(self):
         """

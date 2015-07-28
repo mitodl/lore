@@ -49,6 +49,7 @@ class RESTTestCase(LoreTestCase):
         'weight': 1000,
         'vocabulary_type': 'f',
         'learning_resource_types': [],
+        'multi_terms': False,
     }
     DEFAULT_TERM_DICT = {
         'label': 'term label',
