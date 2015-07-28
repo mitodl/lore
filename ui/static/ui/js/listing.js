@@ -1,8 +1,8 @@
 define('listing',
-  ['jquery', 'lodash', 'setup_manage_taxonomies', 'facets',
+  ['jquery', 'lodash', 'manage_taxonomies', 'facets',
     'learning_resources', 'static_assets', 'utils',
     'lr_exports', 'bootstrap', 'icheck', 'csrf'],
-  function($, _, setupManageTaxonomies, facets, LearningResources, StaticAssets,
+  function($, _, manageTaxonomies, facets, LearningResources, StaticAssets,
   Utils, Exports) {
     'use strict';
     facets.setupFacets(window);
@@ -296,6 +296,6 @@ define('listing',
       });
 
       var repoSlug = $("#repo_slug").val();
-      setupManageTaxonomies.loader(repoSlug);
+      manageTaxonomies.loader(repoSlug, $('#taxonomy-component')[0]);
     });
   });

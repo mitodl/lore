@@ -1,4 +1,4 @@
-define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
+define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
   function (React, _, $, Utils) {
   'use strict';
 
@@ -361,10 +361,11 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
     'AddTermsComponent': AddTermsComponent,
     'AddVocabulary': AddVocabulary,
     'TaxonomyComponent': TaxonomyComponent,
-    'loader' : function (repoSlug) {
+    'loader': function (repoSlug, container) {
       React.render(
         <TaxonomyComponent repoSlug={repoSlug}/>,
-        $('#taxonomy-component')[0]);
+        container
+      );
     }
   };
 
