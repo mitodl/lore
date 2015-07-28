@@ -617,6 +617,7 @@ def create_task_result_dict(task):
 
     state = "processing"
     url = ""
+    collision = False
     # initial_state is a workaround for EagerResult used in testing.
     # In production initial_state should usually be pending.
     if initial_state == SUCCESS:
@@ -633,12 +634,14 @@ def create_task_result_dict(task):
             state = "failure"
 
         if result.successful():
-            url = default_storage.url(result.get())
+            name, collision = result.get()
+            url = default_storage.url(name)
 
     return {
         "id": task_id,
         "status": state,
-        "url": url
+        "url": url,
+        "collision": collision
     }
 
 
@@ -696,15 +699,18 @@ class LearningResourceExportTaskList(ListCreateAPIView):
             learning_resources, self.request.user.username)
 
         if result.successful():
-            url = default_storage.url(result.get())
+            name, collision = result.get()
+            url = default_storage.url(name)
         else:
+            collision = False
             url = ""
 
         # Put new task in session.
         self.request.session[EXPORT_TASK_KEY][repo_slug][result.id] = {
             "id": result.id,
             "initial_state": result.state,
-            "url": url
+            "url": url,
+            "collision": collision
         }
         self.request.session.modified = True
 
