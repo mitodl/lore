@@ -26,36 +26,36 @@
       </div>
       <div class="tile-content">
         <h2>
-          <a href="#" class="cd-btn" data-learningresource-id="{{ result.object.id }}">
-            {% if result.object.title %}
-            {{ result.object.title }}
+          <a href="#" class="cd-btn" data-learningresource-id="{{ result.lid }}">
+            {% if result.title %}
+            {{ result.title }}
             {% else %}
             No Title
             {% endif %}
           </a>
         </h2>
-        
+
         <div class="tile-meta">
-          <span class="meta-item">{{ result.object.description_path }}</span>
+          <span class="meta-item">{{ result.description_path }}</span>
         </div>
         <div class="tile-blurb">
-          {% if result.object.description %}
-          {{ result.object.description }}
+          {% if result.description %}
+          {{ result.description }}
           {% else %}
           No description provided.
           {% endif %}
         </div>
         <div class="tile-meta">
-          <span class="meta-item">{{ result.object.course.course_number }}</span>
-          <span class="meta-item">{{ result.object.course.run }}</span>
-          <span class="meta-item"><a href="{{ result.object.get_preview_url }}" target="_blank">Preview</a></span>
+          <span class="meta-item">{{ result.course }}</span>
+          <span class="meta-item">{{ result.run }}</span>
+          <span class="meta-item"><a href="{{ result.preview_url }}" target="_blank">Preview</a></span>
         </div>
       </div>
     </div>
   </div>
   <div class="col-md-2 col-export">
-    <a class="link-export" href="#" data-learningresource-id="{{ result.object.id }}"
-       {% if result.object.id in exports %}
+    <a class="link-export" href="#" data-learningresource-id="{{ result.lid }}"
+       {% if result.lid in exports %}
          data-selected="true"
        {% else %}
          data-selected="false"
