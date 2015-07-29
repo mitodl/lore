@@ -10,7 +10,7 @@ import tarfile
 
 from django.test import override_settings
 from rest_framework.status import HTTP_200_OK, HTTP_404_NOT_FOUND
-from six import StringIO
+from six import BytesIO
 from six.moves import reload_module   # pylint: disable=import-error
 
 import ui.urls
@@ -59,7 +59,7 @@ class TestExport(RESTTestCase):
 
         tempdir = mkdtemp()
         try:
-            with tarfile.open(fileobj=StringIO(resp.content),
+            with tarfile.open(fileobj=BytesIO(resp.content),
                               mode="r:gz") as tar:
                 tar.extractall(path=tempdir)
 
