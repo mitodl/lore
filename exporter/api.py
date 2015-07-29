@@ -65,6 +65,9 @@ def export_resources_to_tarball(learning_resources, username):
             prefix=EXPORT_PATH_PREFIX,
             username=username
         )
+
+        # Remove any old paths.
+        default_storage.delete(output_path)
         return default_storage.save(output_path, open(tempfilepath, 'rb'))
     finally:
         os.unlink(tempfilepath)
