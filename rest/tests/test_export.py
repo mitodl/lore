@@ -20,13 +20,13 @@ from rest.tests.base import (
 
 
 class TestExport(RESTTestCase):
-    """Test for export"""
+    """Test for export."""
 
     @override_settings(
         DEFAULT_FILE_STORAGE='django.core.files.storage.FileSystemStorage'
     )
     def test_create_new_task(self):
-        """Test a basic export"""
+        """Test a basic export."""
         resource = self.repo.course_set.first().learningresource_set.first()
         self.create_learning_resource_export(self.repo.slug, {
             "id": resource.id

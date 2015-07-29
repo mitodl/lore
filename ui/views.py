@@ -178,7 +178,7 @@ def get_vocabularies(facets):
 
 
 class RepositoryView(FacetedSearchView):
-    """Subclass of haystack.views.FacetedSearchView"""
+    """Subclass of haystack.views.FacetedSearchView."""
 
     # pylint: disable=arguments-differ
     # We need the extra kwarg.
@@ -204,7 +204,7 @@ class RepositoryView(FacetedSearchView):
         return super(RepositoryView, self).__call__(request)
 
     def dispatch(self, *args, **kwargs):
-        """Override for the purpose of having decorators in views.py"""
+        """Override for the purpose of having decorators in views.py."""
         super(RepositoryView, self).dispatch(*args, **kwargs)
 
     def extra_context(self):

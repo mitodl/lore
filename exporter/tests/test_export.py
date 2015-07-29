@@ -53,7 +53,7 @@ class TestExport(LoreTestCase):
         update_description_path(resource)
 
     def assert_resource_directory(self, resources, tempdir):
-        """Assert that files are present with correct content"""
+        """Assert that files are present with correct content."""
         def sanitize(title):
             """Sanitize title for use in filename."""
             # Limit filename to 200 characters since limit is 256
@@ -61,7 +61,7 @@ class TestExport(LoreTestCase):
             return title.replace("/", "_")[:200]
 
         def make_name(resource):
-            """Format expected filename"""
+            """Format expected filename."""
             return "{id}_{title}.xml".format(
                 id=resource.id,
                 title=sanitize(resource.title),
@@ -95,7 +95,7 @@ class TestExport(LoreTestCase):
         # See: https://code.djangoproject.com/ticket/24963#ticket. Remove
         # when updating to Django 1.9
         def seekable():
-            """Hacked seekable for django storage to work in python3"""
+            """Hacked seekable for django storage to work in python3."""
             return True
         try:
             resource_archive = default_storage.open(path)
@@ -119,7 +119,7 @@ class TestExport(LoreTestCase):
         # See: https://code.djangoproject.com/ticket/24963#ticket. Remove
         # when updating to Django 1.9
         def seekable():
-            """Hacked seekable for django storage to work in python3"""
+            """Hacked seekable for django storage to work in python3."""
             return True
         try:
             resource_archive = default_storage.open(path)

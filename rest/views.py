@@ -75,7 +75,7 @@ EXPORT_TASK_KEY = 'learning_resource_export_tasks'
 
 
 class RepositoryList(ListCreateAPIView):
-    """REST list view for Repository"""
+    """REST list view for Repository."""
     serializer_class = RepositorySerializer
     permission_classes = (
         AddRepoPermission,
@@ -83,18 +83,18 @@ class RepositoryList(ListCreateAPIView):
     )
 
     def get_success_headers(self, data):
-        """Add Location header for model create"""
+        """Add Location header for model create."""
         url = reverse('repository-detail', kwargs={'repo_slug': data['slug']})
         return {'Location': url}
 
     def get_queryset(self):
-        """Filter to these repositories"""
+        """Filter to these repositories."""
 
         repo_ids = [repo.id for repo in get_repos(self.request.user.id)]
         return Repository.objects.filter(id__in=repo_ids).order_by('id')
 
     def perform_create(self, serializer):
-        """Create a new repository"""
+        """Create a new repository."""
         # pylint: disable=protected-access
         repo = serializer.save()
         assign_user_to_repo_group(
@@ -105,7 +105,7 @@ class RepositoryList(ListCreateAPIView):
 
 
 class RepositoryDetail(RetrieveAPIView):
-    """REST detail view for Repository"""
+    """REST detail view for Repository."""
     serializer_class = RepositorySerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'repo_slug'
@@ -115,12 +115,12 @@ class RepositoryDetail(RetrieveAPIView):
     )
 
     def get_queryset(self):
-        """Filter to this repository"""
+        """Filter to this repository."""
         return Repository.objects.filter(slug=self.kwargs['repo_slug'])
 
 
 class VocabularyList(ListCreateAPIView):
-    """REST list view for Vocabulary"""
+    """REST list view for Vocabulary."""
     serializer_class = VocabularySerializer
     permission_classes = (
         ViewRepoPermission,
@@ -130,7 +130,7 @@ class VocabularyList(ListCreateAPIView):
 
     def get_queryset(self):
         """Filter vocabularies by repository ownership and optionally
-        by LearningResource type"""
+        by LearningResource type."""
         queryset = Vocabulary.objects.filter(
             repository__slug=self.kwargs['repo_slug']
         )
@@ -142,7 +142,7 @@ class VocabularyList(ListCreateAPIView):
         return queryset.order_by('id')
 
     def get_success_headers(self, data):
-        """Add Location header for model create"""
+        """Add Location header for model create."""
         url = reverse('vocabulary-detail', kwargs={
             'repo_slug': self.kwargs['repo_slug'],
             'vocab_slug': data['slug'],
@@ -151,7 +151,7 @@ class VocabularyList(ListCreateAPIView):
 
 
 class VocabularyDetail(RetrieveUpdateDestroyAPIView):
-    """REST detail view for Vocabulary"""
+    """REST detail view for Vocabulary."""
     serializer_class = VocabularySerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'vocab_slug'
@@ -162,7 +162,7 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
     )
 
     def get_queryset(self):
-        """Filter to a vocabulary within a repository"""
+        """Filter to a vocabulary within a repository."""
         repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
         return repo.vocabulary_set.filter(
             slug=self.kwargs['vocab_slug']
@@ -170,7 +170,7 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
 
 
 class TermList(ListCreateAPIView):
-    """REST list view for Term"""
+    """REST list view for Term."""
     serializer_class = TermSerializer
     permission_classes = (
         ViewVocabularyPermission,
@@ -179,7 +179,7 @@ class TermList(ListCreateAPIView):
     )
 
     def get_queryset(self):
-        """Filter to terms within a vocabulary and repository"""
+        """Filter to terms within a vocabulary and repository."""
 
         repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
         vocabs = repo.vocabulary_set.filter(
@@ -191,7 +191,7 @@ class TermList(ListCreateAPIView):
         return vocabs.first().term_set.order_by('id')
 
     def get_success_headers(self, data):
-        """Add Location header for model create"""
+        """Add Location header for model create."""
         url = reverse('term-detail', kwargs={
             'vocab_slug': self.kwargs['vocab_slug'],
             'repo_slug': self.kwargs['repo_slug'],
@@ -201,7 +201,7 @@ class TermList(ListCreateAPIView):
 
 
 class TermDetail(RetrieveUpdateDestroyAPIView):
-    """REST detail view for Term"""
+    """REST detail view for Term."""
     serializer_class = TermSerializer
     lookup_field = 'slug'
     lookup_url_kwarg = 'term_slug'
@@ -212,7 +212,7 @@ class TermDetail(RetrieveUpdateDestroyAPIView):
     )
 
     def get_queryset(self):
-        """Filter to a term within a vocabulary within a repository"""
+        """Filter to a term within a vocabulary within a repository."""
         repo = Repository.objects.get(slug=self.kwargs['repo_slug'])
         vocabs = repo.vocabulary_set.filter(
             slug=self.kwargs['vocab_slug']
@@ -263,7 +263,7 @@ class RepoMemberGroupList(CheckValidMemberParamMixin, ListCreateAPIView):
         return list_users_in_repo(repo, group_type)
 
     def perform_create(self, serializer):
-        """Add a user in the group"""
+        """Add a user in the group."""
         # Validate the incoming data
         serializer.is_valid(raise_exception=True)
         # Get the user
@@ -316,7 +316,7 @@ class RepoMemberUserList(CheckValidMemberParamMixin, ListCreateAPIView):
         )
 
     def perform_create(self, serializer):
-        """Add a group for a user"""
+        """Add a group for a user."""
         # Validate the incoming data
         serializer.is_valid(raise_exception=True)
         # Get the user
@@ -405,13 +405,13 @@ class RepoMemberGroupUserDetail(RepoMemberUserGroupDetail):
 
 
 class LearningResourceTypeList(ListAPIView):
-    """REST list view for LearningResourceType"""
+    """REST list view for LearningResourceType."""
     serializer_class = LearningResourceTypeSerializer
     queryset = LearningResourceType.objects.all()
 
 
 class LearningResourceList(ListAPIView):
-    """REST list view for LearningResource"""
+    """REST list view for LearningResource."""
     serializer_class = LearningResourceSerializer
     lookup_field = 'id'
     lookup_url_kwarg = 'lr_id'
@@ -422,7 +422,7 @@ class LearningResourceList(ListAPIView):
     )
 
     def get_queryset(self):
-        """Get queryset for a LearningResource"""
+        """Get queryset for a LearningResource."""
         queryset = LearningResource.objects.filter(
             course__repository__slug=self.kwargs['repo_slug']
         )
@@ -437,7 +437,7 @@ class LearningResourceList(ListAPIView):
 
 
 class LearningResourceDetail(RetrieveUpdateAPIView):
-    """REST detail view for LearningResource"""
+    """REST detail view for LearningResource."""
     serializer_class = LearningResourceSerializer
     lookup_field = 'id'
     lookup_url_kwarg = 'lr_id'
@@ -448,13 +448,13 @@ class LearningResourceDetail(RetrieveUpdateAPIView):
     )
 
     def get_queryset(self):
-        """Get queryset for a LearningResource"""
+        """Get queryset for a LearningResource."""
         return LearningResource.objects.filter(
             id=self.kwargs['lr_id'])
 
 
 class StaticAssetList(ListAPIView):
-    """REST list view for StaticAsset"""
+    """REST list view for StaticAsset."""
     serializer_class = StaticAssetSerializer
     permission_classes = (
         ViewLearningResourcePermission,
@@ -464,14 +464,14 @@ class StaticAssetList(ListAPIView):
     lookup_url_kwarg = 'sa_id'
 
     def get_queryset(self):
-        """Get queryset for static assets for a particular LearningResource"""
+        """Get queryset for static assets for a particular LearningResource."""
         return LearningResource.objects.get(
             id=self.kwargs['lr_id']
         ).static_assets.filter()
 
 
 class StaticAssetDetail(RetrieveAPIView):
-    """REST list view for StaticAsset"""
+    """REST list view for StaticAsset."""
     serializer_class = StaticAssetSerializer
     permission_classes = (
         ViewStaticAssetPermission,
@@ -481,14 +481,14 @@ class StaticAssetDetail(RetrieveAPIView):
     lookup_url_kwarg = 'sa_id'
 
     def get_queryset(self):
-        """Get queryset for static assets for a particular LearningResource"""
+        """Get queryset for static assets for a particular LearningResource."""
         return StaticAsset.objects.filter(
             id=self.kwargs['sa_id']
         )
 
 
 class LearningResourceExportList(ListCreateAPIView):
-    """REST list view for exports"""
+    """REST list view for exports."""
 
     serializer_class = LearningResourceExportSerializer
     permission_classes = (
@@ -538,7 +538,7 @@ class LearningResourceExportList(ListCreateAPIView):
 
     # pylint: disable=unused-argument
     def delete(self, request, *args, **kwargs):
-        """Delete all ids in session for this repository and user"""
+        """Delete all ids in session for this repository and user."""
         try:
             del self.request.session[EXPORTS_KEY][self.kwargs['repo_slug']]
             self.request.session.modified = True

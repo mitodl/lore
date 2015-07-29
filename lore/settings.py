@@ -26,7 +26,7 @@ CONFIG_PATHS = [
 
 
 def load_fallback():
-    """Load optional yaml config"""
+    """Load optional yaml config."""
     fallback_config = {}
     config_file_path = None
     for config_path in CONFIG_PATHS:
@@ -42,7 +42,7 @@ FALLBACK_CONFIG = load_fallback()
 
 
 def get_var(name, default):
-    """Return the settings in a precedence way with default"""
+    """Return the settings in a precedence way with default."""
     try:
         value = os.environ.get(name, FALLBACK_CONFIG.get(name, default))
         return ast.literal_eval(value)
