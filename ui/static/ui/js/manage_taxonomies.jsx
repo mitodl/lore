@@ -205,7 +205,6 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
             }
           });
         }
-        console.error(data);
       }).done(function(data) {
         // Reset state (and eventually update the vocab tab
         thiz.props.updateParent(data);
