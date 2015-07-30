@@ -28,7 +28,11 @@ from learningresources.api import (
     NotFound,
     PermissionDenied as LorePermissionDenied,
 )
-from learningresources.models import Repository, StaticAsset
+from learningresources.models import (
+    Repository,
+    StaticAsset,
+    STATIC_ASSET_PREFIX,
+)
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes, RepoPermission
 from search import get_sqs
@@ -178,7 +182,7 @@ def get_vocabularies(facets):
 
 
 class RepositoryView(FacetedSearchView):
-    """Subclass of haystack.views.FacetedSearchView"""
+    """Subclass of haystack.views.FacetedSearchView."""
 
     # pylint: disable=arguments-differ
     # We need the extra kwarg.
@@ -204,7 +208,7 @@ class RepositoryView(FacetedSearchView):
         return super(RepositoryView, self).__call__(request)
 
     def dispatch(self, *args, **kwargs):
-        """Override for the purpose of having decorators in views.py"""
+        """Override for the purpose of having decorators in views.py."""
         super(RepositoryView, self).dispatch(*args, **kwargs)
 
     def extra_context(self):
@@ -261,12 +265,13 @@ class RepositoryView(FacetedSearchView):
 
 
 @login_required
-def serve_media(request, media_path):
+def serve_static_assets(request, path):
     """
     View to serve media files in case settings.DEFAULT_FILE_STORAGE
     is django.core.files.storage.FileSystemStorage
     """
     # first check if the user has access to the file
+    media_path = os.path.join(STATIC_ASSET_PREFIX, path)
     file_path = os.path.join(settings.MEDIA_ROOT, media_path)
     static_asset = get_object_or_404(StaticAsset, asset=media_path)
     if (RepoPermission.view_repo[0] not in
@@ -274,9 +279,41 @@ def serve_media(request, media_path):
         raise PermissionDenied()
     filename = os.path.basename(file_path)
     response = StreamingHttpResponse(
-        FileWrapper(open(file_path)),
+        FileWrapper(open(file_path), 'rb'),
         content_type=mimetypes.guess_type(file_path)[0]
     )
     response['Content-Length'] = os.path.getsize(file_path)
     response['Content-Disposition'] = "attachment; filename=%s" % filename
+    return response
+
+
+@login_required
+def serve_resource_exports(request, path):
+    """
+    View to serve media files in case settings.DEFAULT_FILE_STORAGE
+    is django.core.files.storage.FileSystemStorage
+    """
+    media_path = os.path.join(settings.EXPORT_PATH_PREFIX, path)
+    file_path = os.path.join(settings.MEDIA_ROOT, media_path)
+
+    # There is only one path that will work here, make sure it matches exactly.
+    expected_filename = "{name}_exports.tar.gz".format(
+        name=request.user.username
+    )
+    expected_path = os.path.join(
+        settings.MEDIA_ROOT, settings.EXPORT_PATH_PREFIX, expected_filename)
+    if expected_path != file_path:
+        raise PermissionDenied()
+    if not os.path.exists(file_path):
+        raise Http404()
+
+    filename = os.path.basename(file_path)
+    response = StreamingHttpResponse(
+        FileWrapper(open(file_path, 'rb')),
+        content_type=mimetypes.guess_type(file_path)[0]
+    )
+    response['Content-Length'] = os.path.getsize(file_path)
+    response['Content-Disposition'] = "attachment; filename={filename}".format(
+        filename=filename
+    )
     return response

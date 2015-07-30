@@ -25,6 +25,8 @@ from .views import (
     StaticAssetDetail,
     LearningResourceExportList,
     LearningResourceExportDetail,
+    LearningResourceExportTaskList,
+    LearningResourceExportTaskDetail,
 )
 
 REPOSITORY_MEMBERS_URL = r'^repositories/(?P<repo_slug>[-\w]+)/members/'
@@ -34,6 +36,9 @@ REPOSITORY_RESOURCE_URL = (
 )
 REPOSITORY_EXPORTS_URL = (
     r'^repositories/(?P<repo_slug>[-\w]+)/learning_resource_exports/'
+)
+REPOSITORY_EXPORT_TASK_URL = (
+    r'^repositories/(?P<repo_slug>[-\w]+)/learning_resource_export_tasks/'
 )
 
 urlpatterns = [
@@ -107,6 +112,12 @@ urlpatterns = [
     url(REPOSITORY_EXPORTS_URL + r'(?P<username>[-\w]+)/(?P<lr_id>\d+)/$',
         LearningResourceExportDetail.as_view(),
         name='learning-resource-export-detail'),
+    url(REPOSITORY_EXPORT_TASK_URL + r'$',
+        LearningResourceExportTaskList.as_view(),
+        name='learning-resource-export-task-list'),
+    url(REPOSITORY_EXPORT_TASK_URL + r'(?P<task_id>[-\w]+)/$',
+        LearningResourceExportTaskDetail.as_view(),
+        name='learning-resource-export-task-list'),
     url("^learning_resource_types/$", LearningResourceTypeList.as_view(),
         name='learning-resource-type-list'),
 ]

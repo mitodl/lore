@@ -26,7 +26,7 @@ CONFIG_PATHS = [
 
 
 def load_fallback():
-    """Load optional yaml config"""
+    """Load optional yaml config."""
     fallback_config = {}
     config_file_path = None
     for config_path in CONFIG_PATHS:
@@ -42,7 +42,7 @@ FALLBACK_CONFIG = load_fallback()
 
 
 def get_var(name, default):
-    """Return the settings in a precedence way with default"""
+    """Return the settings in a precedence way with default."""
     try:
         value = os.environ.get(name, FALLBACK_CONFIG.get(name, default))
         return ast.literal_eval(value)
@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     'audit',
     'learningresources',
     'importer',
+    'exporter',
     'ui',
     'taxonomy',
     'rest',
@@ -194,6 +195,7 @@ COMPRESS_PRECOMPILERS = (
 
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
+EXPORT_PATH_PREFIX = get_var('LORE_EXPORT_PATH_PREFIX', 'resource_exports/')
 MEDIA_ROOT = get_var('MEDIA_ROOT', '/tmp/')
 MEDIA_URL = '/media/'
 LORE_USE_S3 = get_var('LORE_USE_S3', False)
@@ -331,6 +333,8 @@ CELERY_RESULT_BACKEND = get_var(
     "CELERY_RESULT_BACKEND", get_var("REDISCLOUD_URL", None)
 )
 CELERY_ALWAYS_EAGER = get_var("CELERY_ALWAYS_EAGER", True)
+CELERY_EAGER_PROPAGATES_EXCEPTIONS = get_var(
+    "CELERY_EAGER_PROPAGATES_EXCEPTIONS", True)
 
 # guardian specific settings
 ANONYMOUS_USER_ID = None
