@@ -219,6 +219,22 @@ a {
     content: "\00a0";
 }
 
+.export-list li {
+	margin-bottom:24px;
+}
+
+.export-list li .tile-blurb {
+	display:block;
+	margin:0 0 0 34px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.export-list label {
+	font-weight:700;
+}
+
 /* results */
 .col-results {
 	border-left:1px dashed #E3E6EA;

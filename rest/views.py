@@ -678,9 +678,16 @@ class LearningResourceExportTaskList(ListCreateAPIView):
 
         repo_slug = self.kwargs['repo_slug']
         try:
-            exports = self.request.session[EXPORTS_KEY][repo_slug]
+            exports = set(self.request.session[EXPORTS_KEY][repo_slug])
         except KeyError:
-            exports = []
+            exports = set()
+
+        ids = self.request.data['ids']
+        for resource_id in ids:
+            if resource_id not in exports:
+                raise ValidationError("id {id} is not in export list".format(
+                    id=resource_id
+                ))
 
         # Cancel any old tasks.
         old_tasks = self.request.session.get(
@@ -694,7 +701,7 @@ class LearningResourceExportTaskList(ListCreateAPIView):
         self.request.session[EXPORT_TASK_KEY][repo_slug] = {}
 
         learning_resources = LearningResource.objects.filter(
-            id__in=exports).all()
+            id__in=ids).all()
         result = export_resources.delay(
             learning_resources, self.request.user.username)
 

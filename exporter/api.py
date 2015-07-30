@@ -4,11 +4,11 @@ Functions for exporting learning resources
 
 from __future__ import unicode_literals
 
-from tempfile import mkdtemp, mkstemp
-import tarfile
 import os
-from shutil import rmtree
 import re
+import tarfile
+from shutil import rmtree
+from tempfile import mkdtemp, mkstemp
 
 from django.utils.text import slugify
 from django.core.files.storage import default_storage
