@@ -50,7 +50,9 @@
     <div class="col-md-7 text-right"></div>
     <div class="col-md-5"></div>
     <div class="col-md-7 text-right">
+      {% if exports %}
       <button id="export_button" class="btn btn-primary" type="button" data-export-count="{{ exports|length }}" data-logged-in-user="{{ request.user.username }}">Export </button>
+      {% endif %}
     </div>
   </div>
   {% for result in page.object_list %}
