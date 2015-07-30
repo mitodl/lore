@@ -51,6 +51,46 @@ define("utils", ["jquery", "lodash", "reactaddons"], function ($, _, React) {
     }
   });
 
+  /**
+   * Component for checkboxes using ICheckbox and integrating with React
+   * appropriately.
+   */
+  var ICheckbox = React.createClass({
+    // onChange is set here to silence React warnings. We're using
+    // ifToggled instead.
+    render: function() {
+      return <span><input type="checkbox"
+                    value={this.props.value}
+                    checked={this.props.checked}
+                    onChange={this.handleChange}
+        /></span>;
+    },
+    handleChange: function(e) {
+      if (this.props.onChange !== undefined) {
+        this.props.onChange(e);
+      }
+    },
+    attachHandler: function() {
+      var node = React.findDOMNode(this);
+      var thiz = this;
+      $(node).off('ifToggled');
+      $(node).on('ifToggled', function(e) {
+        thiz.handleChange(e);
+      });
+      $(node).iCheck({
+        checkboxClass: 'icheckbox_square-blue',
+        radioClass: 'iradio_square-blue'
+      });
+      $(node).iCheck(this.props.checked ? "check" : "uncheck");
+    },
+    componentDidMount: function() {
+      this.attachHandler();
+    },
+    componentDidUpdate: function() {
+      this.attachHandler();
+    }
+  });
+
   return {
     getCollection: _getCollection,
     /**
@@ -74,6 +114,7 @@ define("utils", ["jquery", "lodash", "reactaddons"], function ($, _, React) {
         });
       });
     },
-    StatusBox: StatusBox
+    StatusBox: StatusBox,
+    ICheckbox: ICheckbox
   };
 });

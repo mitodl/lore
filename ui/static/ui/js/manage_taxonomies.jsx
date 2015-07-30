@@ -3,6 +3,7 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
   'use strict';
 
   var StatusBox = Utils.StatusBox;
+  var ICheckbox = Utils.ICheckbox;
 
   var TermComponent = React.createClass({
     render: function () {
@@ -229,12 +230,10 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
             <li key={type}>
               <div className="checkbox">
                 <label>
-                  <input
-                    type="checkbox"
+                  <ICheckbox
                     value={type}
                     checked={checked}
-                    onChange={thiz.updateLearningResourceType} />
-                  {type}
+                    onChange={thiz.updateLearningResourceType} /> {type}
                 </label>
               </div>
             </li>
