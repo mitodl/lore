@@ -110,5 +110,14 @@ define(['QUnit', 'jquery', 'static_assets', 'reactaddons',
           ref={afterMount} />);
       }
     );
+
+    QUnit.test(
+      'Assert that loader mounts a React component', function(assert) {
+        var container = document.createElement("div");
+        assert.equal($(container).find("ul").length, 0);
+        StaticAssets.loader("repo", 1, container);
+        assert.equal($(container).find("ul").length, 1);
+      }
+    );
   }
 );
