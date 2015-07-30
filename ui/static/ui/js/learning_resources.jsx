@@ -70,6 +70,7 @@ define('learning_resources', [
         <form className="form-horizontal">
           <StatusBox message={this.state.message} />
           <textarea className="form-control textarea-xml"
+                    readOnly="true"
                     valueLink={this.linkState('contentXml')}
             />
 
