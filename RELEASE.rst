@@ -5,6 +5,7 @@ Version 0.6.0
 =============
 
 - Modified learningresource panel to include multi select.
+- Fixed export button not appearing in certain situations.
 - Added test for StaticAsset.loader.
 - Added export functionality for learning resources.
 - Added select2-bootstrap-theme bower component.
@@ -20,7 +21,7 @@ Version 0.6.0
 - Fixed broken links in the footer.
 - Removed console.error statement.
 - Fixed bug where export checkboxes were not updated in sync with
-export count.
+  export count.
 - Fix test failures due to pylint dependency chain.
 - Created StatusBox component to hold messages and errors.
 - Added shopping cart for export.
@@ -47,7 +48,7 @@ Version 0.5.0
 - Fixed display of vocabulary terms containing spaces.
 - Fixed comparison of FileFields to strings.
 - Fixed typo in search hint
-- Added bootstrap style to vocabularly learning type checkboxes Closes #337
+- Added bootstrap style to vocabulary learning type checkboxes Closes #337
 - Changed search box description
 - Fixed mutating of this.state which is forbidden
 - Added static file parsing to HTML elements.
@@ -172,7 +173,7 @@ Version 0.1.0
 - Added rest app with support for RESTful API
 - Added initial authorization support
 - Added login requirement for taxonomy app
-- Switched to using django storage for course uploads
+- Switched to using Django storage for course uploads
 - Switched to using Haystack/ElasticSearch for listing page
 - Protected course imports
 - Protected export view
