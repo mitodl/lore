@@ -8,6 +8,7 @@ var REQUIRE_PATHS = {
   react: "react/react",
   reactaddons: "react/react-with-addons",
   lodash: "lodash/lodash",
+  select2: "select2/dist/js/select2.full",
   csrf: "../ui/js/csrf",
   facets: "../ui/js/facets",
   listing: "../ui/js/listing",
