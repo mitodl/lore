@@ -156,6 +156,7 @@ define('learning_resources', [
         thiz.setState({
           message: "Form saved successfully!"
         });
+        location.reload();
       }).fail(function () {
         thiz.setState({
           message: {error: "Unable to save form"}
