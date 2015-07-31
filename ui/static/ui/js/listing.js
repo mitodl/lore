@@ -76,7 +76,94 @@ define('listing',
         });
     }
 
+    /**
+     * Resets all open inline edit description forms
+     */
+    function resetEditForms() {
+      var descElement = $('.text-description');
+      $('textarea[name=search_temp]').remove();
+      descElement.show();
+      $('.save-btn').css('display', 'none');
+      $('.cancel-btn').css('display', 'none');
+      $('.edit-btn').css('display', 'inline');
+    }
+
+    /**
+     * Insert a text area to edit description and save the changes.
+     * Shows new, edited learning resource description.
+     *
+     * @param {String} lrId - Learning resource id
+     * @param {String} repoSlug - Repository slug
+     * @param {JQuery} editButton - Edit description button on the page
+     */
+    function editDescLearningResource(lrId, repoSlug, editButton) {
+      resetEditForms();
+      var replaceWith = $(
+        '<textarea name="search_temp" type="text" ' +
+        'class="form-control col-sm-12 textarea-desc"/>'
+      );
+      var descElement = $('#lr_desc_' + lrId);
+      var buttonSave = $(editButton).parent().find('.save-btn');
+      var buttonCancel = $(editButton).parent().find('.cancel-btn');
+
+      descElement.hide();
+      replaceWith.html($.trim(descElement.text()));
+      descElement.after(replaceWith);
+      replaceWith.focus();
+
+      $(editButton).css('display', 'none');
+      $(buttonSave).css('display', 'inline');
+      $(buttonCancel).css('display', 'inline');
+
+      $(buttonCancel).on('click', function() {
+        replaceWith.remove();
+        descElement.show();
+        $(buttonCancel).css('display', 'none');
+        $(buttonSave).css('display', 'none');
+        $(editButton).css('display', 'inline');
+      });
+      $(buttonSave).on('click', function() {
+        if (replaceWith.val() !== "") {
+          descElement.text(replaceWith.val());
+        } else {
+          descElement.text('No description provided.');
+        }
+        saveDescLearningResource(lrId, repoSlug, replaceWith.val());
+        replaceWith.remove();
+        descElement.show();
+        $(buttonSave).css('display', 'none');
+        $(editButton).css('display', 'inline');
+      });
+    }
+
+    /**
+     * Saves description of a learning resource via REST API.
+     *
+     * @param {String} lrId - Learning resource id
+     * @param {String} repoSlug - Repository slug
+     * @param {String} desc - Edit description button on the page
+     */
+    function saveDescLearningResource(lrId, repoSlug, desc) {
+      var data = {
+        description: desc
+      };
+      $.ajax({
+        url: "/api/v1/repositories/" + repoSlug +
+        "/learning_resources/" + lrId + "/",
+        type: "PATCH",
+        contentType: 'application/json',
+        data: JSON.stringify(data)
+      }).fail(function() {
+        console.log("Unable to save learning resource description.");
+      });
+    }
+
     $(document).ready(function() {
+      $('.tile-blurb').find('.edit-btn').on('click', function() {
+        var lid = $(this).data('lid');
+        var repoSlug = $(this).data('repo-slug');
+        editDescLearningResource(lid, repoSlug, this);
+      });
 
       $('[data-toggle=popover]').popover();
 
@@ -131,7 +218,7 @@ define('listing',
       /**
        * Update export count badge.
        *
-       * @param {number} direction Add this value to
+       * @param {Number} direction Add this value to
        * the existing count before rendering.
        */
       var updateExportCount = function(direction) {
@@ -309,7 +396,7 @@ define('listing',
           $.post("/api/v1/repositories/" + repoSlug +
             "/learning_resource_exports/" + loggedInUsername + "/", {
             id: learningResourceId
-          }).then(function () {
+          }).then(function() {
             updateExportCount(1);
             $node.data("selected", true);
             updateCheckDisplay(node);

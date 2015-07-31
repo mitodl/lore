@@ -39,11 +39,18 @@
           <span class="meta-item">{{ result.description_path }}</span>
         </div>
         <div class="tile-blurb">
+          <span id="lr_desc_{{ result.lid }}" class="text-description">
           {% if result.description %}
           {{ result.description }}
           {% else %}
           No description provided.
           {% endif %}
+          </span>
+          <i class="fa fa-pencil edit-btn" data-lid="{{ result.lid }}" data-repo-slug="{{ repo.slug }}"></i>
+          <div align="right">
+            <i class="fa fa-save save-btn"></i>
+            <i class="fa fa-close cancel-btn"></i>
+          </div>
         </div>
         <div class="tile-meta">
           <span class="meta-item">{{ result.course }}</span>
