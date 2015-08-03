@@ -4,19 +4,18 @@ Test the importer views to make sure they work.
 
 from __future__ import unicode_literals
 
-import imp
-import importlib
 import logging
 import os
 
 from django.conf import settings
 from django.core.files.storage import default_storage
-from django.core.urlresolvers import reverse
 
 import ui.urls
 from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
+from search.sorting import LoreSortingFields
+from six.moves import reload_module  # pylint: disable=import-error
 
 from learningresources.tests.base import LoreTestCase
 
@@ -27,6 +26,7 @@ NOT_FOUND = 404
 log = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-public-methods
 class TestViews(LoreTestCase):
     """Hit each view."""
 
@@ -84,15 +84,23 @@ class TestViews(LoreTestCase):
         body = resp.content.decode("utf-8")
         self.assertTrue(repo_name in body)
 
-    def test_listing_unauthorized(self):
-        """View listing page."""
-        # Not authorized to view this repository...
-        body = self.assert_status_code(
+    def test_listing_not_found(self):
+        """View listing page, but repo does not exist."""
+        self.assert_status_code(
             "/repositories/99/",
+            NOT_FOUND,
+            return_body=True
+        )
+
+    def test_listing_unauthorized(self):
+        """View listing page, but not authorized to view this repository."""
+        self.logout()
+        self.login(self.USERNAME_NO_REPO)
+        self.assert_status_code(
+            self.repository_url,
             UNAUTHORIZED,
             return_body=True
         )
-        self.assertTrue("unauthorized" in body)
 
     def test_listing_importcourse_perms(self):
         """
@@ -222,28 +230,6 @@ class TestViews(LoreTestCase):
         self.assertEqual(len(response.redirect_chain), 2)
         self.assertTrue(302 in response.redirect_chain[0])
 
-    def test_export_good(self):
-        """Get raw XML of something I should be allowed to see."""
-        url = reverse("export", args=(self.repo.slug, self.resource.id))
-        resp = self.client.get(url, follow=True)
-        body = resp.content.decode("utf-8")
-        self.assertTrue(resp.status_code == HTTP_OK)
-        self.assertTrue(self.resource.content_xml in body)
-
-    def test_export_no_permission(self):
-        """Get raw XML of something I should not be allowed to see."""
-        url = reverse("export", args=(self.repo.slug, self.resource.id))
-        self.logout()
-        self.login(self.USERNAME_NO_REPO)
-        resp = self.client.get(url, follow=True)
-        self.assertTrue(resp.status_code == UNAUTHORIZED)
-
-    def test_export_nonexistent(self):
-        """Get raw XML of something than does not exist."""
-        url = reverse("export", args=(self.repo.slug, 999999))
-        resp = self.client.get(url, follow=True)
-        self.assertTrue(resp.status_code == NOT_FOUND)
-
     def test_repo_url(self):
         """Hit repo site normally."""
         resp = self.client.get(self.repository_url, follow=True)
@@ -260,6 +246,69 @@ class TestViews(LoreTestCase):
             self.course.course_number)
         resp = self.client.get(self.repository_url + querystring, follow=True)
         self.assertTrue(resp.status_code == HTTP_OK)
+
+    def test_listing_with_sorting(self):
+        """
+        Hit the listing with sorting and test that the current sorting
+        changes in the interface.
+        The actual sorting of results is tested in search.tests.test_indexing
+        """
+        url = self.repository_url + "?sortby={0}"
+        base_sorting_str = ('<button type="button" '
+                            'class="btn btn-default">{0}</button>')
+        # test no sort type
+        body = self.assert_status_code(
+            self.repository_url,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertIn(
+            base_sorting_str.format(
+                LoreSortingFields.get_sorting_option(
+                    LoreSortingFields.DEFAULT_SORTING_FIELD
+                )[1]
+            ),
+            body
+        )
+        # test all the allowed sort types
+        for sort_option in LoreSortingFields.all_sorting_options():
+            sort_url = url.format(sort_option[0])
+            body = self.assert_status_code(
+                sort_url,
+                HTTP_OK,
+                return_body=True
+            )
+            self.assertIn(
+                base_sorting_str.format(sort_option[1]),
+                body
+            )
+        # test sorting by not allowed sort type
+        url_not_allowed_sort_type = url.format('foo_field')
+        body = self.assert_status_code(
+            url_not_allowed_sort_type,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertIn(
+            base_sorting_str.format(
+                LoreSortingFields.get_sorting_option(
+                    LoreSortingFields.DEFAULT_SORTING_FIELD
+                )[1]
+            ),
+            body
+        )
+
+    def test_description_path(self):
+        """Tests that the description path is in the listing page"""
+        dpath_html = '<span class="meta-item">{0}</span>'.format(
+            self.resource.description_path
+        )
+        body = self.assert_status_code(
+            self.repository_url,
+            HTTP_OK,
+            return_body=True
+        )
+        self.assertIn(dpath_html, body)
 
     def test_serve_media(self):
         """Hit serve media"""
@@ -297,30 +346,18 @@ class TestViews(LoreTestCase):
             DEFAULT_FILE_STORAGE=('storages.backends'
                                   '.s3boto.S3BotoStorage')
         ):
-            # force the reload of the urls
-            # python 2.7, 3.3 and 3.4 have different ways to reload modules
-            # 2.7 uses the builtin function reload
-            # 3.3 uses imp.reload
-            # 3.4 uses importlib.reload
-            try:
-                reload(ui.urls)  # pylint: disable=undefined-variable
-            # this is in case of python 3.4
-            except NameError:  # pragma: no cover
-                try:
-                    importlib.reload(ui.urls)
-                # this is in case of python 3.3
-                except AttributeError:  # pragma: no cover
-                    imp.reload(ui.urls)
+            reload_module(ui.urls)
             # the view is not available any more
             resp = self.client.get(static_asset_url)
             self.assertEqual(resp.status_code, NOT_FOUND)
         # force the reload of the urls again to be sure to have everything back
-        try:
-            reload(ui.urls)  # pylint: disable=undefined-variable
-        # this is in case of python 3.4
-        except NameError:  # pragma: no cover
-            try:
-                importlib.reload(ui.urls)
-            # this is in case of python 3.3
-            except AttributeError:  # pragma: no cover
-                imp.reload(ui.urls)
+        reload_module(ui.urls)
+
+    def test_preview_url(self):
+        """Test that preview url shows up correctly"""
+        resp = self.client.get(self.repository_url, follow=True)
+        self.assertIn(
+            '<a href="https://www.sandbox.edx.org/courses/test-org/'
+            'infinity/Febtober/jump_to_id/url_name1" '
+            'target="_blank">Preview</a>',
+            resp.content.decode('utf-8'))

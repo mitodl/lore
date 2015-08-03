@@ -23,12 +23,22 @@ from .views import (
     LearningResourceTypeList,
     StaticAssetList,
     StaticAssetDetail,
+    LearningResourceExportList,
+    LearningResourceExportDetail,
+    LearningResourceExportTaskList,
+    LearningResourceExportTaskDetail,
 )
 
 REPOSITORY_MEMBERS_URL = r'^repositories/(?P<repo_slug>[-\w]+)/members/'
 REPOSITORY_VOCAB_URL = r'^repositories/(?P<repo_slug>[-\w]+)/vocabularies/'
 REPOSITORY_RESOURCE_URL = (
     r'^repositories/(?P<repo_slug>[-\w]+)/learning_resources/'
+)
+REPOSITORY_EXPORTS_URL = (
+    r'^repositories/(?P<repo_slug>[-\w]+)/learning_resource_exports/'
+)
+REPOSITORY_EXPORT_TASK_URL = (
+    r'^repositories/(?P<repo_slug>[-\w]+)/learning_resource_export_tasks/'
 )
 
 urlpatterns = [
@@ -96,6 +106,18 @@ urlpatterns = [
         r'(?P<lr_id>\d+)/static_assets/(?P<sa_id>\d+)/$',
         StaticAssetDetail.as_view(),
         name='static-asset-detail'),
+    url(REPOSITORY_EXPORTS_URL + r'(?P<username>[-\w]+)/$',
+        LearningResourceExportList.as_view(),
+        name='learning-resource-export-list'),
+    url(REPOSITORY_EXPORTS_URL + r'(?P<username>[-\w]+)/(?P<lr_id>\d+)/$',
+        LearningResourceExportDetail.as_view(),
+        name='learning-resource-export-detail'),
+    url(REPOSITORY_EXPORT_TASK_URL + r'$',
+        LearningResourceExportTaskList.as_view(),
+        name='learning-resource-export-task-list'),
+    url(REPOSITORY_EXPORT_TASK_URL + r'(?P<task_id>[-\w]+)/$',
+        LearningResourceExportTaskDetail.as_view(),
+        name='learning-resource-export-task-list'),
     url("^learning_resource_types/$", LearningResourceTypeList.as_view(),
         name='learning-resource-type-list'),
 ]

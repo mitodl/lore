@@ -18,8 +18,12 @@ from lxml import etree
 from xbundle import XBundle, DESCRIPTOR_TAGS
 
 from learningresources.api import (
-    create_course, create_resource, import_static_assets,
-    create_static_asset, get_video_sub,
+    create_course,
+    create_resource,
+    import_static_assets,
+    create_static_asset,
+    get_video_sub,
+    join_description_paths,
 )
 from learningresources.models import StaticAsset, course_asset_basepath
 
@@ -92,7 +96,9 @@ def import_course_from_path(path, repo_id, user_id):
     Returns:
         course (learningresources.Course)
     """
-    bundle = XBundle()
+    bundle = XBundle(
+        keep_urls=True, keep_studio_urls=True, preserve_url_name=True
+    )
     bundle.import_from_directory(path)
     static_dir = join(path, 'static')
     course = import_course(bundle, repo_id, user_id, static_dir)
@@ -112,6 +118,7 @@ def import_course(bundle, repo_id, user_id, static_dir):
         learningresources.models.Course
     """
     src = bundle.course
+
     course = create_course(
         org=src.attrib["org"],
         repo_id=repo_id,
@@ -120,28 +127,35 @@ def import_course(bundle, repo_id, user_id, static_dir):
         user_id=user_id,
     )
     import_static_assets(course, static_dir)
-    import_children(course, src, None)
+    import_children(course, src, None, '')
     return course
 
 
-def import_children(course, element, parent):
+def import_children(course, element, parent, parent_dpath):
     """
     Create LearningResource instances for each element
     of an XML tree.
 
     Args:
-        course (learningresources.Course): Course
+        course (learningresources.models.Course): Course
         element (lxml.etree): XML element within xbundle
-        parent (learningresources.LearningResource): Parent LearningResource
+        parent (learningresources.models.LearningResource):
+            Parent LearningResource
+        parent_dpath (unicode): parent description path
     Returns:
         None
     """
+    # pylint: disable=too-many-locals
+    title = element.attrib.get("display_name", "MISSING")
     mpath = etree.ElementTree(element).getpath(element)
+    dpath = join_description_paths(parent_dpath, title)
     resource = create_resource(
         course=course, parent=parent, resource_type=element.tag,
-        title=element.attrib.get("display_name", "MISSING"),
+        title=title,
         content_xml=etree.tostring(element),
         mpath=mpath,
+        url_name=element.attrib.get("url_name", None),
+        dpath=dpath,
     )
     target = "/static/"
     if element.tag == "video":
@@ -180,4 +194,4 @@ def import_children(course, element, parent):
 
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
-            import_children(course, child, resource)
+            import_children(course, child, resource, dpath)
