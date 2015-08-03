@@ -11,6 +11,16 @@ import requests
 
 log = logging.getLogger(__name__)
 
+def _call(url, data):
+    """
+    Make call via requests, trapping common errors.
+    Args:
+        url (unicode): URL
+        data (dict): POST parameters
+    Returns:
+        result (dict): Results read as JSON
+    """
+    return requests.post(url=url, data=data).json()
 
 def send_request(url, course_id):
     """
@@ -21,7 +31,7 @@ def send_request(url, course_id):
     Returns:
         token (unicode): Job token from xanalytics.
     """
-    return requests.post(url=url, data={"course_id": course_id}).json()
+    return _call(url=url, data={"course_id": course_id})
 
 
 def get_result(url, token):
@@ -32,4 +42,4 @@ def get_result(url, token):
     Returns:
         data (dict): Dictionary from JSON object provided by xanalytics.
     """
-    return requests.post(url=url, data={"token": token}).json()
+    return _call(url=url, data={"token": token})
