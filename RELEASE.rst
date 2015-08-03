@@ -1,13 +1,54 @@
 Release Notes
 -------------
 
+Version 0.6.0
+=============
+
+- Modified learningresource panel to include multi select.
+- Fixed export button not appearing in certain situations.
+- Added test for StaticAsset.loader.
+- Added export functionality for learning resources.
+- Added select2-bootstrap-theme bower component.
+- Added Select2 to the JS libraries.
+- Created ICheckbox React component.
+- Made XML preview box for a LearningResource should be read only.
+- Pinned all versions.
+- Avoided hitting the database for the search page.
+- Added field to Vocabulary to define if it can contain multiple terms.
+- Incremented xbundle version.
+- Added test for ManageTaxonomies.loader.
+- Changed vocabularies listing page to match the design.
+- Fixed broken links in the footer.
+- Removed console.error statement.
+- Fixed bug where export checkboxes were not updated in sync with
+  export count.
+- Fix test failures due to pylint dependency chain.
+- Created StatusBox component to hold messages and errors.
+- Added shopping cart for export.
+- Changed response vocabulary name to match input and avoid key collision.
+- Added docker support for running worker or Web process by environment.
+- Extended tests for manage_taxonomies.jsx file.
+- Added description path to listing page.
+- Removed export view which isn&#39;t used anymore.
+- Refactored code for reloading module into a function.
+- Refactored permission check for listing view.
+- Updated Haystack to 2.4.0 - Removed automatic index update from deployment.
+- Fixed preview link not showing up in list view.
+- Grouped REST tests by common endpoint.
+- Changed vocabulary term indexing from string to integer.
+- Implemented preview link for learning resource panel.
+- Added sorting to search results.
+- Implemented learning resource panel updating on every panel open.
+- Used different haystack index for tests to prevent conflict with
+  web application.
+
 Version 0.5.0
 =============
 
 - Fixed display of vocabulary terms containing spaces.
 - Fixed comparison of FileFields to strings.
 - Fixed typo in search hint
-- Added bootstrap style to vocabularly learning type checkboxes Closes #337
+- Added bootstrap style to vocabulary learning type checkboxes Closes #337
 - Changed search box description
 - Fixed mutating of this.state which is forbidden
 - Added static file parsing to HTML elements.
@@ -132,7 +173,7 @@ Version 0.1.0
 - Added rest app with support for RESTful API
 - Added initial authorization support
 - Added login requirement for taxonomy app
-- Switched to using django storage for course uploads
+- Switched to using Django storage for course uploads
 - Switched to using Haystack/ElasticSearch for listing page
 - Protected course imports
 - Protected export view
