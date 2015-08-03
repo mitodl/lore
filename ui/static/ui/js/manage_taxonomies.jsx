@@ -281,11 +281,9 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           <p>
             <div className="checkbox">
               <label>
-                <input
-                  type="checkbox"
+                <ICheckbox
                   checked={this.state.multiTerms}
-                  onChange={thiz.updateMultiTerms} />
-                Allow multiple terms per learning resource
+                  onChange={thiz.updateMultiTerms} /> Allow multiple terms per learning resource
               </label>
             </div>
           </p>
