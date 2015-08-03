@@ -18,6 +18,8 @@ def export_resources(learning_resources, username):
             LearningResources to export in tarball
         username (unicode): Name of user
     Returns:
-        unicode: Path of tarball in django-storage
+        (unicode, bool):
+            First item is newly created temp directory with files inside of it.
+            Second item is True if a static asset collision was detected.
     """
     return export_resources_to_tarball(learning_resources, username)

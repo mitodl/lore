@@ -5,10 +5,8 @@ Tests for export
 from __future__ import unicode_literals
 from tempfile import mkdtemp
 from shutil import rmtree
-import os
 import tarfile
 
-from django.utils.text import slugify
 from django.test import override_settings
 from rest_framework.status import HTTP_200_OK, HTTP_404_NOT_FOUND
 from six import BytesIO
@@ -18,6 +16,8 @@ import ui.urls
 from rest.tests.base import (
     RESTTestCase
 )
+from learningresources.models import LearningResource
+from exporter.tests.test_export import assert_resource_directory
 
 
 class TestExport(RESTTestCase):
@@ -28,9 +28,12 @@ class TestExport(RESTTestCase):
     )
     def test_create_new_task(self):
         """Test a basic export."""
-        self.create_learning_resource_export(self.repo.slug, {
-            "id": self.resource.id
-        })
+        resources = LearningResource.objects.filter(
+            course__repository__id=self.repo.id).all()
+        for resource in resources:
+            self.create_learning_resource_export(self.repo.slug, {
+                "id": resource.id
+            })
 
         task_id = self.create_learning_resource_export_task(
             self.repo.slug)['id']
@@ -63,10 +66,6 @@ class TestExport(RESTTestCase):
             with tarfile.open(fileobj=fakefile, mode="r:gz") as tar:
                 tar.extractall(path=tempdir)
 
-            self.assertTrue(os.path.isfile(os.path.join(
-                tempdir, "{id}_{name}.xml".format(
-                    id=self.resource.id,
-                    name=slugify(self.resource.title),
-                ))))
+            assert_resource_directory(self, resources, tempdir)
         finally:
             rmtree(tempdir)
