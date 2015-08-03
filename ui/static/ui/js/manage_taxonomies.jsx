@@ -1,6 +1,9 @@
-define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
+define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
   function (React, _, $, Utils) {
   'use strict';
+
+  var StatusBox = Utils.StatusBox;
+  var ICheckbox = Utils.ICheckbox;
 
   var TermComponent = React.createClass({
     render: function () {
@@ -16,7 +19,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         return <TermComponent term={term} key={term.slug} />;
       });
 
-      return <ul className="icheck-list">
+      return <div className="panel panel-default">
           <div className="panel-heading">
             <h4 className="panel-title">
               <a className="accordion-toggle" data-toggle="collapse"
@@ -29,26 +32,27 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           <div id={'collapse-' + this.props.vocabulary.slug}
                className="panel-collapse collapse in">
             <div className="panel-body">
-              <ul>
+              <ul className="icheck-list">
                 {items}
+                <li>
+                  <div className="input-group">
+                    <input type="text"
+                           valueLink={this.linkState('newTermLabel')}
+                      className="form-control" onKeyUp={this.onKeyUp}
+                      placeholder="Add new term..."
+                      />
+                      <span className="input-group-btn">
+                        <a className="btn btn-white"
+                          type="button" onClick={this.handleAddTermClick}><i
+                          className="fa fa-plus-circle"
+                        ></i></a>
+                      </span>
+                  </div>
+                </li>
               </ul>
             </div>
           </div>
-        <li>
-          <div className="input-group">
-            <input type="text" valueLink={this.linkState('newTermLabel')}
-              className="form-control" onKeyUp={this.onKeyUp}
-              placeholder="Add new term..."
-              />
-              <span className="input-group-btn">
-                <a className="btn btn-white"
-                  type="button" onClick={this.handleAddTermClick}><i
-                  className="fa fa-plus-circle"
-                ></i></a>
-              </span>
-          </div>
-        </li>
-      </ul>;
+      </div>;
     },
     onKeyUp: function(e) {
       if (e.key === "Enter") {
@@ -69,7 +73,9 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           contentType: "application/json; charset=utf-8"
         }
       ).fail(function() {
-          thiz.props.reportError("Error occurred while adding new term.");
+          thiz.props.reportMessage({
+            error: "Error occurred while adding new term."
+          });
         })
       .done(function(newTerm) {
           thiz.props.addTerm(thiz.props.vocabulary.slug, newTerm);
@@ -78,7 +84,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           });
 
           // clear errors
-          thiz.props.reportError(null);
+          thiz.props.reportMessage(null);
         });
     },
     getInitialState: function() {
@@ -98,26 +104,24 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           terms={obj.terms}
           key={obj.vocabulary.slug}
           repoSlug={repoSlug}
-          reportError={thiz.reportError}
+          reportMessage={thiz.reportMessage}
           addTerm={thiz.props.addTerm}
           />;
       });
       return <div className="panel-group lore-panel-group">
         <div className="panel panel-default">
         </div>
-        <span style={{color: "red"}}>
-          {this.state.errorText}
-        </span>
+        <StatusBox message={this.state.message} />
         {items}
       </div>;
 
     },
-    reportError: function(msg) {
-      this.setState({errorText: msg});
+    reportMessage: function(message) {
+      this.setState({message: message});
     },
     getInitialState: function() {
       return {
-        errorText: ""
+        message: undefined
       };
     }
   });
@@ -130,6 +134,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         description: '',
         vocabularyType: 'm',
         learningResourceTypes: [],
+        multiTerms: false,
       };
     },
     updateLearningResourceType: function(e) {
@@ -155,6 +160,9 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
       this.setState({vocabularyType: e.target.value});
       e.target.isChecked = true;
     },
+    updateMultiTerms: function(e) {
+      this.setState({multiTerms: e.target.checked});
+    },
     submitForm: function(e) {
       var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
         '/vocabularies/';
@@ -167,6 +175,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
         required: false,
         weight: 2147483647,
         learning_resource_types: this.state.learningResourceTypes,
+        multi_terms: this.state.multiTerms
       };
 
       $.ajax({
@@ -182,18 +191,21 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
             if (jsonData.non_field_errors[i] ===
               'The fields repository, name must make a unique set.') {
               thiz.setState({
-                errorMessage: 'A Vocabulary named "' + vocabularyData.name +
+                message: {
+                  error: 'A Vocabulary named "' + vocabularyData.name +
                   '" already exists. Please choose a different name.'
+                }
               });
               break;
             }
           }
         } else {
           thiz.setState({
-            errorMessage: 'There was a problem adding the Vocabulary.'
+            message: {
+              error: 'There was a problem adding the Vocabulary.'
+            }
           });
         }
-        console.error(data);
       }).done(function(data) {
         // Reset state (and eventually update the vocab tab
         thiz.props.updateParent(data);
@@ -210,13 +222,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
       });
     },
     render: function() {
-      var errorBox = null;
       var thiz = this;
-      if (this.state.errorMessage !== undefined) {
-        errorBox = <div className="alert alert-danger alert-dismissible">
-                     {this.state.errorMessage}
-                   </div>;
-      }
 
       var checkboxes = _.map(this.props.learningResourceTypes, function(type) {
         var checked = _.includes(thiz.state.learningResourceTypes, type);
@@ -224,12 +230,10 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
             <li key={type}>
               <div className="checkbox">
                 <label>
-                  <input
-                    type="checkbox"
+                  <ICheckbox
                     value={type}
                     checked={checked}
-                    onChange={thiz.updateLearningResourceType} />
-                  {type}
+                    onChange={thiz.updateLearningResourceType} /> {type}
                 </label>
               </div>
             </li>
@@ -238,7 +242,7 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
 
       return (
         <form className="form-horizontal" onSubmit={this.submitForm}>
-          {errorBox}
+          <StatusBox message={this.state.message} />
           <p>
             <input type="text" valueLink={this.linkState('name')}
               className="form-control"
@@ -271,6 +275,17 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
                   checked={this.state.vocabularyType === 'f'}
                   onChange={this.updateVocabularyType} />
                     Tag Style (on the fly)
+              </label>
+            </div>
+          </p>
+          <p>
+            <div className="checkbox">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={this.state.multiTerms}
+                  onChange={thiz.updateMultiTerms} />
+                Allow multiple terms per learning resource
               </label>
             </div>
           </p>
@@ -360,10 +375,11 @@ define('setup_manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
     'AddTermsComponent': AddTermsComponent,
     'AddVocabulary': AddVocabulary,
     'TaxonomyComponent': TaxonomyComponent,
-    'loader' : function (repoSlug) {
+    'loader': function (repoSlug, container) {
       React.render(
         <TaxonomyComponent repoSlug={repoSlug}/>,
-        $('#taxonomy-component')[0]);
+        container
+      );
     }
   };
 

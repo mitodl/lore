@@ -92,13 +92,9 @@ define(['QUnit', 'jquery', 'static_assets', 'reactaddons',
         });
         var afterMount = function(component) {
           waitForAjax(1, function() {
-            assert.equal(
-              component.state.errorText,
-              "Unable to read information about static assets."
-            );
-            assert.equal(
-              component.state.messageText,
-              undefined
+            assert.deepEqual(
+              component.state.message,
+              {error: "Unable to read information about static assets."}
             );
             var $node = $(React.findDOMNode(component));
             var $vocabSelect = $node.find("div.alert");
@@ -112,6 +108,15 @@ define(['QUnit', 'jquery', 'static_assets', 'reactaddons',
           repoSlug="repo"
           learningResourceId="1"
           ref={afterMount} />);
+      }
+    );
+
+    QUnit.test(
+      'Assert that loader mounts a React component', function(assert) {
+        var container = document.createElement("div");
+        assert.equal($(container).find("ul").length, 0);
+        StaticAssets.loader("repo", 1, container);
+        assert.equal($(container).find("ul").length, 1);
       }
     );
   }

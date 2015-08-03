@@ -35,7 +35,7 @@ from learningresources.models import (
 
 
 class RepositorySerializer(ModelSerializer):
-    """Serializer for Repository"""
+    """Serializer for Repository."""
 
     created_by = HiddenField(
         default=CreateOnlyDefault(CurrentUserDefault())
@@ -60,7 +60,7 @@ class RepositorySerializer(ModelSerializer):
 
 
 class VocabularySerializer(ModelSerializer):
-    """Serializer for Vocabulary"""
+    """Serializer for Vocabulary."""
 
     repository = HiddenField(default=LambdaDefault(
         lambda context: get_object_or_404(
@@ -93,6 +93,7 @@ class VocabularySerializer(ModelSerializer):
             'repository',
             'learning_resource_types',
             'terms',
+            'multi_terms',
         )
         read_only_fields = (
             'id',
@@ -101,12 +102,12 @@ class VocabularySerializer(ModelSerializer):
 
     @staticmethod
     def get_terms(obj):
-        """List of terms for vocabulary"""
+        """List of terms for vocabulary."""
         return [TermSerializer(term).data for term in obj.term_set.all()]
 
 
 class TermSerializer(ModelSerializer):
-    """Serializer for Term"""
+    """Serializer for Term."""
 
     vocabulary = HiddenField(default=LambdaDefault(
         lambda context: get_object_or_404(
@@ -139,7 +140,7 @@ class GroupSerializer(Serializer):
     )
 
     def validate_group_type(self, value):
-        """Validate group_type"""
+        """Validate group_type."""
         # pylint: disable=no-self-use
         if value not in BaseGroupTypes.all_base_groups():  # pragma: no cover
             raise ValidationError(
@@ -155,7 +156,7 @@ class UserSerializer(Serializer):
     username = CharField()
 
     def validate_username(self, value):
-        """Validate username"""
+        """Validate username."""
         # pylint: disable=no-self-use
         try:
             User.objects.get(username=value)
@@ -173,7 +174,7 @@ class UserGroupSerializer(UserSerializer, GroupSerializer):
 
 
 class LearningResourceTypeSerializer(ModelSerializer):
-    """Serializer for LearningResourceType"""
+    """Serializer for LearningResourceType."""
     class Meta:
         # pylint: disable=missing-docstring
         model = LearningResourceType
@@ -182,7 +183,7 @@ class LearningResourceTypeSerializer(ModelSerializer):
 
 
 class LearningResourceSerializer(ModelSerializer):
-    """Serializer for LearningResource"""
+    """Serializer for LearningResource."""
 
     learning_resource_type = StringRelatedField()
     terms = SlugRelatedField(
@@ -214,16 +215,30 @@ class LearningResourceSerializer(ModelSerializer):
 
     def validate_terms(self, terms):
         """
-        Validate that this LearningResource's learning_resource_type
-        is supported by the vocabulary of each term being added
+        Validate that
+        1- this LearningResource's learning_resource_type
+           is supported by the vocabulary of each term being added
+        2- There are no multiple terms belonging to a vocabulary with
+           "multi_term" field set to False
         """
         resource_type = self.instance.learning_resource_type
+        vocabulary_cache = {}
         for term in terms:
             if not term.vocabulary.learning_resource_types.filter(
                     name=resource_type.name).exists():
                 raise ValidationError(
                     "Term {} is not supported "
                     "for this LearningResource".format(term.label))
+            if not term.vocabulary.multi_terms:
+                vocabulary_cache.setdefault(
+                    term.vocabulary.id, []).append(term.id)
+                if len(vocabulary_cache[term.vocabulary.id]) > 1:
+                    raise ValidationError(
+                        "Vocabulary {0} can have only one term "
+                        "assigned to the same LearningResource".format(
+                            term.vocabulary.name
+                        )
+                    )
         return terms
 
     @staticmethod
@@ -233,7 +248,7 @@ class LearningResourceSerializer(ModelSerializer):
 
 
 class StaticAssetSerializer(ModelSerializer):
-    """Serializer for StaticAsset"""
+    """Serializer for StaticAsset."""
 
     asset = FileField(use_url=True)
     name = SerializerMethodField()
@@ -254,7 +269,7 @@ class StaticAssetSerializer(ModelSerializer):
 
     @staticmethod
     def get_name(static_asset_obj):
-        """Method to get the name of the asset"""
+        """Method to get the name of the asset."""
         basepath = STATIC_ASSET_BASEPATH.format(
             org=static_asset_obj.course.org,
             course_number=static_asset_obj.course.course_number,
@@ -266,3 +281,10 @@ class StaticAssetSerializer(ModelSerializer):
 class LearningResourceExportSerializer(Serializer):
     """Serializer for exporting id for LearningResource."""
     id = IntegerField()
+
+
+class LearningResourceExportTaskSerializer(Serializer):
+    """Serializer for export tasks for LearningResource."""
+    id = CharField()
+    status = CharField()
+    url = CharField()

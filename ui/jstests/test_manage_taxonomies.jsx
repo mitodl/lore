@@ -1,4 +1,4 @@
-define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
+define(['QUnit', 'jquery', 'manage_taxonomies', 'reactaddons',
   'test_utils'],
   function(QUnit, $, ManageTaxonomies, React, TestUtils) {
   'use strict';
@@ -20,6 +20,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
     "learning_resource_types": [
       "course"
     ],
+    "multi_terms": true,
     "terms": [
       {
         "id": 1,
@@ -63,7 +64,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         devItems,
         'li'
     );
-    assert.equal(itemList.length, 2);
+    assert.equal(itemList.length, 3);
     return devItems;
   }
   QUnit.module('Test taxonomies panel', {
@@ -112,7 +113,8 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             "vocabulary_type": "f",
             "required": false,
             "weight": 2147483647,
-            "terms": vocabulary.terms
+            "terms": vocabulary.terms,
+            "multi_terms": true
           }
         ]
       };
@@ -225,7 +227,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
       var addTerm = function() {
         addTermCalled += 1;
       };
-      var reportError = function() {};
+      var reportMessage = function() {};
       var afterMount = function(component) {
         var node = React.findDOMNode(component);
         var textbox = $(node).find("input")[0];
@@ -251,7 +253,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             devItems,
             'li'
         );
-        assert.equal(itemList.length, 2);
+        assert.equal(itemList.length, 3);
         //test enter text in input text
         var inputNode = React.addons.TestUtils.
           findRenderedDOMComponentWithTag(
@@ -282,7 +284,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
           <VocabularyComponent
             vocabulary={vocabulary}
             terms={vocabulary.terms}
-            reportError={reportError}
+            reportMessage={reportMessage}
             addTerm={addTerm}
             repoSlug="repo"
             ref={afterMount}
@@ -305,12 +307,12 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         "terms": []
       };
       var addTermCalled = 0;
-      var errorMessage;
+      var message;
       var addTerm = function() {
         addTermCalled += 1;
       };
-      var reportError = function(msg) {
-        errorMessage = msg;
+      var reportMessage = function(msg) {
+        message = msg;
       };
       var afterMount = function(component) {
         // wait for calls to populate form
@@ -319,9 +321,10 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
         waitForAjax(1, function () {
           assert.equal(addTermCalled, 0);
-          assert.equal(//Error is caused by a 400 status code
-            errorMessage,
-            "Error occurred while adding new term."
+          // Error is caused by a 400 status code
+          assert.deepEqual(
+            message,
+            {error: "Error occurred while adding new term."}
           );
           done();
         });
@@ -331,7 +334,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
           <VocabularyComponent
             vocabulary={vocabulary}
             terms={vocabulary.terms}
-            reportError={reportError}
+            reportMessage={reportMessage}
             addTerm={addTerm}
             repoSlug="repo"
             ref={afterMount}
@@ -353,18 +356,18 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
       var addTermCalled = 0;
       var afterMount = function(component) {
         assert.equal(
-         component.state.errorText,
-          ''
+          component.state.message,
+          undefined
         );
         assertAddTermCommon(assert, component);
         //test error message
-        component.reportError(
-          "Error occurred while adding new term."
-        );
+        component.reportMessage({
+          error: "Error occurred while adding new term."
+        });
         component.forceUpdate(function() {
-          assert.equal(
-            component.state.errorText,
-            'Error occurred while adding new term.'
+          assert.deepEqual(
+            component.state.message,
+            {error: 'Error occurred while adding new term.'}
           );
           var inputGroup = React.addons.TestUtils.
             findRenderedDOMComponentWithClass(
@@ -432,6 +435,10 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
           component.state.learningResourceTypes.length,
           0
         );
+        assert.equal(
+          component.state.multiTerms,
+          false
+        );
         var formNode = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
             component,
@@ -444,10 +451,11 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             formNode,
             'input'
           );
-        assert.equal(inputNodes.length, 12);
+        assert.equal(inputNodes.length, 13);
         var inputVocabularyName = inputNodes[0];
         var inputVocabularyDesc =  inputNodes[1];
         var radioTagStyle = inputNodes[11];
+        var checkMultiTerms = inputNodes[12];
 
         React.addons.TestUtils.Simulate.change(
           inputVocabularyName, {target: {value: "TestA"}}
@@ -459,6 +467,11 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
           radioTagStyle,
           {target: {value: 'f'}}
         );
+        //change the default multi terms checkbox
+        React.addons.TestUtils.Simulate.change(
+          checkMultiTerms,
+          {target: {checked: true}}
+        );
         component.forceUpdate(function() {
           assert.equal(component.state.name, "TestA");
           assert.equal(component.state.vocabularyType, "f");
@@ -467,6 +480,8 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             component.state.learningResourceTypes.length,
             0
           );
+          //the change to the multi terms is reflected in the state
+          assert.equal(component.state.multiTerms, true);
           React.addons.TestUtils.Simulate.submit(formNode);
           waitForAjax(1, function() {
             assert.equal(
@@ -490,6 +505,10 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
               component.state.learningResourceTypes.length,
               0
             );
+            assert.equal(
+              component.state.multiTerms,
+              false
+            );
             var inputNodes = React.addons.TestUtils.
             scryRenderedDOMComponentsWithTag(
               formNode,
@@ -499,6 +518,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             var inputVocabularyDesc =  inputNodes[1];
             var checkboxCourse =  inputNodes[2];
             var radioTagStyle = inputNodes[11];
+            var checkMultiTerms = inputNodes[12];
 
             React.addons.TestUtils.Simulate.change(
               inputVocabularyName, {target: {value: "TestB"}}
@@ -514,6 +534,11 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
               radioTagStyle,
               {target: {value: 'f', checked: true}}
             );
+            //change the default multi terms checkbox
+            React.addons.TestUtils.Simulate.change(
+              checkMultiTerms,
+              {target: {checked: true}}
+            );
             component.forceUpdate(function() {
               assert.equal(component.state.name, "TestB");
               assert.equal(component.state.description, "TestB");
@@ -522,6 +547,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
                 component.state.learningResourceTypes[0],
                 'course'
               );
+              assert.equal(component.state.multiTerms, true);
               React.addons.TestUtils.Simulate.submit(formNode);
               waitForAjax(1, function() {
                 //testing state is reset
@@ -542,6 +568,10 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
                   0
                 );
                 assert.equal(
+                  component.state.multiTerms,
+                  false
+                );
+                assert.equal(
                   saveVocabularyResponse.id,
                   vocabulary.id
                 );
@@ -559,6 +589,10 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
                   radioTagStyle,
                   {target: {value: 'f', checked: true}}
                 );
+                React.addons.TestUtils.Simulate.change(
+                  checkMultiTerms,
+                  {target: {checked: true}}
+                );
 
                 component.forceUpdate(function() {
                   assert.equal(component.state.name, "TestC");
@@ -568,10 +602,15 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
                     component.state.learningResourceTypes[0],
                     'course'
                   );
-                  //uncheck checkbox
+                  assert.equal(component.state.multiTerms, true);
+                  //uncheck checkboxes
                   React.addons.TestUtils.Simulate.change(
                     checkboxCourse,
                     {target: {value: 'course', checked: false}}
+                  );
+                  React.addons.TestUtils.Simulate.change(
+                    checkMultiTerms,
+                    {target: {checked: false}}
                   );
                   component.forceUpdate(function() {
                     assert.equal(component.state.name, "TestC");
@@ -582,6 +621,8 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
                       component.state.learningResourceTypes.length,
                       0
                     );
+                    //and the multi terms state is consistent
+                    assert.equal(component.state.multiTerms, false);
                     React.addons.TestUtils.Simulate.submit(formNode);
                     waitForAjax(1, function() {
                       //testing state is reset
@@ -601,6 +642,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
                         component.state.learningResourceTypes.length,
                         0
                       );
+                      assert.equal(component.state.multiTerms, false);
                       assert.equal(
                         saveVocabularyResponse.id,
                         vocabulary.id
@@ -651,7 +693,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             formNode,
             'input'
           );
-        assert.equal(inputNodes.length, 4);
+        assert.equal(inputNodes.length, 5);
         var inputVocabularyName = inputNodes[0];
         var inputVocabularyDesc =  inputNodes[1];
         var checkboxCourse =  inputNodes[2];
@@ -668,9 +710,10 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         );
         React.addons.TestUtils.Simulate.submit(formNode);
         waitForAjax(1, function() {
-          assert.equal(//Error is caused by a 400 status code
-            component.state.errorMessage,
-            "There was a problem adding the Vocabulary."
+          // Error is caused by a 400 status code
+          assert.deepEqual(
+            component.state.message,
+            {error: "There was a problem adding the Vocabulary."}
           );
           done();
         });
@@ -711,7 +754,7 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             formNode,
             'input'
           );
-        assert.equal(inputNodes.length, 4);
+        assert.equal(inputNodes.length, 5);
         var inputVocabularyName = inputNodes[0];
         var inputVocabularyDesc =  inputNodes[1];
         var checkboxCourse =  inputNodes[2];
@@ -728,10 +771,13 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
         );
         React.addons.TestUtils.Simulate.submit(formNode);
         waitForAjax(1, function() {
-          assert.equal(//Error is caused by a 400 status code
-            component.state.errorMessage,
-            'A Vocabulary named "" already exists.' +
-            ' Please choose a different name.'
+          // Error is caused by a 400 status code
+          assert.deepEqual(
+            component.state.message,
+            {
+              error: 'A Vocabulary named "" already exists.' +
+              ' Please choose a different name.'
+            }
           );
           done();
         });
@@ -892,6 +938,20 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
             checkboxCourse,
             {target: {value: 'course', checked: true}}
           );
+          TestUtils.replaceMockjax({
+            url: "/api/v1/repositories/repo/vocabularies/",
+            type: "POST",
+            responseText: {
+              "id": 2,
+              "slug": "test-a",
+              "name": "TestA",
+              "description": "TestA",
+              "vocabulary_type": "m",
+              "required": false,
+              "weight": 1,
+              "terms": []
+            }
+          });
           React.addons.TestUtils.Simulate.submit(formNode);
           waitForAjax(1, function() {
             assert.equal(
@@ -917,6 +977,15 @@ define(['QUnit', 'jquery', 'setup_manage_taxonomies', 'reactaddons',
           ref={afterMount}
         />
       );
+    }
+  );
+
+  QUnit.test("Test that ManageTaxonomies.loader renders into div",
+    function(assert) {
+      var container = document.createElement("div");
+      assert.equal(0, $(container).find("input").size());
+      ManageTaxonomies.loader("repo", container);
+      assert.equal(5, $(container).find("input").size());
     }
   );
 });
