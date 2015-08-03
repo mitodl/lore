@@ -8,12 +8,14 @@ var REQUIRE_PATHS = {
   react: "react/react",
   reactaddons: "react/react-with-addons",
   lodash: "lodash/lodash",
+  select2: "select2/dist/js/select2.full",
   csrf: "../ui/js/csrf",
   facets: "../ui/js/facets",
   listing: "../ui/js/listing",
-  setup_manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
+  manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
   learning_resources: "../ui/js/learning_resources.jsx?noext",
   static_assets: "../ui/js/static_assets.jsx?noext",
+  lr_exports: "../ui/js/lr_exports.jsx?noext",
   utils: "../ui/js/utils.jsx?noext",
 };
 var SHIMS = {

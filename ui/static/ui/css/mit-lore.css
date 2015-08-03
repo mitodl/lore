@@ -124,19 +124,30 @@ a {
 }
 
 .panel-heading .accordion-toggle:before {
-    font-family: 'FontAwesome'; 
-    content: "\f078";        
+    font-family: 'FontAwesome';
+    content: "\f078";
     color: #F5A623;
     font-size: 12px;
-    margin:-3px 0 0 0;
+    margin:0;
     line-height: 1em;
     width:16px;
-    display: inline-block; 
-    text-align: center;    
+    font-weight:400 !important;
+    display: inline-block;
+    text-align: center;
+    position:relative;
+    top:-2px;
 }
 
 .panel-heading .accordion-toggle.collapsed:before {
-    content: "\f054";   
+    content: "\f054";
+}
+
+.lore-panel-group.panel-body {
+	padding:8px 0 0 36px;
+}
+
+.panel-title {
+    font-weight: 700;
 }
 
 .lore-panel-group.panel-body {
@@ -161,13 +172,13 @@ a {
 
 .icheck-list {
 	list-style: none;
-	margin:0 0 0 0;
+	margin:0 0 0 16px;
 	padding:0;
 }
 
 .icheck-list li {
 	margin:0 0 10px 0;
-}	
+}
 
 .icheck-list li span.min-width {
 	min-width: 38px;

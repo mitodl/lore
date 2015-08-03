@@ -16,4 +16,4 @@ from dj_static import Cling
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lore.settings")
 
-application = Cling(get_wsgi_application())  # pylint: disable=invalid-name
+application = Cling(get_wsgi_application())

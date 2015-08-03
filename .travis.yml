@@ -24,5 +24,4 @@ deploy:
   run:
     - "sleep 15"
     - "python manage.py migrate --noinput"
-    - "python manage.py update_index"
     - "python manage.py sync_permissions"

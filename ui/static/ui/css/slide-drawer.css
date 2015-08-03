@@ -43,7 +43,9 @@ html, body {
 }
 
 .cd-panel,
-.cd-panel-members {
+.cd-panel-2,
+.cd-panel-members,
+.cd-panel-exports {
   position: fixed;
   top: 0;
   left: 0;
@@ -56,7 +58,9 @@ html, body {
   z-index: 1000;
 }
 .cd-panel::after,
-.cd-panel-members::after {
+.cd-panel-2::after,
+.cd-panel-members::after,
+.cd-panel-exports::after {
   /* overlay layer */
   position: absolute;
   top: 0;
@@ -70,27 +74,35 @@ html, body {
   transition: background 0.3s 0.3s;
 }
 .cd-panel.is-visible,
-.cd-panel-members.is-visible {
+.cd-panel-2.is-visible,
+.cd-panel-members.is-visible,
+.cd-panel-exports.is-visible {
   visibility: visible;
   -webkit-transition: visibility 0s 0s;
   -moz-transition: visibility 0s 0s;
   transition: visibility 0s 0s;
 }
 .cd-panel.is-visible::after,
-.cd-panel-members.is-visible::after {
+.cd-panel-2.is-visible::after,
+.cd-panel-members.is-visible::after,
+.cd-panel-exports.is-visible::after {
   background: rgba(0, 0, 0, 0.6);
   -webkit-transition: background 0.3s 0s;
   -moz-transition: background 0.3s 0s;
   transition: background 0.3s 0s;
 }
 .cd-panel.is-visible .cd-panel-close::before,
-.cd-panel-members.is-visible .cd-panel-close::before {
+.cd-panel-2.is-visible .cd-panel-close::before,
+.cd-panel-members.is-visible .cd-panel-close::before,
+.cd-panel-exports.is-visible .cd-panel-close::before {
   -webkit-animation: cd-close-1 0.6s 0.3s;
   -moz-animation: cd-close-1 0.6s 0.3s;
   animation: cd-close-1 0.6s 0.3s;
 }
 .cd-panel.is-visible .cd-panel-close::after,
-.cd-panel-members.is-visible .cd-panel-close::after {
+.cd-panel-2.is-visible .cd-panel-close::after,
+.cd-panel-members.is-visible .cd-panel-close::after,
+.cd-panel-exports.is-visible .cd-panel-close::after {
   -webkit-animation: cd-close-2 0.6s 0.3s;
   -moz-animation: cd-close-2 0.6s 0.3s;
   animation: cd-close-2 0.6s 0.3s;
@@ -98,54 +110,6 @@ html, body {
 
 .cd-panel-members-list-username,  .cd-panel-members-list-group_type {
   margin-bottom: 15px;
-}
-
-.cd-panel-2 {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  visibility: hidden;
-  -webkit-transition: visibility 0s 0.6s;
-  -moz-transition: visibility 0s 0.6s;
-  transition: visibility 0s 0.6s;
-  z-index: 1000;
-}
-.cd-panel-2::after {
-  /* overlay layer */
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: transparent;
-  cursor: pointer;
-  -webkit-transition: background 0.3s 0.3s;
-  -moz-transition: background 0.3s 0.3s;
-  transition: background 0.3s 0.3s;
-}
-.cd-panel-2.is-visible {
-  visibility: visible;
-  -webkit-transition: visibility 0s 0s;
-  -moz-transition: visibility 0s 0s;
-  transition: visibility 0s 0s;
-}
-.cd-panel-2.is-visible::after {
-  background: rgba(0, 0, 0, 0.6);
-  -webkit-transition: background 0.3s 0s;
-  -moz-transition: background 0.3s 0s;
-  transition: background 0.3s 0s;
-}
-.cd-panel-2.is-visible .cd-panel-close::before {
-  -webkit-animation: cd-close-1 0.6s 0.3s;
-  -moz-animation: cd-close-1 0.6s 0.3s;
-  animation: cd-close-1 0.6s 0.3s;
-}
-.cd-panel-2.is-visible .cd-panel-close::after {
-  -webkit-animation: cd-close-2 0.6s 0.3s;
-  -moz-animation: cd-close-2 0.6s 0.3s;
-  animation: cd-close-2 0.6s 0.3s;
 }
 
 @-webkit-keyframes cd-close-1 {

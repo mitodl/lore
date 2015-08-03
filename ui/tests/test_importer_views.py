@@ -13,6 +13,7 @@ from learningresources.models import LearningResource, Course
 from learningresources.tests.base import LoreTestCase
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.api import GroupTypes
+from search.sorting import LoreSortingFields
 from ui.views import RepositoryView
 
 HTTP_OK = 200
@@ -170,6 +171,7 @@ class TestViews(LoreTestCase):
         """
         repo_view = RepositoryView()
         repo_view.repo = self.repo
+        repo_view.sortby = LoreSortingFields.DEFAULT_SORTING_FIELD
         repo_view.request = mock.MagicMock()
         with mock.patch('ui.views.get_perms') as _:
             with mock.patch(

@@ -75,7 +75,6 @@ class MockAsset(object):
 
 class TestModels(LoreTestCase):
     """Tests for learningresources models"""
-    # pylint: disable=invalid-name
 
     def test_unicode(self):
         """Test for __unicode__ on LearningResourceType"""

@@ -1,6 +1,6 @@
-define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
+define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
   'test_utils', 'jquery_mockjax'], function(
-  QUnit, $, LearningResources, React, TestUtils) {
+  QUnit, $, React, _, LearningResources, TestUtils) {
   'use strict';
 
   var VocabularyOption = LearningResources.VocabularyOption;
@@ -41,6 +41,12 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
     "label": "required",
     "weight": 1
   };
+  var prereqTermsResponseNotRequired = {
+    "id": 4,
+    "slug": "notrequired",
+    "label": "notrequired",
+    "weight": 1
+  };
   var vocabularyResponsePrereq = {
     "id": 1,
     "slug": "prerequisite",
@@ -49,7 +55,8 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
     "vocabulary_type": "m",
     "required": false,
     "weight": 2147483647,
-    "terms": [prereqTermsResponseRequired]
+    "terms": [prereqTermsResponseRequired, prereqTermsResponseNotRequired],
+    "multi_terms": true
   };
   var vocabularyResponseDifficulty = {
     "id": 1,
@@ -59,7 +66,8 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
     "vocabulary_type": "f",
     "required": false,
     "weight": 2147483647,
-    "terms": [termResponseEasy, termResponseHard]
+    "terms": [termResponseEasy, termResponseHard],
+    "multi_terms": false
   };
   var vocabulariesResponseFirst = {
     "count": 1,
@@ -123,13 +131,11 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
 
         // two terms
         var $termsSelect = $vocabSelect.find("option");
-        assert.equal($termsSelect.size(), 3);
-        assert.equal($termsSelect[0].text, "");
-        assert.equal($termsSelect[0].value, "");
-        assert.equal($termsSelect[1].text, "easy");
-        assert.equal($termsSelect[1].value, "easy");
-        assert.equal($termsSelect[2].text, "hard");
-        assert.equal($termsSelect[2].value, "hard");
+        assert.equal($termsSelect.size(), 2);
+        assert.equal($termsSelect[0].text, "easy");
+        assert.equal($termsSelect[0].value, "easy");
+        assert.equal($termsSelect[1].text, "hard");
+        assert.equal($termsSelect[1].value, "hard");
 
         done();
       };
@@ -158,26 +164,48 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
 
           // two terms, first vocab
           var $terms1Select = $($vocabSelect[0]).find("option");
-          assert.equal($terms1Select.size(), 3);
-          assert.equal($terms1Select[0].selected, true);
-          assert.equal($terms1Select[1].selected, false);
-          assert.equal($terms1Select[2].selected, false);
+          assert.equal($terms1Select.size(), 2);
+          assert.equal($terms1Select[0].selected, false);
+          assert.equal($terms1Select[0].selected, false);
 
           // TestUtils.Simulate.change only simulates a change event,
           // we need to update the value first ourselves
-          $vocabSelect[0].value = "hard";
+          $($vocabSelect[0]).val("hard").trigger('change');
           React.addons.TestUtils.Simulate.change($vocabSelect[0]);
-          assert.equal($terms1Select[0].selected, false);
-          assert.equal($terms1Select[1].selected, false);
-          assert.equal($terms1Select[2].selected, true);
+          component.forceUpdate(function() {
+            assert.equal($terms1Select[0].selected, false);
+            assert.equal($terms1Select[1].selected, true);
+            // make sure second vocab (which has a default value) is set properly
+            var $terms2Select = $($vocabSelect[1]).find("option");
+            assert.equal($terms2Select.size(), 2);
+            assert.equal($terms2Select[0].selected, true);
+            assert.equal($terms2Select[1].selected, false);
+            //the second vocabulary can be a multi select
+            $($vocabSelect[1])
+              .val(["notrequired", "required"])
+              .trigger('change');
+            React.addons.TestUtils.Simulate.change($vocabSelect[1]);
+            component.forceUpdate(function() {
+              assert.equal($terms2Select[0].selected, true);
+              assert.equal($terms2Select[1].selected, true);
+              //be sure that the state reflects the selection
+              var terms = _.map(component.state.vocabulariesAndTerms,
+                function (tuple) {
+                  return tuple.selectedTerms;
+                });
+              terms = _.flatten(terms);
+              terms.sort();
+              var expectedTerms = [
+                $terms1Select[1].value,
+                $terms2Select[0].value,
+                $terms2Select[1].value
+              ];
+              expectedTerms.sort();
+              assert.deepEqual(terms, expectedTerms);
 
-          // make sure second vocab (which has a default value) is set properly
-          var $terms2Select = $($vocabSelect[1]).find("option");
-          assert.equal($terms2Select.size(), 2);
-          assert.equal($terms2Select[0].selected, false);
-          assert.equal($terms2Select[1].selected, true);
-
-          done();
+              done();
+            });
+          });
         });
       };
 
@@ -201,8 +229,7 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
           var saveButton = $node.find("button")[0];
           React.addons.TestUtils.Simulate.click(saveButton);
           waitForAjax(1, function() {
-            assert.equal(component.state.errorText, undefined);
-            assert.equal(component.state.messageText,
+            assert.equal(component.state.message,
               "Form saved successfully!");
             done();
           });
@@ -235,8 +262,10 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
           var saveButton = $node.find("button")[0];
           React.addons.TestUtils.Simulate.click(saveButton);
           waitForAjax(1, function() {
-            assert.equal(component.state.errorText, "Unable to save form");
-            assert.equal(component.state.messageText, undefined);
+            assert.deepEqual(
+              component.state.message,
+              {error: "Unable to save form"}
+            );
             done();
           });
         });
@@ -263,9 +292,10 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(1, function () {
-          assert.equal(component.state.errorText,
-            "Unable to read information about learning resource.");
-          assert.equal(component.state.messageText, undefined);
+          assert.deepEqual(
+            component.state.message,
+            {error: "Unable to read information about learning resource."}
+          );
 
           done();
         });
@@ -291,9 +321,10 @@ define(['QUnit', 'jquery', 'learning_resources', 'reactaddons',
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(2, function () {
-          assert.equal(component.state.errorText,
-            "Unable to read information about learning resource.");
-          assert.equal(component.state.messageText, undefined);
+          assert.deepEqual(
+            component.state.message,
+            {error: "Unable to read information about learning resource."}
+          );
 
           done();
         });
