@@ -8,7 +8,6 @@ from unittest import TestCase
 
 from django.conf import settings
 import responses
-from six import BytesIO
 
 from xanalytics import send_request, get_result, _call
 
@@ -86,7 +85,7 @@ class TestBadData(TestCase):
         responses.add(
             responses.POST,
             settings.XANALYTICS_URL,
-            body=BytesIO("hello").getvalue(),
+            body="hello",
             content_type="application/octet-stream",
         )
         resp = _call(settings.XANALYTICS_URL, {})

@@ -6,7 +6,7 @@ import os
 from tempfile import mkstemp
 
 from django.conf import settings
-from requests.exceptions import ConnectionError
+from requests.exceptions import ConnectionError as RequestsConnectionError
 import requests
 
 
@@ -28,7 +28,7 @@ def _call(url, data):
             return resp.json()
         except ValueError as ex:
             log.error("Bad JSON returned: %s", ex.args)
-    except ConnectionError as ex:
+    except RequestsConnectionError as ex:
         log.error("Unable to connect to xanalytics server: %s", ex.args)
 
     # Fallback in case things fail.

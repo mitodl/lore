@@ -43,7 +43,7 @@ class TestXanalyticsData(LoreTestCase):
 
     def test_empty(self):
         """Empty dict."""
-        self.assertTrue(update_xanalytics({}) is None)
+        self.assertEqual(update_xanalytics({}), 0)
 
     def test_course_id(self):
         """Missing/bad course ID."""
@@ -54,12 +54,6 @@ class TestXanalyticsData(LoreTestCase):
                     "xa_nr_views": "3",
                     "xa_nr_attempts": "25"
                 },
-                {
-                    "module_id": "2",
-                    "xa_nr_views": "7",
-                    "xa_nr_attempts": "99"
-
-                }
             ]
         }
-        self.assertTrue(update_xanalytics({}) is None)
+        self.assertEqual(update_xanalytics(data), 0)

@@ -317,6 +317,7 @@ def update_xanalytics(data):
     """
     vals = data.get("module_medata", [])
     course_number = data.get("course_id", "")
+    count = 0
     for rec in vals:
         resource_key = rec.pop("module_id")
         count = LearningResource.objects.filter(
@@ -326,7 +327,7 @@ def update_xanalytics(data):
         ).update(**rec)
         if count is None:
             count = 0
-        return count
+    return count
 
 
 def join_description_paths(*args):
