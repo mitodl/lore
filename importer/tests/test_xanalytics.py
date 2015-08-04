@@ -41,6 +41,15 @@ class TestAPI(LoreTestCase):
             body='{"token": "abcde"}',
             content_type="application/json"
         )
+        # We must mock the /status endpoint as well,
+        # because a status check is queued when /create is called.
+        reply = {"status": "still busy"}
+        responses.add(
+            responses.POST,
+            'http://example.com/status',
+            body=json.dumps(reply),
+            content_type="application/json"
+        )
         populate_xanalytics_fields(1234)
 
     @responses.activate

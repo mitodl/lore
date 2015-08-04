@@ -11,6 +11,7 @@ import requests
 
 log = logging.getLogger(__name__)
 
+
 def _call(url, data):
     """
     Make call via requests, trapping common errors.
@@ -21,6 +22,7 @@ def _call(url, data):
         result (dict): Results read as JSON
     """
     return requests.post(url=url, data=data).json()
+
 
 def send_request(url, course_id):
     """
