@@ -8,8 +8,9 @@ from unittest import TestCase
 
 from django.conf import settings
 import responses
+from six import BytesIO
 
-from xanalytics import send_request, get_result
+from xanalytics import send_request, get_result, _call
 
 log = logging.getLogger(__name__)
 
@@ -73,5 +74,20 @@ class TestBadData(TestCase):
     @responses.activate
     def test_server_down(self):
         """Endpoint unavailable."""
-        resp = send_request(settings.XANALYTICS_URL + "/create", 1234)
+        resp = _call(settings.XANALYTICS_URL, {})
+        self.assertEqual(resp, {})
+
+    @responses.activate
+    def test_binary(self):
+        """
+        Binary data received. This also implicitly tests malformed
+        JSON, and any content received along with a non-200 error.
+        """
+        responses.add(
+            responses.POST,
+            settings.XANALYTICS_URL,
+            body=BytesIO("hello").getvalue(),
+            content_type="application/octet-stream",
+        )
+        resp = _call(settings.XANALYTICS_URL, {})
         self.assertEqual(resp, {})

@@ -24,10 +24,15 @@ def _call(url, data):
     """
     try:
         resp = requests.post(url=url, data=data)
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError as ex:
+            log.error("Bad JSON returned: %s", ex.args)
     except ConnectionError as ex:
         log.error("Unable to connect to xanalytics server: %s", ex.args)
-        return {}
+
+    # Fallback in case things fail.
+    return {}
 
 
 def send_request(url, course_id):
