@@ -6,6 +6,7 @@ import os
 from tempfile import mkstemp
 
 from django.conf import settings
+from requests.exceptions import ConnectionError
 import requests
 
 
@@ -21,7 +22,12 @@ def _call(url, data):
     Returns:
         result (dict): Results read as JSON
     """
-    return requests.post(url=url, data=data).json()
+    try:
+        resp = requests.post(url=url, data=data)
+        return resp.json()
+    except ConnectionError as ex:
+        log.error("Unable to connect to xanalytics server: %s", ex.args)
+        return {}
 
 
 def send_request(url, course_id):

@@ -53,3 +53,25 @@ class TestAPI(TestCase):
         )
         self.assertEqual(get_result(
             settings.XANALYTICS_URL + "/status", 1234)["status"], "success")
+
+
+class TestBadData(TestCase):
+    """
+    Assume the worst from the xanalytics API.
+    """
+    def setUp(self):
+        """Override setting."""
+        super(TestBadData, self).setUp()
+        self.original_url = settings.XANALYTICS_URL
+        settings.XANALYTICS_URL = "http://example.com"
+
+    def tearDown(self):
+        """Restore original setting."""
+        super(TestBadData, self).tearDown()
+        settings.XANALYTICS_URL = self.original_url
+
+    @responses.activate
+    def test_server_down(self):
+        """Endpoint unavailable."""
+        resp = send_request(settings.XANALYTICS_URL + "/create", 1234)
+        self.assertEqual(resp, {})
