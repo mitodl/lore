@@ -312,12 +312,21 @@ def update_xanalytics(data):
     Update xanalytics fields for a LearningResource.
     Args:
         data (dict): dict from JSON file from xanalytics
+    Returns:
+        count (int): number of records updated
     """
-    for rec in data["module_medata"]:
+    vals = data.get("module_medata", [])
+    course_number = data.get("course_id", "")
+    for rec in vals:
         resource_key = rec.pop("module_id")
-        LearningResource.objects.filter(
-            uuid=resource_key
+        count = LearningResource.objects.filter(
+            uuid=resource_key,
+            course__course_number=course_number,
+
         ).update(**rec)
+        if count is None:
+            count = 0
+        return count
 
 
 def join_description_paths(*args):
