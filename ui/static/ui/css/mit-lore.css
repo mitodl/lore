@@ -208,6 +208,17 @@ a {
 	margin:2px 0 0 0;
 }
 
+.checkbox-add-vocabulary label {
+    min-height: 20px;
+    margin-bottom: 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-add-vocabulary label span:after {
+    content: "\00a0";
+}
+
 /* results */
 .col-results {
 	border-left:1px dashed #E3E6EA;
