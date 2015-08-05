@@ -1,8 +1,10 @@
 define("lr_exports",
-  ['reactaddons', 'jquery', 'lodash', 'utils'], function (React, $, _, Utils) {
+  ['reactaddons', 'jquery', 'lodash', 'utils', 'icheck'],
+  function (React, $, _, Utils) {
   'use strict';
 
   var StatusBox = Utils.StatusBox;
+  var ICheckbox = Utils.ICheckbox;
 
   /**
    * A React component which shows the list of exports
@@ -35,9 +37,13 @@ define("lr_exports",
             return;
           }
           if (learningResources.length > 0) {
+            var exportsSelected = _.map(learningResources, function(resource) {
+              return resource.id;
+            });
             thiz.setState({
               exports: learningResources,
-              exportButtonVisible: true
+              exportButtonVisible: true,
+              exportsSelected: exportsSelected
             });
           }
         })
@@ -53,9 +59,32 @@ define("lr_exports",
         });
       });
     },
+    updateChecked: function(exportId, event) {
+      if (event.target.checked) {
+        this.setState({
+          exportsSelected: _.uniq(this.state.exportsSelected.concat([exportId]))
+        });
+      } else {
+        this.setState({
+          exportsSelected: _.remove(this.state.exportsSelected, function(id) {
+            return id !== exportId;
+          })
+        });
+      }
+    },
     render: function() {
+      var thiz = this;
+
       var exports = _.map(this.state.exports, function(ex) {
-        return <li key={ex.id}>{ex.title}</li>;
+        var checked = _.includes(thiz.state.exportsSelected, ex.id);
+        return <li key={ex.id}>
+            <ICheckbox value={ex.id} checked={checked}
+                       onChange={_.curry(thiz.updateChecked)(ex.id)} />
+          <label>
+            {ex.title}
+          </label>
+          <span className="tile-blurb">{ex.description}</span>
+          </li>;
       });
 
       var urlLink = null;
@@ -75,34 +104,45 @@ define("lr_exports",
         displayExportButton = "none";
       }
 
+      var collisionMessage = null;
+      if (this.state.collision) {
+        collisionMessage = "WARNING: some static assets had the " +
+          "same filename and were automatically renamed.";
+      }
+
       return <div>
         <StatusBox message={this.state.message} />
-        <ul>
+        <ul className="icheck-list export-list">
         {exports}
         </ul>
+        {collisionMessage}
         {urlLink}
         {iframe}
-        <button className="btn btn-primary"
+        <button className="btn btn-lg btn-primary"
                 onClick={this.startArchiving}
                 style={{display: displayExportButton}}
-          >Export Resources</button>
+          >Export Selected Items</button>
         </div>;
     },
     getInitialState: function() {
       return {
         exports: [],
-        exportButtonVisible: false // This will become true when exports load.
+        exportButtonVisible: false, // This will become true when exports load.
+        exportsSelected: [],
+        collision: false
       };
     },
     startArchiving: function() {
       var thiz = this;
 
-      var exportIds = _.map(this.state.exports, function(ex) {
-        return ex.id;
-      });
-
-      $.post("/api/v1/repositories/" + this.props.repoSlug +
-        "/learning_resource_export_tasks/", exportIds).then(function(result) {
+      $.ajax({
+          type: "POST",
+          url: "/api/v1/repositories/" + this.props.repoSlug +
+          "/learning_resource_export_tasks/",
+          data: JSON.stringify({ids: this.state.exportsSelected}),
+          contentType: 'application/json'
+        }
+      ).then(function(result) {
         if (!thiz.isMounted()) {
           return;
         }
@@ -145,7 +185,8 @@ define("lr_exports",
               "/learning_resource_exports/" + thiz.props.loggedInUser + "/"
             }).then(function() {
               thiz.setState({
-                exports: []
+                exports: [],
+                exportsSelected: []
               });
               thiz.props.clearExports();
             }).fail(function() {
@@ -157,7 +198,8 @@ define("lr_exports",
             });
 
             thiz.setState({
-              url: result.url
+              url: result.url,
+              collision: result.collision
             });
           } else if (result.status === "processing") {
             setTimeout(function() {

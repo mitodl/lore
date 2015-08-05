@@ -2,7 +2,11 @@
 <div class="cd-panel-exports from-right"
   data-members-url="{% url 'repo-members' repo.slug %}">
   <header class="cd-panel-header">
-    <h1>Exports</h1>
+    <h1>Export
+      {% if exports %}
+      ({{ exports|length }})
+      {% endif %}
+    </h1>
     <a href="#0" class="cd-panel-close">Close</a>
   </header>
   <div class="cd-panel-container">
