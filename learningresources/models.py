@@ -118,7 +118,7 @@ class LearningResource(BaseModel):
     The units that compose an edX course:
     chapter, sequential, vertical, problem, video, html, etc.
     """
-    course = models.ForeignKey(Course)
+    course = models.ForeignKey(Course, related_name="resources")
     learning_resource_type = models.ForeignKey('LearningResourceType')
     static_assets = models.ManyToManyField(StaticAsset, blank=True)
     uuid = models.TextField()
