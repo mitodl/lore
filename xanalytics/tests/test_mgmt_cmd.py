@@ -47,7 +47,8 @@ class TestMgmtCmd(LoreTestCase):
 
         # Runs, no errors.
         self.assertTrue(
-            call_command("populate_xanalytics", "1") is None
+            call_command(
+                "populate_xanalytics", "{0}".format(self.course.id)) is None
         )
 
         # Course ID must exist in the database.
