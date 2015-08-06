@@ -95,7 +95,8 @@ INSTALLED_APPS = (
     'rest_framework',
     'haystack',
     'search',
-    'roles'
+    'roles',
+    'xanalytics',
 )
 
 MIDDLEWARE_CLASSES = (

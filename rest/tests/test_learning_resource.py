@@ -719,7 +719,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
             ))
         self.assertEqual(HTTP_403_FORBIDDEN, resp.status_code)
 
-        resource = self.repo.course_set.first().learningresource_set.first()
+        resource = self.repo.course_set.first().resources.first()
         self.create_learning_resource_export(self.repo.slug, {
             "id": resource.id
         })
