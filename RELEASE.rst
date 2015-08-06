@@ -1,6 +1,17 @@
 Release Notes
 -------------
 
+Version 0.7.0
+=============
+
+- Implemented ``Select2`` element to refactor ``select2`` widgets.
+- Added checkboxes to allow user to uncheck items in export panel.
+- Sped up indexing using caching.
+- Made checkbox for ``Allow multiple terms`` in the taxonomy panel
+  consistent with the rest of the UI.
+- Implemented export of static assets.
+- Fixed user menu display on LORE welcome page.
+
 Version 0.6.0
 =============
 
