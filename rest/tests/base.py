@@ -759,7 +759,7 @@ class RESTTestCase(LoreTestCase):
         if expected_status == HTTP_200_OK:
             return as_json(resp)
 
-    def create_learning_resource_export_task(self, repo_slug,
+    def create_learning_resource_export_task(self, repo_slug, input_dict,
                                              expected_status=HTTP_201_CREATED):
         """
         Helper method to create a task for the user to export a tarball of
@@ -769,7 +769,9 @@ class RESTTestCase(LoreTestCase):
             '/api/v1/repositories/{repo_slug}/'
             'learning_resource_export_tasks/'.format(
                 repo_slug=repo_slug,
-            )
+            ),
+            json.dumps(input_dict),
+            content_type='application/json',
         )
         self.assertEqual(expected_status, resp.status_code)
         if expected_status == HTTP_201_CREATED:

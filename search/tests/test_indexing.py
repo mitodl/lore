@@ -1,6 +1,8 @@
 """Tests for search engine indexing."""
 from __future__ import unicode_literals
 
+from django.conf import settings
+
 from search.sorting import LoreSortingFields
 from search.tests.base import SearchTestCase
 
@@ -105,3 +107,48 @@ class TestIndexing(SearchTestCase):
             top_res.avg_grade,
             res1.xa_avg_grade
         )
+
+    def test_indexing_cache(self):
+        """
+        Test caching -- enabled and disabled.
+        This test both the course and taxonomy caches
+        from within search/search_indexes.py, because
+        both are "faceted" searches.
+        """
+        def get_count():
+            """
+            Get the count of a search after changing
+            the course_number. This will return different
+            results depending on whether caching is enabled.
+            """
+            # This save() is required to make the caching
+            # happen if it's enabled, or delete it if it's disabled.
+            # Either way, a clean slate for this test.
+            self.resource.save()
+
+            # Remember original value, and prove a resource is found.
+            orig = self.course.course_number
+            self.assertEqual(self.count_faceted_results("course", orig), 1)
+
+            # Change the course number and make sure indexing
+            # is called by saving the resource again.
+            self.course.course_number = orig + "blah blah blah"
+            self.course.save()
+            self.resource.save()
+
+            # Get the result and reset everything.
+            count = self.count_faceted_results("course", orig)
+            self.course.course_number = orig
+            self.course.save()
+            self.resource.save()
+            return count
+
+        orig_cache_setting = settings.ALLOW_CACHING
+
+        settings.ALLOW_CACHING = False
+        self.assertEqual(get_count(), 0)
+
+        settings.ALLOW_CACHING = True
+        self.assertEqual(get_count(), 1)
+
+        settings.ALLOW_CACHING = orig_cache_setting
