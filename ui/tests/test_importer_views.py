@@ -173,6 +173,11 @@ class TestViews(LoreTestCase):
         repo_view.repo = self.repo
         repo_view.sortby = LoreSortingFields.DEFAULT_SORTING_FIELD
         repo_view.request = mock.MagicMock()
+        repo_view.request.session = {
+            'learning_resource_exports': {
+                self.repo.slug: []
+            }
+        }
         with mock.patch('ui.views.get_perms') as _:
             with mock.patch(
                 'ui.views.FacetedSearchView.extra_context'
