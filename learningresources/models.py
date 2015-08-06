@@ -136,12 +136,25 @@ class LearningResource(BaseModel):
     xa_histogram_grade = models.FloatField(default=0)
     url_name = models.TextField(null=True)
 
-    def get_preview_url(self):
-        """Create a preview URL."""
+    def get_preview_url(self, org=None, course_number=None, run=None):
+        """
+        Create a preview URL. Accepts optional kwargs to prevent
+        database lookups, especially for during search engine indexing.
+        Args:
+            org (unicode): self.course.org
+            run (unicode): self.course.run
+            course_number (unicode): self.course.course_number
+        """
+        if org is None:
+            org = self.course.org
+        if course_number is None:
+            course_number = self.course.course_number
+        if run is None:
+            run = self.course.run
         key = "{org}/{course}/{run}".format(
-            org=self.course.org,
-            course=self.course.course_number,
-            run=self.course.run,
+            org=org,
+            course=course_number,
+            run=run,
         )
 
         if self.url_name is not None:

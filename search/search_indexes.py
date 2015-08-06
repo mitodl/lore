@@ -14,11 +14,82 @@ the index. They can not be mixed.
 
 from __future__ import unicode_literals
 
-from lxml import etree
-from haystack import indexes
+from collections import defaultdict
+from datetime import datetime, timedelta
+import logging
 
-from learningresources.models import LearningResource
-from taxonomy.models import Vocabulary
+from django.conf import settings
+from haystack import indexes
+from lxml import etree
+
+from learningresources.models import Course, LearningResource
+
+INDEX_CACHE = {
+    "course": {},
+    "term": {},
+    "born": datetime.now(),
+}
+MAX_INDEX_AGE = timedelta(minutes=1)
+
+log = logging.getLogger(__name__)
+
+
+def check_cache_age():
+    """
+    Keep the cache from getting stale.
+
+    Must not cache during tests or development, or it will
+    cause confusion. Must manually enable caching in production.
+    """
+    # pylint: disable=global-statement
+    global INDEX_CACHE
+    if (datetime.now() - INDEX_CACHE["born"] > MAX_INDEX_AGE) \
+            or settings.ALLOW_CACHING is False:
+        INDEX_CACHE = {
+            "course": {},
+            "term": {},
+            "born": datetime.now(),
+        }
+
+
+def get_course_metadata(course_id):
+    """
+    Caches and returns course metadata.
+    Args:
+        course_id (int): Primary key of learningresources.models.Course
+    Returns:
+        data (dict): Metadata about course.
+    """
+    check_cache_age()
+    data = INDEX_CACHE["course"].get(course_id, {})
+    if data == {}:
+        course = Course.objects.get(id=course_id)
+        data["run"] = course.run
+        data["course_number"] = course.course_number
+        data["org"] = course.org
+        data["repo_slug"] = course.repository.slug
+        INDEX_CACHE["course"][course_id] = data
+    return data
+
+
+def get_vocabs(course_id, lid):
+    """
+    Caches and returns taxonomy metadata for a course.
+    Args:
+        course_id (int): Primary key of learningresources.models.Course
+        lid (int): Primary key of learningresources.models.LearningResource
+    Returns:
+        data (dict): Vocab/term data for course.
+    """
+    check_cache_age()
+    if INDEX_CACHE["term"].get(course_id) is None:
+        INDEX_CACHE["term"][course_id] = defaultdict(lambda: defaultdict(list))
+        rels = LearningResource.terms.related.through.objects.select_related(
+            "term").filter(learningresource__course__id=course_id)
+        for rel in rels.iterator():
+            INDEX_CACHE["term"][course_id][rel.learningresource_id][
+                rel.term.vocabulary_id].append(rel.term_id)
+    return INDEX_CACHE["term"][course_id][lid]
 
 
 class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
@@ -80,16 +151,23 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_run(self, obj):  # pylint: disable=no-self-use
         """Define what goes into the "run" index."""
-        return obj.course.run
+        data = get_course_metadata(obj.course_id)
+        return data["run"]
 
     def prepare_preview_url(self, obj):  # pylint: disable=no-self-use
         """Define what goes into the "run" index."""
-        return obj.get_preview_url()
+        data = get_course_metadata(obj.course_id)
+        return obj.get_preview_url(
+            org=data["org"],
+            course_number=data["course_number"],
+            run=data["run"],
+        )
 
     @staticmethod
     def prepare_course(obj):
         """Define what goes into the "course" index."""
-        return obj.course.course_number
+        data = get_course_metadata(obj.course_id)
+        return data["course_number"]
 
     def prepare(self, obj):
         """
@@ -103,16 +181,16 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         as well, but don't because explicit is better than implicit.
         """
         prepared = super(LearningResourceIndex, self).prepare(obj)
-        for vocab in Vocabulary.objects.all():
+
+        for vocab_id, term_ids in get_vocabs(obj.course_id, obj.id).items():
             # Use the integer primary keys as index values. This saves space,
             # and also avoids all issues dealing with "special" characters.
-            terms = set(obj.terms.filter(vocabulary_id=vocab.id).values_list(
-                'id', flat=True))
-            prepared[vocab.id] = terms
-            # for faceted "_exact" in URL
-            prepared["{0}_exact".format(vocab.id)] = terms
+            prepared[vocab_id] = term_ids
+            # For faceted "_exact" in URL.
+            prepared["{0}_exact".format(vocab_id)] = term_ids
         return prepared
 
     def prepare_repository(self, obj):  # pylint: disable=no-self-use
         """Use the slug for the repo, since it's unique."""
-        return obj.course.repository.slug
+        data = get_course_metadata(obj.course_id)
+        return data["repo_slug"]

@@ -58,7 +58,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
             {
               "id": "task1",
               "status": "successful",
-              "url": "/media/resource_exports/export_task1.tar.gz"
+              "url": "/media/resource_exports/export_task1.tar.gz",
+              "collision": false
             }
           ]
         }
@@ -76,7 +77,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
         responseText: {
           "id": "task2",
           "status": "processing",
-          "url": ""
+          "url": "",
+          "collision": false
         }
       });
       TestUtils.initMockjax({
@@ -107,7 +109,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
       assert.deepEqual(
         {
           exportButtonVisible: false,
-          exports: []
+          exports: [],
+          exportsSelected: [],
+          collision: false
         },
         component.state
       );
@@ -118,7 +122,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
         assert.deepEqual(
           {
             exports: [learningResourceResponse],
-            exportButtonVisible: true
+            exportButtonVisible: true,
+            exportsSelected: [learningResourceResponse.id],
+            collision: false
           },
           component.state
         );
@@ -133,7 +139,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
           assert.deepEqual(
             {
               exports: [learningResourceResponse],
-              exportButtonVisible: false
+              exportButtonVisible: false,
+              exportsSelected: [learningResourceResponse.id],
+              collision: false
             },
             component.state
           );
@@ -145,7 +153,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
             responseText: {
               "id": "task2",
               "status": "processing",
-              "url": ""
+              "url": "",
+              "collision": false
             }
           });
 
@@ -154,7 +163,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
             assert.deepEqual(
               {
                 exportButtonVisible: false,
-                exports: [learningResourceResponse]
+                exports: [learningResourceResponse],
+                exportsSelected: [learningResourceResponse.id],
+                collision: false
               },
               component.state
             );
@@ -166,7 +177,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
               responseText: {
                 "id": "task2",
                 "status": "success",
-                "url": "/media/resource_exports/export_task2.tar.gz"
+                "url": "/media/resource_exports/export_task2.tar.gz",
+                "collision": false
               }
             });
 
@@ -179,6 +191,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
                 {
                   exports: [],
                   exportButtonVisible: false,
+                  exportsSelected: [],
+                  collision: false,
                   url: "/media/resource_exports/export_task2.tar.gz"
                 },
                 component.state
@@ -221,7 +235,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
       assert.deepEqual(
         {
           exportButtonVisible: false,
-          exports: []
+          exports: [],
+          exportsSelected: [],
+          collision: false
         },
         component.state
       );
@@ -231,7 +247,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
         assert.deepEqual(
           {
             exports: [],
-            exportButtonVisible: false
+            exportButtonVisible: false,
+            exportsSelected: [],
+            collision: false
           },
           component.state
         );
@@ -257,7 +275,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
       assert.deepEqual(
         {
           exportButtonVisible: false,
-          exports: []
+          exports: [],
+          exportsSelected: [],
+          collision: false
         },
         component.state
       );
@@ -268,7 +288,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
         assert.deepEqual(
           {
             exports: [learningResourceResponse],
-            exportButtonVisible: true
+            exportButtonVisible: true,
+            exportsSelected: [learningResourceResponse.id],
+            collision: false
           },
           component.state
         );
@@ -291,6 +313,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
             {
               exports: [learningResourceResponse],
               exportButtonVisible: true,
+              exportsSelected: [learningResourceResponse.id],
+              collision: false,
               message: {
                 error: "Error preparing learning resources for download."
               }
@@ -321,7 +345,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
       assert.deepEqual(
         {
           exportButtonVisible: false,
-          exports: []
+          exports: [],
+          exportsSelected: [],
+          collision: false
         },
         component.state
       );
@@ -332,7 +358,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
         assert.deepEqual(
           {
             exports: [learningResourceResponse],
-            exportButtonVisible: true
+            exportButtonVisible: true,
+            exportsSelected: [learningResourceResponse.id],
+            collision: false
           },
           component.state
         );
@@ -355,6 +383,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
             {
               exports: [learningResourceResponse],
               exportButtonVisible: false,
+              exportsSelected: [learningResourceResponse.id],
+              collision: false,
               message: {
                 error: "Error occurred preparing " +
                 "learning resources for download."
@@ -387,7 +417,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
       assert.deepEqual(
         {
           exportButtonVisible: false,
-          exports: []
+          exports: [],
+          exportsSelected: [],
+          collision: false
         },
         component.state
       );
@@ -398,7 +430,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
         assert.deepEqual(
           {
             exports: [learningResourceResponse],
-            exportButtonVisible: true
+            exportButtonVisible: true,
+            exportsSelected: [learningResourceResponse.id],
+            collision: false
           },
           component.state
         );
@@ -413,7 +447,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
           assert.deepEqual(
             {
               exports: [learningResourceResponse],
-              exportButtonVisible: false
+              exportButtonVisible: false,
+              exportsSelected: [learningResourceResponse.id],
+              collision: false
             },
             component.state
           );
@@ -432,6 +468,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
               {
                 exports: [learningResourceResponse],
                 exportButtonVisible: false,
+                exportsSelected: [learningResourceResponse.id],
+                collision: false,
                 message: {
                   error: "Error occurred preparing learning " +
                   "resources for download."
@@ -465,7 +503,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
       assert.deepEqual(
         {
           exportButtonVisible: false,
-          exports: []
+          exports: [],
+          exportsSelected: [],
+          collision: false
         },
         component.state
       );
@@ -476,7 +516,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
         assert.deepEqual(
           {
             exports: [learningResourceResponse],
-            exportButtonVisible: true
+            exportButtonVisible: true,
+            exportsSelected: [learningResourceResponse.id],
+            collision: false
           },
           component.state
         );
@@ -491,7 +533,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
           assert.deepEqual(
             {
               exports: [learningResourceResponse],
-              exportButtonVisible: false
+              exportButtonVisible: false,
+              exportsSelected: [learningResourceResponse.id],
+              collision: false
             },
             component.state
           );
@@ -503,7 +547,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
             responseText: {
               "id": "task2",
               "status": "processing",
-              "url": ""
+              "url": "",
+              "collision": false
             }
           });
 
@@ -513,7 +558,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
             assert.deepEqual(
               {
                 exportButtonVisible: false,
-                exports: [learningResourceResponse]
+                exports: [learningResourceResponse],
+                exportsSelected: [learningResourceResponse.id],
+                collision: false
               },
               component.state
             );
@@ -522,7 +569,12 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
               url: '/api/v1/repositories/repo/' +
               'learning_resource_export_tasks/task2/',
               type: 'GET',
-              status: 400
+              responseText: {
+                "id": "task2",
+                "status": "failure",
+                "url": "",
+                "collision": false
+              }
             });
 
             waitForAjax(1, function() {
@@ -530,6 +582,117 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
                 {
                   exports: [learningResourceResponse],
                   exportButtonVisible: false,
+                  exportsSelected: [learningResourceResponse.id],
+                  message: {
+                    error: "Error occurred preparing learning " +
+                    "resources for download."
+                  },
+                  collision: false
+                },
+                component.state
+              );
+              done();
+            });
+          });
+        });
+      });
+    };
+
+    React.addons.TestUtils.renderIntoDocument(
+      <ExportsComponent
+      interval={200}
+      repoSlug="repo"
+      loggedInUser="user"
+      clearExports={function() {}}
+      ref={afterMount}
+      />);
+  });
+
+  QUnit.test("Test failure to get status update due to 500",
+    function(assert) {
+    var done = assert.async();
+
+    var afterMount = function(component) {
+      // Initial state
+      assert.deepEqual(
+        {
+          exportButtonVisible: false,
+          exports: [],
+          exportsSelected: [],
+          collision: false
+        },
+        component.state
+      );
+
+      // Wait for GET exports and GET related learning resources.
+      waitForAjax(2, function() {
+        // one export
+        assert.deepEqual(
+          {
+            exports: [learningResourceResponse],
+            exportButtonVisible: true,
+            exportsSelected: [learningResourceResponse.id],
+            collision: false
+          },
+          component.state
+        );
+
+        var $node = $(React.findDOMNode(component));
+        var button = $node.find("button")[0];
+
+        // Click the button. There should be a POST to start the task
+        // followed by an immediate GET to check status (which is 'processing').
+        React.addons.TestUtils.Simulate.click(button);
+        waitForAjax(2, function() {
+          assert.deepEqual(
+            {
+              exports: [learningResourceResponse],
+              exportButtonVisible: false,
+              exportsSelected: [learningResourceResponse.id],
+              collision: false
+            },
+            component.state
+          );
+
+          TestUtils.replaceMockjax({
+            url: '/api/v1/repositories/repo/' +
+            'learning_resource_export_tasks/task2/',
+            type: 'GET',
+            responseText: {
+              "id": "task2",
+              "status": "processing",
+              "url": "",
+              "collision": false
+            }
+          });
+
+          // In a second another GET for status will happen which will
+          // fail.
+          waitForAjax(1, function() {
+            assert.deepEqual(
+              {
+                exportButtonVisible: false,
+                exports: [learningResourceResponse],
+                exportsSelected: [learningResourceResponse.id],
+                collision: false
+              },
+              component.state
+            );
+
+            TestUtils.replaceMockjax({
+              url: '/api/v1/repositories/repo/' +
+              'learning_resource_export_tasks/task2/',
+              type: 'GET',
+              status: 500
+            });
+
+            waitForAjax(1, function() {
+              assert.deepEqual(
+                {
+                  exports: [learningResourceResponse],
+                  exportButtonVisible: false,
+                  exportsSelected: [learningResourceResponse.id],
+                  collision: false,
                   message: {
                     error: "Error occurred preparing learning " +
                     "resources for download."
@@ -567,7 +730,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
       assert.deepEqual(
         {
           exportButtonVisible: false,
-          exports: []
+          exports: [],
+          exportsSelected: [],
+          collision: false,
         },
         component.state
       );
@@ -578,7 +743,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
         assert.deepEqual(
           {
             exports: [learningResourceResponse],
-            exportButtonVisible: true
+            exportButtonVisible: true,
+            exportsSelected: [learningResourceResponse.id],
+            collision: false
           },
           component.state
         );
@@ -593,7 +760,9 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
           assert.deepEqual(
             {
               exports: [learningResourceResponse],
-              exportButtonVisible: false
+              exportButtonVisible: false,
+              exportsSelected: [learningResourceResponse.id],
+              collision: false
             },
             component.state
           );
@@ -605,7 +774,8 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
             responseText: {
               "id": "task2",
               "status": "success",
-              "url": "/media/resource_exports/export_task2.tar.gz"
+              "url": "/media/resource_exports/export_task2.tar.gz",
+              "collision": true
             }
           });
           TestUtils.replaceMockjax({
@@ -622,10 +792,12 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
               {
                 exports: [learningResourceResponse],
                 exportButtonVisible: false,
+                exportsSelected: [learningResourceResponse.id],
                 message: {
                   error: "Error clearing learning resource exports."
                 },
-                url: "/media/resource_exports/export_task2.tar.gz"
+                url: "/media/resource_exports/export_task2.tar.gz",
+                collision: true
               },
               component.state
             );
@@ -653,5 +825,156 @@ define(['QUnit', 'jquery', 'lr_exports', 'reactaddons',
     assert.equal(0, $(container).find("div").size());
     Exports.loader("repo", "user", function() {}, container);
     assert.equal(1, $(container).find("div").size());
+  });
+
+  QUnit.test("Assert that export checkboxes adjust ids sent to server",
+    function(assert) {
+    var done = assert.async();
+
+    var clearExportCount = 0;
+    var clearExports = function() {
+      clearExportCount++;
+    };
+
+    var afterMount = function(component) {
+      // Initial state
+      assert.deepEqual(
+        {
+          exportButtonVisible: false,
+          exports: [],
+          exportsSelected: [],
+          collision: false,
+        },
+        component.state
+      );
+
+      // Wait for GET exports and GET related learning resources.
+      waitForAjax(2, function() {
+        // one export
+        assert.deepEqual(
+          {
+            exports: [learningResourceResponse],
+            exportButtonVisible: true,
+            exportsSelected: [learningResourceResponse.id],
+            collision: false
+          },
+          component.state
+        );
+
+        var $node = $(React.findDOMNode(component));
+        var button = $node.find("button")[0];
+
+        // This matches against an empty set of ids which verifies that
+        // exportsSelected affects what's sent to the server.
+        TestUtils.replaceMockjax({
+          url: '/api/v1/repositories/repo/' +
+          'learning_resource_export_tasks/',
+          type: 'POST',
+          responseText: {
+            id: "task2"
+          },
+          data: JSON.stringify({
+            ids: []
+          })
+        });
+
+        component.setState({
+          exportsSelected: []
+        }, function() {
+          // Click the button. There should be a POST to start the task
+          // followed by an immediate GET to check status.
+          React.addons.TestUtils.Simulate.click(button);
+          waitForAjax(2, function() {
+            // If we reach this point the request data matched successfully.
+            done();
+          });
+        });
+      });
+    };
+
+    React.addons.TestUtils.renderIntoDocument(
+      <ExportsComponent
+      interval={200}
+      repoSlug="repo"
+      loggedInUser="user"
+      clearExports={clearExports}
+      ref={afterMount}
+      />);
+  });
+
+  QUnit.test("Verify that checkboxes alter state", function(assert) {
+    var done = assert.async();
+
+    var response1 = learningResourceResponse;
+    var response2 = $.extend({}, learningResourceResponse, {id: 345});
+    var response3 = $.extend({}, learningResourceResponse, {id: 789});
+
+    TestUtils.replaceMockjax({
+      url: '/api/v1/repositories/repo/learning_resource_exports/user/',
+      type: 'GET',
+      responseText: {
+        "count": 3,
+        "next": null,
+        "previous": null,
+        "results": [
+          {"id": response1.id},
+          {"id": response2.id},
+          {"id": response3.id}]
+      }
+    });
+    TestUtils.initMockjax({
+      url: '/api/v1/repositories/repo/learning_resources/?id=123%2C345%2C789',
+      type: 'GET',
+      responseText: {
+        "count": 3,
+        "next": null,
+        "previous": null,
+        "results": [
+          response1,
+          response2,
+          response3
+        ]
+      }
+    });
+
+    var afterMount = function(component) {
+      var node = React.findDOMNode(component);
+      // Wait for GET exports and GET related learning resources.
+      waitForAjax(2, function() {
+        assert.deepEqual(
+          component.state.exportsSelected,
+          [response1.id, response2.id, response3.id]
+        );
+
+        // Deselect first and second
+        $($(node).find("ins")[0]).click();
+        $($(node).find("ins")[1]).click();
+
+        component.forceUpdate(function() {
+          assert.deepEqual(
+            component.state.exportsSelected,
+            [response3.id]
+          );
+
+          // Select first one
+          $($(node).find("ins")[1]).click();
+          component.forceUpdate(function() {
+            assert.deepEqual(
+              component.state.exportsSelected,
+              [response3.id, response2.id]
+            );
+            done();
+          });
+        });
+      });
+    };
+
+    React.addons.TestUtils.renderIntoDocument(
+      <ExportsComponent
+        repoSlug="repo"
+        loggedInUser="user"
+        ref={afterMount}
+        />
+    );
   });
 });
