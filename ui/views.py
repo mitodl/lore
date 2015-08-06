@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import logging
 import mimetypes
+import json
 import os
 
 from django.conf import settings
@@ -30,7 +31,6 @@ from learningresources.api import (
     PermissionDenied as LorePermissionDenied,
 )
 from learningresources.models import (
-    LearningResource,
     Repository,
     StaticAsset,
     STATIC_ASSET_PREFIX,
@@ -241,24 +241,46 @@ class RepositoryView(FacetedSearchView):
                 )
             qs_prefix = "?{0}&".format("&".join(qs_prefix))
 
-        show_export_button = LearningResource.objects.filter(
-            course__repository__id=self.repo.id
-        ).exists()
+        def make_dict(result):
+            """Serialize result to dict."""
+            return {
+                "lid": result.lid,
+                "resource_type": result.resource_type,
+                "title": result.title,
+                "course": result.course,
+                "run": result.run,
+                "description": result.description,
+                "description_path": result.description_path,
+                "preview_url": result.preview_url,
+                "xa_nr_views": result.nr_views,
+                "xa_nr_attempts": result.nr_attempts,
+                "xa_avg_grade": result.avg_grade,
+            }
+
+        page_no = int(self.request.GET.get('page', 1))
+        page = self.build_page()[0].page(page_no)
+
+        # Provide information used to populate listing UI.
+        resources = [make_dict(result) for result in page]
+        exports = self.request.session.get(
+            'learning_resource_exports', {}).get(self.repo.slug, [])
+
+        sorting_options = {
+            "current": LoreSortingFields.get_sorting_option(
+                self.sortby),
+            "all": LoreSortingFields.all_sorting_options_but(
+                self.sortby)
+        }
 
         context.update({
             "repo": self.repo,
             "perms_on_cur_repo": get_perms(self.request.user, self.repo),
             "vocabularies": get_vocabularies(context["facets"]),
             "qs_prefix": qs_prefix,
-            "sorting_options": {
-                "current": LoreSortingFields.get_sorting_option(
-                    self.sortby),
-                "all": LoreSortingFields.all_sorting_options_but(
-                    self.sortby)
-            },
-            "exports": self.request.session.get(
-                'learning_resource_exports', {}).get(self.repo.slug, []),
-            "show_export_button": show_export_button
+            "sorting_options": sorting_options,
+            "sorting_options_json": json.dumps(sorting_options),
+            "resources_json": json.dumps(resources),
+            "exports_json": json.dumps(exports)
         })
         return context
 
