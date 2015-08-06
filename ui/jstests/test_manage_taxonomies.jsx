@@ -45,14 +45,10 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'reactaddons',
    * */
   function  assertAddTermCommon(assert, component) {
     // check term title
-    var listOfLinks = React.addons.TestUtils.
-      scryRenderedDOMComponentsWithTag(
-        component,
-        'a'
-    );
-    assert.equal(listOfLinks.length, 2);
-    var linkHeader = React.findDOMNode(listOfLinks[0]);
-    assert.equal(linkHeader.innerHTML, vocabulary.name);
+    var node = React.findDOMNode(component);
+    var $vocabTitles = $(node).find(".vocab-title");
+    assert.equal($vocabTitles.length, 1);
+    assert.equal($vocabTitles[0].innerHTML, vocabulary.name);
     //test items
     var devItems = React.addons.TestUtils.
       findRenderedDOMComponentWithClass(
@@ -230,17 +226,11 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'reactaddons',
       var reportMessage = function() {};
       var afterMount = function(component) {
         var node = React.findDOMNode(component);
-        var textbox = $(node).find("input")[0];
 
-        // check term title
-        var listOfLinks = React.addons.TestUtils.
-          scryRenderedDOMComponentsWithTag(
-            component,
-            'a'
-        );
-        assert.equal(listOfLinks.length, 2);
-        var linkHeader = React.findDOMNode(listOfLinks[0]);
-        assert.equal(linkHeader.innerHTML, vocabulary.name);
+        // check vocab title
+        var $vocabLinks = $(node).find(".vocab-title");
+        assert.equal($vocabLinks.length, 1);
+        assert.equal($vocabLinks[0].innerHTML, vocabulary.name);
 
         //test items
         var devItems = React.addons.TestUtils.
@@ -265,6 +255,8 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'reactaddons',
           {target: {value: 'test12'}}
         );
         component.forceUpdate(function() {
+          node = React.findDOMNode(component);
+          var textbox = $(node).find("input")[0];
           assert.equal(
             'test12',
             component.state.newTermLabel
