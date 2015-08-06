@@ -1,4 +1,4 @@
-define("utils", ["jquery", "lodash", "reactaddons", "select2"],
+define("utils", ["jquery", "lodash", "react", "select2"],
   function ($, _, React) {
   'use strict';
 

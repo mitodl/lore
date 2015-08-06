@@ -1,4 +1,4 @@
-define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
+define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
   function (React, _, $, Utils) {
   'use strict';
 

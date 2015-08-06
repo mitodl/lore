@@ -1,4 +1,4 @@
-define(['QUnit', 'jquery', 'manage_taxonomies', 'reactaddons',
+define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
   'test_utils'],
   function(QUnit, $, ManageTaxonomies, React, TestUtils) {
   'use strict';

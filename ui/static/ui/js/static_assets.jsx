@@ -1,5 +1,5 @@
 define('static_assets', [
-  'reactaddons', 'jquery', 'lodash', 'utils'], function (React, $, _, Utils) {
+  'react', 'jquery', 'lodash', 'utils'], function (React, $, _, Utils) {
   'use strict';
 
   var StatusBox = Utils.StatusBox;

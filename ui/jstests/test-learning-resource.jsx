@@ -1,4 +1,4 @@
-define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
+define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
   'test_utils', 'jquery_mockjax'], function(
   QUnit, $, React, _, LearningResources, TestUtils) {
   'use strict';
