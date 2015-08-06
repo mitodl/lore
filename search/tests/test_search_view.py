@@ -50,7 +50,7 @@ class TestSearchView(SearchTestCase):
         """
         Search should not load LearningResources from the database.
         """
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(11):
             resp = self.client.get(
                 reverse("repositories", args=(self.repo.slug,)))
 
