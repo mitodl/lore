@@ -341,6 +341,22 @@ a {
 	font-size:16px;
 }
 
+.sub-meta {
+    display: inline-block;
+    float: right;
+    width: 60%;
+    text-align: right;
+}
+
+.sub-meta .meta-item {
+    width: 65px;
+    text-align: left;
+}
+
+.sub-meta .meta-item.mi-col-4 {
+    width: 24px;
+}
+
 /* pagination */
 .lore-pagination {
 	padding:40px 0;

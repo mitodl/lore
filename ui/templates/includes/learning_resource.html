@@ -48,7 +48,12 @@
         <div class="tile-meta">
           <span class="meta-item">{{ result.course }}</span>
           <span class="meta-item">{{ result.run }}</span>
-          <span class="meta-item"><a href="{{ result.preview_url }}" target="_blank">Preview</a></span>
+          <span class="sub-meta">
+            <span class="meta-item mi-col-1"><i class="fa fa-eye"></i> {{ result.nr_views }}</span>
+            <span class="meta-item mi-col-2"><i class="fa fa-edit"></i> {{ result.nr_attempts }}</span>
+            <span class="meta-item mi-col-3"><i class="fa fa-graduation-cap"></i> {{ result.avg_grade }}</span>
+            <span class="meta-item mi-col-4"><a href="{{ result.preview_url }}" target="_blank">Preview</a></span>
+          </span>
         </div>
       </div>
     </div>
