@@ -35,6 +35,9 @@ define("test_utils", ["jquery", "stacktrace", "lodash", "QUnit",
       mockjaxCount = 0;
       // setTimeout will have its own stack trace, so preserve this one
       // so we can know where the error occurred
+
+      // NOTE: this function may make an AJAX call to get the source for the
+      // stack trace.
       stacktrace = printStackTrace().join("\n");
     }
 
