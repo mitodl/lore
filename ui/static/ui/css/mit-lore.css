@@ -6,6 +6,7 @@
 
 *::after, *::before {
     content: '';
+    content: none;  /* for chrome and safari */
 }
 
 body {
@@ -509,4 +510,8 @@ ul.repos {
     list-style-type: none;
     padding: 0px;
     margin: 0px;
+}
+
+.dropdown-repository {
+    margin-left: 380px;
 }
