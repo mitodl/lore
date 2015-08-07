@@ -79,7 +79,24 @@ define('listing',
     $(document).ready(function() {
 
       $('[data-toggle=popover]').popover();
-
+      //Close panels on escape keypress
+      $(document).keyup(function(event) {
+        if (event.keyCode === 27) { // escape key maps to keycode `27`
+          if ($('.cd-panel').hasClass('is-visible')) {
+            $('.cd-panel').removeClass('is-visible');
+          }
+          if ($('.cd-panel-2').hasClass('is-visible')) {
+            $('.cd-panel-2').removeClass('is-visible');
+          }
+          if ($('.cd-panel-exports').hasClass('is-visible')) {
+            $('.cd-panel-exports').removeClass('is-visible');
+          }
+          if ($('.cd-panel-members').hasClass('is-visible')) {
+            $('.cd-panel-members').removeClass('is-visible');
+          }
+          event.preventDefault();
+        }
+      });
       //open the lateral panel
       $('.cd-btn').on('click', function(event) {
         event.preventDefault();
