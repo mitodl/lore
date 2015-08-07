@@ -29,6 +29,7 @@ from learningresources.api import (
     PermissionDenied as LorePermissionDenied,
 )
 from learningresources.models import (
+    LearningResource,
     Repository,
     StaticAsset,
     STATIC_ASSET_PREFIX,
@@ -234,6 +235,10 @@ class RepositoryView(FacetedSearchView):
                 )
             qs_prefix = "?{0}&".format("&".join(qs_prefix))
 
+        show_export_button = LearningResource.objects.filter(
+            course__repository__id=self.repo.id
+        ).exists()
+
         context.update({
             "repo": self.repo,
             "perms_on_cur_repo": get_perms(self.request.user, self.repo),
@@ -246,7 +251,8 @@ class RepositoryView(FacetedSearchView):
                     self.sortby)
             },
             "exports": self.request.session.get(
-                'learning_resource_exports', {}).get(self.repo.slug, [])
+                'learning_resource_exports', {}).get(self.repo.slug, []),
+            "show_export_button": show_export_button
         })
         return context
 
