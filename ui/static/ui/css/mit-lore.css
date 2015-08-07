@@ -510,3 +510,11 @@ ul.repos {
     padding: 0px;
     margin: 0px;
 }
+
+.save-btn {
+	display: none;
+}
+
+.cancel-btn {
+    display: none;
+}
