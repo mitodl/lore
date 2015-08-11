@@ -251,11 +251,6 @@ a {
     padding: 0;
 }
 
-.tile-meta {
-	font-size:small;
-	color:#929292;
-}
-
 .tile {
     margin: 18px 0 18px 0;
 }
@@ -330,9 +325,8 @@ a {
 }
 
 .tile-meta {
-    font-size: 13px;
-    color: #666;
-    font-weight: 700;
+	font-size:small;
+	color:#929292;
 }
 
 .meta-item {
