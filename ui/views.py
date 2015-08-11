@@ -21,6 +21,7 @@ from django.shortcuts import (
 from haystack.views import FacetedSearchView
 from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import get_perms
+from statsd.defaults.django import statsd
 
 from learningresources.api import (
     get_repo,
@@ -187,6 +188,7 @@ class RepositoryView(FacetedSearchView):
 
     # pylint: disable=arguments-differ
     # We need the extra kwarg.
+    @statsd.timer('lore.repository_view')
     def __call__(self, request, repo_slug):
         # Get arguments from the URL
         # It's a subclass of an external class, so we don't have

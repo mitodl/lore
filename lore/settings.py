@@ -194,6 +194,12 @@ COMPRESS_PRECOMPILERS = (
     ('text/jsx', 'node_modules/.bin/jsx < {infile} > {outfile}')
 )
 
+# Statsd client config
+STATSD_HOST = get_var('LORE_STATSD_HOST', 'localhost')
+STATSD_PORT = get_var('LORE_STATSD_PORT', 8125)
+STATSD_PREFIX = get_var('LORE_STATSD_PREFIX', None)
+STATSD_MAXUDPSIZE = get_var('LORE_STATSD_MAXUDPSIZE', 512)
+
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
 EXPORT_PATH_PREFIX = get_var('LORE_EXPORT_PATH_PREFIX', 'resource_exports/')
@@ -352,7 +358,7 @@ HAYSTACK_CONNECTIONS = {
         'INDEX_NAME': get_var('HAYSTACK_INDEX', 'haystack'),
     }
 }
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_SIGNAL_PROCESSOR = 'search.signals.LoreRealTimeSignalProcessor'
 
 XANALYTICS_URL = get_var('XANALYTICS_URL', "")
 

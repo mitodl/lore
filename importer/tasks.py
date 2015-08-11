@@ -8,6 +8,7 @@ import logging
 
 from django.conf import settings
 import requests
+from statsd.defaults.django import statsd
 
 from lore.celery import async
 from learningresources.api import update_xanalytics
@@ -19,6 +20,7 @@ RETRY_LIMIT = 10
 
 
 @async.task
+@statsd.timer('lore.import_file')
 def import_file(path, repo_id, user_id):
     """Asynchronously import a course."""
     from importer.api import import_course_from_file
