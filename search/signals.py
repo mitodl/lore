@@ -11,7 +11,7 @@ import logging
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 
-from search.search_indexes import LearningResourceIndex
+from search.search_indexes import LearningResourceIndex, get_vocabs
 
 log = logging.getLogger(__name__)
 
@@ -23,4 +23,6 @@ def handle_m2m_save(sender, **kwargs):
     instance = kwargs.pop("instance", None)
     if instance.__class__.__name__ != "LearningResource":
         return
+    # Update cache for the LearningResource if it's already set.
+    get_vocabs(instance.course_id, instance.id, solo_update=True)
     LearningResourceIndex().update_object(instance)
