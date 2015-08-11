@@ -353,5 +353,15 @@ HAYSTACK_CONNECTIONS = {
     }
 }
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-ALLOW_CACHING = get_var("ALLOW_CACHING", get_var("ALLOW_CACHING", False))
+
 XANALYTICS_URL = get_var('XANALYTICS_URL', "")
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    },
+    "lore_indexing": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "TIMEOUT": get_var("LORE_INDEXING_CACHE_TIMEOUT", "60"),
+    }
+}
