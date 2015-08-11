@@ -977,4 +977,18 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
         />
     );
   });
+
+  QUnit.test(
+    'Verify exports panel header renders properly',
+    function(assert) {
+      var container = document.createElement("div");
+      Exports.loadExportsHeader(0, container);
+      assert.equal(1, $(container).children().size());
+      assert.equal("Export", $(container).text().trim());
+      Exports.loadExportsHeader(3, container);
+      assert.equal(1, $(container).children().size());
+      assert.equal("Export (3)", $(container).text().trim());
+    }
+  );
+
 });
