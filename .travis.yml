@@ -6,7 +6,8 @@ services:
 before_script:
   - sleep 10
 env:
-  - DATABASE_URL=postgres://postgres@localhost:5432/postgres
+  global:
+    - DATABASE_URL=postgres://postgres@localhost:5432/postgres
 install:
   - "pip install 'tox>=2.0.2,<3.0.0'"
   - pip install coveralls
