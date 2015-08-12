@@ -362,6 +362,12 @@ HAYSTACK_SIGNAL_PROCESSOR = 'search.signals.LoreRealTimeSignalProcessor'
 
 XANALYTICS_URL = get_var('XANALYTICS_URL', "")
 
+# Token required to access the status page.
+STATUS_TOKEN = get_var(
+    "STATUS_TOKEN",
+    "7E17C32A63B2810F0053DE454FC8395CA3262CCB8392D2307887C5E67F132550"
+)
+
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",

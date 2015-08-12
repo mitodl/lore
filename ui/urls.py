@@ -22,6 +22,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 
 from search.forms import SearchForm
+from status.views import status
 from ui.views import (
     welcome, create_repo,
     upload, RepositoryView, serve_static_assets, serve_resource_exports
@@ -50,6 +51,7 @@ urlpatterns = [
     ),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),
+    url(r'^status/$', status, name='status'),
 ]
 
 if (settings.DEFAULT_FILE_STORAGE ==
