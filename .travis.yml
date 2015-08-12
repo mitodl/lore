@@ -3,11 +3,14 @@ python:
   - '2.7'
 services:
   - elasticsearch
+  - redis-server
 before_script:
   - sleep 10
 env:
   global:
     - DATABASE_URL=postgres://postgres@localhost:5432/postgres
+    - BROKER_URL=redis://localhost:6379/4
+    - HAYSTACK_URL=127.0.0.1:9200
 install:
   - "pip install 'tox>=2.0.2,<3.0.0'"
   - pip install coveralls
