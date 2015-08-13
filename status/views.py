@@ -69,7 +69,7 @@ def get_redis_info():
     """Check Redis connection."""
     try:
         url = settings.BROKER_URL
-        _, host, port, _, _, db, _ = parse_redis_url(url)
+        _, host, port, _, password, db, _ = parse_redis_url(url)
     except AttributeError:
         log.error("No valid Redis connection info found in settings.")
         return {"status": NO_CONFIG}
@@ -77,7 +77,9 @@ def get_redis_info():
     start = datetime.now()
     try:
         rdb = StrictRedis(
-            host=host, port=port, db=db, socket_timeout=TIMEOUT_SECONDS)
+            host=host, port=port, db=db,
+            password=password, socket_timeout=TIMEOUT_SECONDS,
+        )
         info = rdb.info()
     except (RedisConnectionError, TypeError) as ex:
         log.error("Error making Redis connection: %s", ex.args)
