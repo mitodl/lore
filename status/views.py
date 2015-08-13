@@ -17,7 +17,11 @@ from django.http import JsonResponse, Http404
 from elasticsearch import Elasticsearch, ConnectionError as ESConnectionError
 from kombu.utils.url import _parse_url as parse_redis_url
 from psycopg2 import connect, OperationalError
-from redis import StrictRedis, ConnectionError as RedisConnectionError
+from redis import (
+    StrictRedis,
+    ConnectionError as RedisConnectionError,
+    ResponseError as RedisResponseError,
+)
 
 log = logging.getLogger(__name__)
 
@@ -75,8 +79,12 @@ def get_redis_info():
         rdb = StrictRedis(
             host=host, port=port, db=db, socket_timeout=TIMEOUT_SECONDS)
         info = rdb.info()
-    except (RedisConnectionError, TypeError):
+    except (RedisConnectionError, TypeError) as ex:
+        log.error("Error making Redis connection: %s", ex.args)
         return {"status": DOWN}
+    except RedisResponseError as ex:
+        log.error("Bad Redis response: %s", ex.args)
+        return {"status": DOWN, "message": "auth error"}
     micro = (datetime.now() - start).microseconds
     del rdb  # the redis package does not support Redis's QUIT.
     ret = {
