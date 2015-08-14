@@ -27,6 +27,15 @@ To run one-off commands, like shell, you can run
 ``docker-compose run web python manage.py shell`` or to create root
 user, etc.
 
+Currently in the development environment we compile JSX on every
+request, which at the time of this writing is about 5 seconds. If you
+want to disable this (because you are working just on python for
+example), you can add the line ``LORE_COMPRESS_ENABLED: True`` to
+`docker-compose.yml` under the web -> environment section of the file.
+The first request will then take 5 seconds, but subsequent ones will
+be subsecond.
+
+
 Adding an application
 =====================
 

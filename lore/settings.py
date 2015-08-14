@@ -193,6 +193,8 @@ COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
     ('text/jsx', 'node_modules/.bin/jsx < {infile} > {outfile}')
 )
+COMPRESS_OFFLINE = get_var('LORE_COMPRESS_OFFLINE', False)
+COMPRESS_ENABLED = get_var('LORE_COMPRESS_ENABLED', not DEBUG)
 
 # Statsd client config
 STATSD_HOST = get_var('LORE_STATSD_HOST', 'localhost')
