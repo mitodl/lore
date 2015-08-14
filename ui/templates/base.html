@@ -120,6 +120,7 @@
     {% endcompress %}
     {% block postcontent %}
     {% endblock %}
+    {% if settings.GOOGLE_ANALYTICS_ID %}
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
@@ -129,5 +130,6 @@
       ga('create', '{{ settings.GOOGLE_ANALYTICS_ID }}', 'auto');
       ga('send', 'pageview');
     </script>
+    {% endif %}
   </body>
 </html>
