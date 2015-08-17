@@ -72,10 +72,10 @@ define("test_utils", ["jquery", "stacktrace", "lodash", "QUnit",
     }
 
     $.mockjax.clear(id);
-    return initMockjax(settings);
+    return initMockjax(settings, true);
   };
 
-  var initMockjax = function (settings) {
+  var initMockjax = function (settings, allowReplace) {
     var newSettings = $.extend({}, settings);
     newSettings.onAfterComplete = function () {
       mockjaxCount++;
@@ -83,6 +83,11 @@ define("test_utils", ["jquery", "stacktrace", "lodash", "QUnit",
     var id = $.mockjax(newSettings);
     var key = makeKeyFromSettings(settings);
 
+    if (!allowReplace) {
+      if (_.has(mockjaxIdLookup, key)) {
+        throw "Mockjax key " + key + " already exists";
+      }
+    }
     mockjaxIdLookup[key] = id;
     return id;
   };
@@ -109,6 +114,9 @@ define("test_utils", ["jquery", "stacktrace", "lodash", "QUnit",
 
       // by default logs every URL which gets verbose
       $.mockjaxSettings.logging = false;
+
+      // in case a test failed and we didn't get to cleanup
+      mockjaxIdLookup = {};
 
       requestPool = [];
       $.ajaxSetup({

@@ -293,15 +293,12 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     'An error should show up on AJAX failure while saving form',
     function(assert) {
       var done = assert.async();
-      var thiz = this;
-
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(3, function () {
           var $node = $(React.findDOMNode(component));
 
-          $.mockjax.clear(thiz.learningResourcesPatchId);
-          TestUtils.initMockjax({
+          TestUtils.replaceMockjax({
             url: '/api/v1/repositories/repo/learning_resources/1/',
             type: 'PATCH',
             status: 400
