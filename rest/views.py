@@ -452,6 +452,23 @@ class LearningResourceDetail(RetrieveUpdateAPIView):
         return LearningResource.objects.filter(
             id=self.kwargs['lr_id'])
 
+    def update(self, request, *args, **kwargs):
+        """Override update to remove response."""
+        super(LearningResourceDetail, self).update(request, *args, **kwargs)
+
+        # Since content_xml may be large don't return the object
+        # in the response unless user requests it via GET.
+        return Response(status=status.HTTP_200_OK)
+
+    def partial_update(self, request, *args, **kwargs):
+        """Override partial_update to remove response."""
+        super(LearningResourceDetail, self).partial_update(
+            request, *args, **kwargs)
+
+        # Since content_xml may be large don't return the object
+        # in the response unless user requests it via GET.
+        return Response(status=status.HTTP_200_OK)
+
 
 class StaticAssetList(ListAPIView):
     """REST list view for StaticAsset."""
