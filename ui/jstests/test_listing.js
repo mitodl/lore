@@ -330,6 +330,17 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
           ]
         }]
     };
+    var membersResponse = {
+      "count": 1,
+      "next": null,
+      "previous": null,
+      "results": [
+        {
+          "username": "root",
+          "group_type": "administrators"
+        }
+      ]
+    };
 
     QUnit.module('Tests for listing page', {
       beforeEach: function() {
@@ -359,21 +370,31 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
           dataType: 'json',
           type: "GET"
         });
+        TestUtils.initMockjax({
+          url: "/api/v1/repositories/test/members/",
+          contentType: "application/json; charset=utf-8",
+          responseText: membersResponse,
+          dataType: 'json',
+          type: 'GET'
+        });
 
-        $("body").append($("<div id='listing_container'>" +
-          "<div id='listing'></div>" +
-            "<div id='exports_content'></div>" +
-            "<div id='exports_heading'></div>" +
-            "<div id='tab-1'></div>" +
-            "<div id='tab-3'></div>" +
-            "<div id='lore-pagination'></div>" +
-            "<div id='taxonomy-component'></div>" +
-            "<div class='btn-taxonomies'></div>" +
-            "<div class='btn-members'></div>" +
-            "<div class='cd-panel'></div>" +
-            "<div class='cd-panel-2'></div>" +
-            "<div class='cd-panel-exports'></div>" +
-            "<div class='cd-panel-members'></div>" +
+        $("body").append($(
+          "<div id='listing_container'>" +
+            "<div id='listing' />" +
+            "<div id='exports_content' />" +
+            "<div id='exports_heading' />" +
+            "<div id='tab-1' />" +
+            "<div id='tab-3' />" +
+            "<div id='lore-pagination' />" +
+            "<div id='taxonomy-component' />" +
+            "<div id='members-alert' />" +
+            "<button class='btn-taxonomies' />" +
+            "<button class='btn-members' />" +
+            "<div class='cd-panel' />" +
+            "<div class='cd-panel-2' />" +
+            "<div class='cd-panel-exports' />" +
+            "<div class='cd-panel-members' " +
+            "data-members-url='/api/v1/repositories/test/members/' />" +
           "</div>"));
       },
       afterEach: function() {
@@ -448,38 +469,40 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
     QUnit.test('Assert taxonomy tab opens', function(assert) {
       Listing.loader(listingOptions, $("#listing")[0]);
       var done = assert.async();
-      waitForAjax(3, function() {
+      waitForAjax(1, function() {
         assert.ok(!$('.cd-panel-2').hasClass("is-visible"));
 
         // click Manage Taxonomies button
         $(".btn-taxonomies").click();
         assert.ok($('.cd-panel-2').hasClass("is-visible"));
-
-        // Press escape to close
-        var press = $.Event("keyup");
-        press.keyCode = 27;
-        $(document).trigger(press);
-        assert.ok(!$('.cd-panel-2').hasClass("is-visible"));
-        done();
+        waitForAjax(2, function() {
+          // Press escape to close
+          var press = $.Event("keyup");
+          press.keyCode = 27;
+          $(document).trigger(press);
+          assert.ok(!$('.cd-panel-2').hasClass("is-visible"));
+          done();
+        });
       });
     });
 
     QUnit.test('Assert members tab opens', function(assert) {
       var done = assert.async();
       Listing.loader(listingOptions, $("#listing")[0]);
-      waitForAjax(3, function() {
+      waitForAjax(1, function() {
         assert.ok(!$('.cd-panel-members').hasClass("is-visible"));
 
         // click Members button
         $(".btn-members").click();
         assert.ok($('.cd-panel-members').hasClass("is-visible"));
-
-        // Press escape to close
-        var press = $.Event("keyup");
-        press.keyCode = 27;
-        $(document).trigger(press);
-        assert.ok(!$('.cd-panel-members').hasClass("is-visible"));
-        done();
+        waitForAjax(1, function() {
+          // Press escape to close
+          var press = $.Event("keyup");
+          press.keyCode = 27;
+          $(document).trigger(press);
+          assert.ok(!$('.cd-panel-members').hasClass("is-visible"));
+          done();
+        });
       });
     });
 
@@ -491,8 +514,7 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
         var container = $("#listing")[0];
         Listing.loader(listingOptions, container);
 
-        // NOTE: after manage taxonomy PR is merged this will change.
-        waitForAjax(3, function() {
+        waitForAjax(1, function() {
           assert.equal(window.location.toString(), oldLocation);
 
           // Select course facet
@@ -511,7 +533,6 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
             });
           });
         });
-
       }
     );
   }
