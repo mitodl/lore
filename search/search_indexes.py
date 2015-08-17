@@ -68,7 +68,8 @@ def get_vocabs(course_id, resource_id, solo_update=False):
     # terms for that LearningResource. Otherwise, looking up the vocabularies
     # for that resource will refill the cache for the entire course. If there
     # is already a value, retain it.
-    resource_ids = LearningResource.objects.all().values_list('id', flat=True)
+    resource_ids = LearningResource.objects.filter(
+        course__id=course_id).values_list('id', flat=True)
     for resource_id in resource_ids:
         rkey = "vocab_cache_{0}".format(resource_id)
         cache.set(rkey, cache.get(rkey, {}))
