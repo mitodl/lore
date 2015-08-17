@@ -93,39 +93,63 @@ class TestIndexing(SearchTestCase):
             xa_nr_attempts=101,
             xa_avg_grade=7.3
         ))
-        self.assertEqual(self.count_results(''), 3)
+        res4 = self.create_resource(**dict(
+            resource_type="example",
+            title="silly example 4",
+            content_xml="<blah>blah 4</blah>",
+            mpath="/blah3",
+            xa_nr_views=1003,
+            xa_nr_attempts=101,
+            xa_avg_grade=9.9
+        ))
+        self.assertEqual(self.count_results(''), 4)
         # sorting by number of views
         results = self.search(
             '',
             sorting=LoreSortingFields.SORT_BY_NR_VIEWS[0]
         )
-        # expected position (res2, res3, res1)
+        # expected position res2, res4
         top_res = results[0]
+        sec_res = results[1]
         self.assertEqual(
-            top_res.nr_views,
-            res2.xa_nr_views
+            top_res.lid,
+            res2.id
+        )
+        self.assertEqual(
+            sec_res.lid,
+            res4.id
         )
         # sorting by number of attempts
         results = self.search(
             '',
             sorting=LoreSortingFields.SORT_BY_NR_ATTEMPTS[0]
         )
-        # expected position (res3, res1, res2)
+        # expected position res3, res4
         top_res = results[0]
+        sec_res = results[1]
         self.assertEqual(
-            top_res.nr_attempts,
-            res3.xa_nr_attempts
+            top_res.lid,
+            res3.id
+        )
+        self.assertEqual(
+            sec_res.lid,
+            res4.id
         )
         # sorting by average grade
         results = self.search(
             '',
             sorting=LoreSortingFields.SORT_BY_AVG_GRADE[0]
         )
-        # expected position (res1, res3, res2)
+        # expected position res1, res4
         top_res = results[0]
+        sec_res = results[1]
         self.assertEqual(
-            top_res.avg_grade,
-            res1.xa_avg_grade
+            top_res.lid,
+            res1.id
+        )
+        self.assertEqual(
+            sec_res.lid,
+            res4.id
         )
 
     def test_indexing_cache(self):
