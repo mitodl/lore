@@ -88,13 +88,37 @@ define('listing',
         $('.cd-panel').removeClass('is-visible');
       }
 
+      var hideTaxonomyPanel = function() {
+        $('.cd-panel-2').removeClass('is-visible');
+      };
+
+      var setVocabularyActionTabName = function(isEditMode) {
+        var actionTabName = 'Add Vocabulary';
+        if (isEditMode) {
+          actionTabName = 'Edit Vocabulary';
+        }
+        $('.add-edit-vocabulary-tab').html(actionTabName);
+      };
+
+      var loadManageTaxonomies = function (isHideTaxonomyPanel) {
+        ManageTaxonomies.loader(
+          repoSlug,
+          $('#taxonomy-component')[0],
+          isHideTaxonomyPanel,
+          hideTaxonomyPanel,
+          showConfirmationDialog,
+          setVocabularyActionTabName,
+          refreshFromAPI
+        );
+      };
+
       $('[data-toggle=popover]').popover();
       //Close panels on escape keypress
       $(document).keyup(function(event) {
         if (event.keyCode === 27) { // escape key maps to keycode `27`
           closeLearningResourcePanel();
           if ($('.cd-panel-2').hasClass('is-visible')) {
-            $('.cd-panel-2').removeClass('is-visible');
+            loadManageTaxonomies(true);
           }
           if ($('.cd-panel-exports').hasClass('is-visible')) {
             $('.cd-panel-exports').removeClass('is-visible');
@@ -118,6 +142,7 @@ define('listing',
       //open the lateral panel
       $('.btn-taxonomies').on('click', function (event) {
         event.preventDefault();
+        loadManageTaxonomies(false);
         $('.cd-panel-2').addClass('is-visible');
       });
 
@@ -125,7 +150,7 @@ define('listing',
       $('.cd-panel-2').on('click', function (event) {
         if ($(event.target).is('.cd-panel-2') ||
           $(event.target).is('.cd-panel-close')) {
-          $('.cd-panel-2').removeClass('is-visible');
+          loadManageTaxonomies(true);
           event.preventDefault();
         }
       });
@@ -502,11 +527,6 @@ define('listing',
 
       // Initial refresh to populate page.
       refreshFromAPI();
-      ManageTaxonomies.loader(
-        repoSlug,
-        refreshFromAPI,
-        showConfirmationDialog,
-        $('#taxonomy-component')[0]);
     };
 
     return {
