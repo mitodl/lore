@@ -1,5 +1,5 @@
 define('learning_resources', [
-  'reactaddons', 'jquery', 'lodash', 'utils'], function (
+  'react', 'jquery', 'lodash', 'utils'], function (
   React, $, _, Utils) {
   'use strict';
 
