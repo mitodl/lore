@@ -6,7 +6,6 @@
 
 *::after, *::before {
     content: '';
-    content: none;  /* for chrome and safari */
 }
 
 body {
@@ -513,4 +512,8 @@ ul.repos {
 
 .dropdown-repository {
     margin-left: 380px;
+}
+
+.dropdown-repository button::after, .dropdown-repository button::before {
+    content: none;
 }
