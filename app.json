@@ -1,0 +1,106 @@
+{
+    "name": "LORE",
+    "description": "Learning Object Repository for Education",
+    "keywords": [
+        "Django",
+        "Python",
+        "MIT",
+        "Office of Digital Learning",
+        "Open edX"
+    ],
+    "website": "http://lore.readthedocs.org/",
+    "repository": "https://github.com/mitodl/lore",
+    "success_url": "/",
+    "scripts": {
+        "postdeploy": "./manage.py migrate"
+    },
+    "addons": [
+        "bonsai:staging",
+        "heroku-postgresql:hobby-dev",
+        "rediscloud:30"
+    ],
+    "buildpacks": [
+        {
+            "url": "https://github.com/heroku/heroku-buildpack-nodejs"
+        },
+        {
+            "url": "https://github.com/heroku/heroku-buildpack-python"
+        }
+    ],
+    "env": {
+        "ALLOWED_HOSTS": {
+            "description": "Array of allowed hostnames",
+            "default":  "['*']"
+        },
+        "AWS_ACCESS_KEY_ID": {
+            "description": "AWS Access Key for S3 storage."
+        },
+        "AWS_SECRET_ACCESS_KEY": {
+            "description": "AWS Secret Key for S3 storage."
+        },
+        "AWS_STORAGE_BUCKET_NAME": {
+            "description": "S3 Bucket name."
+        },
+        "CELERY_ALWAYS_EAGER": {
+            "description": "Set to False if you don't want to use worker dynos."
+            "value": "True"
+        },
+        "HAYSTACK_URL": {
+            "description": "URL to ElasticSearch (should be BONSAI_URL)."
+        },
+        "LORE_ADMIN_EMAIL": {
+            "description": "E-mail to send 500 reports to.",
+            "required": false  
+        },
+        "LORE_CAS_URL": {
+            "description": "CAS Server for authentication",
+            "required": false
+        },
+        "LORE_EMAIL_HOST": {
+            "description": "Outgoing e-mail settings",
+            "required": false
+        },
+        "LORE_EMAIL_PASSWORD": {
+            "description": "Outgoing e-mail settings",
+            "required": false
+        },
+        "LORE_EMAIL_PORT": {
+            "description": "Outgoing e-mail settings",
+            "required": false,
+            "value":  "587"
+            
+        },
+        "LORE_EMAIL_TLS": {
+            "description": "Outgoing e-mail settings",
+            "required": false,
+            "value":  "True"
+        },
+        "LORE_EMAIL_USER": {
+            "description": "Outgoing e-mail settings",
+            "required": false
+        },
+        "LORE_FROM_EMAIL": {
+            "description": "E-mail to use for the from field"
+
+        },
+        "LORE_PREVIEW_BASE_URL": {
+            "description": "URL to edx-platform where LMS hosts content"
+
+        },
+        "LORE_SUPPORT_EMAIL": {
+            "description": "E-mail address for support e-mails."
+        },
+        "LORE_USE_CAS": {
+            "description": "Set to True if you want to use CAS for authentication (recommended).",
+            "value": "False"
+        },        
+        "LORE_USE_S3": {
+            "description": "Use S3 for storage backend (required on Heroku)",
+            "value": "True"
+        },
+        "SECRET_KEY": {
+            "description": "Django secret key.",
+            "generator": "secret"
+        }
+    }
+}

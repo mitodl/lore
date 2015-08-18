@@ -11,6 +11,10 @@ LORE
 .. image:: https://img.shields.io/badge/license-AGPLv3-blue.svg
     :target: https://github.com/mitodl/lore/blob/master/LICENSE
 
+|Deploy|
+
+.. |Deploy| image:: https://www.herokucdn.com/deploy/button.png
+   :target: https://heroku.com/deploy
 
 Getting Started
 ===============
