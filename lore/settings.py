@@ -209,6 +209,8 @@ COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
     ('text/jsx', 'node_modules/.bin/jsx < {infile} > {outfile}')
 )
+COMPRESS_OFFLINE = get_var('LORE_COMPRESS_OFFLINE', False)
+COMPRESS_ENABLED = get_var('LORE_COMPRESS_ENABLED', not DEBUG)
 
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
