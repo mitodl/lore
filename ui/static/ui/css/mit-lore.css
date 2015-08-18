@@ -324,8 +324,8 @@ a {
 }
 
 .tile-meta {
-	font-size:small;
-	color:#929292;
+    font-size:small;
+    color:#929292;
 }
 
 .meta-item {
@@ -495,6 +495,32 @@ ul.with-utility-features {
 .listing-table {
     table-layout: fixed;
     word-wrap: break-word;
+}
+
+div#term-list-container .panel-heading {
+    padding: 10px 15px;
+}
+
+ul#term-list li.applied-term span.label {
+    color:black;
+}
+
+ul#term-list {
+    list-style: none;
+    padding-left:0;
+}
+
+div#term-list-container .panel-heading {
+    padding: 10px 15px;
+}
+
+ul#term-list li.applied-term span.label {
+    color:black;
+}
+
+ul#term-list {
+    list-style: none;
+    padding-left:0;
 }
 
 /* welcome/home page */

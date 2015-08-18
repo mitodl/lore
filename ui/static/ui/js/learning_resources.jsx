@@ -6,73 +6,185 @@ define('learning_resources', [
   var StatusBox = Utils.StatusBox;
   var Select2 = Utils.Select2;
 
-  var VocabularyOption = React.createClass({
+  var TermList = React.createClass({
     render: function () {
-      var options = _.map(this.props.terms, function (term) {
+      var appliedVocabularies = this.props.vocabs.map(function (vocab) {
+        var selectedTerms = vocab.selectedTerms;
+        var vocabularyName = vocab.vocabulary.name;
+
+        if (selectedTerms.length) {
+          return (
+            <TermListItem
+              key={vocab.vocabulary.id}
+              label={vocabularyName}
+              terms={selectedTerms.join(", ")}
+            />
+          );
+        }
+      });
+      return (
+        <div id="term-list-container" className="panel panel-default">
+          <div className="panel-heading">
+              Taxonomy Terms applied to this Learning Resource
+          </div>
+          <ul id="term-list" className="list-group">
+            {appliedVocabularies}
+          </ul>
+        </div>
+      );
+    }
+  });
+
+  var TermListItem = React.createClass({
+    render: function () {
+      return (
+        <li className="applied-term list-group-item">
+          <strong>{this.props.label}: </strong> {this.props.terms}
+        </li>
+      );
+    }
+  });
+
+  var VocabSelect = React.createClass({
+    render: function () {
+      var options;
+      options = _.map(this.props.vocabs, function(vocab) {
+        return {
+          id: vocab.vocabulary.slug,
+          text: vocab.vocabulary.name,
+        };
+      });
+
+      var slug = this.props.selectedVocabulary.slug;
+
+      return <div className="col-sm-6">
+          <Select2
+            key="vocabChooser"
+            className="form-control"
+            placeholder={"Select a vocabulary"}
+            options={options}
+            allowClear={false}
+            onChange={this.handleChange}
+            values={slug}
+            multiple={false}
+            />
+        </div>;
+    },
+    handleChange: function(e) {
+      var selectedValue = _.pluck(
+        _.filter(e.target.options, function(option) {
+          return option.selected && option.value !== null;
+        }), 'value');
+      this.props.setValues(
+        _.pluck(this.props.vocabs, 'vocabulary'), selectedValue[0]
+      );
+    }
+  });
+
+  var TermSelect = React.createClass({
+    render: function () {
+      var options = [];
+      options = _.map(this.props.selectedVocabulary.terms, function (term) {
         return {
           id: term.slug,
           text: term.label
         };
       });
 
-      return <div className="form-group">
-        <label className="col-sm-6 control-label">
-        {this.props.vocabulary.name}
-          </label>
-        <div className="col-sm-6">
+      var currentVocabulary = {};
+      var selectedVocabulary = this.props.selectedVocabulary;
+
+      _.forEach(this.props.vocabs, function(vocab) {
+        if (vocab.vocabulary.slug === selectedVocabulary.slug) {
+          currentVocabulary = vocab;
+          return false;
+        }
+      });
+
+      var name = this.props.selectedVocabulary.name;
+      return <div className="col-sm-6">
           <Select2
+            key={name}
             className="form-control"
-            placeholder={"Select a value for " + this.props.vocabulary.name}
+            placeholder={"Select a value for " + name}
             options={options}
             onChange={this.handleChange}
-            values={this.props.selectedTerms}
-            multiple={this.props.vocabulary.multi_terms}
+            values={currentVocabulary.selectedTerms}
+            multiple={this.props.selectedVocabulary.multi_terms}
             />
-        </div>
-      </div>;
+        </div>;
     },
+
     handleChange: function(e) {
-      var selectValues = _.pluck(
+      var selectedValues = _.pluck(
         _.filter(e.target.options, function(option) {
           return option.selected && option.value !== null;
         }), 'value');
-      this.props.updateTerms(this.props.vocabulary.slug, selectValues);
+
+      this.props.setValues(this.props.selectedVocabulary.slug, selectedValues);
     }
   });
 
   var LearningResourcePanel = React.createClass({
     mixins: [React.addons.LinkedStateMixin],
-    render: function () {
-      var thiz = this;
-      var vocabulariesAndTerms = this.state.vocabulariesAndTerms;
-      var options = _.map(vocabulariesAndTerms, function (pair) {
-        var updateTerms = function(vocabSlug, newTermsSlug) {
-          var newVocabulariesAndTerms = _.map(vocabulariesAndTerms,
-            function(tuple) {
-              if (vocabSlug === tuple.vocabulary.slug) {
-                return {
-                  vocabulary: tuple.vocabulary,
-                  terms: tuple.terms,
-                  selectedTerms: newTermsSlug
-                };
-              } else {
-                return tuple;
-              }
-            });
 
-          thiz.setState({
-            vocabulariesAndTerms: newVocabulariesAndTerms
-          });
-        };
-
-        return <VocabularyOption
-          vocabulary={pair.vocabulary}
-          terms={pair.terms}
-          selectedTerms={pair.selectedTerms}
-          key={pair.vocabulary.slug}
-          updateTerms={updateTerms}
-          />;
+    setSelectedVocabulary: function(vocabs, selectedValue) {
+      var selectedVocabulary = _.find(
+        vocabs, _.matchesProperty('slug', selectedValue)
+      );
+      this.setState({
+        selectedVocabulary: selectedVocabulary
       });
+    },
+
+    setSelectedTerms: function(vocabSlug, selectedTerms) {
+      var vocabulariesAndTerms = this.state.vocabulariesAndTerms;
+      var newVocabulariesAndTerms = _.map(vocabulariesAndTerms,
+        function(tuple) {
+          if (vocabSlug === tuple.vocabulary.slug) {
+            var newTuple = {
+              vocabulary: tuple.vocabulary,
+              terms: tuple.terms,
+              selectedTerms: selectedTerms
+            };
+            return newTuple;
+          } else {
+            return tuple;
+          }
+        });
+
+      this.setState({
+        vocabulariesAndTerms: newVocabulariesAndTerms
+      });
+    },
+
+    render: function () {
+
+      var vocabulariesAndTerms = this.state.vocabulariesAndTerms;
+      var vocabSelector = "There are no terms for this resource";
+      var termSelector = "";
+      var termList = "";
+
+      if (vocabulariesAndTerms.length) {
+        vocabSelector =
+          <VocabSelect
+            vocabs={vocabulariesAndTerms}
+            selectedVocabulary={this.state.selectedVocabulary}
+            setValues={this.setSelectedVocabulary}
+          />;
+
+        termSelector =
+          <TermSelect
+            vocabs={vocabulariesAndTerms}
+            selectedVocabulary={this.state.selectedVocabulary}
+            setValues={this.setSelectedTerms}
+          />;
+
+        termList =
+        <TermList
+          vocabs={vocabulariesAndTerms}
+        />;
+      }
 
       return <div>
         <form className="form-horizontal">
@@ -90,7 +202,12 @@ define('learning_resources', [
                href={this.state.previewUrl} target="_blank">Preview</a>
           </p>
 
-          {options}
+          <div id="vocabularies" className="form-group">
+              {vocabSelector} {termSelector}
+          </div>
+
+          {termList}
+
           <div className="form-group form-desc">
             <label className="col-sm-12 control-label">Description</label>
               <textarea
@@ -188,8 +305,15 @@ define('learning_resources', [
             });
 
           thiz.setState({
-            vocabulariesAndTerms: vocabulariesAndTerms
+            vocabulariesAndTerms: vocabulariesAndTerms,
           });
+
+          if (vocabulariesAndTerms.length) {
+            thiz.setState({
+              selectedVocabulary: vocabulariesAndTerms[0].vocabulary
+            });
+          }
+
         }).fail(function () {
           thiz.setState({
             message: {
@@ -210,13 +334,16 @@ define('learning_resources', [
       return {
         contentXml: "",
         description: "",
-        vocabulariesAndTerms: []
+        vocabulariesAndTerms: [],
+        selectedVocabulary: {}
       };
     }
   });
 
   return {
-    VocabularyOption: VocabularyOption,
+    TermList: TermList,
+    TermSelect: TermSelect,
+    VocabSelect: VocabSelect,
     LearningResourcePanel: LearningResourcePanel,
     loader: function (repoSlug, learningResourceId, container) {
       // Unmount and remount the component to ensure that its state

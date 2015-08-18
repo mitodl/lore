@@ -106,12 +106,17 @@ define("utils", ["jquery", "lodash", "react", "select2"],
       }
     },
     applySelect2: function () {
-      //this function can be used only if the component has been mounted
+      // This function can be used only if the component has been mounted
       var thiz = this;
       var isMultiTerms = this.props.multiple;
-      //not allowing the clear for the multi terms dropdown
-      var allowClear = !isMultiTerms;
-      //apply select2 to the right elements
+
+      // Either use the value set when the component is instantiated, or set a default.
+      var allowClear = this.props.allowClear;
+      if (this.props.allowClear === undefined) {
+        allowClear = !isMultiTerms;
+      }
+
+      // Apply select2 to the right elements
       var parent = React.findDOMNode(this);
       var $select = $(parent).find('select').first();
 
