@@ -42,7 +42,7 @@
             "description": "S3 Bucket name."
         },
         "CELERY_ALWAYS_EAGER": {
-            "description": "Set to False if you don't want to use worker dynos."
+            "description": "Set to False if you don't want to use worker dynos.",
             "value": "True"
         },
         "HAYSTACK_URL": {
