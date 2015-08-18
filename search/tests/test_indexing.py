@@ -10,6 +10,23 @@ from search.tests.base import SearchTestCase
 log = logging.getLogger(__name__)
 
 
+def copy_instance(instance):
+    """
+    Make a copy of a model instance. The copy will need to be saved by the
+    caller because this function doesn't know what fields must be unique.
+
+    Args:
+        instance (models.Model): models.Model instance
+    Returns:
+        original (models.Model): models.Model instance
+        clone (models.Model): models.Model instance
+    """
+    original_id = instance.pk
+    clone = instance
+    clone.pk = None
+    return instance.__class__.objects.get(id=original_id), clone
+
+
 def set_cache_timeout(seconds):
     """Override the cache timeout for testing."""
     cache.default_timeout = seconds
@@ -245,3 +262,38 @@ class TestIndexing(SearchTestCase):
         a LearningResource isn't tagged with any terms.
         """
         self.thrice()
+
+    def test_vocab_cache_by_course(self):
+        """
+        Ensure that get_vocabs for one course doesn't
+        pollute the cache for another course.
+        """
+        # Create a resource in a separate course.
+        self.course, course2 = copy_instance(self.course)
+        self.resource, resource2 = copy_instance(self.resource)
+        course2.run = "{0} part 2".format(self.course.run)
+        course2.save()
+        resource2.course = course2
+        resource2.save()
+
+        key1 = "vocab_cache_{0}".format(self.resource.id)
+        key2 = "vocab_cache_{0}".format(resource2.id)
+
+        # Resources were recently saved, so the keys should be in the cache.
+        self.assertIn(key1, cache)
+        self.assertIn(key2, cache)
+
+        # Getting vocabs for a resource should not refresh the cache for
+        # resources in another course.
+        cache.clear()
+        self.resource.save()
+        self.assertIn(key1, cache)
+        self.assertNotIn(key2, cache)
+
+        # Resource for the same course are updated.
+        resource2.course = self.resource.course
+        resource2.save()
+        cache.clear()
+        self.resource.save()
+        self.assertIn(key1, cache)
+        self.assertIn(key2, cache)
