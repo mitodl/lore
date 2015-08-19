@@ -535,11 +535,3 @@ ul.repos {
     padding: 0px;
     margin: 0px;
 }
-
-.dropdown-repository {
-    margin-left: 380px;
-}
-
-.dropdown-repository button::after, .dropdown-repository button::before {
-    content: none;
-}
