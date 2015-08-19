@@ -3,10 +3,14 @@ python:
   - '2.7'
 services:
   - elasticsearch
+  - redis-server
 before_script:
   - sleep 10
 env:
-  - DATABASE_URL=postgres://postgres@localhost:5432/postgres
+  global:
+    - DATABASE_URL=postgres://postgres@localhost:5432/postgres
+    - BROKER_URL=redis://localhost:6379/4
+    - HAYSTACK_URL=127.0.0.1:9200
 install:
   - "pip install 'tox>=2.0.2,<3.0.0'"
   - pip install coveralls
@@ -20,6 +24,7 @@ deploy:
     secure: CGv5mHV8SFnFkdwpRl2EGRU5kvnl7xfxZPgl5DvqJHZ6xBreDpGFQOyQDVVqRAt7s9Dq/JD8qMCvm15rVRdXN9rKMDFV9ilPiR2dTBPs5rzE+upA/W2N2+pkQrnXEP+80EF3Wy3ODUAUb4aUlCwG1NqZCWnn4NzuZNCtAYEqwuk=
   app:
     master: lore-ci
+    release-candidate: lore-rc
     release: lore-release
   run:
     - "sleep 15"

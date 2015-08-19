@@ -1,4 +1,4 @@
-define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
+define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
   function (React, _, $, Utils) {
   'use strict';
 
@@ -7,7 +7,14 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
 
   var TermComponent = React.createClass({
     render: function () {
-      return <li><label
+      return <li>
+        <span className="utility-features">
+          <a href="#">
+            <i className="fa fa-pencil"></i>
+          </a> <a href="#">
+            <i className="fa fa-remove"></i>
+          </a>
+        </span> <label className="term-title"
         htmlFor="minimal-checkbox-1-11">{this.props.term.label}</label></li>;
     }
   });
@@ -22,9 +29,16 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
       return <div className="panel panel-default">
           <div className="panel-heading">
             <h4 className="panel-title">
-              <a className="accordion-toggle" data-toggle="collapse"
-                 data-parent="#accordion"
-                 href={'#collapse-' + this.props.vocabulary.slug}>
+              <span className="utility-features">
+                <a href="#">
+                  <i className="fa fa-pencil"></i>
+                </a> <a href="#">
+                  <i className="fa fa-remove"></i>
+                </a>
+              </span> <a className="accordion-toggle vocab-title"
+                         data-toggle="collapse"
+                         data-parent="#accordion"
+                         href={'#collapse-' + this.props.vocabulary.slug}>
                 {this.props.vocabulary.name}
               </a>
             </h4>
@@ -32,7 +46,7 @@ define('manage_taxonomies', ['reactaddons', 'lodash', 'jquery', 'utils'],
           <div id={'collapse-' + this.props.vocabulary.slug}
                className="panel-collapse collapse in">
             <div className="panel-body">
-              <ul className="icheck-list">
+              <ul className="icheck-list with-utility-features">
                 {items}
                 <li>
                   <div className="input-group">

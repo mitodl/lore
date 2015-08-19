@@ -18,6 +18,12 @@ class TestViews(LoreTestCase):
         resp = self.client.get(repo_url)
         self.assertContains(resp, button_text)
 
+        # Even though the listing page is empty the export button should
+        # still show up.
+        url = "{repo_url}?q=zebra".format(repo_url=repo_url)
+        resp = self.client.get(url)
+        self.assertContains(resp, button_text)
+
         # Export button should only appear if there are LearningResources in
         # the repository.
         LearningResource.objects.all().delete()

@@ -1,6 +1,31 @@
 Release Notes
 -------------
 
+Version 0.8.0
+=============
+- Changed how vocabulary terms are applied to Learning Resources to use two dropdowns instead of a growing list of fields.
+- Added deployment for release candidates
+- Added deploy button and app.json
+- Fixed caching bug.
+- Fixed panel shade issue
+- Added base sorting field in case used sorting is working on same values
+- Removed response from PATCH on learning resource to aid in performance
+- Added configuration option and heroku command to pre-compress assets
+- Added Google Analytics tracking support Closes
+- Reduce workers per dyno to avoid memory issues
+- Added statsd and a few timers - Import timer - Index signal handler timers - Search page load time
+- Updated indexing caching from dict to Django's cache.
+- .tile-meta no longer defined twice
+- Split builds and removed python 3.3 testing
+- reverted tile-meta and meta-item for previous appearance
+- Added import for (sample) xanalytics API data.
+- Added closing panels with ESC key
+- Fixed export button to show up even without search results.
+- Updated CSS and HTML according to mockup changes
+- Added xanalytics icons to listing page
+- Added xanalytics management command.
+
+
 Version 0.7.0
 =============
 

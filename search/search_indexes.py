@@ -15,41 +15,17 @@ the index. They can not be mixed.
 from __future__ import unicode_literals
 
 from collections import defaultdict
-from datetime import datetime, timedelta
 import logging
 
-from django.conf import settings
+from django.core.cache import caches
 from haystack import indexes
 from lxml import etree
 
 from learningresources.models import Course, LearningResource
 
-INDEX_CACHE = {
-    "course": {},
-    "term": {},
-    "born": datetime.now(),
-}
-MAX_INDEX_AGE = timedelta(minutes=1)
-
 log = logging.getLogger(__name__)
 
-
-def check_cache_age():
-    """
-    Keep the cache from getting stale.
-
-    Must not cache during tests or development, or it will
-    cause confusion. Must manually enable caching in production.
-    """
-    # pylint: disable=global-statement
-    global INDEX_CACHE
-    if (datetime.now() - INDEX_CACHE["born"] > MAX_INDEX_AGE) \
-            or settings.ALLOW_CACHING is False:
-        INDEX_CACHE = {
-            "course": {},
-            "term": {},
-            "born": datetime.now(),
-        }
+cache = caches["lore_indexing"]
 
 
 def get_course_metadata(course_id):
@@ -60,36 +36,61 @@ def get_course_metadata(course_id):
     Returns:
         data (dict): Metadata about course.
     """
-    check_cache_age()
-    data = INDEX_CACHE["course"].get(course_id, {})
+    key = "course_metadata_{0}".format(course_id)
+    data = cache.get(key, {})
     if data == {}:
-        course = Course.objects.get(id=course_id)
+        course = Course.objects.select_related("repository").get(id=course_id)
         data["run"] = course.run
         data["course_number"] = course.course_number
         data["org"] = course.org
         data["repo_slug"] = course.repository.slug
-        INDEX_CACHE["course"][course_id] = data
+        cache.set(key, data)
+    # Return `data` directly, not from the cache. Otherwise, if caching
+    # is disabled (TIMEOUT == 0), this will always return nothing.
     return data
 
 
-def get_vocabs(course_id, lid):
+def get_vocabs(course_id, resource_id, solo_update=False):
     """
     Caches and returns taxonomy metadata for a course.
     Args:
-        course_id (int): Primary key of learningresources.models.Course
-        lid (int): Primary key of learningresources.models.LearningResource
+        course_id (int): Primary key of Course
+        resource_id (int): Primary key of LearningResource
     Returns:
         data (dict): Vocab/term data for course.
     """
-    check_cache_age()
-    if INDEX_CACHE["term"].get(course_id) is None:
-        INDEX_CACHE["term"][course_id] = defaultdict(lambda: defaultdict(list))
-        rels = LearningResource.terms.related.through.objects.select_related(
-            "term").filter(learningresource__course__id=course_id)
-        for rel in rels.iterator():
-            INDEX_CACHE["term"][course_id][rel.learningresource_id][
-                rel.term.vocabulary_id].append(rel.term_id)
-    return INDEX_CACHE["term"][course_id][lid]
+    key = "vocab_cache_{0}".format(resource_id)
+    cached = cache.get(key)
+    if (solo_update is False) and (cached is not None):
+        return cached
+
+    # Pre-populate the cache with blank values in case there are no
+    # terms for that LearningResource. Otherwise, looking up the vocabularies
+    # for that resource will refill the cache for the entire course. If there
+    # is already a value, retain it.
+    resource_ids = LearningResource.objects.filter(
+        course__id=course_id).values_list('id', flat=True)
+    for resource_id in resource_ids:
+        rkey = "vocab_cache_{0}".format(resource_id)
+        cache.set(rkey, cache.get(rkey, {}))
+    value = {}
+
+    term_cache = defaultdict(lambda: defaultdict(list))
+    rels = LearningResource.terms.related.through.objects.select_related(
+        "term").filter(learningresource__course__id=course_id)
+    if solo_update is True:
+        rels = rels.filter(learningresource_id=resource_id)
+    for rel in rels.iterator():
+        term_cache[rel.learningresource_id][
+            rel.term.vocabulary_id].append(rel.term_id)
+    for lid, data in term_cache.items():
+        lkey = "vocab_cache_{0}".format(lid)
+        if lkey == key:
+            value = dict(data)
+        cache.set(lkey, dict(data))
+    # Return `value` directly, not from the cache. Otherwise, if caching
+    # is disabled (TIMEOUT == 0), this will always return nothing.
+    return value
 
 
 class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
@@ -181,7 +182,6 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         as well, but don't because explicit is better than implicit.
         """
         prepared = super(LearningResourceIndex, self).prepare(obj)
-
         for vocab_id, term_ids in get_vocabs(obj.course_id, obj.id).items():
             # Use the integer primary keys as index values. This saves space,
             # and also avoids all issues dealing with "special" characters.

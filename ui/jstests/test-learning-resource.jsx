@@ -1,9 +1,11 @@
-define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
+define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
   'test_utils', 'jquery_mockjax'], function(
   QUnit, $, React, _, LearningResources, TestUtils) {
   'use strict';
 
-  var VocabularyOption = LearningResources.VocabularyOption;
+  var VocabSelect = LearningResources.VocabSelect;
+  var TermList = LearningResources.TermList;
+  var TermSelect = LearningResources.TermSelect;
   var LearningResourcePanel = LearningResources.LearningResourcePanel;
   var waitForAjax = TestUtils.waitForAjax;
 
@@ -35,13 +37,13 @@ define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
     "label": "hard",
     "weight": 1
   };
-  var prereqTermsResponseRequired = {
+  var preReqTermsResponseReq = {
     "id": 3,
     "slug": "required",
     "label": "required",
     "weight": 1
   };
-  var prereqTermsResponseNotRequired = {
+  var preReqTermsResponseNotReq = {
     "id": 4,
     "slug": "notrequired",
     "label": "notrequired",
@@ -55,11 +57,11 @@ define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
     "vocabulary_type": "m",
     "required": false,
     "weight": 2147483647,
-    "terms": [prereqTermsResponseRequired, prereqTermsResponseNotRequired],
+    "terms": [preReqTermsResponseReq, preReqTermsResponseNotReq],
     "multi_terms": true
   };
   var vocabularyResponseDifficulty = {
-    "id": 1,
+    "id": 2,
     "slug": "difficulty",
     "name": "difficulty",
     "description": "Difficulty",
@@ -67,8 +69,21 @@ define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
     "required": false,
     "weight": 2147483647,
     "terms": [termResponseEasy, termResponseHard],
-    "multi_terms": false
+    "multi_terms": true
   };
+  var selectedVocabulary = vocabularyResponseDifficulty;
+  var vocabulariesAndTerms = [
+    {
+      "terms": [preReqTermsResponseReq, preReqTermsResponseNotReq],
+      "selectedTerms": [preReqTermsResponseReq, preReqTermsResponseNotReq],
+      'vocabulary': vocabularyResponsePrereq,
+    },
+    {
+      "terms": [termResponseEasy, termResponseHard],
+      "selectedTerms": [termResponseEasy, termResponseHard],
+      'vocabulary': vocabularyResponseDifficulty,
+    }
+  ];
   var vocabulariesResponseFirst = {
     "count": 1,
     "next": "/api/v1/repositories/repo/vocabularies/?type_name=course&page=2",
@@ -80,12 +95,6 @@ define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
     "next": null,
     "previous": "/api/v1/repositories/repo/vocabularies/?type_name=course",
     "results": [vocabularyResponsePrereq]
-  };
-  var difficultyTermsResponse = {
-    "count": 2,
-    "next": null,
-    "previous": null,
-    "results": [termResponseEasy, termResponseHard]
   };
 
   QUnit.module('Test learning resource panel', {
@@ -119,76 +128,117 @@ define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
   });
 
   QUnit.test(
-    'Assert that VocabularyOption renders properly',
+    'Assert that VocabSelect renders properly',
     function (assert) {
       var done = assert.async();
-      var afterMount = function (component) {
+
+      var afterMount = function(component) {
         var $node = $(React.findDOMNode(component));
 
-        // one vocabulary
         var $vocabSelect = $node.find("select");
         assert.equal($vocabSelect.size(), 1);
-
-        // two terms
-        var $termsSelect = $vocabSelect.find("option");
-        assert.equal($termsSelect.size(), 2);
-        assert.equal($termsSelect[0].text, "easy");
-        assert.equal($termsSelect[0].value, "easy");
-        assert.equal($termsSelect[1].text, "hard");
-        assert.equal($termsSelect[1].value, "hard");
 
         done();
       };
 
       React.addons.TestUtils.renderIntoDocument(
-        <VocabularyOption vocabulary={vocabularyResponseDifficulty}
-                          terms={difficultyTermsResponse.results}
-                          selectedTerm="hard"
-                          ref={afterMount}/>
+        <VocabSelect
+          vocabs={vocabulariesAndTerms}
+          selectedVocabulary={selectedVocabulary}
+          ref={afterMount}
+        />
       );
     }
   );
 
   QUnit.test(
-    'Assert that LearningResourcePanel changes state properly',
-    function(assert) {
+    'Assert that TermSelect renders properly',
+    function (assert) {
       var done = assert.async();
 
       var afterMount = function(component) {
+        var $node = $(React.findDOMNode(component));
+
+        var $termSelect = $node.find("select");
+        assert.equal($termSelect.size(), 1);
+
+        done();
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        <TermSelect
+          vocabs={vocabulariesAndTerms}
+          selectedVocabulary={selectedVocabulary}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test(
+    'Assert that TermList renders properly',
+    function (assert) {
+      var done = assert.async();
+      var afterMount = function(component) {
+        var $node = $(React.findDOMNode(component));
+        var $termList = $node.find("ul");
+        assert.equal($termList.size(), 1);
+        done();
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        <TermList
+          vocabs={vocabulariesAndTerms}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+  QUnit.test(
+    'Assert that LearningResourcePanel changes state properly',
+    function(assert) {
+      var done = assert.async();
+      var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(3, function () {
-          // one vocabulary
+          // two menus: vocabulary and terms.
           var $node = $(React.findDOMNode(component));
-          var $vocabSelect = $node.find("select");
-          assert.equal($vocabSelect.size(), 2);
 
-          // two terms, first vocab
-          var $terms1Select = $($vocabSelect[0]).find("option");
-          assert.equal($terms1Select.size(), 2);
-          assert.equal($terms1Select[0].selected, false);
-          assert.equal($terms1Select[0].selected, false);
+          var $allSelects = $node.find("#vocabularies select");
+          assert.equal($allSelects.size(), 2);
+
+          var $vocabSelect = $node.find($allSelects).first();
+          assert.equal($vocabSelect.size(), 1);
+
+          // first vocab, two options
+          var $vocabOptions = $vocabSelect.find("option");
+          assert.equal($vocabOptions.size(), 2);
+
+          assert.equal($vocabOptions[0].selected, true);
+          assert.equal($vocabOptions[1].selected, false);
 
           // TestUtils.Simulate.change only simulates a change event,
           // we need to update the value first ourselves
-          $($vocabSelect[0]).val("hard").trigger('change');
-          React.addons.TestUtils.Simulate.change($vocabSelect[0]);
+          $vocabSelect.val("prerequisite").trigger('change');
+          React.addons.TestUtils.Simulate.change($vocabSelect);
           component.forceUpdate(function() {
-            assert.equal($terms1Select[0].selected, false);
-            assert.equal($terms1Select[1].selected, true);
-            // make sure second vocab (which has a default value) is set properly
-            var $terms2Select = $($vocabSelect[1]).find("option");
-            assert.equal($terms2Select.size(), 2);
-            assert.equal($terms2Select[0].selected, true);
-            assert.equal($terms2Select[1].selected, false);
-            //the second vocabulary can be a multi select
-            $($vocabSelect[1])
-              .val(["notrequired", "required"])
+            assert.equal($vocabOptions[0].selected, false);
+            assert.equal($vocabOptions[1].selected, true);
+            // on selection of the second vocabulary, make sure the term selector updates.
+            var termsSelect = $allSelects[1];
+            var $termsOptions = $(termsSelect).find("option");
+            assert.equal($termsOptions.size(), 2);
+            assert.equal($termsOptions[0].selected, false);
+            assert.equal($termsOptions[1].selected, false);
+            // the second vocabulary can be a multi select
+            $(termsSelect)
+              .val(["hard", "easy"])
               .trigger('change');
-            React.addons.TestUtils.Simulate.change($vocabSelect[1]);
+            React.addons.TestUtils.Simulate.change(termsSelect);
             component.forceUpdate(function() {
-              assert.equal($terms2Select[0].selected, true);
-              assert.equal($terms2Select[1].selected, true);
-              //be sure that the state reflects the selection
+              assert.equal($termsOptions[0].selected, true);
+              assert.equal($termsOptions[1].selected, true);
+              // be sure that the state reflects the selection
               var terms = _.map(component.state.vocabulariesAndTerms,
                 function (tuple) {
                   return tuple.selectedTerms;
@@ -196,13 +246,11 @@ define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
               terms = _.flatten(terms);
               terms.sort();
               var expectedTerms = [
-                $terms1Select[1].value,
-                $terms2Select[0].value,
-                $terms2Select[1].value
+                $termsOptions[0].value,
+                $termsOptions[1].value
               ];
               expectedTerms.sort();
               assert.deepEqual(terms, expectedTerms);
-
               done();
             });
           });
@@ -215,7 +263,6 @@ define(['QUnit', 'jquery', 'reactaddons', 'lodash', 'learning_resources',
         ref={afterMount} />);
     }
   );
-
   QUnit.test(
     'Assert that LearningResourcePanel saves properly',
     function(assert) {

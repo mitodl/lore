@@ -510,18 +510,21 @@ class RESTTestCase(LoreTestCase):
             self, repo_slug, learning_resource_id, lr_dict,
             expected_status=HTTP_200_OK, skip_assert=False):
         """Update a LearningResource."""
+        url = '{repo_base}{repo_slug}/learning_resources/{lr_id}/'.format(
+            repo_base=REPO_BASE,
+            repo_slug=repo_slug,
+            lr_id=learning_resource_id
+        )
         resp = self.client.patch(
-            '{repo_base}{repo_slug}/'
-            'learning_resources/{lr_id}/'.format(
-                repo_base=REPO_BASE,
-                repo_slug=repo_slug,
-                lr_id=learning_resource_id
-            ),
+            url,
             json.dumps(lr_dict),
             content_type='application/json',
         )
         self.assertEqual(expected_status, resp.status_code)
         if resp.status_code == HTTP_200_OK:
+            self.assertEqual(0, len(resp.content))
+
+            resp = self.client.get(url)
             result_dict = as_json(resp)
             if not skip_assert:
                 for key, value in lr_dict.items():
@@ -532,18 +535,21 @@ class RESTTestCase(LoreTestCase):
             self, repo_slug, learning_resource_id, lr_dict,
             expected_status=HTTP_200_OK, skip_assert=False):
         """Update a LearningResource."""
+        url = '{repo_base}{repo_slug}/learning_resources/{lr_id}/'.format(
+            repo_base=REPO_BASE,
+            repo_slug=repo_slug,
+            lr_id=learning_resource_id
+        )
         resp = self.client.put(
-            '{repo_base}{repo_slug}/'
-            'learning_resources/{lr_id}/'.format(
-                repo_base=REPO_BASE,
-                repo_slug=repo_slug,
-                lr_id=learning_resource_id
-            ),
+            url,
             json.dumps(lr_dict),
             content_type='application/json',
         )
         self.assertEqual(expected_status, resp.status_code)
         if resp.status_code == HTTP_200_OK:
+            self.assertEqual(0, len(resp.content))
+
+            resp = self.client.get(url)
             result_dict = as_json(resp)
             if not skip_assert:
                 for key, value in lr_dict.items():
