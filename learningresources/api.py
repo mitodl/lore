@@ -47,13 +47,14 @@ def create_course(org, repo_id, course_number, run, user_id):
 
     Args:
         org (unicode): Organization
+        repo_id (int): Repository id
         course_number (unicode): Course number
         run (unicode): Run
         user_id (int): Primary key of user creating the course
     Raises:
         ValueError: Duplicate course
     Returns:
-        course (learningresource.Course): The created course
+        course (learningresources.models.Course): The created course
 
     """
     # Check on unique values before attempting a get_or_create, because
@@ -65,7 +66,9 @@ def create_course(org, repo_id, course_number, run, user_id):
     if Course.objects.filter(**unique).exists():
         raise ValueError("Duplicate course")
     kwargs = {
-        "org": org, "course_number": course_number, "run": run,
+        "org": org,
+        "course_number": course_number,
+        "run": run,
         'imported_by_id': user_id,
         "repository_id": repo_id,
     }
@@ -75,20 +78,27 @@ def create_course(org, repo_id, course_number, run, user_id):
 
 
 # pylint: disable=too-many-arguments
-def create_resource(course, parent, resource_type, title, content_xml, mpath):
+def create_resource(
+        course, parent, resource_type, title, content_xml, mpath, url_name,
+        dpath
+):
     """
     Create a learning resource.
 
     Args:
-        course (learningresources.Course): Course
-        parent (learningresources.LearningResource): Parent LearningResource
+        course (learningresources.models.Course): Course
+        parent (learningresources.models.LearningResource):
+            Parent LearningResource
         resource_type (unicode): Name of LearningResourceType
         title (unicode): Title of resource
         content_xml (unicode): XML
         mpath (unicode): Materialized path
+        url_name (unicode): Resource identifier
+        dpath (unicode): Description path
 
     Returns:
-        resource (learningresources.LearningResource): New LearningResource
+        resource (learningresources.models.LearningResource):
+            New LearningResource
     """
     params = {
         "course": course,
@@ -96,6 +106,8 @@ def create_resource(course, parent, resource_type, title, content_xml, mpath):
         "title": title,
         "content_xml": content_xml,
         "materialized_path": mpath,
+        "url_name": url_name,
+        "description_path": dpath,
     }
     if parent is not None:
         params["parent_id"] = parent.id
@@ -287,9 +299,70 @@ def import_static_assets(course, path):
     """
     for root, _, files in walk(path):
         for name in files:
-            with open(join(root, name), 'r') as open_file:
+            with open(join(root, name), 'rb') as open_file:
                 django_file = File(open_file)
                 # Remove base path from file name
                 name = join(root, name).replace(path + sep, '', 1)
                 django_file.name = name
                 create_static_asset(course.id, django_file)
+
+
+def update_xanalytics(data):
+    """
+    Update xanalytics fields for a LearningResource.
+    Args:
+        data (dict): dict from JSON file from xanalytics
+    Returns:
+        count (int): number of records updated
+    """
+    vals = data.get("module_medata", [])
+    course_number = data.get("course_id", "")
+    count = 0
+    for rec in vals:
+        resource_key = rec.pop("module_id")
+        count = LearningResource.objects.filter(
+            uuid=resource_key,
+            course__course_number=course_number,
+
+        ).update(**rec)
+        if count is None:
+            count = 0
+    return count
+
+
+def join_description_paths(*args):
+    """
+    Helper function to format the description path.
+    Args:
+        args (unicode): description path
+    Returns:
+        unicode: Formatted dpath
+    """
+    return ' / '.join([dpath for dpath in args if dpath != ''])
+
+
+def update_description_path(resource, force_parent_update=False):
+    """
+    Updates the specified learning resource description path
+    based on the current title and the parent's description path
+    Args:
+        resource (learningresources.models.LearningResource): LearningResource
+        force_parent_update (boolean): force parent update
+    Returns:
+        None
+    """
+    description_path = ''
+    if resource.parent is None:
+        description_path = join_description_paths(resource.title)
+    else:
+        # if the parent doesn't have a description_path update first the parent
+        if resource.parent.description_path == '' or force_parent_update:
+            update_description_path(resource.parent, force_parent_update)
+        # the current description path is
+        # the parent's one plus the current title
+        description_path = join_description_paths(
+            resource.parent.description_path,
+            resource.title
+        )
+    resource.description_path = description_path
+    resource.save()

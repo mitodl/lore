@@ -5,6 +5,8 @@ Learning resources data model
 from __future__ import unicode_literals
 
 import logging
+# pylint currently has a bug which incorrectly flags this as an error
+import six.moves.urllib.parse as urllib_parse  # pylint: disable=import-error
 
 from django.db import models
 from django.db import transaction
@@ -16,12 +18,14 @@ from django.shortcuts import get_object_or_404
 from audit.models import BaseModel
 from roles.api import roles_init_new_repo, roles_update_repo
 from roles.permissions import RepoPermission
+from lore.settings import LORE_PREVIEW_BASE_URL
 
 log = logging.getLogger(__name__)
 
 # defining the file path max length
 FILE_PATH_MAX_LENGTH = 900
-STATIC_ASSET_BASEPATH = 'assets/{org}/{course_number}/{run}/'
+STATIC_ASSET_PREFIX = 'assets'
+STATIC_ASSET_BASEPATH = STATIC_ASSET_PREFIX + '/{org}/{course_number}/{run}/'
 
 
 class FilePathLengthException(Exception):
@@ -62,7 +66,7 @@ def course_asset_basepath(course, filename):
         (unicode): forward slash separated path to use below
             ``settings.MEDIA_ROOT``.
     """
-    return 'assets/{org}/{course_number}/{run}/{filename}'.format(
+    return (STATIC_ASSET_BASEPATH + '{filename}').format(
         org=course.org,
         course_number=course.course_number,
         run=course.run,
@@ -81,7 +85,7 @@ class Course(BaseModel):
     imported_by = models.ForeignKey(User)
 
     class Meta:
-        # pylint: disable=invalid-name,missing-docstring,too-few-public-methods
+        # pylint: disable=missing-docstring,too-few-public-methods
         unique_together = ("repository", "org", "course_number", "run")
 
 
@@ -114,7 +118,7 @@ class LearningResource(BaseModel):
     The units that compose an edX course:
     chapter, sequential, vertical, problem, video, html, etc.
     """
-    course = models.ForeignKey(Course)
+    course = models.ForeignKey(Course, related_name="resources")
     learning_resource_type = models.ForeignKey('LearningResourceType')
     static_assets = models.ManyToManyField(StaticAsset, blank=True)
     uuid = models.TextField()
@@ -122,6 +126,7 @@ class LearningResource(BaseModel):
     description = models.TextField(blank=True)
     content_xml = models.TextField()
     materialized_path = models.TextField()
+    description_path = models.TextField(blank=True)
     url_path = models.TextField()
     parent = models.ForeignKey('self', null=True, blank=True)
     copyright = models.TextField()
@@ -129,6 +134,46 @@ class LearningResource(BaseModel):
     xa_nr_attempts = models.IntegerField(default=0)
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
+    url_name = models.TextField(null=True)
+
+    def get_preview_url(self, org=None, course_number=None, run=None):
+        """
+        Create a preview URL. Accepts optional kwargs to prevent
+        database lookups, especially for during search engine indexing.
+        Args:
+            org (unicode): self.course.org
+            run (unicode): self.course.run
+            course_number (unicode): self.course.course_number
+        """
+        if org is None:
+            org = self.course.org
+        if course_number is None:
+            course_number = self.course.course_number
+        if run is None:
+            run = self.course.run
+        key = "{org}/{course}/{run}".format(
+            org=org,
+            course=course_number,
+            run=run,
+        )
+
+        if self.url_name is not None:
+            url_format = 'courses/{key}/jump_to_id/{preview_id}'
+            return LORE_PREVIEW_BASE_URL + urllib_parse.quote(
+                url_format.format(
+                    base_url=LORE_PREVIEW_BASE_URL,
+                    key=key,
+                    preview_id=self.url_name,
+                )
+            )
+        else:
+            url_format = 'courses/{key}/courseware'
+            return LORE_PREVIEW_BASE_URL + urllib_parse.quote(
+                url_format.format(
+                    base_url=LORE_PREVIEW_BASE_URL,
+                    key=key,
+                )
+            )
 
 
 @python_2_unicode_compatible

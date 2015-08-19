@@ -25,7 +25,7 @@ class TestRoleApi(LoreTestCase):
     the repository model where it is called
     """
     # there are too many self assignment in the init: disabling the check
-    # pylint: disable=too-many-instance-attributes, invalid-name
+    # pylint: disable=too-many-instance-attributes
     # pylint: disable=protected-access
     def __init__(self, *args, **kwargs):
         super(TestRoleApi, self).__init__(*args, **kwargs)

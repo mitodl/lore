@@ -26,27 +26,48 @@
       </div>
       <div class="tile-content">
         <h2>
-          <a href="{% url 'export' repo.slug result.object.id %}" class="cd-btn" data-learningresource-id="{{ result.object.id }}">
-            {% if result.object.title %}
-            {{ result.object.title }}
+          <a href="#" class="cd-btn" data-learningresource-id="{{ result.lid }}">
+            {% if result.title %}
+            {{ result.title }}
             {% else %}
             No Title
             {% endif %}
           </a>
         </h2>
-        
+
+        <div class="tile-meta">
+          <span class="meta-item">{{ result.description_path }}</span>
+        </div>
         <div class="tile-blurb">
-          {% if result.object.description %}
-          {{ result.object.description }}
+          {% if result.description %}
+          {{ result.description }}
           {% else %}
           No description provided.
           {% endif %}
         </div>
         <div class="tile-meta">
-          <span class="meta-item">{{ result.object.course.course_number }}</span>
-          <span class="meta-item">{{ result.object.course.run }}</span>
+          <span class="meta-item">{{ result.course }}</span>
+          <span class="meta-item">{{ result.run }}</span>
+          <span class="sub-meta">
+            <span class="meta-item mi-col-1"><i class="fa fa-eye"></i> {{ result.nr_views }}</span>
+            <span class="meta-item mi-col-2"><i class="fa fa-edit"></i> {{ result.nr_attempts }}</span>
+            <span class="meta-item mi-col-3"><i class="fa fa-graduation-cap"></i> {{ result.avg_grade }}</span>
+            <span class="meta-item mi-col-4"><a href="{{ result.preview_url }}" target="_blank">Preview</a></span>
+          </span>
         </div>
       </div>
     </div>
+  </div>
+  <div class="col-md-2 col-export">
+    <a class="link-export" href="#" data-learningresource-id="{{ result.lid }}"
+       {% if result.lid in exports %}
+         data-selected="true"
+       {% else %}
+         data-selected="false"
+       {% endif %}
+      >
+    <i></i>
+      Export
+    </a>
   </div>
 </div>

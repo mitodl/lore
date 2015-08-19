@@ -20,16 +20,22 @@ from django.test import Client
 from django.test.testcases import TestCase
 import haystack
 
-from learningresources.api import create_repo, create_course, create_resource
+from learningresources.api import (
+    create_repo,
+    create_course,
+    create_resource,
+    update_description_path
+)
 from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group
 from roles.permissions import GroupTypes
 
-log = logging.getLogger(__name__)  # pylint: disable=invalid-name
+log = logging.getLogger(__name__)
 
 
 class LoreTestCase(TestCase):
     """Handle often-needed things in tests."""
+    # pylint: disable=too-many-instance-attributes
     USERNAME = 'test'
     PASSWORD = 'test'
     USERNAME_NO_REPO = 'test2'
@@ -56,6 +62,25 @@ class LoreTestCase(TestCase):
         if return_body:
             return resp.content.decode("utf-8")
 
+    def create_resource(self, **kwargs):
+        """Creates a learning resource with extra fields"""
+        learn_res = create_resource(
+            course=self.course,
+            parent=kwargs.get('parent'),
+            resource_type=kwargs.get('resource_type', "example"),
+            title=kwargs.get('title', "other silly example"),
+            content_xml=kwargs.get('content_xml', "<blah>other blah</blah>"),
+            mpath=kwargs.get('mpath', "/otherblah"),
+            url_name=kwargs.get('url_name'),
+            dpath=''
+        )
+        learn_res.xa_nr_views = kwargs.get('xa_nr_views', 0)
+        learn_res.xa_nr_attempts = kwargs.get('xa_nr_attempts', 0)
+        learn_res.xa_avg_grade = kwargs.get('xa_avg_grade', 0)
+        learn_res.save()
+        update_description_path(learn_res)
+        return learn_res
+
     def setUp(self):
         """set up"""
         super(LoreTestCase, self).setUp()
@@ -75,19 +100,20 @@ class LoreTestCase(TestCase):
             user_id=self.user.id,
         )
         self.course = create_course(
-            org="test org",
+            org="test-org",
             repo_id=self.repo.id,
             course_number="infinity",
             run="Febtober",
             user_id=self.user.id,
         )
-        self.resource = create_resource(
+        self.resource = self.create_resource(
             course=self.course,
             parent=None,
             resource_type="example",
             title="silly example",
             content_xml="<blah>blah</blah>",
             mpath="/blah",
+            url_name="url_name1",
         )
 
         assign_user_to_repo_group(
@@ -95,7 +121,8 @@ class LoreTestCase(TestCase):
             self.repo,
             GroupTypes.REPO_ADMINISTRATOR
         )
-
+        self.toy_resource_count = 18  # Resources in toy course.
+        self.toy_asset_count = 5  # Static assets in toy course.
         self.client = Client()
 
         self.login(username=self.USERNAME)

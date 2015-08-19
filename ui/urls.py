@@ -22,13 +22,14 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 
 from search.forms import SearchForm
+from status.views import status
 from ui.views import (
-    welcome, create_repo, export,
-    upload, edit_vocabulary, create_vocabulary,
-    RepositoryView, serve_media
+    welcome, create_repo,
+    upload, RepositoryView, serve_static_assets, serve_resource_exports
 )
 import rest.urls as rest_urls
 import cas.urls as cas_urls
+from learningresources.models import STATIC_ASSET_PREFIX
 
 
 urlpatterns = [
@@ -43,29 +44,27 @@ urlpatterns = [
         login_required(
             RepositoryView(
                 form_class=SearchForm, template="repository.html",
+                load_all=False,
             )
         ),
         name='repositories'
     ),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'learningresources/(?P<resource_id>\d+)/$',
-        export,
-        name='export'),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/vocabularies/$',
-        create_vocabulary,
-        name="create_vocabulary"),
-    url(r'^repositories/(?P<repo_slug>[-\w]+)/'
-        r'vocabularies/(?P<vocab_slug>[-\w]+)/$',
-        edit_vocabulary,
-        name="edit_vocabulary"),
+    url(r'^status/$', status, name='status'),
 ]
 
 if (settings.DEFAULT_FILE_STORAGE ==
         'django.core.files.storage.FileSystemStorage'):
     urlpatterns.append(
-        url(r'^media/(?P<media_path>.+)$',
-            serve_media,
+        url(r'^media/{assets}/(?P<path>.+)$'.format(
+            assets=STATIC_ASSET_PREFIX
+        ),
+            serve_static_assets,
+            name='media')
+    )
+    urlpatterns.append(
+        url(r'^media/resource_exports/(?P<path>.+)$',
+            serve_resource_exports,
             name='media')
     )

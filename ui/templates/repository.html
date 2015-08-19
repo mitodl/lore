@@ -10,7 +10,7 @@
         <input
            id="id_q" name="q" type="search"
            class="form-control input-lg input-search col-md-12"
-           placeholder="Search..."
+           placeholder="Search for terms in learning resource titles, descriptions or content..."
            {% if form.q.value %}value="{{ form.q.value }}"{% endif %}
          >
         <span class="input-group-btn">
@@ -29,8 +29,31 @@
 </div>
 <div class="col-md-9 col-results">
   <div class="row grid-row-top">
-    <div class="col-md-5"></div>
+    <div class="col-md-5">
+      {% if page.object_list %}
+      <!-- Split button -->
+      <span>Sort by</span>
+      <div class="btn-group">
+        <button type="button" class="btn btn-default">{{ sorting_options.current.1 }}</button>
+        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <span class="caret"></span>
+          <span class="sr-only">Toggle Dropdown</span>
+        </button>
+        <ul class="dropdown-menu">
+          {% for sorting_option in sorting_options.all %}
+          <li><a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}sortby={{ sorting_option.0 }}">{{ sorting_option.1 }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
     <div class="col-md-7 text-right"></div>
+    <div class="col-md-5"></div>
+    <div class="col-md-7 text-right">
+      {% if show_export_button %}
+      <button id="export_button" class="btn btn-primary" type="button" data-export-count="{{ exports|length }}" data-logged-in-user="{{ request.user.username }}">Export </button>
+      {% endif %}
+    </div>
   </div>
   {% for result in page.object_list %}
     {% include "includes/learning_resource.html" %}
@@ -42,12 +65,12 @@
     <div class="lore-pagination">
       {% if page.has_other_pages %}
       {% if page.has_previous %}
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}page={{ page.previous_page_number }}">
+      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}page={{ page.previous_page_number }}&sortby={{ sorting_options.current.0 }}">
         <i class="fa fa-angle-left"></i>
       </a>
       {% endif %}
       {% if page.has_next %}
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix}}page={{ page.next_page_number }}">
+      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix}}page={{ page.next_page_number }}&sortby={{ sorting_options.current.0 }}">
         <i class="fa fa-angle-right"></i>
       </a>
       {% endif %}
@@ -60,6 +83,7 @@
 {% if 'manage_repo_users' in perms_on_cur_repo %}
   {% include "includes/members_panel.html" %}
 {% endif %}
+{% include "includes/exports_panel.html" %}
 <!-- Modal -->
 <div class="modal fade" id="progress-modal" tabindex="-1" role="dialog" aria-labelledby="progressModal">
   <div class="modal-dialog" role="document">
@@ -74,6 +98,15 @@
 </script>
 <script type="text/jsx"
         src="{% static "ui/js/learning_resources.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/static_assets.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/lr_exports.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/utils.jsx" %}">
 </script>
 <script type="text/javascript">
   require(["listing"]);

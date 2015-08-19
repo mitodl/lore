@@ -29,6 +29,14 @@
        rel="stylesheet"
        href="{% static "bower/bootstrap/dist/css/bootstrap.css" %}"
      >
+    <link
+      rel="stylesheet"
+      href="{% static "bower/select2/dist/css/select2.css" %}"
+    >
+    <link
+      rel="stylesheet"
+      href="{% static "bower/select2-bootstrap-theme/dist/select2-bootstrap.css" %}"
+    >
     {# Site css #}
     <link rel="stylesheet" href="{% static "ui/css/slide-drawer.css" %}">
     <link rel="stylesheet" href="{% static "ui/css/mit-lore.css" %}">
@@ -88,11 +96,7 @@
     {% endblock %}
       <footer>
         <div class="container">
-          © 2015, Massachusetts Institute of Technology
-          <span class="links-footer">
-            <a href="">About LORE</a>
-            <a href="">Help</a>
-          </span>
+          © 2015, Massachusetts Institute of Technology | Contact us: mitx-support@mit.edu
         </div>
       </footer>
     </div>
@@ -111,9 +115,21 @@
         shim: SHIMS,
         paths: REQUIRE_PATHS
       });
+      require(["jquery", "bootstrap"]);
     </script>
     {% endcompress %}
     {% block postcontent %}
     {% endblock %}
+    {% if settings.GOOGLE_ANALYTICS_ID %}
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new
+      Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+      ga('create', '{{ settings.GOOGLE_ANALYTICS_ID }}', 'auto');
+      ga('send', 'pageview');
+    </script>
+    {% endif %}
   </body>
 </html>

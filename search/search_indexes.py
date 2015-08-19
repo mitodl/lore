@@ -14,11 +14,83 @@ the index. They can not be mixed.
 
 from __future__ import unicode_literals
 
-from lxml import etree
-from haystack import indexes
+from collections import defaultdict
+import logging
 
-from learningresources.models import LearningResource
-from taxonomy.models import Vocabulary
+from django.core.cache import caches
+from haystack import indexes
+from lxml import etree
+
+from learningresources.models import Course, LearningResource
+
+log = logging.getLogger(__name__)
+
+cache = caches["lore_indexing"]
+
+
+def get_course_metadata(course_id):
+    """
+    Caches and returns course metadata.
+    Args:
+        course_id (int): Primary key of learningresources.models.Course
+    Returns:
+        data (dict): Metadata about course.
+    """
+    key = "course_metadata_{0}".format(course_id)
+    data = cache.get(key, {})
+    if data == {}:
+        course = Course.objects.select_related("repository").get(id=course_id)
+        data["run"] = course.run
+        data["course_number"] = course.course_number
+        data["org"] = course.org
+        data["repo_slug"] = course.repository.slug
+        cache.set(key, data)
+    # Return `data` directly, not from the cache. Otherwise, if caching
+    # is disabled (TIMEOUT == 0), this will always return nothing.
+    return data
+
+
+def get_vocabs(course_id, resource_id, solo_update=False):
+    """
+    Caches and returns taxonomy metadata for a course.
+    Args:
+        course_id (int): Primary key of Course
+        resource_id (int): Primary key of LearningResource
+    Returns:
+        data (dict): Vocab/term data for course.
+    """
+    key = "vocab_cache_{0}".format(resource_id)
+    cached = cache.get(key)
+    if (solo_update is False) and (cached is not None):
+        return cached
+
+    # Pre-populate the cache with blank values in case there are no
+    # terms for that LearningResource. Otherwise, looking up the vocabularies
+    # for that resource will refill the cache for the entire course. If there
+    # is already a value, retain it.
+    resource_ids = LearningResource.objects.filter(
+        course__id=course_id).values_list('id', flat=True)
+    for resource_id in resource_ids:
+        rkey = "vocab_cache_{0}".format(resource_id)
+        cache.set(rkey, cache.get(rkey, {}))
+    value = {}
+
+    term_cache = defaultdict(lambda: defaultdict(list))
+    rels = LearningResource.terms.related.through.objects.select_related(
+        "term").filter(learningresource__course__id=course_id)
+    if solo_update is True:
+        rels = rels.filter(learningresource_id=resource_id)
+    for rel in rels.iterator():
+        term_cache[rel.learningresource_id][
+            rel.term.vocabulary_id].append(rel.term_id)
+    for lid, data in term_cache.items():
+        lkey = "vocab_cache_{0}".format(lid)
+        if lkey == key:
+            value = dict(data)
+        cache.set(lkey, dict(data))
+    # Return `value` directly, not from the cache. Otherwise, if caching
+    # is disabled (TIMEOUT == 0), this will always return nothing.
+    return value
 
 
 class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
@@ -37,6 +109,19 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     # repo_slug in the URL. It is not used or needed in the repository listing
     # page because that page is always for a single repository.
     repository = indexes.CharField(faceted=True)
+
+    nr_views = indexes.IntegerField(model_attr="xa_nr_views")
+    nr_attempts = indexes.IntegerField(model_attr="xa_nr_attempts")
+    avg_grade = indexes.FloatField(model_attr="xa_avg_grade")
+
+    lid = indexes.IntegerField(model_attr="id", indexed=False)
+    title = indexes.CharField(model_attr="title", indexed=False)
+    description = indexes.CharField(model_attr="description", indexed=False)
+    description_path = indexes.CharField(
+        model_attr="description_path",
+        indexed=False,
+    )
+    preview_url = indexes.CharField(indexed=False)
 
     def get_model(self):
         """Return the model for which this configures indexing."""
@@ -67,12 +152,23 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
 
     def prepare_run(self, obj):  # pylint: disable=no-self-use
         """Define what goes into the "run" index."""
-        return obj.course.run
+        data = get_course_metadata(obj.course_id)
+        return data["run"]
+
+    def prepare_preview_url(self, obj):  # pylint: disable=no-self-use
+        """Define what goes into the "run" index."""
+        data = get_course_metadata(obj.course_id)
+        return obj.get_preview_url(
+            org=data["org"],
+            course_number=data["course_number"],
+            run=data["run"],
+        )
 
     @staticmethod
     def prepare_course(obj):
         """Define what goes into the "course" index."""
-        return obj.course.course_number
+        data = get_course_metadata(obj.course_id)
+        return data["course_number"]
 
     def prepare(self, obj):
         """
@@ -86,16 +182,15 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         as well, but don't because explicit is better than implicit.
         """
         prepared = super(LearningResourceIndex, self).prepare(obj)
-        for vocab in Vocabulary.objects.all():
-            # Values with spaces do not work, so we use the slug.
-            terms = [
-                term.label for term in obj.terms.filter(vocabulary_id=vocab.id)
-            ]
-            prepared[vocab.slug] = terms
-            # for faceted "_exact" in URL
-            prepared[vocab.slug + "_exact"] = terms  # for faceted "exact"
+        for vocab_id, term_ids in get_vocabs(obj.course_id, obj.id).items():
+            # Use the integer primary keys as index values. This saves space,
+            # and also avoids all issues dealing with "special" characters.
+            prepared[vocab_id] = term_ids
+            # For faceted "_exact" in URL.
+            prepared["{0}_exact".format(vocab_id)] = term_ids
         return prepared
 
     def prepare_repository(self, obj):  # pylint: disable=no-self-use
         """Use the slug for the repo, since it's unique."""
-        return obj.course.repository.slug
+        data = get_course_metadata(obj.course_id)
+        return data["repo_slug"]

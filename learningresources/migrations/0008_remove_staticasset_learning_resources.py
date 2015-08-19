@@ -5,6 +5,7 @@ from django.db import models, migrations
 
 # pylint: skip-file
 
+
 class Migration(migrations.Migration):
 
     dependencies = [

@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.4.0'
+VERSION = '0.8.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -26,7 +26,7 @@ CONFIG_PATHS = [
 
 
 def load_fallback():
-    """Load optional yaml config"""
+    """Load optional yaml config."""
     fallback_config = {}
     config_file_path = None
     for config_path in CONFIG_PATHS:
@@ -42,7 +42,7 @@ FALLBACK_CONFIG = load_fallback()
 
 
 def get_var(name, default):
-    """Return the settings in a precedence way with default"""
+    """Return the settings in a precedence way with default."""
     try:
         value = os.environ.get(name, FALLBACK_CONFIG.get(name, default))
         return ast.literal_eval(value)
@@ -88,13 +88,15 @@ INSTALLED_APPS = (
     'audit',
     'learningresources',
     'importer',
+    'exporter',
     'ui',
     'taxonomy',
     'rest',
     'rest_framework',
     'haystack',
     'search',
-    'roles'
+    'roles',
+    'xanalytics',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -128,9 +130,15 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django_settings_export.settings_export',
             ],
         },
     },
+]
+
+# Settings to export to templates
+SETTINGS_EXPORT = [
+    'GOOGLE_ANALYTICS_ID',
 ]
 
 WSGI_APPLICATION = 'lore.wsgi.application'
@@ -155,6 +163,16 @@ else:
 
 DATABASES = {
     'default': DEFAULT_DATABASE_CONFIG
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    },
+    "lore_indexing": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "TIMEOUT": get_var("LORE_INDEXING_CACHE_TIMEOUT", "60"),
+    }
 }
 
 # Internationalization
@@ -191,9 +209,12 @@ COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
     ('text/jsx', 'node_modules/.bin/jsx < {infile} > {outfile}')
 )
+COMPRESS_OFFLINE = get_var('LORE_COMPRESS_OFFLINE', False)
+COMPRESS_ENABLED = get_var('LORE_COMPRESS_ENABLED', not DEBUG)
 
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
+EXPORT_PATH_PREFIX = get_var('LORE_EXPORT_PATH_PREFIX', 'resource_exports/')
 MEDIA_ROOT = get_var('MEDIA_ROOT', '/tmp/')
 MEDIA_URL = '/media/'
 LORE_USE_S3 = get_var('LORE_USE_S3', False)
@@ -219,12 +240,18 @@ else:
     DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 
 
+# Lore preview settings
+LORE_PREVIEW_BASE_URL = get_var(
+    'LORE_PREVIEW_BASE_URL', 'https://www.sandbox.edx.org/')
+
+
 # Configure e-mail settings
 EMAIL_HOST = get_var('LORE_EMAIL_HOST', 'localhost')
 EMAIL_PORT = get_var('LORE_EMAIL_PORT', 25)
 EMAIL_HOST_USER = get_var('LORE_EMAIL_USER', '')
 EMAIL_HOST_PASSWORD = get_var('LORE_EMAIL_PASSWORD', '')
 EMAIL_USE_TLS = get_var('LORE_EMAIL_TLS', False)
+EMAIL_SUPPORT = get_var('LORE_SUPPORT_EMAIL', 'support@example.com')
 DEFAULT_FROM_EMAIL = get_var('LORE_FROM_EMAIL', 'webmaster@localhost')
 
 # e-mail configurable admins
@@ -325,6 +352,8 @@ CELERY_RESULT_BACKEND = get_var(
     "CELERY_RESULT_BACKEND", get_var("REDISCLOUD_URL", None)
 )
 CELERY_ALWAYS_EAGER = get_var("CELERY_ALWAYS_EAGER", True)
+CELERY_EAGER_PROPAGATES_EXCEPTIONS = get_var(
+    "CELERY_EAGER_PROPAGATES_EXCEPTIONS", True)
 
 # guardian specific settings
 ANONYMOUS_USER_ID = None
@@ -341,4 +370,21 @@ HAYSTACK_CONNECTIONS = {
         'INDEX_NAME': get_var('HAYSTACK_INDEX', 'haystack'),
     }
 }
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
+HAYSTACK_SIGNAL_PROCESSOR = 'search.signals.LoreRealTimeSignalProcessor'
+
+XANALYTICS_URL = get_var('XANALYTICS_URL', "")
+
+# Token required to access the status page.
+STATUS_TOKEN = get_var(
+    "STATUS_TOKEN",
+    "7E17C32A63B2810F0053DE454FC8395CA3262CCB8392D2307887C5E67F132550"
+)
+
+# Statsd client config
+STATSD_HOST = get_var('LORE_STATSD_HOST', 'localhost')
+STATSD_PORT = get_var('LORE_STATSD_PORT', 8125)
+STATSD_PREFIX = get_var('LORE_STATSD_PREFIX', None)
+STATSD_MAXUDPSIZE = get_var('LORE_STATSD_MAXUDPSIZE', 512)
+
+# Google analytics code
+GOOGLE_ANALYTICS_ID = get_var('LORE_GOOGLE_ANALYTICS_ID', None)

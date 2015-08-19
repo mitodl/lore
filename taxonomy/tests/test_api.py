@@ -4,7 +4,6 @@ Tests for taxonomy app
 from __future__ import unicode_literals
 
 # pylint: disable=too-many-instance-attributes
-# pylint: disable=invalid-name
 
 from learningresources.tests.base import LoreTestCase
 from learningresources.api import (

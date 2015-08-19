@@ -200,3 +200,16 @@ class ViewStaticAssetPermission(ViewLearningResourcePermission):
             raise Http404()
 
         return True
+
+
+class ViewLearningResourceExportPermission(BasePermission):
+    """
+    Checks that username mentioned is the same one as the request.
+    In the future we may want to let users see each other's exports
+    but for now this just enforces the user seeing their own exports.
+    """
+
+    def has_permission(self, request, view):
+        username = view.kwargs['username']
+
+        return request.user.username == username

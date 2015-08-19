@@ -1,6 +1,101 @@
 Release Notes
 -------------
 
+Version 0.8.0
+=============
+- Changed how vocabulary terms are applied to Learning Resources to use two dropdowns instead of a growing list of fields.
+- Added deployment for release candidates
+- Added deploy button and app.json
+- Fixed caching bug.
+- Fixed panel shade issue
+- Added base sorting field in case used sorting is working on same values
+- Removed response from PATCH on learning resource to aid in performance
+- Added configuration option and heroku command to pre-compress assets
+- Added Google Analytics tracking support Closes
+- Reduce workers per dyno to avoid memory issues
+- Added statsd and a few timers - Import timer - Index signal handler timers - Search page load time
+- Updated indexing caching from dict to Django's cache.
+- .tile-meta no longer defined twice
+- Split builds and removed python 3.3 testing
+- reverted tile-meta and meta-item for previous appearance
+- Added import for (sample) xanalytics API data.
+- Added closing panels with ESC key
+- Fixed export button to show up even without search results.
+- Updated CSS and HTML according to mockup changes
+- Added xanalytics icons to listing page
+- Added xanalytics management command.
+
+
+Version 0.7.0
+=============
+
+- Implemented ``Select2`` element to refactor ``select2`` widgets.
+- Added checkboxes to allow user to uncheck items in export panel.
+- Sped up indexing using caching.
+- Made checkbox for ``Allow multiple terms`` in the taxonomy panel
+  consistent with the rest of the UI.
+- Implemented export of static assets.
+- Fixed user menu display on LORE welcome page.
+
+Version 0.6.0
+=============
+
+- Modified learningresource panel to include multi select.
+- Fixed export button not appearing in certain situations.
+- Added test for StaticAsset.loader.
+- Added export functionality for learning resources.
+- Added select2-bootstrap-theme bower component.
+- Added Select2 to the JS libraries.
+- Created ICheckbox React component.
+- Made XML preview box for a LearningResource should be read only.
+- Pinned all versions.
+- Avoided hitting the database for the search page.
+- Added field to Vocabulary to define if it can contain multiple terms.
+- Incremented xbundle version.
+- Added test for ManageTaxonomies.loader.
+- Changed vocabularies listing page to match the design.
+- Fixed broken links in the footer.
+- Removed console.error statement.
+- Fixed bug where export checkboxes were not updated in sync with
+  export count.
+- Fix test failures due to pylint dependency chain.
+- Created StatusBox component to hold messages and errors.
+- Added shopping cart for export.
+- Changed response vocabulary name to match input and avoid key collision.
+- Added docker support for running worker or Web process by environment.
+- Extended tests for manage_taxonomies.jsx file.
+- Added description path to listing page.
+- Removed export view which isn&#39;t used anymore.
+- Refactored code for reloading module into a function.
+- Refactored permission check for listing view.
+- Updated Haystack to 2.4.0 - Removed automatic index update from deployment.
+- Fixed preview link not showing up in list view.
+- Grouped REST tests by common endpoint.
+- Changed vocabulary term indexing from string to integer.
+- Implemented preview link for learning resource panel.
+- Added sorting to search results.
+- Implemented learning resource panel updating on every panel open.
+- Used different haystack index for tests to prevent conflict with
+  web application.
+
+Version 0.5.0
+=============
+
+- Fixed display of vocabulary terms containing spaces.
+- Fixed comparison of FileFields to strings.
+- Fixed typo in search hint
+- Added bootstrap style to vocabulary learning type checkboxes Closes #337
+- Changed search box description
+- Fixed mutating of this.state which is forbidden
+- Added static file parsing to HTML elements.
+- Removed vocabulary forms since we are doing this via REST API and React instead
+- Reported code coverage for javascript on the command line
+- Added function to obtain collections
+- Set QUnit timeout to fix test error reporting
+- Added HTML reporting of javascript tests
+- Added panel for static assets
+- Added link to request create repository permission
+
 Version 0.4.0
 =============
 
@@ -114,7 +209,7 @@ Version 0.1.0
 - Added rest app with support for RESTful API
 - Added initial authorization support
 - Added login requirement for taxonomy app
-- Switched to using django storage for course uploads
+- Switched to using Django storage for course uploads
 - Switched to using Haystack/ElasticSearch for listing page
 - Protected course imports
 - Protected export view

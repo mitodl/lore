@@ -10,6 +10,11 @@ elastic:
   image: elasticsearch
   ports:
     - "9200"
+stats:
+  image: kamon/grafana_graphite
+  ports:
+    - "8125/udp:8125/udp"
+    - "8071:80"
 web:
   build: .
   command: >
@@ -32,7 +37,10 @@ web:
     LORE_USE_CAS:
     LORE_ADMIN_EMAIL:
     LORE_CAS_URL:
+    LORE_GOOGLE_ANALYTICS_ID:
+    LORE_STATSD_HOST: stats
     CELERY_ALWAYS_EAGER: False
+    CELERY_RESULT_BACKEND: redis://redis:6379/4
     BROKER_URL: redis://redis:6379/4
     HAYSTACK_URL: elastic:9200
   ports:
@@ -41,6 +49,7 @@ web:
     - db
     - redis
     - elastic
+    - stats
 celery:
   image: lore_web
   command: >
@@ -53,6 +62,7 @@ celery:
     DEBUG: True
     LORE_LOG_LEVEL: DEBUG
     LORE_DB_DISABLE_SSL: True
+    LORE_STATSD_HOST: stats
     DJANGO_LOG_LEVEL: INFO
     DATABASE_URL: postgres://postgres@db:5432/postgres
     BROKER_URL: redis://redis:6379/4
@@ -62,3 +72,4 @@ celery:
     - db
     - elastic
     - redis
+    - stats
