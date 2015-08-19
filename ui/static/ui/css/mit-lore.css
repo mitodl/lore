@@ -535,3 +535,22 @@ ul.repos {
     padding: 0px;
     margin: 0px;
 }
+
+.repo-page-status {
+    white-space: nowrap;
+    cursor: pointer;
+    display: inline;
+    font-size: 25px;
+    position: relative;
+    top: 27%;
+    transform: translateY(-27%);
+}
+
+input.repo-page-status {
+    width: 7%;
+    display: inline;
+    font-size: medium;
+    position: relative;
+    top: 27%;
+    transform: translateY(-27%);
+}

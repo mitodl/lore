@@ -69,6 +69,9 @@
         <i class="fa fa-angle-left"></i>
       </a>
       {% endif %}
+      <a id="repo_page_status" class="repo-page-status" data-page-num="{{ page.number }}" data-max-page-num="{{ page.paginator.num_pages }}">
+          Page {{ page.number }} of {{ page.paginator.num_pages }}
+      </a>
       {% if page.has_next %}
       <a href="{% url 'repositories' repo.slug %}{{ qs_prefix}}page={{ page.next_page_number }}&sortby={{ sorting_options.current.0 }}">
         <i class="fa fa-angle-right"></i>
