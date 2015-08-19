@@ -7,8 +7,6 @@ import logging
 from django.core.urlresolvers import reverse
 
 from learningresources.api import create_repo
-from roles.api import assign_user_to_repo_group
-from roles.permissions import GroupTypes
 from search.tests.base import SearchTestCase
 
 log = logging.getLogger(__name__)
@@ -27,11 +25,6 @@ class TestSearchView(SearchTestCase):
 
         # Make a new repo with no content.
         new_repo = create_repo("other", "whatever", self.user.id)
-        assign_user_to_repo_group(
-            self.user,
-            new_repo,
-            GroupTypes.REPO_ADMINISTRATOR
-        )
         resp = self.client.get(reverse("repositories", args=(new_repo.slug,)))
         self.assertNotContains(resp, self.resource.title)
 

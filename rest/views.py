@@ -93,16 +93,6 @@ class RepositoryList(ListCreateAPIView):
         repo_ids = [repo.id for repo in get_repos(self.request.user.id)]
         return Repository.objects.filter(id__in=repo_ids).order_by('id')
 
-    def perform_create(self, serializer):
-        """Create a new repository."""
-        # pylint: disable=protected-access
-        repo = serializer.save()
-        assign_user_to_repo_group(
-            self.request.user,
-            repo,
-            GroupTypes.REPO_ADMINISTRATOR
-        )
-
 
 class RepositoryDetail(RetrieveAPIView):
     """REST detail view for Repository."""

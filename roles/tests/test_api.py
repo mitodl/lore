@@ -194,23 +194,6 @@ class TestRoleApi(LoreTestCase):
         Group.objects.get(name=self.group_curator)
         Group.objects.get(name=self.group_author)
 
-    def test_assign_user_group_1(self):
-        """
-        Test for api.assign_user_to_repo_group
-        check situation before use of helper function
-        """
-        _ = Repository.objects.create(
-            name=self.repo_name,
-            description=self.repo_desc,
-            created_by=self.user
-        )
-        admin = Group.objects.get(name=self.group_admin)
-        curator = Group.objects.get(name=self.group_curator)
-        author = Group.objects.get(name=self.group_author)
-        self.assertNotIn(self.user, admin.user_set.all())
-        self.assertNotIn(self.user, curator.user_set.all())
-        self.assertNotIn(self.user, author.user_set.all())
-
     def test_assign_user_group_2(self):
         """
         Test for api.assign_user_to_repo_group
@@ -224,11 +207,6 @@ class TestRoleApi(LoreTestCase):
         curator = Group.objects.get(name=self.group_curator)
         author = Group.objects.get(name=self.group_author)
 
-        api.assign_user_to_repo_group(
-            self.user,
-            repo,
-            group_type=GroupTypes.REPO_ADMINISTRATOR
-        )
         self.assertIn(self.user, admin.user_set.all())
         self.assertNotIn(self.user, curator.user_set.all())
         self.assertNotIn(self.user, author.user_set.all())
@@ -264,12 +242,6 @@ class TestRoleApi(LoreTestCase):
             created_by=self.user
         )
         admin = Group.objects.get(name=self.group_admin)
-
-        api.assign_user_to_repo_group(
-            self.user,
-            repo,
-            group_type=GroupTypes.REPO_ADMINISTRATOR
-        )
         self.assertIn(self.user, admin.user_set.all())
 
         api.remove_user_from_repo_group(
