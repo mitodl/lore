@@ -27,8 +27,6 @@ from learningresources.api import (
     update_description_path
 )
 from learningresources.models import Repository, StaticAsset
-from roles.api import assign_user_to_repo_group
-from roles.permissions import GroupTypes
 
 log = logging.getLogger(__name__)
 
@@ -116,11 +114,6 @@ class LoreTestCase(TestCase):
             url_name="url_name1",
         )
 
-        assign_user_to_repo_group(
-            self.user,
-            self.repo,
-            GroupTypes.REPO_ADMINISTRATOR
-        )
         self.toy_resource_count = 18  # Resources in toy course.
         self.toy_asset_count = 5  # Static assets in toy course.
         self.client = Client()
