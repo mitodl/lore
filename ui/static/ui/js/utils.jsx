@@ -202,6 +202,7 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
         data: this.props.options,
         placeholder: this.props.placeholder,
         allowClear: allowClear,
+        tags: this.props.allowTags,
         theme: "bootstrap",
         dropdownAdapter: CustomAdapter
       }).val(this.props.values)

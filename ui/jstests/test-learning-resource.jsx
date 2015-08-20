@@ -49,6 +49,12 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     "label": "notrequired",
     "weight": 1
   };
+  var termResponseMedium = {
+    "id": 5,
+    "slug": "medium",
+    "label": "medium",
+    "weight": 1
+  };
   var vocabularyResponsePrereq = {
     "id": 1,
     "slug": "prerequisite",
@@ -120,6 +126,11 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
         url: '/api/v1/repositories/repo/vocabularies/?type_name=course&page=2',
         type: 'GET',
         responseText: vocabulariesResponseSecond
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/repo/vocabularies/difficulty/terms/',
+        type: 'POST',
+        responseText: termResponseMedium
       });
     },
     afterEach: function() {
@@ -220,38 +231,88 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
           // TestUtils.Simulate.change only simulates a change event,
           // we need to update the value first ourselves
           $vocabSelect.val("prerequisite").trigger('change');
-          React.addons.TestUtils.Simulate.change($vocabSelect);
           component.forceUpdate(function() {
             assert.equal($vocabOptions[0].selected, false);
             assert.equal($vocabOptions[1].selected, true);
-            // on selection of the second vocabulary, make sure the term selector updates.
+            // re-fetch the selects to get the prerequisite one
+            $allSelects = $node.find("#vocabularies select");
             var termsSelect = $allSelects[1];
             var $termsOptions = $(termsSelect).find("option");
             assert.equal($termsOptions.size(), 2);
-            assert.equal($termsOptions[0].selected, false);
+            assert.equal($termsOptions[0].selected, true);
             assert.equal($termsOptions[1].selected, false);
-            // the second vocabulary can be a multi select
-            $(termsSelect)
-              .val(["hard", "easy"])
-              .trigger('change');
-            React.addons.TestUtils.Simulate.change(termsSelect);
+            assert.equal($(termsSelect).val(), "required");
+
+            // remove selection for this vocabulary to not interfere to the rest of the test
+            $(termsSelect).val("").trigger('change');
             component.forceUpdate(function() {
-              assert.equal($termsOptions[0].selected, true);
-              assert.equal($termsOptions[1].selected, true);
-              // be sure that the state reflects the selection
-              var terms = _.map(component.state.vocabulariesAndTerms,
-                function (tuple) {
-                  return tuple.selectedTerms;
+              // Switch to difficulty
+              $vocabSelect.val("difficulty").trigger('change');
+              component.forceUpdate(function() {
+                // re-fetch the selects to get the difficulty one
+                $allSelects = $node.find("#vocabularies select");
+                // update the term select
+                termsSelect = $allSelects[1];
+                $termsOptions = $(termsSelect).find("option");
+
+                assert.equal($termsOptions.size(), 2);
+                assert.equal($termsOptions[0].selected, false);
+                assert.equal($termsOptions[1].selected, false);
+                // the second vocabulary can be a multi select
+                $(termsSelect)
+                  .val(["hard", "easy"])
+                  .trigger('change');
+                component.forceUpdate(function () {
+                  assert.equal($termsOptions[0].selected, true);
+                  assert.equal($termsOptions[1].selected, true);
+                  // be sure that the state reflects the selection
+                  var terms = _.map(component.state.vocabulariesAndTerms,
+                    function (tuple) {
+                      return tuple.selectedTerms;
+                    });
+                  terms = _.flatten(terms);
+                  terms.sort();
+                  var expectedTerms = [
+                    $termsOptions[0].value,
+                    $termsOptions[1].value
+                  ];
+                  expectedTerms.sort();
+                  assert.deepEqual(terms, expectedTerms);
+
+                  // the second vocabulary also allows free tagging
+                  $(termsSelect)
+                    // hack to simulate the free tagging
+                    .append($('<option />', {value: 'medium'}))
+                    .val(["hard", "easy", "medium"])
+                    .trigger('change');
+                  waitForAjax(1, function () {
+                    component.forceUpdate(function () {
+                      // check if the new option has been added
+                      $termsOptions = $(termsSelect).find("option");
+                      assert.equal($termsOptions.size(), 3);
+                      assert.equal($termsOptions[0].selected, true);
+                      assert.equal($termsOptions[1].selected, true);
+                      assert.equal($termsOptions[2].selected, true);
+                      // be sure that the state reflects the selection
+                      var terms = _.map(component.state.vocabulariesAndTerms,
+                        function (tuple) {
+                          return tuple.selectedTerms;
+                        });
+                      terms = _.flatten(terms);
+                      terms.sort();
+                      var expectedTerms = [
+                        $termsOptions[0].value,
+                        $termsOptions[1].value,
+                        $termsOptions[2].value
+                      ];
+                      expectedTerms.sort();
+                      assert.deepEqual(terms, expectedTerms);
+                      done();
+                    });
+                  });
+
                 });
-              terms = _.flatten(terms);
-              terms.sort();
-              var expectedTerms = [
-                $termsOptions[0].value,
-                $termsOptions[1].value
-              ];
-              expectedTerms.sort();
-              assert.deepEqual(terms, expectedTerms);
-              done();
+              });
             });
           });
         });

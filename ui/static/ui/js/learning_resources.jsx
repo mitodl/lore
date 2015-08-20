@@ -9,15 +9,20 @@ define('learning_resources', [
   var TermList = React.createClass({
     render: function () {
       var appliedVocabularies = this.props.vocabs.map(function (vocab) {
-        var selectedTerms = vocab.selectedTerms;
+        var selectedTermsLabels = _.pluck(
+          _.filter(vocab.terms, function (term) {
+            return _.indexOf(vocab.selectedTerms, term.slug) !== -1;
+          }),
+          'label'
+        );
         var vocabularyName = vocab.vocabulary.name;
 
-        if (selectedTerms.length) {
+        if (selectedTermsLabels.length) {
           return (
             <TermListItem
               key={vocab.vocabulary.id}
               label={vocabularyName}
-              terms={selectedTerms.join(", ")}
+              terms={selectedTermsLabels.join(", ")}
             />
           );
         }
@@ -67,6 +72,7 @@ define('learning_resources', [
             onChange={this.handleChange}
             values={slug}
             multiple={false}
+            allowTags={false}
             />
         </div>;
     },
@@ -102,6 +108,10 @@ define('learning_resources', [
       });
 
       var name = this.props.selectedVocabulary.name;
+      var allowTags = false;
+      if (this.props.selectedVocabulary.vocabulary_type === 'f') {
+        allowTags = true;
+      }
       return <div className="col-sm-6">
           <Select2
             key={name}
@@ -111,6 +121,7 @@ define('learning_resources', [
             onChange={this.handleChange}
             values={currentVocabulary.selectedTerms}
             multiple={this.props.selectedVocabulary.multi_terms}
+            allowTags={allowTags}
             />
         </div>;
     },
@@ -120,8 +131,66 @@ define('learning_resources', [
         _.filter(e.target.options, function(option) {
           return option.selected && option.value !== null;
         }), 'value');
+      // check if the current vocabulary allows free tagging and in case add
+      // the new tags before proceeding
+      if (this.props.selectedVocabulary.vocabulary_type === 'f') {
+        // extract the list of terms not in the vocabulary existing terms
+        var termsSlugs = _.pluck(this.props.selectedVocabulary.terms, 'slug');
+        var termsToCreate = _.filter(selectedValues, function (slug) {
+          return !_.includes(termsSlugs, slug);
+        });
+        // if there are no new terms to create, set the state
+        if (!termsToCreate.length) {
+          this.props.setValues(
+            this.props.selectedVocabulary.slug, selectedValues
+          );
+        } else {
+          // otherwise create the terms and update the vocabularies
+          // create the term
+          var thiz = this;
+          var API_ROOT_TERMS_URL = '/api/v1/repositories/' +
+            thiz.props.repoSlug + '/vocabularies/' +
+            thiz.props.selectedVocabulary.slug + "/terms/";
+          _.forEach(termsToCreate, function (termLabel) {
+            $.ajax({
+                type: "POST",
+                url: API_ROOT_TERMS_URL ,
+                data: JSON.stringify({
+                  label: termLabel,
+                  weight: 1
+                }),
+                contentType: "application/json; charset=utf-8"
+              }
+            )
+            .fail(function() {
+                thiz.props.reportMessage({
+                  error: "Error occurred while adding new term \"" +
+                    termLabel + "\"."
+                });
+              })
+            .done(function(newTerm) {
+              //append the new term to the list of newly created terms
+              // replace che current label in the selected values with the newly created slug
+              selectedValues.splice(
+                _.indexOf(selectedValues, termLabel),
+                1,
+                newTerm.slug
+              );
+              // change the state
+              thiz.props.appendTermSelectedVocabulary(newTerm);
+              // finally set the current selected values
+              thiz.props.setValues(
+                thiz.props.selectedVocabulary.slug, selectedValues
+              );
+            });
+          });
 
-      this.props.setValues(this.props.selectedVocabulary.slug, selectedValues);
+        }
+      } else {
+        this.props.setValues(
+          this.props.selectedVocabulary.slug, selectedValues
+        );
+      }
     }
   });
 
@@ -158,6 +227,20 @@ define('learning_resources', [
       });
     },
 
+    appendTermSelectedVocabulary: function (termObj) {
+      var selectedVocabulary = this.state.selectedVocabulary;
+      selectedVocabulary.terms.push(termObj);
+      this.setState({
+        selectedVocabulary: selectedVocabulary
+      });
+    },
+
+    reportMessage: function (messageObj) {
+      this.setState({
+        message: messageObj
+      });
+    },
+
     render: function () {
 
       var vocabulariesAndTerms = this.state.vocabulariesAndTerms;
@@ -178,6 +261,9 @@ define('learning_resources', [
             vocabs={vocabulariesAndTerms}
             selectedVocabulary={this.state.selectedVocabulary}
             setValues={this.setSelectedTerms}
+            appendTermSelectedVocabulary={this.appendTermSelectedVocabulary}
+            repoSlug={this.props.repoSlug}
+            reportMessage={this.reportMessage}
           />;
 
         termList =
