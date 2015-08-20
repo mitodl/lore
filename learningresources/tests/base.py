@@ -18,6 +18,7 @@ from django.core.files.storage import default_storage
 from django.core.management import call_command
 from django.test import Client
 from django.test.testcases import TestCase
+from django.test.utils import override_settings
 import haystack
 
 from learningresources.api import (
@@ -29,8 +30,11 @@ from learningresources.api import (
 from learningresources.models import Repository, StaticAsset
 
 log = logging.getLogger(__name__)
+# Using the md5 hasher speeds up tests.
+hashers = ('django.contrib.auth.hashers.MD5PasswordHasher',)
 
 
+@override_settings(PASSWORD_HASHERS=hashers)
 class LoreTestCase(TestCase):
     """Handle often-needed things in tests."""
     # pylint: disable=too-many-instance-attributes
