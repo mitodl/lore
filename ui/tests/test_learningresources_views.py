@@ -320,7 +320,8 @@ class TestViews(LoreTestCase):
         self.upload_test_file()
         self.assertEqual(len(StaticAsset.objects.all()), 5)
         # take the url of a static asset
-        static_asset_url = StaticAsset.objects.all()[0].asset.url
+        static_asset = StaticAsset.objects.first().asset
+        static_asset_url = static_asset.url
         # hit the view
         resp = self.client.get(static_asset_url)
         self.assertEqual(resp.status_code, HTTP_OK)
@@ -329,6 +330,10 @@ class TestViews(LoreTestCase):
             'attachment; filename={}'.format(
                 os.path.basename(static_asset_url)
             )
+        )
+        self.assertEqual(
+            b"".join(resp.streaming_content),
+            static_asset.file.read()
         )
         # only the user with right to see the repo can access the file
         self.logout()

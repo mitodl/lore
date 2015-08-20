@@ -281,7 +281,7 @@ def serve_static_assets(request, path):
         raise PermissionDenied()
     filename = os.path.basename(file_path)
     response = StreamingHttpResponse(
-        FileWrapper(open(file_path), 'rb'),
+        FileWrapper(open(file_path, 'rb')),
         content_type=mimetypes.guess_type(file_path)[0]
     )
     response['Content-Length'] = os.path.getsize(file_path)
