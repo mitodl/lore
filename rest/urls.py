@@ -27,6 +27,7 @@ from .views import (
     LearningResourceExportDetail,
     LearningResourceExportTaskList,
     LearningResourceExportTaskDetail,
+    RepositorySearchList,
 )
 
 REPOSITORY_MEMBERS_URL = r'^repositories/(?P<repo_slug>[-\w]+)/members/'
@@ -40,6 +41,7 @@ REPOSITORY_EXPORTS_URL = (
 REPOSITORY_EXPORT_TASK_URL = (
     r'^repositories/(?P<repo_slug>[-\w]+)/learning_resource_export_tasks/'
 )
+REPOSITORY_SEARCH_URL = r'^repositories/(?P<repo_slug>[-\w]+)/search/'
 
 urlpatterns = [
     url(r'^api-auth/', include('rest_framework.urls',
@@ -120,4 +122,6 @@ urlpatterns = [
         name='learning-resource-export-task-list'),
     url("^learning_resource_types/$", LearningResourceTypeList.as_view(),
         name='learning-resource-type-list'),
+    url(REPOSITORY_SEARCH_URL, RepositorySearchList.as_view({'get': 'list'}),
+        name="repository-search-list"),
 ]

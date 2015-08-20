@@ -134,6 +134,84 @@ Create a repository by providing its JSON representation.
             "create_date": "2015-06-22"
         }
 
+## Group SearchResults
+
+## SearchResult Collection [/repositories/{repo_slug}/search/{?q,sortby,selected_facets}]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + q: `zebra` (string, optional) - a piece of text to search with. If this is blank or omitted all results will be returned.
+    + sortby: `nr_views` (string, optional) - a column to sort results by. This is descending by default, add prefix '-' to sort in ascending order. May be one of: nr_views, nr_attempts, avg_grade.
+    + selected_facets: `course:DemoX` (string, optional) - a facet to narrow searches. Param may be specified more than once to narrow on multiple facets.
+
+### List SearchResults [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "resource_type": "discussion",
+                    "course": "DemoX",
+                    "run": "Demo_Course",
+                    "xa_nr_views": 12,
+                    "xa_nr_attempts": 1,
+                    "xa_avg_grade": 4.0,
+                    "lid": 91,
+                    "title": "Peer Grading",
+                    "description": "",
+                    "description_path": "...",
+                    "preview_url": "..."
+                }
+            ],
+            "facet_counts": {
+                "course": {
+                    "facet": {
+                        "key": "course",
+                        "label": "Course"
+                    },
+                    "values": [
+                        {
+                            "count": 1,
+                            "key": "DemoX",
+                            "label": "DemoX"
+                        }
+                    ]
+                },
+                "run": {
+                    "facet": {
+                        "key": "run",
+                        "label": "Run"
+                    },
+                    "values": [
+                        {
+                            "count": 1,
+                            "key": "Demo_Course",
+                            "label": "Demo_Course"
+                        }
+                    ]
+                },
+                "resource_type": {
+                    "facet": {
+                        "key": "resource_type",
+                        "label": "Item Type"
+                    },
+                    "values": [
+                        {
+                            "count": 1,
+                            "key": "discussion",
+                            "label": "discussion"
+                        }
+                    ]
+                }
+            }
+        }
+
 ## Group LearningResources
 
 ## LearningResource Collection [/repositories/{repo_slug}/learning_resources/{?type_name}]
