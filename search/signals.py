@@ -44,5 +44,5 @@ def handle_m2m_save(sender, **kwargs):
     if instance.__class__.__name__ != "LearningResource":
         return
     # Update cache for the LearningResource if it's already set.
-    get_vocabs(instance.course_id, instance.id, solo_update=True)
+    get_vocabs(instance.id)
     LearningResourceIndex().update_object(instance)
