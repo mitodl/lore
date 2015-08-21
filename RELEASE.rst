@@ -1,6 +1,18 @@
 Release Notes
 -------------
 
+Version 0.9.0
+=============
+
+- Stripped caching out of vocabularies during indexing.
+- Changed password hashing during tests.
+- Updated third party requirements
+- Made better navigation of paging in search results
+- Made creator of a repo an admin during repo creation.
+- Fixed static asset download for local servers
+- Added lazy loading of static asset information
+- Added icon for logout previously reverted
+
 Version 0.8.0
 =============
 - Changed how vocabulary terms are applied to Learning Resources to use two dropdowns instead of a growing list of fields.
