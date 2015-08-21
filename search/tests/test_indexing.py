@@ -205,11 +205,11 @@ class TestIndexing(SearchTestCase):
             return count
 
         set_cache_timeout(0)
-        with self.assertNumQueries(23):
+        with self.assertNumQueries(20):
             self.assertEqual(get_count(), 0)
 
         set_cache_timeout(60)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(9):
             self.assertEqual(get_count(), 1)
 
     def test_course_cache(self):
@@ -234,14 +234,14 @@ class TestIndexing(SearchTestCase):
         def three_times():
             """Get vocab data three times."""
             for _ in range(0, 3):
-                get_vocabs(self.course.id, self.resource.id)
+                get_vocabs(self.resource.id)
 
         set_cache_timeout(0)
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(3):
             three_times()
 
         set_cache_timeout(60)
-        with self.assertNumQueries(2):
+        with self.assertNumQueries(3):
             three_times()
 
     def test_term_cache_with_data(self):
@@ -262,38 +262,3 @@ class TestIndexing(SearchTestCase):
         a LearningResource isn't tagged with any terms.
         """
         self.thrice()
-
-    def test_vocab_cache_by_course(self):
-        """
-        Ensure that get_vocabs for one course doesn't
-        pollute the cache for another course.
-        """
-        # Create a resource in a separate course.
-        self.course, course2 = copy_instance(self.course)
-        self.resource, resource2 = copy_instance(self.resource)
-        course2.run = "{0} part 2".format(self.course.run)
-        course2.save()
-        resource2.course = course2
-        resource2.save()
-
-        key1 = "vocab_cache_{0}".format(self.resource.id)
-        key2 = "vocab_cache_{0}".format(resource2.id)
-
-        # Resources were recently saved, so the keys should be in the cache.
-        self.assertIn(key1, cache)
-        self.assertIn(key2, cache)
-
-        # Getting vocabs for a resource should not refresh the cache for
-        # resources in another course.
-        cache.clear()
-        self.resource.save()
-        self.assertIn(key1, cache)
-        self.assertNotIn(key2, cache)
-
-        # Resource for the same course are updated.
-        resource2.course = self.resource.course
-        resource2.save()
-        cache.clear()
-        self.resource.save()
-        self.assertIn(key1, cache)
-        self.assertIn(key2, cache)
