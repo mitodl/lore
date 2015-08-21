@@ -6,6 +6,7 @@ var REQUIRE_PATHS = {
   icheck: "icheck/icheck",
   retina: "retina.js/dist/retina",
   react: "react/react-with-addons",
+  react_infinite: "react-infinite/dist/react-infinite",
   lodash: "lodash/lodash",
   select2: "select2/dist/js/select2.full",
   csrf: "../ui/js/csrf",
@@ -19,6 +20,7 @@ var REQUIRE_PATHS = {
 };
 var SHIMS = {
   "icheck": {"deps": ["jquery"]},
-  "bootstrap": {"deps": ["jquery"]}
+  "bootstrap": {"deps": ["jquery"]},
+  "react_infinite": {"deps": ["react"]}
 };
 /* jshint ignore:end */

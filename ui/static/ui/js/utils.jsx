@@ -1,12 +1,75 @@
-define("utils", ["jquery", "lodash", "react", "select2"],
-  function ($, _, React) {
+define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
+  function ($, _, React, Infinite) {
   'use strict';
 
   /**
-   * Get a collection from the REST API
+   * A list which connects to our collection APIs and grows as the user
+   * scrolls down.
+   */
+  var InfiniteList = React.createClass({
+    getInitialState: function() {
+      return {
+        elements: [],
+        isInfiniteLoading: false,
+        next: this.props.url
+      };
+    },
+    componentDidMount: function() {
+      this.loadPage();
+    },
+    loadPage: function() {
+      var thiz = this;
+
+      if (this.state.next === null) {
+        this.setState({
+          isInfiniteLoading: false
+        });
+        return;
+      }
+
+      $.get(this.state.next).then(function (results) {
+        thiz.setState({
+          elements: thiz.state.elements.concat(results.results),
+          next: results.next,
+          isInfiniteLoading: false
+        });
+      }).fail(function(err) {
+        thiz.setState({
+          isInfiniteLoading: false
+        });
+        thiz.props.onError(err);
+      });
+    },
+    handleInfiniteLoad: function () {
+      this.setState({
+        isInfiniteLoading: true
+      });
+      this.loadPage();
+    },
+    render: function () {
+      var spinner = <div className="infinite-item-list">Loading...</div>;
+      var elements = _.map(this.state.elements, this.props.makeElement);
+
+      return <div className="infinite-list">
+        <Infinite
+          onInfiniteLoad={this.handleInfiniteLoad}
+          loadingSpinnerDelegate={spinner}
+          isInfiniteLoading={this.state.isInfiniteLoading}
+          infiniteLoadBeginBottomOffset={this.props.containerHeight - 50}
+          {...this.props}>
+          {elements}
+        </Infinite>
+      </div>;
+    }
+  });
+
+  /**
+   * Get a collection from the REST API all at once. Provides a promise
+   * of all items in collection.
+   *
    * @param {string} url The URL of the collection (may be part way through)
    * @param {array} [previousItems] If defined, the items previously collected
-   * @returns {Promise} A promise evaluting to the array of items
+   * @returns {Promise} A promise evaluating to the array of items
    * in the collection
    */
   var _getCollection = function(url, previousItems) {
@@ -199,6 +262,7 @@ define("utils", ["jquery", "lodash", "react", "select2"],
     },
     StatusBox: StatusBox,
     ICheckbox: ICheckbox,
-    Select2: Select2
+    Select2: Select2,
+    InfiniteList: InfiniteList
   };
 });
