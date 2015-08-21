@@ -11,6 +11,27 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
 
     var waitForAjax = TestUtils.waitForAjax;
 
+    // This is mostly filler, we test facets in more detail in test_facets.jsx
+    var emptyFacetCounts = {
+      "run": {
+        "facet": {"key": "run", "label": "Run"},
+        "values": []
+      },
+      "1": {"facet": {"key": "1", "label": "a"}, "values": []},
+      "course": {"facet": {"key": "course", "label": "Course"}, "values": []},
+      "3": {"facet": {"key": "3", "label": "s"}, "values": []},
+      "2": {"facet": {"key": "2", "label": "run"}, "values": []},
+      "5": {"facet": {"key": "5", "label": "disallowmultiple"}, "values": []},
+      "4": {"facet": {"key": "4", "label": "allowmulti"}, "values": []},
+      "7": {"facet": {"key": "7", "label": "infinite"}, "values": []},
+      "6": {"facet": {"key": "6", "label": "one"}, "values": []},
+      "8": {"facet": {"key": "8", "label": "free"}, "values": []},
+      "resource_type": {
+        "facet": {"key": "resource_type", "label": "Item Type"},
+        "values": []
+      }
+    };
+
     var sampleResources = [{
       "run": "2015_Summer",
       "description": "Description A",
@@ -56,7 +77,8 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       sortingOptions: sortingOptions,
       loggedInUsername: "user",
       qsPrefix: "qs",
-      imageDir: "images"
+      imageDir: "images",
+      facetCounts: emptyFacetCounts
     };
 
     // NOTE: these tests will show 404 for /images/*.png due to these

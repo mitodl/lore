@@ -22,14 +22,8 @@
     </form>
   </div>
 </div>
-<div class="col-md-3">
-  <div class="panel-group lore-panel-group">
-    {% include "includes/facet_panel.html" %}
-  </div>
-</div>
-<div class="col-md-9 col-results">
-  <div id="listing">
-  </div>
+<div id="listing">
+
 </div>
 
 <div class="row">
@@ -96,7 +90,8 @@ require(["listing", "jquery"], function(Listing, $) {
     sortingOptions: {{ sorting_options_json|safe }},
     loggedInUsername: "{{ request.user.username|escapejs }}",
     qsPrefix: "{{ qs_prefix|escapejs }}",
-    imageDir: "{% static "ui/images"|escapejs %}"
+    imageDir: "{% static "ui/images"|escapejs %}",
+    facetCounts: {{ facet_counts_json|safe }}
   };
   $(function() {
     Listing.loader(listingOptions, $("#listing")[0]);

@@ -1,6 +1,137 @@
-define('listing_resources', ['react', 'jquery', 'lodash'],
-  function (React, $, _) {
+define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
+  function (React, $, _, Utils) {
     'use strict';
+
+    var ICheckbox = Utils.ICheckbox;
+
+    var getImageFile = function(resourceType) {
+      if (resourceType === 'chapter') {
+        return 'ic-book.png';
+      } else if (resourceType === 'sequential') {
+        return 'ic-sequential.png';
+      } else if (resourceType === 'vertical') {
+        return 'ic-vertical.png';
+      } else if (resourceType === 'problem') {
+        return 'ic-pieces.png';
+      } else if (resourceType === 'video') {
+        return 'ic-video.png';
+      } else {
+        return 'ic-code.png';
+      }
+    };
+
+    var Facet = React.createClass({
+      render: function() {
+        var icon = null;
+        if (this.props.facetId === 'resource_type') {
+          var src = this.props.imageDir + "/" + getImageFile(this.props.id);
+          icon = <span className="min-width">
+            <img src={src} className="ic-custom"/>
+            </span>;
+        }
+
+        return <li>
+          <ICheckbox
+            id={"check-" + this.props.id}
+            tabIndex="add"
+            className="icheck-11" onChange={this.handleChange}
+            checked={this.props.selected} />
+          {icon}
+          <label htmlFor={"check-" + this.props.id}>
+            {this.props.label}
+          </label>
+          <span className="badge">
+            {this.props.count}
+          </span>
+        </li>;
+      },
+      handleChange: function(e) {
+        this.props.updateFacets(
+          this.props.facetId, this.props.id, e.target.checked);
+      }
+    });
+
+    var FacetGroup = React.createClass({
+      render: function() {
+        var thiz = this;
+        var facets = _.map(this.props.values, function(value) {
+          var selected = thiz.props.selectedFacets[value.key];
+
+          return <Facet label={value.label}
+                        id={value.key}
+                        count={value.count}
+                        key={value.key}
+                        facetId={thiz.props.id}
+                        imageDir={thiz.props.imageDir}
+                        updateFacets={thiz.props.updateFacets}
+                        selected={selected}
+            />;
+        });
+
+        var collapseId = "collapse-" + this.props.id;
+
+        return <div className="panel panel-default">
+          <div className="panel-heading">
+            <h4 className="panel-title">
+              <a className="accordion-toggle"
+                 href={"#" + collapseId}
+                 data-parent="#accordion"
+                 data-toggle="collapse"
+                >
+                {this.props.label}
+              </a>
+            </h4>
+          </div>
+          <div className="panel-collapse collapse in" id={collapseId}>
+            <div className="panel-body">
+              <ul className="icheck-list">
+                {facets}
+              </ul>
+            </div>
+          </div>
+        </div>;
+      }
+    });
+
+    var Facets = React.createClass({
+      render: function() {
+        var thiz = this;
+        var facets = [];
+
+        var makeFacetGroup = function(values) {
+          if (!values.values.length) {
+            return null;
+          }
+          var selectedFacets = {};
+          if (thiz.props.selectedFacets[values.facet.key] !== undefined) {
+            selectedFacets = thiz.props.selectedFacets[values.facet.key];
+          }
+
+          return <FacetGroup
+            values={values.values}
+            label={values.facet.label}
+            id={values.facet.key}
+            key={values.facet.key}
+            updateFacets={thiz.props.updateFacets}
+            imageDir={thiz.props.imageDir}
+            selectedFacets={selectedFacets}
+            />;
+        };
+
+        _.each(["course", "run", "resource_type"], function(key) {
+          facets.push(makeFacetGroup(thiz.props.facetCounts[key]));
+        });
+
+        _.each(this.props.facetCounts, function(values) {
+          var key = values.facet.key;
+          if (key !== "course" && key !== "run" && key !== "resource_type") {
+            facets.push(makeFacetGroup(values));
+          }
+        });
+
+        return <div className="panel-group lore-panel-group">{facets}</div>;
+      }
+    });
 
     var SortingDropdown = React.createClass({
       render: function() {
@@ -64,22 +195,6 @@ define('listing_resources', ['react', 'jquery', 'lodash'],
           <i className={className} /> Export</a>;
       }
     });
-
-    var getImageFile = function(resourceType) {
-      if (resourceType === 'chapter') {
-        return 'ic-book.png';
-      } else if (resourceType === 'sequential') {
-        return 'ic-sequential.png';
-      } else if (resourceType === 'vertical') {
-        return 'ic-vertical.png';
-      } else if (resourceType === 'problem') {
-        return 'ic-pieces.png';
-      } else if (resourceType === 'video') {
-        return 'ic-video.png';
-      } else {
-        return 'ic-code.png';
-      }
-    };
 
     var ListingResource = React.createClass({
       render: function() {
@@ -266,13 +381,33 @@ define('listing_resources', ['react', 'jquery', 'lodash'],
       }
     });
 
+    var ListingPage = React.createClass({
+      render: function() {
+        return <div>
+          <div className="col-md-3">
+            <div className="panel-group lore-panel-group">
+              <Facets facetCounts={this.props.facetCounts}
+                      updateFacets={this.props.updateFacets}
+                      selectedFacets={this.props.selectedFacets}
+                      imageDir={this.props.imageDir} />
+            </div>
+          </div>
+          <div className="col-md-9 col-results">
+            <Listing {...this.props} />
+          </div>
+        </div>;
+      }
+    });
+
     return {
       loader: function(listingOptions, container, openExportsPanel,
-                       openResourcePanel) {
+                       openResourcePanel, updateFacets, selectedFacets) {
         return React.render(
-          <Listing {...listingOptions}
+          <ListingPage {...listingOptions}
                    openExportsPanel={openExportsPanel}
                    openResourcePanel={openResourcePanel}
+                   updateFacets={updateFacets}
+                   selectedFacets={selectedFacets}
             />,
           container
         );
@@ -282,7 +417,11 @@ define('listing_resources', ['react', 'jquery', 'lodash'],
       ExportLink: ExportLink,
       SortingDropdown: SortingDropdown,
       ListingResource: ListingResource,
-      Listing: Listing
+      Listing: Listing,
+      ListingPage: ListingPage,
+      FacetGroup: FacetGroup,
+      Facet: Facet,
+      Facets: Facets
     };
   }
 );

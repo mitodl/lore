@@ -10,7 +10,6 @@ var REQUIRE_PATHS = {
   lodash: "lodash/lodash",
   select2: "select2/dist/js/select2.full",
   csrf: "../ui/js/csrf",
-  facets: "../ui/js/facets",
   listing: "../ui/js/listing",
   manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
   learning_resources: "../ui/js/learning_resources.jsx?noext",
