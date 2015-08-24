@@ -52,3 +52,32 @@ def get_term(repo_slug, user_id, vocab_slug, term_slug):
         raise NotFound()
     except Term.DoesNotExist:
         raise NotFound()
+
+
+# pylint: disable=too-many-arguments
+def create_vocabulary(
+        user_id, repo_slug, name, description,
+        required=False, vocabulary_type=Vocabulary.MANAGED, weight=0,
+        multi_terms=False):
+    """
+    Create a new vocabulary.
+    Args:
+        user_id (int): primary key of the User
+        repo_slug (unicode): slug of the repository
+        name (unicode): vocab name
+        description (unicode): vocab description
+        required (bool): is it required?
+        vocabulary_type (unicode): on of the Vocabulary.vocabulary_type options
+        weight (int): vocab weight
+        multi_terms (bool): multiple terms possible on one LearningResource
+    Returns:
+        vocab (Vocabulary)
+    """
+    repo = get_repo(repo_slug, user_id)
+    vocab = Vocabulary.objects.create(
+        repository_id=repo.id,
+        name=name, description=description,
+        required=required, vocabulary_type=vocabulary_type,
+        weight=weight, multi_terms=multi_terms
+    )
+    return vocab

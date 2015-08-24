@@ -4,6 +4,7 @@ LORE test case
 
 from __future__ import unicode_literals
 import json
+import logging
 
 from rest_framework.status import (
     HTTP_200_OK,
@@ -23,6 +24,8 @@ from roles.permissions import GroupTypes
 
 API_BASE = '/api/v1/'
 REPO_BASE = '/api/v1/repositories/'
+
+log = logging.getLogger(__name__)
 
 
 def as_json(resp):
@@ -199,6 +202,7 @@ class RESTTestCase(LoreTestCase):
                 repo_base=REPO_BASE,
             ), vocab_dict)
         self.assertEqual(expected_status, resp.status_code)
+
         if resp.status_code == HTTP_201_CREATED:
             result_dict = as_json(resp)
             if not skip_assert:
@@ -528,7 +532,7 @@ class RESTTestCase(LoreTestCase):
             result_dict = as_json(resp)
             if not skip_assert:
                 for key, value in lr_dict.items():
-                    self.assertEqual(value, result_dict[key])
+                    self.assertEqual(sorted(value), sorted(result_dict[key]))
             return result_dict
 
     def put_learning_resource(

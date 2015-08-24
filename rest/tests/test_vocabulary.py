@@ -4,6 +4,8 @@ REST tests relating to vocabularies and terms
 
 from __future__ import unicode_literals
 
+import logging
+
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
@@ -25,6 +27,8 @@ from rest.serializers import (
 from taxonomy.models import Vocabulary, Term
 from learningresources.models import LearningResourceType
 
+log = logging.getLogger(__name__)
+
 
 class TestVocabulary(RESTTestCase):
     """
@@ -35,13 +39,14 @@ class TestVocabulary(RESTTestCase):
         Test for Vocabulary
         """
 
-        vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(0, vocabularies['count'])
+        original_count = self.get_vocabularies(self.repo.slug)['count']
 
         self.create_vocabulary(self.repo.slug)
-
         vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(1, vocabularies['count'])
+        self.assertEqual(
+            original_count + 1,
+            self.get_vocabularies(self.repo.slug)['count'],
+        )
         new_vocab_slug = vocabularies['results'][0]['slug']
 
         self.get_vocabulary(self.repo.slug, new_vocab_slug)
@@ -78,13 +83,19 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(input_dict['name'],
                          Vocabulary.objects.get(slug=new_vocab_slug).name)
         # never created a duplicate
-        self.assertEqual(1, Vocabulary.objects.count())
+        self.assertEqual(
+            original_count + 1,
+            self.get_vocabularies(self.repo.slug)['count'],
+        )
 
         # try deleting a vocabulary
         self.delete_vocabulary(self.repo.slug, new_vocab_slug)
 
         vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(0, vocabularies['count'])
+        self.assertEqual(
+            original_count,
+            self.get_vocabularies(self.repo.slug)['count'],
+        )
 
         # test missing repository
         self.create_vocabulary("missing", input_dict,
@@ -147,9 +158,10 @@ class TestVocabulary(RESTTestCase):
         vocab2_dict = dict(vocab1_dict)
         vocab2_dict['name'] = 'name 2'  # use different name to change slug
 
-        # this is ignored in POST but the assertions assume these don't exist
+        # The assertions in self.create_vocabulary assume these don't exist.
         del vocab2_dict['slug']
         del vocab2_dict['id']
+        del vocab2_dict['terms']
 
         vocab2_dict = self.create_vocabulary(
             other_repo_dict['slug'], vocab2_dict)
@@ -158,10 +170,10 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(2, repositories['count'])
 
         vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(1, vocabularies['count'])
+        self.assertEqual(2, vocabularies['count'])
 
         vocabularies = self.get_vocabularies(other_repo_dict['slug'])
-        self.assertEqual(1, vocabularies['count'])
+        self.assertEqual(2, vocabularies['count'])
 
         # test getting both vocabs with both repos
         self.get_vocabulary(
@@ -194,7 +206,7 @@ class TestVocabulary(RESTTestCase):
             repo_slug=self.repo.slug,
         ))
         self.assertEqual(resp.status_code, HTTP_200_OK)
-        self.assertEqual(1, as_json(resp)['count'])
+        self.assertEqual(2, as_json(resp)['count'])
 
         resp = self.client.get(
             "{repo_base}{repo_slug}"
@@ -220,7 +232,7 @@ class TestVocabulary(RESTTestCase):
         """Test REST access for term"""
         vocab1_slug = self.create_vocabulary(self.repo.slug)['slug']
         terms = self.get_terms(self.repo.slug, vocab1_slug)
-        self.assertEqual(0, terms['count'])
+        self.assertEqual(1, terms['count'])  # There's always "not set."
 
         input_dict = {
             "label": "term label",
@@ -240,7 +252,7 @@ class TestVocabulary(RESTTestCase):
         )
 
         terms = self.get_terms(self.repo.slug, vocab1_slug)
-        self.assertEqual(0, terms['count'])
+        self.assertEqual(1, terms['count'])
 
         self.create_term(self.repo.slug, vocab1_slug, input_dict)
         # create term again, prevented due to duplicate data validation error
@@ -277,7 +289,10 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(input_dict['label'],
                          Term.objects.get(slug=new_term_slug).label)
         # never created a duplicate
-        self.assertEqual(1, Term.objects.count())
+        self.assertEqual(
+            2,
+            self.get_terms(self.repo.slug, vocab1_slug)['count'],
+        )
 
         # test missing repository slug
         self.get_term(self.repo.slug, vocab1_slug, "missing",
@@ -317,9 +332,9 @@ class TestVocabulary(RESTTestCase):
         # that was just created
         # vocab2 has only term2
         terms = self.get_terms(self.repo.slug, vocab1_slug)
-        self.assertEqual(2, terms['count'])
+        self.assertEqual(3, terms['count'])
         terms = self.get_terms(self.repo.slug, vocab2_slug)
-        self.assertEqual(1, terms['count'])
+        self.assertEqual(2, terms['count'])
 
         # we shouldn't find term2 in vocab1 and vice versa
         self.get_term(self.repo.slug, vocab1_slug, term1['slug'])
@@ -398,16 +413,26 @@ class TestVocabulary(RESTTestCase):
 
     def test_vocabulary_pagination(self):
         """Test pagination for collections"""
-
+        # Ordering by ID is required, because due to the ORM's laziness,
+        # grabbing vocabs[0] later might return a different item.
+        vocabs = Vocabulary.objects.filter(
+            repository__id=self.repo.id).order_by('id')
+        # The curator status vocabulary will be there by default, and
+        # should still be the only thing there.
+        self.assertEqual(vocabs.count(), 1)
         expected = [
-            Vocabulary.objects.create(
+            VocabularySerializer(Vocabulary.objects.create(
                 repository=self.repo,
                 name="name{i}".format(i=i),
                 description="description",
                 required=True,
                 vocabulary_type=Vocabulary.FREE_TAGGING,
                 weight=1000,
-            ) for i in range(40)]
+            )).data for i in range(40)]
+
+        # The curator status vocabulary will be first by ID.
+        expected.append(VocabularySerializer(vocabs[0]).data)
+        expected.sort(key=lambda x: x["id"])
 
         resp = self.client.get(
             '{repo_base}{repo_slug}/vocabularies/'.format(
@@ -416,9 +441,18 @@ class TestVocabulary(RESTTestCase):
             ))
         self.assertEqual(HTTP_200_OK, resp.status_code)
         vocabularies = as_json(resp)
-        self.assertEqual(40, vocabularies['count'])
-        self.assertEqual([VocabularySerializer(x).data for x in expected[:20]],
-                         vocabularies['results'])
+        self.assertEqual(41, vocabularies['count'])
+
+        # Sort both lists in preparation for comparisons.
+        expected.sort(key=lambda x: x["id"])
+        from_api = sorted(vocabularies['results'], key=lambda x: x["id"])
+
+        expected_count = 20
+        self.assertEqual(expected_count, len(from_api))
+        self.assertEqual(
+            expected[:expected_count],
+            from_api,
+        )
 
         resp = self.client.get(
             '{repo_base}{repo_slug}/vocabularies/?page=2'.format(
@@ -427,14 +461,19 @@ class TestVocabulary(RESTTestCase):
             ))
         self.assertEqual(HTTP_200_OK, resp.status_code)
         vocabularies = as_json(resp)
-        self.assertEqual(40, vocabularies['count'])
-        self.assertEqual([VocabularySerializer(x).data
-                          for x in expected[20:40]], vocabularies['results'])
+        from_api = sorted(vocabularies['results'], key=lambda x: x["id"])
+        self.assertEqual(expected_count, len(from_api))
+        self.assertEqual(41, vocabularies['count'])
+        self.assertEqual(
+            from_api,
+            expected[expected_count:expected_count*2],
+        )
 
     def test_term_pagination(self):
         """Test pagination for collections"""
 
         vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+        not_set = self.get_terms(self.repo.slug, vocab_slug)["results"][0]
 
         expected = [
             self.create_term(
@@ -445,9 +484,9 @@ class TestVocabulary(RESTTestCase):
                     "weight": 1000,
                 }
             ) for i in range(40)]
-
+        expected.insert(0, not_set)
         terms = self.get_terms(self.repo.slug, vocab_slug)
-        self.assertEqual(40, terms['count'])
+        self.assertEqual(41, terms['count'])
         self.assertEqual([TermSerializer(x).data for x in expected[:20]],
                          terms['results'])
 
@@ -460,7 +499,7 @@ class TestVocabulary(RESTTestCase):
             ))
         self.assertEqual(HTTP_200_OK, resp.status_code)
         terms = as_json(resp)
-        self.assertEqual(40, terms['count'])
+        self.assertEqual(41, terms['count'])
         self.assertEqual([TermSerializer(x).data
                           for x in expected[20:40]], terms['results'])
 
@@ -608,9 +647,13 @@ class TestVocabularyAuthorization(RESTAuthTestCase):
         """Test create vocabulary"""
         self.logout()
         self.login(self.curator_user.username)
+        original_count = self.get_vocabularies(self.repo.slug)['count']
 
         self.create_vocabulary(self.repo.slug)
-        self.assertEqual(1, self.get_vocabularies(self.repo.slug)['count'])
+        self.assertEqual(
+            original_count + 1,
+            self.get_vocabularies(self.repo.slug)['count'],
+        )
 
         # login as author which doesn't have manage_taxonomy permissions
         self.logout()
@@ -724,12 +767,16 @@ class TestVocabularyAuthorization(RESTAuthTestCase):
 
     def test_vocabulary_get(self):
         """Test get vocabulary and vocabularies"""
+        original_count = self.get_vocabularies(self.repo.slug)['count']
         vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
 
         # author_user has view_repo permissions
         self.logout()
         self.login(self.author_user.username)
-        self.assertEqual(1, self.get_vocabularies(self.repo.slug)['count'])
+        self.assertEqual(
+            original_count + 1,
+            self.get_vocabularies(self.repo.slug)['count'],
+        )
         self.get_vocabulary(self.repo.slug, vocab_slug)
 
         # user_norepo has no view_repo permission
@@ -750,13 +797,14 @@ class TestVocabularyAuthorization(RESTAuthTestCase):
     def test_term_create(self):
         """Test create term"""
         vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+        original_count = self.get_terms(self.repo.slug, vocab_slug)['count']
 
         # curator has manage_taxonomy permission
         self.logout()
         self.login(self.curator_user.username)
 
         self.create_term(self.repo.slug, vocab_slug)
-        self.assertEqual(1, self.get_terms(
+        self.assertEqual(original_count + 1, self.get_terms(
             self.repo.slug, vocab_slug)['count'])
 
         # login as author which doesn't have manage_taxonomy permissions
@@ -863,11 +911,12 @@ class TestVocabularyAuthorization(RESTAuthTestCase):
         """Test retrieve term"""
         vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
         term_slug = self.create_term(self.repo.slug, vocab_slug)['slug']
+        expected_count = self.get_terms(self.repo.slug, vocab_slug)['count']
 
         # author_user has view_repo permissions
         self.logout()
         self.login(self.author_user.username)
-        self.assertEqual(1, self.get_terms(
+        self.assertEqual(expected_count, self.get_terms(
             self.repo.slug, vocab_slug)['count'])
         self.get_term(self.repo.slug, vocab_slug, term_slug)
 

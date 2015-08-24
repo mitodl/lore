@@ -21,7 +21,7 @@ from django.core.cache import caches
 from haystack import indexes
 from lxml import etree
 
-from learningresources.models import Course, LearningResource
+from learningresources.models import Course, LearningResource, get_preview_url
 
 log = logging.getLogger(__name__)
 
@@ -71,10 +71,7 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     Index configuration for the LearningResource model.
     """
     text = indexes.CharField(document=True)
-    resource_type = indexes.CharField(
-        model_attr="learning_resource_type",
-        faceted=True,
-    )
+    resource_type = indexes.CharField(faceted=True)
     course = indexes.CharField(faceted=True)
     run = indexes.CharField(faceted=True)
 
@@ -131,7 +128,8 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_preview_url(self, obj):  # pylint: disable=no-self-use
         """Define what goes into the "run" index."""
         data = get_course_metadata(obj.course_id)
-        return obj.get_preview_url(
+        return get_preview_url(
+            obj,
             org=data["org"],
             course_number=data["course_number"],
             run=data["run"],
@@ -142,6 +140,11 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         """Define what goes into the "course" index."""
         data = get_course_metadata(obj.course_id)
         return data["course_number"]
+
+    @staticmethod
+    def prepare_resource_type(obj):
+        """The name of the LearningResourceType."""
+        return obj.learning_resource_type.name
 
     def prepare(self, obj):
         """

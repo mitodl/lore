@@ -83,9 +83,12 @@ class TestRepository(RESTTestCase):
         repositories = self.get_repositories()
         self.assertEqual(2, repositories['count'])
 
+        original_count = self.get_vocabularies(self.repo.slug)['count']
         vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
-        vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(1, vocabularies['count'])
+        self.assertEqual(
+            original_count + 1,
+            self.get_vocabularies(self.repo.slug)['count']
+        )
 
         self.delete_repository(self.repo.slug,
                                expected_status=HTTP_405_METHOD_NOT_ALLOWED)
@@ -93,7 +96,7 @@ class TestRepository(RESTTestCase):
         self.delete_vocabulary(self.repo.slug, vocab_slug)
 
         vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(0, vocabularies['count'])
+        self.assertEqual(original_count, vocabularies['count'])
 
         self.delete_repository(self.repo.slug,
                                expected_status=HTTP_405_METHOD_NOT_ALLOWED)
