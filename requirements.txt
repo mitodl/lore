@@ -2,7 +2,7 @@
 celery==3.1.18
 Django==1.8.4
 django-appconf==1.0.1
-django-bootstrap3==6.2.1
+django-bootstrap3==6.2.2
 django-compressor==1.5
 django-haystack==2.4.0
 djangorestframework==3.2.2
