@@ -30,7 +30,8 @@ from learningresources.models import (
     LearningResource,
     StaticAsset,
     LearningResourceType,
-    STATIC_ASSET_BASEPATH
+    STATIC_ASSET_BASEPATH,
+    get_preview_url as resource_preview_url,
 )
 
 
@@ -244,7 +245,7 @@ class LearningResourceSerializer(ModelSerializer):
     @staticmethod
     def get_preview_url(obj):
         """Construct preview URL for LearningResource."""
-        return obj.get_preview_url()
+        return resource_preview_url(obj)
 
 
 class StaticAssetSerializer(ModelSerializer):

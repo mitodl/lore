@@ -3,11 +3,15 @@ Signals handlers
 """
 from __future__ import unicode_literals
 
+import logging
+
 from django.db.models.signals import post_migrate, post_save
 from django.dispatch import receiver
 
-from learningresources.models import Repository
+from learningresources.models import Repository, repo_created
 from roles.utils import sync_groups_permissions
+
+log = logging.getLogger(__name__)
 
 
 # pylint: disable=unused-argument
@@ -41,3 +45,6 @@ def add_creator_permission(sender, **kwargs):
         instance,
         GroupTypes.REPO_ADMINISTRATOR,
     )
+    # This signal is only fired upon initial creation of a repository,
+    # so receivers don't have to check whether the repository is new.
+    repo_created.send(sender=instance)

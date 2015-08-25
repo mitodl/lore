@@ -9,17 +9,20 @@ import string
 from shutil import rmtree
 from tempfile import mkdtemp
 
+from django.conf import settings
 from django.core.files import File
 from mock import MagicMock
 
 from .base import LoreTestCase
 from learningresources.models import (
     FILE_PATH_MAX_LENGTH,
+    LearningResource,
     LearningResourceType,
     Repository,
     static_asset_basepath,
     StaticAsset,
-    FilePathLengthException
+    FilePathLengthException,
+    get_preview_url,
 )
 
 
@@ -162,3 +165,28 @@ class TestModels(LoreTestCase):
                     asset=File(file_handle)
                 )
             )
+
+    def test_preview_url(self):
+        """
+        Test get_preview_url function. It returns different results depending
+        upon whether property url_name is None.
+        """
+        base_url = "{0}courses/org/".format(settings.LORE_PREVIEW_BASE_URL)
+        resource = LearningResource()
+
+        kwargs = {
+            'resource': resource,
+            'org': "org",
+            'course_number': 'babelfish',
+            'run': 'gazelle',
+        }
+
+        tests = (
+            (None, '{0}babelfish/gazelle/courseware'.format(base_url)),
+            ("WNYX", '{0}babelfish/gazelle/jump_to_id/WNYX'.format(base_url))
+        )
+
+        for url_name, wanted in tests:
+            resource.url_name = url_name
+            url = get_preview_url(**kwargs)
+            self.assertEqual(url, wanted)
