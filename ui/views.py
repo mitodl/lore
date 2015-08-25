@@ -35,8 +35,7 @@ from learningresources.models import (
     StaticAsset,
     STATIC_ASSET_PREFIX,
 )
-from roles.api import assign_user_to_repo_group
-from roles.permissions import GroupTypes, RepoPermission
+from roles.permissions import RepoPermission
 from search import get_sqs
 from search.sorting import LoreSortingFields
 from taxonomy.models import Vocabulary, Term
@@ -118,11 +117,6 @@ def create_repo(request):
         form = RepositoryForm(data=request.POST)
         if form.is_valid():
             repo = form.save(request.user)
-            assign_user_to_repo_group(
-                request.user,
-                repo,
-                GroupTypes.REPO_ADMINISTRATOR
-            )
             return redirect(reverse("repositories", args=(repo.slug,)))
     return render(
         request,
@@ -287,7 +281,7 @@ def serve_static_assets(request, path):
         raise PermissionDenied()
     filename = os.path.basename(file_path)
     response = StreamingHttpResponse(
-        FileWrapper(open(file_path), 'rb'),
+        FileWrapper(open(file_path, 'rb')),
         content_type=mimetypes.guess_type(file_path)[0]
     )
     response['Content-Length'] = os.path.getsize(file_path)

@@ -50,47 +50,20 @@ def get_course_metadata(course_id):
     return data
 
 
-def get_vocabs(course_id, resource_id, solo_update=False):
+def get_vocabs(resource_id):
     """
-    Caches and returns taxonomy metadata for a course.
+    Returns taxonomy metadata for a course.
     Args:
-        course_id (int): Primary key of Course
         resource_id (int): Primary key of LearningResource
     Returns:
         data (dict): Vocab/term data for course.
     """
-    key = "vocab_cache_{0}".format(resource_id)
-    cached = cache.get(key)
-    if (solo_update is False) and (cached is not None):
-        return cached
-
-    # Pre-populate the cache with blank values in case there are no
-    # terms for that LearningResource. Otherwise, looking up the vocabularies
-    # for that resource will refill the cache for the entire course. If there
-    # is already a value, retain it.
-    resource_ids = LearningResource.objects.filter(
-        course__id=course_id).values_list('id', flat=True)
-    for resource_id in resource_ids:
-        rkey = "vocab_cache_{0}".format(resource_id)
-        cache.set(rkey, cache.get(rkey, {}))
-    value = {}
-
-    term_cache = defaultdict(lambda: defaultdict(list))
+    data = defaultdict(list)
     rels = LearningResource.terms.related.through.objects.select_related(
-        "term").filter(learningresource__course__id=course_id)
-    if solo_update is True:
-        rels = rels.filter(learningresource_id=resource_id)
+        "term").filter(learningresource__id=resource_id)
     for rel in rels.iterator():
-        term_cache[rel.learningresource_id][
-            rel.term.vocabulary_id].append(rel.term_id)
-    for lid, data in term_cache.items():
-        lkey = "vocab_cache_{0}".format(lid)
-        if lkey == key:
-            value = dict(data)
-        cache.set(lkey, dict(data))
-    # Return `value` directly, not from the cache. Otherwise, if caching
-    # is disabled (TIMEOUT == 0), this will always return nothing.
-    return value
+        data[rel.term.vocabulary_id].append(rel.term_id)
+    return dict(data)
 
 
 class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
@@ -182,7 +155,7 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         as well, but don't because explicit is better than implicit.
         """
         prepared = super(LearningResourceIndex, self).prepare(obj)
-        for vocab_id, term_ids in get_vocabs(obj.course_id, obj.id).items():
+        for vocab_id, term_ids in get_vocabs(obj.id).items():
             # Use the integer primary keys as index values. This saves space,
             # and also avoids all issues dealing with "special" characters.
             prepared[vocab_id] = term_ids

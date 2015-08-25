@@ -16,7 +16,7 @@ from django.utils.encoding import python_2_unicode_compatible
 from django.shortcuts import get_object_or_404
 
 from audit.models import BaseModel
-from roles.api import roles_init_new_repo, roles_update_repo
+from roles.api import roles_update_repo
 from roles.permissions import RepoPermission
 from lore.settings import LORE_PREVIEW_BASE_URL
 
@@ -201,7 +201,6 @@ class Repository(BaseModel):
     @transaction.atomic
     def save(self, *args, **kwargs):
         """Handle slugs and groups"""
-        is_create = False
         is_update = False
         if self.id is None or self.name != get_object_or_404(
                 Repository, id=self.id).name:
@@ -216,11 +215,7 @@ class Repository(BaseModel):
                 count += 1
             self.slug = slug
             # check if it's necessary to initialize the permissions
-            if self.id is None:
-                is_create = True
         new_repository = super(Repository, self).save(*args, **kwargs)
-        if is_create:
-            roles_init_new_repo(self)
         if is_update:
             roles_update_repo(self, old_slug)
         return new_repository
