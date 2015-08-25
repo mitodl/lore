@@ -1,0 +1,35 @@
+{
+  "AWSEBDockerrunVersion": 2,
+  "containerDefinitions": [
+    {
+      "name": "lore-web",
+      "image": "mitodl/lore-manual:eb_test",
+      "essential": true,
+      "memory": 384,
+      "environment": [
+        {
+          "name": "PORT",
+          "value": "8070"
+        }
+      ],
+      "portMappings": [
+        {
+          "hostPort": 80,
+          "containerPort": 8070
+        }
+      ]
+    },
+    {
+      "name": "lore-worker",
+      "image": "mitodl/lore:eb_test",
+      "environment": [
+        {
+          "name": "WORKER",
+          "value": "True"
+        }
+      ],
+      "essential": true,
+      "memory": 128
+    }
+  ]
+}
