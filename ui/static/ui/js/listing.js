@@ -330,9 +330,20 @@ define('listing',
         window.location = "?" + URI().search(urlMap).query();
       };
 
+      var showConfirmationDialog = function(options) {
+        var container = $("#confirmation-container")[0];
+        Utils.showConfirmationDialog(
+          options,
+          container
+        );
+      };
+
       Pagination.loader(pageNum, numPages, updatePage,
         $("#lore-pagination")[0]);
-      ManageTaxonomies.loader(repoSlug, $('#taxonomy-component')[0]);
+      ManageTaxonomies.loader(
+        repoSlug,
+        $('#taxonomy-component')[0],
+        showConfirmationDialog);
     };
 
     return {

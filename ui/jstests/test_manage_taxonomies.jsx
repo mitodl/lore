@@ -220,8 +220,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       var done = assert.async();
 
       var addTermCalled = 0;
+      var deleteVocabularyCalled = 0;
       var addTerm = function() {
         addTermCalled += 1;
+      };
+      var deleteVocabulary = function() {
+        deleteVocabularyCalled += 1;
       };
       var reportMessage = function() {};
       var afterMount = function(component) {
@@ -244,30 +248,41 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             'li'
         );
         assert.equal(itemList.length, 3);
-        //test enter text in input text
-        var inputNode = React.addons.TestUtils.
-          findRenderedDOMComponentWithTag(
-            component,
-            'input'
-        );
-        React.addons.TestUtils.Simulate.change(
-          inputNode,
-          {target: {value: 'test12'}}
-        );
-        component.forceUpdate(function() {
-          node = React.findDOMNode(component);
-          var textbox = $(node).find("input")[0];
-          assert.equal(
-            'test12',
-            component.state.newTermLabel
-          );
-          React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
-          assert.equal(addTermCalled, 0);
 
-          React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
-          waitForAjax(1, function() {
-            assert.equal(addTermCalled, 1);
-            done();
+        var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+          component,
+          'delete-vocabulary'
+        );
+        var deleteVocabularyButton = actionButtons[0];
+        React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+        component.forceUpdate(function() {
+          assert.equal(deleteVocabularyCalled, 1);
+          //test enter text in input text
+          var inputNode = React.addons.TestUtils.
+            findRenderedDOMComponentWithTag(
+              component,
+              'input'
+          );
+          React.addons.TestUtils.Simulate.change(
+            inputNode,
+            {target: {value: 'test12'}}
+          );
+          component.forceUpdate(function() {
+            node = React.findDOMNode(component);
+            var textbox = $(node).find("input")[0];
+            assert.equal(
+              'test12',
+              component.state.newTermLabel
+            );
+            React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
+            assert.equal(addTermCalled, 0);
+
+            React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
+            waitForAjax(1, function() {
+              assert.equal(addTermCalled, 1);
+              done();
+            });
           });
         });
       };
@@ -277,6 +292,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             vocabulary={vocabulary}
             terms={vocabulary.terms}
             reportMessage={reportMessage}
+            deleteVocabulary={deleteVocabulary}
             addTerm={addTerm}
             repoSlug="repo"
             ref={afterMount}
@@ -966,6 +982,116 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         <TaxonomyComponent
           vocabularies={vocabularies}
           repoSlug="repo"
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that delete vocabulary works in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var userSelectedConfirm = 0;
+      var showConfirmationDialog = function (options) {
+        options.confirmationSuccess(true, vocabulary);
+        userSelectedConfirm += 1;
+      };
+
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/" + vocabulary.slug,
+        type: "DELETE"
+      });
+
+      var afterMount = function(component) {
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'delete-vocabulary'
+          );
+          var deleteVocabularyButton = actionButtons[0];
+          React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+          component.forceUpdate(function() {
+            waitForAjax(1, function() {
+              assert.equal(userSelectedConfirm, 1);
+              assert.equal(
+                component.state.vocabularies.length,
+                0
+              );
+              done();
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
+          repoSlug="repo"
+          renderConfirmationDialog={showConfirmationDialog}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that delete vocabulary ajax call' +
+    ' fail in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var userSelectedConfirm = 0;
+      var showConfirmationDialog = function (options) {
+        options.confirmationSuccess(true, vocabulary);
+        userSelectedConfirm += 1;
+      };
+
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/" + vocabulary.slug,
+        type: "DELETE",
+        status: 400
+      });
+
+      var afterMount = function(component) {
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'delete-vocabulary'
+          );
+          var deleteVocabularyButton = actionButtons[0];
+          React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+          component.forceUpdate(function() {
+            waitForAjax(1, function() {
+              assert.equal(userSelectedConfirm, 1);
+              assert.equal(
+                component.state.vocabularies.length,
+                1
+              );
+              var message = "Unable to delete vocabulary '" +
+                vocabulary.name + "'";
+              assert.deepEqual(
+                component.state.message,
+                {error: message}
+              );
+              done();
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
+          repoSlug="repo"
+          renderConfirmationDialog={showConfirmationDialog}
           ref={afterMount}
         />
       );
