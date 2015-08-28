@@ -43,12 +43,13 @@ define('listing_resources', ['react', 'jquery', 'lodash'],
           badge = <span> <span className='badge'>
             {this.props.count}
             </span></span>;
-        }
 
-        return <button className="btn btn-primary"
-                       onClick={this.props.openExportsPanel}>
-          Export{badge}
-        </button>;
+          return <button className="btn btn-primary"
+                         onClick={this.props.openExportsPanel}>
+            Export{badge}
+          </button>;
+        }
+        return null;
       }
     });
 
