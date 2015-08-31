@@ -269,7 +269,7 @@ define('listing_resources', ['react', 'jquery', 'lodash'],
     return {
       loader: function(listingOptions, container, openExportsPanel,
                        openResourcePanel) {
-        React.render(
+        return React.render(
           <Listing {...listingOptions}
                    openExportsPanel={openExportsPanel}
                    openResourcePanel={openResourcePanel}

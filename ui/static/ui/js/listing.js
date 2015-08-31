@@ -203,8 +203,14 @@ define('listing',
         }
       });
 
-      // Need to declare this above assignment due to circular dependencies.
-      var listingResources;
+      /**
+       * Rerender listing resources
+       * @returns {ReactComponent}
+       */
+      var renderListingResources = function() {
+        return ListingResources.loader(listingOptions,
+          container, openExportsPanel, openResourcePanel);
+      };
 
       /**
        * Clears exports on page. Assumes DELETE to clear on server already
@@ -212,7 +218,11 @@ define('listing',
        */
       var clearExports = function () {
         // Clear export links.
-        listingResources.setState({exports: []});
+        listingOptions = $.extend({}, listingOptions);
+        listingOptions.allExports = [];
+
+        var listingResources = renderListingResources();
+        listingResources.setState({exportSelection: {}});
       };
 
       var openExportsPanel = function() {
@@ -231,8 +241,7 @@ define('listing',
 
       // Listing resources React object. We need this variable to allow
       // clearExports to tell it to clear exports.
-      listingResources = ListingResources.loader(listingOptions,
-        container, openExportsPanel, openResourcePanel);
+      renderListingResources();
 
       // Close exports panel.
       $('.cd-panel-exports').on('click', function (event) {
