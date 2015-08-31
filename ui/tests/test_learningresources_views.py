@@ -12,7 +12,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 
 import ui.urls
-from learningresources.models import Repository, StaticAsset
+from learningresources.models import Repository, StaticAsset, get_preview_url
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
 from search.sorting import LoreSortingFields
@@ -295,7 +295,7 @@ class TestViews(LoreTestCase):
             self.resource.description_path, resource['description_path'])
         self.assertEqual(self.resource.description, resource['description'])
         self.assertEqual(
-            self.resource.get_preview_url(), resource['preview_url'])
+            get_preview_url(resource), resource['preview_url'])
 
     def test_serve_media(self):
         """Hit serve media"""
