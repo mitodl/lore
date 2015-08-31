@@ -87,28 +87,28 @@ define('listing',
        *
        * @param {Number} pageNum - current page number
        * @param {Number} maxPages - total number of pages
-       * @param {JQuery} callerElem - Reference to pagination status link
+       * @param {Element} callerElem - Reference to pagination status link
        */
       function navigateToPage(pageNum, maxPages, callerElem) {
-        var replaceWith = $(
+        var $replaceWith = $(
           '<input name="search_temp" type="number" ' +
             'value="' + pageNum + '" size="10" ' +
           'class="form-control repo-page-status"/>'
         );
-        var callerSelector = $(callerElem);
+        var $callerSelector = $(callerElem);
 
-        callerSelector.hide();
-        callerSelector.after(replaceWith);
-        replaceWith.focus();
-        $(replaceWith).focusout(function() {
+        $callerSelector.hide();
+        $callerSelector.after($replaceWith);
+        $replaceWith.focus();
+        $($replaceWith).focusout(function() {
           processPage(
               pageNum,
               maxPages,
-              replaceWith,
-              callerSelector
+              $replaceWith,
+              $callerSelector
             );
         });
-        $(replaceWith).keypress(function(e) {
+        $($replaceWith).keypress(function(e) {
           var key = e.which;
           // the enter key code
           if (key === 13) {
@@ -116,8 +116,8 @@ define('listing',
             processPage(
               pageNum,
               maxPages,
-              replaceWith,
-              callerSelector
+              $replaceWith,
+              $callerSelector
             );
           }
         });
@@ -128,12 +128,12 @@ define('listing',
        *
        * @param {Number} pageNum - current page number
        * @param {Number} maxPages - total number of pages
-       * @param {JQuery} replaceWith - text field selector
-       * @param {JQuery} callerSelector - pagination status selector
+       * @param {jQuery} $replaceWith - text field selector
+       * @param {jQuery} $callerSelector - pagination status selector
        */
-      function processPage(pageNum, maxPages, replaceWith, callerSelector) {
-        var newPageNum = replaceWith.val();
-        replaceWith.remove();
+      function processPage(pageNum, maxPages, $replaceWith, $callerSelector) {
+        var newPageNum = $replaceWith.val();
+        $replaceWith.remove();
         if (newPageNum !== pageNum &&
           newPageNum > 0 &&
           newPageNum <= maxPages) {
@@ -156,7 +156,7 @@ define('listing',
             url
           );
         }
-        callerSelector.show();
+        $callerSelector.show();
       }
 
       $('[data-toggle=popover]').popover();
@@ -341,12 +341,12 @@ define('listing',
           }
           showMembersAlert(message, 'danger');
         });
+      });
 
-        $("a#repo_page_status").click(function() {
-          var pageNum = $(this).data('page-num');
-          var maxPages = $(this).data('max-page-num');
-          navigateToPage(pageNum, maxPages, this);
-        });
+      $("a#repo_page_status").click(function() {
+        var pageNum = $(this).data('page-num');
+        var maxPages = $(this).data('max-page-num');
+        navigateToPage(pageNum, maxPages, this);
       });
 
       ManageTaxonomies.loader(repoSlug, $('#taxonomy-component')[0]);
