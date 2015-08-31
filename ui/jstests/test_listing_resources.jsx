@@ -56,8 +56,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       sortingOptions: sortingOptions,
       loggedInUsername: "user",
       qsPrefix: "qs",
-      imageDir: "images",
-      showExportButton: true
+      imageDir: "images"
     };
 
     // NOTE: these tests will show 404 for /images/*.png due to these
@@ -309,22 +308,22 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       assert.equal(getImageFile('some other value'), 'ic-code.png');
     });
 
-    QUnit.test('Assert showExportButton', function(assert) {
+    QUnit.test('Assert export button visibility', function(assert) {
 
-      var listingOptionsWithFalse = $.extend({}, listingOptions);
-      listingOptionsWithFalse.showExportButton = false;
+      var listingOptionsWithoutExports = $.extend({}, listingOptions);
+      listingOptionsWithoutExports.allExports = [];
 
       var doneFalse = assert.async();
       var afterMountFalse = function(component) {
         var node = React.findDOMNode(component);
         var $exportBadge = $(node).find(".btn:contains('Export') .badge");
-        assert.equal($exportBadge.text(), "");
+        assert.equal($exportBadge.size(), 0);
 
         doneFalse();
       };
 
       React.addons.TestUtils.renderIntoDocument(
-        <Listing {...listingOptionsWithFalse}
+        <Listing {...listingOptionsWithoutExports}
           ref={afterMountFalse} />
       );
 

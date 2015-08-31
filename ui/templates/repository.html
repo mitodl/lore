@@ -95,8 +95,7 @@ require(["listing", "jquery"], function(Listing, $) {
     sortingOptions: {{ sorting_options_json|safe }},
     loggedInUsername: "{{ request.user.username|escapejs }}",
     qsPrefix: "{{ qs_prefix|escapejs }}",
-    imageDir: "{% static "ui/images"|escapejs %}",
-    showExportButton: {{ show_export_button_json|safe }}
+    imageDir: "{% static "ui/images"|escapejs %}"
   };
   $(function() {
     Listing.loader(listingOptions, $("#listing")[0]);

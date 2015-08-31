@@ -201,24 +201,25 @@ define('listing_resources', ['react', 'jquery', 'lodash'],
         }
 
         var exportButton = null;
-        if (this.props.showExportButton) {
-          var count = 0;
-          _.each(this.props.allExports, function(resourceId) {
-            if (!_.has(thiz.state.exportSelection, resourceId)) {
-              // exportSelection only contains info about exports on the current
-              // page, so if it's not in there we can safely count it.
-              count++;
-            }
-          });
-          _.each(thiz.state.exportSelection, function(selected) {
-            if (selected) {
-              // If it is on the current page count it if it is checked.
-              count++;
-            }
-          });
+        var count = 0;
+        _.each(this.props.allExports, function(resourceId) {
+          if (!_.has(thiz.state.exportSelection, resourceId)) {
+            // exportSelection only contains info about exports on the current
+            // page, so if it's not in there we can safely count it.
+            count++;
+          }
+        });
+        _.each(thiz.state.exportSelection, function(selected) {
+          if (selected) {
+            // If it is on the current page count it if it is checked.
+            count++;
+          }
+        });
 
-          exportButton = <ExportButton count={count}
-            openExportsPanel={thiz.props.openExportsPanel} />;
+        if (count > 0) {
+          exportButton = <ExportButton
+            count={count}
+            openExportsPanel={thiz.props.openExportsPanel}/>;
         }
 
         return <div>

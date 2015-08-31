@@ -266,9 +266,6 @@ class RepositoryView(FacetedSearchView):
         resources = [make_dict(result) for result in page]
         exports = self.request.session.get(
             'learning_resource_exports', {}).get(self.repo.slug, [])
-        show_export_button = LearningResource.objects.filter(
-            course__repository__id=self.repo.id
-        ).exists()
 
         sorting_options = {
             "current": LoreSortingFields.get_sorting_option(
@@ -285,8 +282,7 @@ class RepositoryView(FacetedSearchView):
             "sorting_options": sorting_options,
             "sorting_options_json": json.dumps(sorting_options),
             "resources_json": json.dumps(resources),
-            "exports_json": json.dumps(exports),
-            "show_export_button_json": json.dumps(show_export_button)
+            "exports_json": json.dumps(exports)
         })
         return context
 
