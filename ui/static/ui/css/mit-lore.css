@@ -554,3 +554,12 @@ input.repo-page-status {
     top: 27%;
     transform: translateY(-27%);
 }
+
+.edit-term-box-show {
+    width: 50%;
+    display: inline;
+}
+
+.edit-term-box-hide {
+    display: none;
+}

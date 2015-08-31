@@ -190,27 +190,217 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
   QUnit.test('Assert that TermComponent renders properly',
     function(assert) {
       assert.ok(TermComponent, "class object not found");
+      var done = assert.async();
       var term = {
         "id": 9,
         "slug": "test",
         "label": "test",
         "weight": 1
       };
-      var termComponentRendered = React.addons.TestUtils.
+      var parentUpdateCount = 0;
+      var updateTerm = function() {
+        parentUpdateCount += 1;
+      };
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test",
+        responseText: term,
+        type: "PUT"
+      });
+      var afterMount = function(component) {
+        var labels = React.addons.TestUtils.
+        scryRenderedDOMComponentsWithTag(
+          component,
+          'label'
+        );
+        //testing label value render
+        var termLable = labels[0];
+        var label = termLable.getDOMNode();
+        assert.equal(label.innerHTML, term.label);
+        assert.equal(component.state.formatActionState, 'edit');
+        var formatButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'format-button'
+        );
+        var cancelButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'revert-button'
+        );
+        var editTermBox = React.addons.TestUtils.
+        findRenderedDOMComponentWithTag(
+          component,
+          'input'
+        );
+        //open edit mode
+        React.addons.TestUtils.Simulate.click(formatButton);
+        component.forceUpdate(function() {
+          assert.equal(component.state.formatActionState, 'save');
+          //edit term
+          React.addons.TestUtils.Simulate.change(
+            editTermBox, {target: {value: "TestB"}}
+          );
+          component.forceUpdate(function() {
+            //save term
+            React.addons.TestUtils.Simulate.click(formatButton);
+            component.forceUpdate(function() {
+              //afer saved term using api
+              waitForAjax(1, function() {
+                //term state reset
+                assert.equal(component.state.formatActionState, 'edit');
+                // term is update in parent
+                assert.equal(parentUpdateCount, 1);
+                // Edit term again
+                React.addons.TestUtils.Simulate.click(formatButton);
+                component.forceUpdate(function() {
+                  assert.equal(component.state.formatActionState, 'save');
+                  React.addons.TestUtils.Simulate.change(
+                    editTermBox, {target: {value: "TestB"}}
+                  );
+                  component.forceUpdate(function () {
+                    // press cancel button and assert term layout is reset.
+                    React.addons.TestUtils.Simulate.click(cancelButton);
+                    component.forceUpdate(function () {
+                      assert.equal(component.state.formatActionState, 'edit');
+                      //assert editbox is hide (UI reset)
+                      assert.equal(
+                        component.state.editTextClass,
+                        'form-control edit-term-box-hide'
+                      );
+                      // Edit again term with same label
+                      React.addons.TestUtils.Simulate.click(formatButton);
+                      component.forceUpdate(function() {
+                        assert.equal(component.state.formatActionState, 'save');
+                        React.addons.TestUtils.Simulate.change(
+                          editTermBox, {target: {value: "test"}}
+                        );
+                        component.forceUpdate(function() {
+                          // save term with label equals to previous label
+                          React.addons.TestUtils.Simulate.click(formatButton);
+                          component.forceUpdate(function() {
+                            //assert editbox is hide (UI reset)
+                            assert.equal(
+                              component.state.editTextClass,
+                              'form-control edit-term-box-hide'
+                            );
+                            done();
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      };
+
+      React.addons.TestUtils.
         renderIntoDocument(
           <TermComponent
             term={term}
+            repoSlug="repo"
+            updateTerm={updateTerm}
+            vocabularySlug={vocabulary.slug}
+            ref={afterMount}
           />
         );
+    }
+  );
 
-      var labelComponent = React.addons.TestUtils.
-        findRenderedDOMComponentWithTag(
-          termComponentRendered,
+  QUnit.test('Assert that ajax fail on update term TermComponent',
+    function(assert) {
+      assert.ok(TermComponent, "class object not found");
+      var done = assert.async();
+      var term = {
+        "id": 9,
+        "slug": "test",
+        "label": "test",
+        "weight": 1
+      };
+      var parentUpdateCount = 0;
+      var updateTerm = function() {
+        parentUpdateCount += 1;
+      };
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test",
+        responseText: term,
+        type: "PUT",
+        status: 400
+      });
+      var afterMount = function(component) {
+        var labels = React.addons.TestUtils.
+        scryRenderedDOMComponentsWithTag(
+          component,
           'label'
-      );
-      //testing label value render
-      var label = labelComponent.getDOMNode();
-      assert.equal(label.innerHTML, term.label);
+        );
+        //testing label value render
+        var termLable = labels[0];
+        var label = termLable.getDOMNode();
+        assert.equal(label.innerHTML, term.label);
+        assert.equal(component.state.formatActionState, 'edit');
+        var formatButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'format-button'
+        );
+        var cancelButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'revert-button'
+        );
+        var editTermBox = React.addons.TestUtils.
+        findRenderedDOMComponentWithTag(
+          component,
+          'input'
+        );
+        React.addons.TestUtils.Simulate.click(formatButton);
+        component.forceUpdate(function() {
+          assert.equal(component.state.formatActionState, 'save');
+          React.addons.TestUtils.Simulate.change(
+            editTermBox, {target: {value: "TestB"}}
+          );
+          component.forceUpdate(function() {
+            React.addons.TestUtils.Simulate.click(formatButton);
+            component.forceUpdate(function() {
+              waitForAjax(1, function() {
+                assert.equal(
+                  component.state.errorMessage, 'Unable to update term'
+                );
+                assert.equal(component.state.formatActionState, 'save');
+                assert.equal(parentUpdateCount, 0);
+                React.addons.TestUtils.Simulate.change(
+                    editTermBox, {target: {value: "TestB"}}
+                );
+                //after unable to save you can reset edit mode
+                component.forceUpdate(function () {
+                  React.addons.TestUtils.Simulate.click(cancelButton);
+                  component.forceUpdate(function () {
+                    assert.equal(component.state.formatActionState, 'edit');
+                    //assert editbox is hide (UI reset)
+                    assert.equal(
+                      component.state.editTextClass,
+                      'form-control edit-term-box-hide'
+                    );
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.
+        renderIntoDocument(
+          <TermComponent
+            term={term}
+            repoSlug="repo"
+            updateTerm={updateTerm}
+            vocabularySlug={vocabulary.slug}
+            ref={afterMount}
+          />
+        );
     }
   );
 
@@ -245,26 +435,31 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         );
         assert.equal(itemList.length, 3);
         //test enter text in input text
-        var inputNode = React.addons.TestUtils.
-          findRenderedDOMComponentWithTag(
+        var inputNodes = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithTag(
             component,
             'input'
         );
+        var addTermInputBox = inputNodes[
+          vocabulary.terms.length
+        ];
         React.addons.TestUtils.Simulate.change(
-          inputNode,
+          addTermInputBox,
           {target: {value: 'test12'}}
         );
         component.forceUpdate(function() {
-          node = React.findDOMNode(component);
-          var textbox = $(node).find("input")[0];
           assert.equal(
             'test12',
             component.state.newTermLabel
           );
-          React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
+          React.addons.TestUtils.Simulate.keyUp(
+            addTermInputBox, {key: "x"}
+          );
           assert.equal(addTermCalled, 0);
 
-          React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
+          React.addons.TestUtils.Simulate.keyUp(
+            addTermInputBox, {key: "Enter"}
+          );
           waitForAjax(1, function() {
             assert.equal(addTermCalled, 1);
             done();
@@ -965,6 +1160,93 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       (
         <TaxonomyComponent
           vocabularies={vocabularies}
+          repoSlug="repo"
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that edit term works in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var term = {
+        "id": 1,
+        "slug": "easy",
+        "label": "TestB",
+        "weight": 1
+      };
+      var afterMount = function(component) {
+        assert.equal(
+          component.state.vocabularies.length,
+          0
+        );
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          assert.equal(
+            component.state.vocabularies[0].terms.length,
+            2
+          );
+          var updateTermUrl = "/api/v1/repositories/repo/vocabularies/" +
+              component.state.vocabularies[0].vocabulary.slug + "/terms/" +
+              component.state.vocabularies[0].terms[0].slug;
+          TestUtils.initMockjax({
+            url: updateTermUrl,
+            responseText: term,
+            type: "PUT"
+          });
+          var formatButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'format-button'
+          );
+          var formatButton = formatButtons[0];
+          var editTermBoxes = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'edit-term-box-hide'
+          );
+          var editTermBox = editTermBoxes[0];
+          //open edit mode
+          React.addons.TestUtils.Simulate.click(formatButton);
+          component.forceUpdate(function() {
+            //edit term
+            React.addons.TestUtils.Simulate.change(
+              editTermBox, {target: {value: "TestB"}}
+            );
+            component.forceUpdate(function() {
+              //save term
+              React.addons.TestUtils.Simulate.click(formatButton);
+              component.forceUpdate(function() {
+                //after saved term using api
+                waitForAjax(1, function () {
+                  //assert term update
+                  assert.equal(
+                    component.state.vocabularies.length,
+                    1
+                  );
+                  assert.equal(
+                    component.state.vocabularies[0].terms.length,
+                    2
+                  );
+                  assert.equal(
+                    component.state.vocabularies[0].terms[0].label,
+                    "TestB"
+                  );
+                  done();
+                });
+              });
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
           repoSlug="repo"
           ref={afterMount}
         />

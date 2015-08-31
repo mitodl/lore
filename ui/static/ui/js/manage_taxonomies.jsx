@@ -6,24 +6,116 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
   var ICheckbox = Utils.ICheckbox;
 
   var TermComponent = React.createClass({
+    mixins: [React.addons.LinkedStateMixin],
+    getInitialState: function() {
+      return {
+        formatActionClassName: 'fa fa-pencil',
+        formatActionState: 'edit',
+        editTextClass: 'form-control edit-term-box-hide',
+        listClassName: 'form-group',
+        label: ''
+      };
+    },
+    componentWillMount: function() {
+      if (this.props.term.label) {
+        this.setState({label: this.props.term.label});
+      }
+    },
     render: function () {
-      return <li>
+      var editBoxId = "edit_" + this.props.term.id;
+      return <li className={this.state.listClassName}>
         <span className="utility-features">
-          <a href="#">
-            <i className="fa fa-pencil"></i>
-          </a> <a href="#">
+          <a onClick={this.formatHandler} className="format-button">
+            <i className={this.state.formatActionClassName}></i>
+          </a> <a onClick={this.revertHandler} className="revert-button">
             <i className="fa fa-remove"></i>
           </a>
-        </span> <label className="term-title"
-        htmlFor="minimal-checkbox-1-11">{this.props.term.label}</label></li>;
+        </span>
+        <label className="term-title" id={this.props.term.id}
+        htmlFor="minimal-checkbox-1-11">{this.state.label}</label> <input
+        name="exit_term_temp" type="text" id={editBoxId}
+          valueLink={this.linkState('label')}
+          className={this.state.editTextClass}/> <label htmlFor={editBoxId}
+        className="help-inline control-label">{this.state.errorMessage}</label>
+      </li>;
+    },
+    formatHandler: function() {
+      var formatActionState = this.state.formatActionState;
+      var replaceWith = $('#edit_' + this.props.term.id);
+      var labelSelector = $('#' + this.props.term.id);
+
+      if (formatActionState === 'edit') {
+        this.setState({
+          formatActionClassName: "fa fa-save",
+          formatActionState: 'save',
+          editTextClass: 'form-control edit-term-box-show'
+        });
+        labelSelector.hide();
+        replaceWith.focus();
+      } else if (formatActionState === 'save') {
+        if (this.state.label !== this.props.term.label) {
+          this.updateTermSubmit();
+        } else {
+          this.resetUtilityFeatures();
+        }
+      }
+    },
+    revertHandler : function() {
+      var formatActionState = this.state.formatActionState;
+      if (formatActionState === 'save') {
+        // user is in edit mode. Cancel edit if user presses cross icon.
+        this.resetUtilityFeatures();
+        this.setState({label: this.props.term.label});
+      }
+    },
+    resetUtilityFeatures: function() {
+      var labelSelector = $('#' + this.props.term.id);
+      this.setState({
+        formatActionClassName: "fa fa-pencil",
+        formatActionState: 'edit',
+        editTextClass: 'form-control edit-term-box-hide',
+        listClassName: 'form-group',
+        errorMessage: ''
+      });
+      labelSelector.show();
+    },
+    updateTermSubmit: function() {
+      var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/' + this.props.vocabularySlug + '/terms/' +
+        this.props.term.slug;
+      var thiz = this;
+      var termData = {
+        label: this.state.label,
+        weight: this.props.term.weight
+      };
+      $.ajax({
+        type: 'PUT',
+        url: API_ROOT_VOCAB_URL,
+        data: JSON.stringify(termData),
+        contentType: "application/json"
+      }).fail(function() {
+        thiz.setState({
+          listClassName: 'form-group has-error',
+          errorMessage: 'Unable to update term'
+        });
+      }).done(function(term) {
+        thiz.props.updateTerm(thiz.props.vocabularySlug, term);
+        thiz.resetUtilityFeatures();
+      });
     }
   });
 
   var VocabularyComponent = React.createClass({
     mixins: [React.addons.LinkedStateMixin],
     render: function () {
+      var thiz = this;
       var items = _.map(this.props.terms, function (term) {
-        return <TermComponent term={term} key={term.slug} />;
+        return <TermComponent
+          updateTerm={thiz.props.updateTerm}
+          vocabularySlug={thiz.props.vocabulary.slug}
+          repoSlug={thiz.props.repoSlug}
+          term={term}
+          key={term.slug} />;
       });
 
       return <div className="panel panel-default">
@@ -114,6 +206,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
       var thiz = this;
       var items = _.map(this.props.vocabularies, function (obj) {
         return <VocabularyComponent
+          updateTerm={thiz.props.updateTerm}
           vocabulary={obj.vocabulary}
           terms={obj.terms}
           key={obj.vocabulary.slug}
@@ -338,11 +431,28 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
       });
       this.setState({vocabularies: vocabularies});
     },
+    updateTerm: function(vocabSlug, term) {
+      var vocabularies = this.state.vocabularies;
+      var vocabIndex = _.findIndex(vocabularies, function(vocabularyObj) {
+        return vocabularyObj.vocabulary.slug === vocabSlug;
+      });
+      if (vocabIndex > -1) {
+        var terms = vocabularies[vocabIndex].terms;
+        var termIndex = _.findIndex(terms, function(termObj) {
+          return termObj.id === term.id;
+        });
+        if (termIndex > -1) {
+          vocabularies[vocabIndex].terms[termIndex] = term;
+        }
+        this.setState({vocabularies: vocabularies});
+      }
+    },
     render: function() {
       return (
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
+              updateTerm={this.updateTerm}
               vocabularies={this.state.vocabularies}
               repoSlug={this.props.repoSlug}
               addTerm={this.addTerm} />
