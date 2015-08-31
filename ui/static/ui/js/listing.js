@@ -289,24 +289,24 @@ define('listing',
           type: 'POST',
           data: {username: username}
         })
-          .done(function () {
-            //reset the values
-            resetUserGroupForm();
-            //show alert
-            var message = '<strong>' + email +
-              '</strong> added to group <strong>' +
-              formatGroupName(groupType) + '</strong>';
-            showMembersAlert(message);
-            //retrieve the members lists
-            showUpdateAllMembers();
-          })
-          .fail(function (data) {
-            //show alert
-            var message = 'Error adding user ' + email +
-              ' to group ' + formatGroupName(groupType);
-            message = message + '<br>' + data.responseJSON.username[0];
-            showMembersAlert(message, 'danger');
-          });
+        .done(function () {
+          //reset the values
+          resetUserGroupForm();
+          //show alert
+          var message = '<strong>' + email +
+            '</strong> added to group <strong>' +
+            formatGroupName(groupType) + '</strong>';
+          showMembersAlert(message);
+          //retrieve the members lists
+          showUpdateAllMembers();
+        })
+        .fail(function (data) {
+          //show alert
+          var message = 'Error adding user ' + email +
+            ' to group ' + formatGroupName(groupType);
+          message = message + '<br>' + data.responseJSON.username[0];
+          showMembersAlert(message, 'danger');
+        });
       });
       //remove button for the members
       $(document).on('click', '.cd-panel-members-remove', function () {
@@ -320,27 +320,27 @@ define('listing',
           url: url,
           type: 'DELETE'
         })
-          .done(function () {
-            //show alert
-            var message = '<strong>' + email +
-              '</strong> deleted from group <strong>' +
-              formatGroupName(groupType) + '</strong>';
-            showMembersAlert(message);
-            //retrieve the members lists
-            showUpdateAllMembers();
-          })
-          .fail(function (data) {
-            //show alert
-            var message = 'Error deleting user <strong>' +
-              email + '</strong> from group <strong>' +
-              formatGroupName(groupType) + '</strong>';
-            try {
-              message += '<br>' + data.responseJSON.detail;
-            }
-            catch (err) {
-            }
-            showMembersAlert(message, 'danger');
-          });
+        .done(function () {
+          //show alert
+          var message = '<strong>' + email +
+            '</strong> deleted from group <strong>' +
+            formatGroupName(groupType) + '</strong>';
+          showMembersAlert(message);
+          //retrieve the members lists
+          showUpdateAllMembers();
+        })
+        .fail(function (data) {
+          //show alert
+          var message = 'Error deleting user <strong>' +
+            email + '</strong> from group <strong>' +
+            formatGroupName(groupType) + '</strong>';
+          try {
+            message += '<br>' + data.responseJSON.detail;
+          }
+          catch (err) {
+          }
+          showMembersAlert(message, 'danger');
+        });
 
         $("a#repo_page_status").click(function() {
           var pageNum = $(this).data('page-num');
