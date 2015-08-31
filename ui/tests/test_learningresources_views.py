@@ -295,7 +295,7 @@ class TestViews(LoreTestCase):
             self.resource.description_path, resource['description_path'])
         self.assertEqual(self.resource.description, resource['description'])
         self.assertEqual(
-            get_preview_url(resource), resource['preview_url'])
+            get_preview_url(self.resource), resource['preview_url'])
 
     def test_serve_media(self):
         """Hit serve media"""
