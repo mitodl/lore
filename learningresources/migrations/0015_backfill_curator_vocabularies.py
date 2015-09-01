@@ -64,8 +64,17 @@ def backfill_resources(apps, repo_id):
     resources = LearningResource.objects.filter(
         course__repository__id=repo_id
     )
-    for resource in resources.iterator():
-        resource.terms.add(empty_term)
+    ThroughModel = Term.learning_resources.through
+
+    to_insert = [
+        ThroughModel(
+            learningresource_id=resource.id,
+            term_id=empty_term.id,
+        ) for resource in resources.all()
+    ]
+
+    ThroughModel.objects.bulk_create(to_insert)
+
 
 class Migration(migrations.Migration):
 
