@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 from django.db import models, migrations
 from django.utils.text import slugify
 
-from taxonomy.signals import create_default_vocabulary
-
 # pylint: skip-file
 
 VOCAB_NAME = "curation status"

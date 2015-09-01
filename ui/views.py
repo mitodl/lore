@@ -172,18 +172,10 @@ def get_vocabularies(facets):
             continue
         vocab = (vocabulary_id, vocabs[int(vocabulary_id)])
         vocabularies[vocab] = []
-        notset = None
         for t_id, count in term_data:
-            # Save this for last if it exists.
-            if terms[int(t_id)] == Term.EMPTY_VALUE:
-                notset = (t_id, terms[int(t_id)], count)
-            else:
-                vocabularies[vocab].append((t_id, terms[int(t_id)], count))
+            vocabularies[vocab].append((t_id, terms[int(t_id)], count))
         # By default, sort alphabetically.
         vocabularies[vocab].sort(key=lambda x: x[1])
-        # Add "not set" value after alphabetized values.
-        if notset is not None:
-            vocabularies[vocab].append(notset)
     return vocabularies
 
 

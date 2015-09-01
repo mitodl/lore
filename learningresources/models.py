@@ -10,7 +10,6 @@ import six.moves.urllib.parse as urllib_parse  # pylint: disable=import-error
 
 from django.db import models
 from django.db import transaction
-from django.dispatch import Signal
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.utils.encoding import python_2_unicode_compatible
@@ -27,12 +26,6 @@ log = logging.getLogger(__name__)
 FILE_PATH_MAX_LENGTH = 900
 STATIC_ASSET_PREFIX = 'assets'
 STATIC_ASSET_BASEPATH = STATIC_ASSET_PREFIX + '/{org}/{course_number}/{run}/'
-
-# Used to signify that a repository has been created
-# and its initial permissions have been set.
-# This allows the "curation status" vocabulary to be
-# created automatically.
-repo_created = Signal(providing_args=["repository"])
 
 
 class FilePathLengthException(Exception):
@@ -170,10 +163,6 @@ class Repository(BaseModel):
     def save(self, *args, **kwargs):
         """
         Handle slugs and groups.
-
-        Note that creation of a new Repository also triggers a signal in
-        the taxonomy application to create the curation status vocabulary.
-        That code can't be put here because it would create a circular import.
         """
         is_update = False
         if self.id is None or self.name != get_object_or_404(
