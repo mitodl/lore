@@ -1,54 +1,54 @@
 FROM ubuntu:trusty
 MAINTAINER ODL DevOps <mitx-devops@mit.edu>
 
-
 # Add package files
-ADD requirements.txt /tmp/requirements.txt
-ADD test_requirements.txt /tmp/test_requirements.txt
-ADD doc_requirements.txt /tmp/doc_requirements.txt
-ADD apt.txt /tmp/apt.txt
 WORKDIR /tmp
 
 # Install base packages
-RUN apt-get update
-RUN apt-get install -y $(grep -vE "^\s*#" apt.txt  | tr "\n" " ")
-RUN pip install pip --upgrade
+COPY apt.txt /tmp/apt.txt
+RUN apt-get update &&\
+    apt-get install -y $(grep -vE "^\s*#" apt.txt  | tr "\n" " ") &&\
+    ln -s /usr/bin/nodejs /usr/bin/node &&\
+    pip install pip --upgrade
 
-# Install project packages
-RUN pip install -r requirements.txt
-RUN pip install -r test_requirements.txt
-RUN pip install -r doc_requirements.txt
-RUN pip3 install -r requirements.txt
-RUN pip3 install -r test_requirements.txt
-
-# Add, and run as, non-root user.
+# Add non-root user.
 RUN adduser --disabled-password --gecos "" mitodl
 
+# Install project packages
+
+# Python 2
+COPY requirements.txt /tmp/requirements.txt
+COPY test_requirements.txt /tmp/test_requirements.txt
+COPY doc_requirements.txt /tmp/doc_requirements.txt
+RUN pip install -r requirements.txt &&\
+    pip install -r test_requirements.txt &&\
+    pip install -r doc_requirements.txt
+
+# Python 3
+RUN pip3 install -r requirements.txt &&\
+    pip3 install -r test_requirements.txt
+
+# Install node development and production packages
+RUN mkdir /node
+COPY package.json /node/package.json
+RUN cd /node &&\
+    npm install &&\
+    npm install --production
+
 # Add project
-ADD . /src
+COPY . /src
 WORKDIR /src
 RUN chown -R mitodl:mitodl /src
 
-# Link nodejs to node since npm expects node
-RUN ln -s /usr/bin/nodejs /usr/bin/node
-
-# Install development packages globally for things like
-# bower.
-RUN mkdir /node
-ADD package.json /node/package.json
-RUN cd /node && npm install
-
-# Install productions deps for runtime items like jsx
-RUN npm install --production
-ENV PATH /src/node_modules/.bin:/node/node_modules/.bin:$PATH
-
-# Set pip cache folder, as it is breaking pip when it is on a shared volume
-ENV XDG_CACHE_HOME /tmp/.cache
-
 # Gather static
 RUN ./manage.py collectstatic --noinput
-
+RUN apt-get clean && apt-get purge
 USER mitodl
+
+# Setup node environment
+ENV PATH /src/node_modules/.bin:/node/node_modules/.bin:$PATH
+# Set pip cache folder, as it is breaking pip when it is on a shared volume
+ENV XDG_CACHE_HOME /tmp/.cache
 
 # Set and expose port for uwsgi config
 EXPOSE 8070
