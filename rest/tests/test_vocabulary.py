@@ -170,10 +170,10 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(2, repositories['count'])
 
         vocabularies = self.get_vocabularies(self.repo.slug)
-        self.assertEqual(2, vocabularies['count'])
+        self.assertEqual(1, vocabularies['count'])
 
         vocabularies = self.get_vocabularies(other_repo_dict['slug'])
-        self.assertEqual(2, vocabularies['count'])
+        self.assertEqual(1, vocabularies['count'])
 
         # test getting both vocabs with both repos
         self.get_vocabulary(
@@ -206,7 +206,7 @@ class TestVocabulary(RESTTestCase):
             repo_slug=self.repo.slug,
         ))
         self.assertEqual(resp.status_code, HTTP_200_OK)
-        self.assertEqual(2, as_json(resp)['count'])
+        self.assertEqual(1, as_json(resp)['count'])
 
         resp = self.client.get(
             "{repo_base}{repo_slug}"
@@ -232,7 +232,7 @@ class TestVocabulary(RESTTestCase):
         """Test REST access for term"""
         vocab1_slug = self.create_vocabulary(self.repo.slug)['slug']
         terms = self.get_terms(self.repo.slug, vocab1_slug)
-        self.assertEqual(1, terms['count'])  # There's always "not set."
+        self.assertEqual(0, terms['count'])
 
         input_dict = {
             "label": "term label",
@@ -252,7 +252,7 @@ class TestVocabulary(RESTTestCase):
         )
 
         terms = self.get_terms(self.repo.slug, vocab1_slug)
-        self.assertEqual(1, terms['count'])
+        self.assertEqual(0, terms['count'])
 
         self.create_term(self.repo.slug, vocab1_slug, input_dict)
         # create term again, prevented due to duplicate data validation error
@@ -290,7 +290,7 @@ class TestVocabulary(RESTTestCase):
                          Term.objects.get(slug=new_term_slug).label)
         # never created a duplicate
         self.assertEqual(
-            2,
+            1,
             self.get_terms(self.repo.slug, vocab1_slug)['count'],
         )
 
@@ -332,9 +332,9 @@ class TestVocabulary(RESTTestCase):
         # that was just created
         # vocab2 has only term2
         terms = self.get_terms(self.repo.slug, vocab1_slug)
-        self.assertEqual(3, terms['count'])
-        terms = self.get_terms(self.repo.slug, vocab2_slug)
         self.assertEqual(2, terms['count'])
+        terms = self.get_terms(self.repo.slug, vocab2_slug)
+        self.assertEqual(1, terms['count'])
 
         # we shouldn't find term2 in vocab1 and vice versa
         self.get_term(self.repo.slug, vocab1_slug, term1['slug'])
@@ -417,9 +417,7 @@ class TestVocabulary(RESTTestCase):
         # grabbing vocabs[0] later might return a different item.
         vocabs = Vocabulary.objects.filter(
             repository__id=self.repo.id).order_by('id')
-        # The curator status vocabulary will be there by default, and
-        # should still be the only thing there.
-        self.assertEqual(vocabs.count(), 1)
+        self.assertEqual(vocabs.count(), 0)
         expected = [
             VocabularySerializer(Vocabulary.objects.create(
                 repository=self.repo,
@@ -430,8 +428,6 @@ class TestVocabulary(RESTTestCase):
                 weight=1000,
             )).data for i in range(40)]
 
-        # The curator status vocabulary will be first by ID.
-        expected.append(VocabularySerializer(vocabs[0]).data)
         expected.sort(key=lambda x: x["id"])
 
         resp = self.client.get(
@@ -441,7 +437,7 @@ class TestVocabulary(RESTTestCase):
             ))
         self.assertEqual(HTTP_200_OK, resp.status_code)
         vocabularies = as_json(resp)
-        self.assertEqual(41, vocabularies['count'])
+        self.assertEqual(40, vocabularies['count'])
 
         # Sort both lists in preparation for comparisons.
         expected.sort(key=lambda x: x["id"])
@@ -463,7 +459,7 @@ class TestVocabulary(RESTTestCase):
         vocabularies = as_json(resp)
         from_api = sorted(vocabularies['results'], key=lambda x: x["id"])
         self.assertEqual(expected_count, len(from_api))
-        self.assertEqual(41, vocabularies['count'])
+        self.assertEqual(40, vocabularies['count'])
         self.assertEqual(
             from_api,
             expected[expected_count:expected_count*2],
@@ -473,7 +469,6 @@ class TestVocabulary(RESTTestCase):
         """Test pagination for collections"""
 
         vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
-        not_set = self.get_terms(self.repo.slug, vocab_slug)["results"][0]
 
         expected = [
             self.create_term(
@@ -484,9 +479,8 @@ class TestVocabulary(RESTTestCase):
                     "weight": 1000,
                 }
             ) for i in range(40)]
-        expected.insert(0, not_set)
         terms = self.get_terms(self.repo.slug, vocab_slug)
-        self.assertEqual(41, terms['count'])
+        self.assertEqual(40, terms['count'])
         self.assertEqual([TermSerializer(x).data for x in expected[:20]],
                          terms['results'])
 
@@ -499,7 +493,7 @@ class TestVocabulary(RESTTestCase):
             ))
         self.assertEqual(HTTP_200_OK, resp.status_code)
         terms = as_json(resp)
-        self.assertEqual(41, terms['count'])
+        self.assertEqual(40, terms['count'])
         self.assertEqual([TermSerializer(x).data
                           for x in expected[20:40]], terms['results'])
 

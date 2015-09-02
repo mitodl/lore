@@ -5,8 +5,6 @@ REST tests for LearningResources and static assets
 from __future__ import unicode_literals
 import os
 
-from django.utils.text import slugify
-
 from rest_framework.status import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
@@ -30,7 +28,7 @@ from learningresources.models import (
     get_preview_url,
 )
 from importer.tasks import import_file
-from taxonomy.models import Vocabulary, Term
+from taxonomy.models import Vocabulary
 from roles.permissions import GroupTypes
 from roles.api import assign_user_to_repo_group
 
@@ -170,7 +168,7 @@ class TestLearningResource(RESTTestCase):
             self.repo.slug, vocab2_slug)['slug']
 
         self.assertEqual(
-            [slugify(Term.EMPTY_VALUE)],
+            [],
             self.get_learning_resource(self.repo.slug, lr_id)['terms']
         )
 

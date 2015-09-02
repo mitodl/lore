@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 import logging
 
-from taxonomy.models import Vocabulary, Term
+from taxonomy.models import Vocabulary
 from learningresources.api import create_repo, create_resource
 from learningresources.tests.base import LoreTestCase
 
@@ -54,24 +54,24 @@ class TestModels(LoreTestCase):
 
 class TestCuratorVocabulary(LoreTestCase):
     """
-    Tests for the automatically-created curator vocabulary.
+    Tests for automatically-created vocabularies.
     """
     def test_vocab_created(self):
         """
-        A Repository should have the "curation status" vocabulary added
-        automatically upon creation.
+        At the moment there are no vocabularies automatically created
+        though that will change soon.
         """
         repo = create_repo(
             name="Ford Prefect",
             description="Mostly harmless.",
             user_id=self.user.id
         )
-        self.assertEqual(len(get_vocabularies(repo.id)), 1)
+        self.assertEqual(len(get_vocabularies(repo.id)), 0)
 
     def test_new_resource(self):
         """
-        When a new LearningResource is created, it should automatically
-        have the default (not set) value of the curator status vocabulary.
+        When a new LearningResource is created, it will have no
+        terms assigned to it.
         """
         resource = create_resource(
             course=self.course,
@@ -83,7 +83,5 @@ class TestCuratorVocabulary(LoreTestCase):
             url_name="",
             dpath="",
         )
-        # Should have the
         terms = resource.terms.all()
-        self.assertEqual(terms.count(), 1)
-        self.assertEqual(terms[0].label, Term.EMPTY_VALUE)
+        self.assertEqual(terms.count(), 0)

@@ -50,30 +50,20 @@ class Vocabulary(BaseModel):
     @transaction.atomic
     def save(self, *args, **kwargs):
         """Handle slugs."""
-        create_notset = False
         if self.id is None or self.name != get_object_or_404(
                 Vocabulary, id=self.id).name:
             slug = slugify(self.name)
             count = 1
-            if self.id is None:
-                create_notset = True
             while Vocabulary.objects.filter(slug=slug).exists():
                 slug = "{0}{1}".format(slugify(self.name), count)
                 count += 1
             self.slug = slug
 
-        super(Vocabulary, self).save(*args, **kwargs)
-        if create_notset:
-            Term.objects.create(
-                vocabulary=self, label=Term.EMPTY_VALUE, weight=0)
-        return self
+        return super(Vocabulary, self).save(*args, **kwargs)
 
 
 class Term(BaseModel):
     """Model for term table"""
-
-    EMPTY_VALUE = '--not set--'
-
     vocabulary = models.ForeignKey(Vocabulary)
     label = models.CharField(max_length=256)
     slug = models.CharField(max_length=256, unique=True)
