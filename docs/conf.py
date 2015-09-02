@@ -6,6 +6,7 @@ import sphinx_bootstrap_theme
 #pylint: skip-file
 
 sys.path.insert(0, os.path.abspath('..'))
+from lore.settings import VERSION
 
 # django-specific configuration
 os.environ['DJANGO_SETTINGS_MODULE'] = 'lore.settings'
@@ -31,8 +32,8 @@ master_doc = 'index'
 project = u'LORE'
 copyright = u'2015, MIT Office of Digital Learning'
 
-version = '0.11.0'
-release = '0.11.0'
+version = VERSION
+release = VERSION
 
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'
