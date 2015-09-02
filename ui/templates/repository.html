@@ -86,6 +86,7 @@
 <script type="text/jsx"
         src="{% static "ui/js/utils.jsx" %}">
 </script>
+{% endcompress %}
 <script type="text/javascript">
 require(["listing", "jquery"], function(Listing, $) {
   var listingOptions = {
@@ -102,5 +103,4 @@ require(["listing", "jquery"], function(Listing, $) {
   });
 });
 </script>
-{% endcompress %}
 {% endblock %}
