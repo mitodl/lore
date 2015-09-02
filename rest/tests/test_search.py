@@ -438,3 +438,54 @@ class TestSearch(RESTTestCase):
                 }]
             }
         )
+
+    def test_selected_facets(self):
+        """Test selected_facets in REST results."""
+        self.import_course_tarball(self.repo)
+
+        vocab = Vocabulary.objects.create(
+            repository=self.repo,
+            required=False,
+            weight=1
+        )
+        term1 = Term.objects.create(vocabulary=vocab, label='term1', weight=1)
+
+        resources = LearningResource.objects.filter(
+            course__repository__id=self.repo.id,
+            learning_resource_type__name='html'
+        ).all()
+
+        resource1 = resources[0]
+        resource1.terms.add(term1)
+
+        selected_facets = self.get_results(
+            selected_facets=["{v}_exact:{t}".format(
+                v=vocab.id, t=term1.id
+            )]
+        )['selected_facets']
+        self.assertEqual(
+            selected_facets,
+            {
+                '{v}'.format(v=vocab.id): {'{t}'.format(t=term1.id): True},
+                'course': {},
+                'resource_type': {},
+                'run': {}
+            }
+        )
+
+        # Because we're faceting on something that doesn't exist
+        # we should have no checkboxes that show up.
+        selected_facets = self.get_results(
+            selected_facets=["{v}_exact:{t}".format(
+                v=vocab.id, t=term1.id
+            ), "run_exact:doesnt_exist"]
+        )['selected_facets']
+        self.assertEqual(
+            selected_facets,
+            {
+                '{v}'.format(v=vocab.id): {},
+                'course': {},
+                'resource_type': {},
+                'run': {}
+            }
+        )

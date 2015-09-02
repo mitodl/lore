@@ -338,6 +338,7 @@ define('learning_resources', [
         thiz.setState({
           message: "Form saved successfully!"
         });
+        thiz.props.refreshFromAPI();
       }).fail(function () {
         thiz.setState({
           message: {error: "Unable to save form"}
@@ -431,12 +432,14 @@ define('learning_resources', [
     TermSelect: TermSelect,
     VocabSelect: VocabSelect,
     LearningResourcePanel: LearningResourcePanel,
-    loader: function (repoSlug, learningResourceId, container) {
+    loader: function (repoSlug, learningResourceId, refreshFromAPI, container) {
       // Unmount and remount the component to ensure that its state
       // is always up to date with the rest of the app.
       React.unmountComponentAtNode(container);
       React.render(<LearningResourcePanel
-        repoSlug={repoSlug} learningResourceId={learningResourceId}
+        repoSlug={repoSlug}
+        learningResourceId={learningResourceId}
+        refreshFromAPI={refreshFromAPI}
         />, container);
     }
   };

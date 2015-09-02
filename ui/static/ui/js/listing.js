@@ -1,10 +1,10 @@
 define('listing',
-  ['jquery', 'lodash', 'uri', 'manage_taxonomies',
+  ['jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
     'learning_resources', 'static_assets', 'utils',
     'lr_exports', 'listing_resources', 'pagination',
     'bootstrap', 'icheck', 'csrf'],
-  function ($, _, URI, ManageTaxonomies, LearningResources, StaticAssets,
-            Utils, Exports, ListingResources, Pagination) {
+  function ($, _, URI, History, ManageTaxonomies, LearningResources,
+            StaticAssets, Utils, Exports, ListingResources, Pagination) {
     'use strict';
 
     var loader = function (listingOptions, pageNum, numPages, container) {
@@ -126,7 +126,34 @@ define('listing',
         }
       });
 
+      /**
+       * Render resource items in the UI
+       *
+       * @returns {ReactElement} The rendered resource items
+       */
       var renderListingResources;
+      /**
+       * Render pagination in the UI
+       *
+       * @returns {ReactElement} The rendered pagination
+       */
+      var renderPagination;
+
+      // queryMap is the canonical place to manage query parameters for the UI.
+      // The URL in the browser will be updated with these changes in
+      // refreshFromAPI.
+      var queryMap = {};
+      // Populate queryMap with query string key value pairs.
+      _.each(URI(window.location).query(true), function(v, k) {
+        if (!Array.isArray(v)) {
+          // URI().query(true) will put two or more values with the same
+          // key in an array and not use an array for single values.
+          // Put everything into arrays for consistency's sake.
+          queryMap[k] = [v];
+        } else {
+          queryMap[k] = v;
+        }
+      });
 
       /**
        * Clears exports on page. Assumes DELETE to clear on server already
@@ -148,54 +175,124 @@ define('listing',
         Exports.loadExportsHeader(exportCount, $("#exports_heading")[0]);
       };
 
+      /**
+       * When called, query search API using query parameters of this URL
+       * and update listing with updated resources.
+       *
+       * @returns {jQuery.Deferred} A promise that's resolved or rejected when
+       * the AJAX call completes and the rerender is triggered.
+       */
+      var refreshFromAPI;
+
+      // Will be set in refreshFromAPI
+      var selectedFacets;
+
       var openResourcePanel = function(resourceId) {
         LearningResources.loader(
-          repoSlug, resourceId, $("#tab-1")[0]);
+          repoSlug, resourceId, refreshFromAPI, $("#tab-1")[0]);
         $('.cd-panel').addClass('is-visible');
         StaticAssets.loader(
           repoSlug, resourceId, $("#tab-3")[0]);
       };
 
-      var facetIsSelected = function(facetId, valueId) {
-        var facetQuery = "selected_facets=" + facetId + "_exact:" + valueId;
-        if (location.search === undefined) {
-          return false;
-        }
-        return location.search.indexOf(facetQuery) !== -1;
-      };
+      refreshFromAPI = function() {
+        var newQuery = "?" + URI().search(queryMap).query();
+        History.replaceState(null, document.title, newQuery);
 
-      var updateFacets = function(facetId, valueId, selected) {
-        $("#progress-modal").modal();
+        var url = "/api/v1/repositories/" +
+          listingOptions.repoSlug + "/search/" + newQuery;
 
-        var currentQueryset = '?';
-        if (location.search !== undefined && location.search !== '') {
-          currentQueryset = location.search;
-        }
+        var setOpacity = function(opacity) {
+          $("#listing").css({opacity: opacity});
+        };
 
-        var facetQuery = "selected_facets=" + facetId + "_exact:" + valueId;
-        if (!selected) {
-          window.location = currentQueryset.replace(facetQuery, '');
-        } else {
-          if (currentQueryset === "?") {
-            window.location = currentQueryset + facetQuery;
-          } else {
-            window.location = currentQueryset + "&" + facetQuery;
+        setOpacity(0.6);
+        return $.get(url).then(function(collection) {
+          listingOptions = $.extend({}, listingOptions);
+          listingOptions.resources = collection.results;
+          listingOptions.facetCounts = collection.facet_counts;
+          selectedFacets = collection.selected_facets;
+
+          numPages = Math.ceil(collection.count / listingOptions.pageSize);
+          if (pageNum > numPages) {
+            pageNum = numPages - 1;
+            if (pageNum < 1) {
+              pageNum = 1;
+            }
           }
-        }
-      };
 
-      var selectedFacets = {};
-      _.each(listingOptions.facetCounts, function(counts) {
-        var facetId = counts.facet.key;
-        selectedFacets[facetId] = {};
+          renderListingResources();
+          renderPagination();
 
-        _.each(counts.values, function(value) {
-          var valueId = value.key;
-          if (facetIsSelected(facetId, valueId)) {
-            selectedFacets[facetId][valueId] = true;
-          }
+          setOpacity(1);
+        }).fail(function(error) {
+          setOpacity(1);
+
+          // Propagate error
+          return $.Deferred().reject(error);
         });
-      });
+      };
+
+      /**
+       * Update queryMap with updated facet information, then refresh from API.
+       *
+       * @param facetId {String} Facet key
+       * @param valueId {String} Facet value
+       * @param selected {bool} Value for facet checkbox
+       *
+       * @returns {jQuery.Deferred} Promise which is resolved or rejected after
+       * refresh occurs.
+       */
+      var updateFacets = function(facetId, valueId, selected) {
+        var param = facetId + "_exact:" + valueId;
+
+        queryMap = $.extend({}, queryMap);
+        queryMap.page = undefined;
+
+        if (!queryMap.selected_facets) {
+          queryMap.selected_facets = [];
+        }
+
+        // Remove facet. If selected we'll add it back again with a push().
+        queryMap.selected_facets = _.filter(
+          queryMap.selected_facets, function(facet) {
+            return facet !== param;
+          }
+        );
+
+        if (selected) {
+          queryMap.selected_facets.push(param);
+        }
+
+        return refreshFromAPI();
+      };
+
+      /**
+       * Update sorting and refresh from API.
+       *
+       * @param value {String} Sort parameter
+       * @return {jQuery.Deferred} A promise which is resolved or rejected after
+       * refresh has occurred.
+       */
+      var updateSort = function(value) {
+        queryMap = $.extend({}, queryMap);
+        queryMap.sortby = value;
+
+        listingOptions = $.extend({}, listingOptions);
+        var allOptions = listingOptions.sortingOptions.all.concat([
+          listingOptions.sortingOptions.current
+        ]);
+        var current = _.filter(allOptions, function(pair) {
+          return pair[0] === value;
+        });
+        var all = _.filter(allOptions, function(pair) {
+          return pair[0] !== value;
+        });
+        listingOptions.sortingOptions.all = all;
+        listingOptions.sortingOptions.current = current[0];
+
+        refreshFromAPI();
+      };
 
       /**
        * Rerender listing resources
@@ -204,12 +301,36 @@ define('listing',
       renderListingResources = function() {
         return ListingResources.loader(listingOptions,
         container, openExportsPanel, openResourcePanel,
-        updateFacets, selectedFacets);
+        updateFacets, selectedFacets, updateSort);
       };
 
-      // Listing resources React object. We need this variable to allow
-      // clearExports to tell it to clear exports.
-      renderListingResources();
+      /**
+       * Update search parameter then refresh from API.
+       *
+       * @param search {String} The search phrase
+       * @returns {jQuery.Deferred} Promise which evalutes after refresh occurs.
+       */
+      var updateSearch = function (search) {
+        queryMap.page = undefined;
+        if (search !== '') {
+          queryMap.q = [search];
+        } else {
+          queryMap.q = undefined;
+        }
+
+        // clear facets
+        queryMap.selected_facets = undefined;
+
+        return refreshFromAPI();
+      };
+
+      // If search is executed update query parameter and refresh from API.
+      $("#search_button").click(function(e) {
+        e.preventDefault();
+
+        var search = $("#id_q").val();
+        updateSearch(search);
+      });
 
       // Close exports panel.
       $('.cd-panel-exports').on('click', function (event) {
@@ -324,10 +445,22 @@ define('listing',
         });
       });
 
+      /**
+       * Update page number and refresh from API.
+       * @param newPageNum {Number} New page number
+       * @return {jQuery.Deferred} Promise which resolves or rejects after
+       * refresh has occurred.
+       */
       var updatePage = function(newPageNum) {
-        var urlMap = URI(window.location).query(true);
-        urlMap.page = newPageNum;
-        window.location = "?" + URI().search(urlMap).query();
+        queryMap.page = [newPageNum.toString()];
+        pageNum = newPageNum;
+
+        return refreshFromAPI();
+      };
+
+      renderPagination = function() {
+        return Pagination.loader(
+          pageNum, numPages, updatePage, $("#lore-pagination")[0]);
       };
 
       var showConfirmationDialog = function(options) {
@@ -338,8 +471,8 @@ define('listing',
         );
       };
 
-      Pagination.loader(pageNum, numPages, updatePage,
-        $("#lore-pagination")[0]);
+      // Initial refresh to populate page.
+      refreshFromAPI();
       ManageTaxonomies.loader(
         repoSlug,
         $('#taxonomy-component')[0],
