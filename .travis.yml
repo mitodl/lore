@@ -30,3 +30,10 @@ deploy:
     - "sleep 15"
     - "python manage.py migrate --noinput"
     - "python manage.py sync_permissions"
+notifications:
+  hipchat:
+    rooms:
+      - secure: "KSHr7U6lD12n8j/BL9cR7Ku7dS9+NdUCW0TBlBBuZz9gykzU9qi2CQQmdE3pssbL/8E4aqXBysN8caRX5Q54fdzXNkyzx+Q1adkKVe32hMJhPmSEkjIEyqYSYiC34ZXJTysJX9S3oxZcjea4j4s+F/JPqz0+sLV6wnaxqwMli+8="
+  slack:
+    rooms:
+      - secure: "bXeYxDu/dD8BCldgnZE9DW10YPPCwvglA4u8LPGxvljj9EOeZxf/MmpeYoS++EQze+ArvP6dY+GzMlViRrAw7NPMiLyWR31P7LdVX7talkNUiq5jjaC0MGc1IiTMS40bwrmgJPPP8Bq2+m0qSq8gLtQQ/j8BQ8nedBhnrxLx478="
