@@ -83,6 +83,42 @@ define('listing',
       }
 
       /**
+       * If page number is change and it is valid then navigate user to new page
+       *
+       * @param {Number} pageNum - current page number
+       * @param {Number} maxPages - total number of pages
+       * @param {jQuery} $replaceWith - text field selector
+       * @param {jQuery} $callerSelector - pagination status selector
+       */
+      function processPage(pageNum, maxPages, $replaceWith, $callerSelector) {
+        var newPageNum = $replaceWith.val();
+        $replaceWith.remove();
+        if (newPageNum !== pageNum &&
+          newPageNum > 0 &&
+          newPageNum <= maxPages) {
+          var href = $(location).attr('href');
+          var url;
+          if (href.toLowerCase().indexOf("page=") >= 0) {
+            url = href.replace(
+              "page=" + pageNum,
+              "page=" + newPageNum
+            );
+          } else {
+            if (href[href.length - 1] === "/") {
+              url = href + "?page=" + newPageNum;
+            } else {
+              url = href + "&page=" + newPageNum;
+            }
+          }
+          $(location).attr(
+            'href',
+            url
+          );
+        }
+        $callerSelector.show();
+      }
+
+      /**
        * Change page number in edit mode. Navigate to new page of it is valid
        *
        * @param {Number} pageNum - current page number
@@ -121,42 +157,6 @@ define('listing',
             );
           }
         });
-      }
-
-      /**
-       * If page number is change and it is valid then navigate user to new page
-       *
-       * @param {Number} pageNum - current page number
-       * @param {Number} maxPages - total number of pages
-       * @param {jQuery} $replaceWith - text field selector
-       * @param {jQuery} $callerSelector - pagination status selector
-       */
-      function processPage(pageNum, maxPages, $replaceWith, $callerSelector) {
-        var newPageNum = $replaceWith.val();
-        $replaceWith.remove();
-        if (newPageNum !== pageNum &&
-          newPageNum > 0 &&
-          newPageNum <= maxPages) {
-          var href = $(location).attr('href');
-          var url;
-          if (href.toLowerCase().indexOf("page=") >= 0) {
-            url = href.replace(
-              "page=" + pageNum,
-              "page=" + newPageNum
-            );
-          } else {
-            if (href[href.length - 1] === "/") {
-              url = href + "?page=" + newPageNum;
-            } else {
-              url = href + "&page=" + newPageNum;
-            }
-          }
-          $(location).attr(
-            'href',
-            url
-          );
-        }
-        $callerSelector.show();
       }
 
       $('[data-toggle=popover]').popover();
@@ -203,14 +203,7 @@ define('listing',
         }
       });
 
-      /**
-       * Rerender listing resources
-       * @returns {ReactComponent}
-       */
-      var renderListingResources = function() {
-        return ListingResources.loader(listingOptions,
-          container, openExportsPanel, openResourcePanel);
-      };
+      var renderListingResources;
 
       /**
        * Clears exports on page. Assumes DELETE to clear on server already
@@ -237,6 +230,15 @@ define('listing',
         $('.cd-panel').addClass('is-visible');
         StaticAssets.loader(
           repoSlug, resourceId, $("#tab-3")[0]);
+      };
+
+      /**
+       * Rerender listing resources
+       * @returns {ReactComponent}
+       */
+      renderListingResources = function() {
+        return ListingResources.loader(listingOptions,
+          container, openExportsPanel, openResourcePanel);
       };
 
       // Listing resources React object. We need this variable to allow

@@ -67,17 +67,6 @@ define("test_utils", ["jquery", "stacktrace", "lodash", "QUnit",
     return JSON.stringify({url: settings.url, type: type});
   };
 
-  var replaceMockjax = function (settings) {
-    var key = makeKeyFromSettings(settings);
-    var id = mockjaxIdLookup[key];
-    if (id === undefined) {
-      throw "Unable to find mocked url given key " + key;
-    }
-
-    $.mockjax.clear(id);
-    return initMockjax(settings, true);
-  };
-
   var initMockjax = function (settings, allowReplace) {
     var newSettings = $.extend({}, settings);
     newSettings.onAfterComplete = function () {
@@ -93,6 +82,17 @@ define("test_utils", ["jquery", "stacktrace", "lodash", "QUnit",
     }
     mockjaxIdLookup[key] = id;
     return id;
+  };
+
+  var replaceMockjax = function (settings) {
+    var key = makeKeyFromSettings(settings);
+    var id = mockjaxIdLookup[key];
+    if (id === undefined) {
+      throw "Unable to find mocked url given key " + key;
+    }
+
+    $.mockjax.clear(id);
+    return initMockjax(settings, true);
   };
 
   return {
