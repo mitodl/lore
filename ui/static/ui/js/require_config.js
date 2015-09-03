@@ -9,6 +9,10 @@ var REQUIRE_PATHS = {
   react_infinite: "react-infinite/dist/react-infinite",
   lodash: "lodash/lodash",
   select2: "select2/dist/js/select2.full",
+  uri: "uri.js/src/URI",
+  punycode: "uri.js/src/punycode",
+  IPv6: "uri.js/src/IPv6",
+  SecondLevelDomains: "uri.js/src/SecondLevelDomains",
   csrf: "../ui/js/csrf",
   listing: "../ui/js/listing",
   manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
@@ -16,6 +20,7 @@ var REQUIRE_PATHS = {
   listing_resources: "../ui/js/listing_resources.jsx?noext",
   static_assets: "../ui/js/static_assets.jsx?noext",
   lr_exports: "../ui/js/lr_exports.jsx?noext",
+  pagination: "../ui/js/pagination.jsx?noext",
   utils: "../ui/js/utils.jsx?noext",
 };
 var SHIMS = {

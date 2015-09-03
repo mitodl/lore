@@ -1,12 +1,13 @@
 define('listing',
-  ['jquery', 'lodash', 'manage_taxonomies',
+  ['jquery', 'lodash', 'uri', 'manage_taxonomies',
     'learning_resources', 'static_assets', 'utils',
-    'lr_exports', 'listing_resources', 'bootstrap', 'icheck', 'csrf'],
-  function ($, _, ManageTaxonomies, LearningResources, StaticAssets,
-            Utils, Exports, ListingResources) {
+    'lr_exports', 'listing_resources', 'pagination',
+    'bootstrap', 'icheck', 'csrf'],
+  function ($, _, URI, ManageTaxonomies, LearningResources, StaticAssets,
+            Utils, Exports, ListingResources, Pagination) {
     'use strict';
 
-    var loader = function (listingOptions, container) {
+    var loader = function (listingOptions, pageNum, numPages, container) {
       var repoSlug = listingOptions.repoSlug;
       var loggedInUsername = listingOptions.loggedInUsername;
 
@@ -79,83 +80,6 @@ define('listing',
             var message = 'Unable to retrieve list of members.';
             showMembersAlert(message, 'danger');
           });
-      }
-
-      /**
-       * If page number is change and it is valid then navigate user to new page
-       *
-       * @param {Number} pageNum - current page number
-       * @param {Number} maxPages - total number of pages
-       * @param {jQuery} $replaceWith - text field selector
-       * @param {jQuery} $callerSelector - pagination status selector
-       */
-      function processPage(pageNum, maxPages, $replaceWith, $callerSelector) {
-        var newPageNum = $replaceWith.val();
-        $replaceWith.remove();
-        if (newPageNum !== pageNum &&
-          newPageNum > 0 &&
-          newPageNum <= maxPages) {
-          var href = $(location).attr('href');
-          var url;
-          if (href.toLowerCase().indexOf("page=") >= 0) {
-            url = href.replace(
-              "page=" + pageNum,
-              "page=" + newPageNum
-            );
-          } else {
-            if (href[href.length - 1] === "/") {
-              url = href + "?page=" + newPageNum;
-            } else {
-              url = href + "&page=" + newPageNum;
-            }
-          }
-          $(location).attr(
-            'href',
-            url
-          );
-        }
-        $callerSelector.show();
-      }
-
-      /**
-       * Change page number in edit mode. Navigate to new page of it is valid
-       *
-       * @param {Number} pageNum - current page number
-       * @param {Number} maxPages - total number of pages
-       * @param {Element} callerElem - Reference to pagination status link
-       */
-      function navigateToPage(pageNum, maxPages, callerElem) {
-        var $replaceWith = $(
-          '<input name="search_temp" type="number" ' +
-            'value="' + pageNum + '" size="10" ' +
-          'class="form-control repo-page-status"/>'
-        );
-        var $callerSelector = $(callerElem);
-
-        $callerSelector.hide();
-        $callerSelector.after($replaceWith);
-        $replaceWith.focus();
-        $replaceWith.focusout(function() {
-          processPage(
-              pageNum,
-              maxPages,
-              $replaceWith,
-              $callerSelector
-            );
-        });
-        $replaceWith.keypress(function(e) {
-          var key = e.which;
-          // the enter key code
-          if (key === 13) {
-            e.preventDefault();
-            processPage(
-              pageNum,
-              maxPages,
-              $replaceWith,
-              $callerSelector
-            );
-          }
-        });
       }
 
       $('[data-toggle=popover]').popover();
@@ -400,12 +324,14 @@ define('listing',
         });
       });
 
-      $("a#repo_page_status").click(function() {
-        var pageNum = $(this).data('page-num');
-        var maxPages = $(this).data('max-page-num');
-        navigateToPage(pageNum, maxPages, this);
-      });
+      var updatePage = function(newPageNum) {
+        var urlMap = URI(window.location).query(true);
+        urlMap.page = newPageNum;
+        window.location = "?" + URI().search(urlMap).query();
+      };
 
+      Pagination.loader(pageNum, numPages, updatePage,
+        $("#lore-pagination")[0]);
       ManageTaxonomies.loader(repoSlug, $('#taxonomy-component')[0]);
     };
 
