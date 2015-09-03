@@ -6,6 +6,16 @@ define('learning_resources', [
   var StatusBox = Utils.StatusBox;
   var Select2 = Utils.Select2;
 
+  var TermListItem = React.createClass({
+    render: function () {
+      return (
+        <li className="applied-term list-group-item">
+          <strong>{this.props.label}: </strong> {this.props.terms}
+        </li>
+      );
+    }
+  });
+
   var TermList = React.createClass({
     render: function () {
       var appliedVocabularies = this.props.vocabs.map(function (vocab) {
@@ -36,16 +46,6 @@ define('learning_resources', [
             {appliedVocabularies}
           </ul>
         </div>
-      );
-    }
-  });
-
-  var TermListItem = React.createClass({
-    render: function () {
-      return (
-        <li className="applied-term list-group-item">
-          <strong>{this.props.label}: </strong> {this.props.terms}
-        </li>
       );
     }
   });

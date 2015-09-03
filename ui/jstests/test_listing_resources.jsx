@@ -148,6 +148,17 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
 
     QUnit.test('Assert export button and resource links', function(assert) {
       var done = assert.async();
+
+      var openExportsPanelCalled = 0;
+      var openExportsPanel = function() {
+        openExportsPanelCalled++;
+      };
+
+      var openResourcePanelCalled = {};
+      var openResourcePanel = function(lid) {
+        openResourcePanelCalled[lid] = true;
+      };
+
       var afterMount = function(component) {
         var node = React.findDOMNode(component);
         var exportButton = $(node).find(".btn:contains('Export')")[0];
@@ -166,16 +177,6 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
         });
 
         done();
-      };
-
-      var openExportsPanelCalled = 0;
-      var openExportsPanel = function() {
-        openExportsPanelCalled++;
-      };
-
-      var openResourcePanelCalled = {};
-      var openResourcePanel = function(lid) {
-        openResourcePanelCalled[lid] = true;
       };
 
       React.addons.TestUtils.renderIntoDocument(
@@ -222,6 +223,15 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
         var done = assert.async();
 
         var resource = sampleResources[1];
+        var openResourcePanelCount = {};
+        var openResourcePanel = function(lid) {
+          openResourcePanelCount[lid] = true;
+        };
+
+        var updateExportLinkClickCount = {};
+        var updateExportLinkClick = function(lid, selected) {
+          updateExportLinkClickCount[lid] = selected;
+        };
 
         var afterMount = function(component) {
           // ListingResource has no state
@@ -274,16 +284,6 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
             $lastRow.find("a[target='_blank']").attr('href'));
 
           done();
-        };
-
-        var openResourcePanelCount = {};
-        var openResourcePanel = function(lid) {
-          openResourcePanelCount[lid] = true;
-        };
-
-        var updateExportLinkClickCount = {};
-        var updateExportLinkClick = function(lid, selected) {
-          updateExportLinkClickCount[lid] = selected;
         };
 
         React.addons.TestUtils.renderIntoDocument(
