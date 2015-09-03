@@ -71,9 +71,9 @@ define('listing',
       function showUpdateAllMembers() {
         //retrieve all the members
         var url = $('.cd-panel-members').data('members-url');
-        $('#cd-panel-members-list').empty();
-        Utils.getCollection(url)
-          .done(function (results) {
+        return Utils.getCollection(url)
+          .then(function (results) {
+            $('#cd-panel-members-list').empty();
             formatUserGroups(results, '#cd-panel-members-list');
           })
           .fail(function () {
@@ -301,7 +301,11 @@ define('listing',
           type: 'POST',
           data: {username: username}
         })
-        .done(function () {
+        .then(function() {
+          //retrieve the members lists
+          return showUpdateAllMembers();
+        })
+        .then(function () {
           //reset the values
           resetUserGroupForm();
           //show alert
@@ -309,14 +313,14 @@ define('listing',
             '</strong> added to group <strong>' +
             formatGroupName(groupType) + '</strong>';
           showMembersAlert(message);
-          //retrieve the members lists
-          showUpdateAllMembers();
         })
         .fail(function (data) {
           //show alert
           var message = 'Error adding user ' + email +
             ' to group ' + formatGroupName(groupType);
-          message = message + '<br>' + data.responseJSON.username[0];
+          if (data && data.responseJSON && data.responseJSON.username) {
+            message = message + '<br>' + data.responseJSON.username[0];
+          }
           showMembersAlert(message, 'danger');
         });
       });
@@ -332,24 +336,24 @@ define('listing',
           url: url,
           type: 'DELETE'
         })
-        .done(function () {
+        .then(function() {
+          //retrieve the members lists
+          return showUpdateAllMembers();
+        })
+        .then(function () {
           //show alert
           var message = '<strong>' + email +
             '</strong> deleted from group <strong>' +
             formatGroupName(groupType) + '</strong>';
           showMembersAlert(message);
-          //retrieve the members lists
-          showUpdateAllMembers();
         })
         .fail(function (data) {
           //show alert
           var message = 'Error deleting user <strong>' +
             email + '</strong> from group <strong>' +
             formatGroupName(groupType) + '</strong>';
-          try {
+          if (data && data.responseJSON && data.responseJSON.detail) {
             message += '<br>' + data.responseJSON.detail;
-          }
-          catch (err) {
           }
           showMembersAlert(message, 'danger');
         });
