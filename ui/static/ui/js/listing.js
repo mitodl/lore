@@ -218,10 +218,11 @@ define('listing',
         listingResources.setState({exportSelection: {}});
       };
 
-      var openExportsPanel = function() {
+      var openExportsPanel = function(exportCount) {
         $('.cd-panel-exports').addClass('is-visible');
         Exports.loader(repoSlug, loggedInUsername, clearExports,
           $("#exports_content")[0]);
+        Exports.loadExportsHeader(exportCount, $("#exports_heading")[0]);
       };
 
       var openResourcePanel = function(resourceId) {
