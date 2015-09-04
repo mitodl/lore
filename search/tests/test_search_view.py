@@ -36,7 +36,7 @@ class TestSearchView(SearchTestCase):
             self.resource.terms.add(term)
         resp = self.client.get(reverse("repositories", args=(self.repo.slug,)))
         self.assertContains(resp, "easy")
-        self.assertContains(resp, "ancòra")
+        self.assertContains(resp, "anc\\u00f2ra")
         self.assertContains(resp, "very difficult")
 
     def test_db_hits(self):

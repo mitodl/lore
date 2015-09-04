@@ -1,8 +1,8 @@
 define('listing',
-  ['jquery', 'lodash', 'manage_taxonomies', 'facets',
+  ['jquery', 'lodash', 'manage_taxonomies',
     'learning_resources', 'static_assets', 'utils',
     'lr_exports', 'listing_resources', 'bootstrap', 'icheck', 'csrf'],
-  function ($, _, ManageTaxonomies, Facets, LearningResources, StaticAssets,
+  function ($, _, ManageTaxonomies, LearningResources, StaticAssets,
             Utils, Exports, ListingResources) {
     'use strict';
 
@@ -10,7 +10,6 @@ define('listing',
       var repoSlug = listingOptions.repoSlug;
       var loggedInUsername = listingOptions.loggedInUsername;
 
-      Facets.setupFacets(window);
       var EMAIL_EXTENSION = '@mit.edu';
 
       function formatGroupName(string) {
@@ -233,13 +232,55 @@ define('listing',
           repoSlug, resourceId, $("#tab-3")[0]);
       };
 
+      var facetIsSelected = function(facetId, valueId) {
+        var facetQuery = "selected_facets=" + facetId + "_exact:" + valueId;
+        if (location.search === undefined) {
+          return false;
+        }
+        return location.search.indexOf(facetQuery) !== -1;
+      };
+
+      var updateFacets = function(facetId, valueId, selected) {
+        $("#progress-modal").modal();
+
+        var currentQueryset = '?';
+        if (location.search !== undefined && location.search !== '') {
+          currentQueryset = location.search;
+        }
+
+        var facetQuery = "selected_facets=" + facetId + "_exact:" + valueId;
+        if (!selected) {
+          window.location = currentQueryset.replace(facetQuery, '');
+        } else {
+          if (currentQueryset === "?") {
+            window.location = currentQueryset + facetQuery;
+          } else {
+            window.location = currentQueryset + "&" + facetQuery;
+          }
+        }
+      };
+
+      var selectedFacets = {};
+      _.each(listingOptions.facetCounts, function(counts) {
+        var facetId = counts.facet.key;
+        selectedFacets[facetId] = {};
+
+        _.each(counts.values, function(value) {
+          var valueId = value.key;
+          if (facetIsSelected(facetId, valueId)) {
+            selectedFacets[facetId][valueId] = true;
+          }
+        });
+      });
+
       /**
        * Rerender listing resources
        * @returns {ReactComponent}
        */
       renderListingResources = function() {
         return ListingResources.loader(listingOptions,
-          container, openExportsPanel, openResourcePanel);
+        container, openExportsPanel, openResourcePanel,
+        updateFacets, selectedFacets);
       };
 
       // Listing resources React object. We need this variable to allow
