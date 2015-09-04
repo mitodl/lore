@@ -247,7 +247,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
                     </span>
                     <span className="meta-item mi-col-3">
                       <i className="fa fa-graduation-cap">
-                      </i> {resource.xa_avg_grade}
+                      </i> {resource.xa_avg_grade.toFixed(1)}
                     </span>
                     <span className="meta-item mi-col-4">
                       <a href={resource.preview_url} target="_blank">Preview</a>
