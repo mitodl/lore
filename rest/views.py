@@ -21,8 +21,11 @@ from rest_framework.generics import (
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import GenericViewSet
 from celery.states import FAILURE, SUCCESS, REVOKED
 from celery.result import AsyncResult
+from haystack.inputs import Exact
+from haystack.query import SearchQuerySet
 
 from exporter.tasks import export_resources
 from roles.permissions import GroupTypes, BaseGroupTypes
@@ -43,6 +46,7 @@ from rest.serializers import (
     LearningResourceSerializer,
     LearningResourceExportSerializer,
     LearningResourceExportTaskSerializer,
+    RepositorySearchSerializer,
     StaticAssetSerializer,
 )
 from rest.permissions import (
@@ -58,7 +62,9 @@ from rest.permissions import (
     ViewStaticAssetPermission,
 )
 from rest.util import CheckValidMemberParamMixin
+from search.sorting import LoreSortingFields
 from taxonomy.models import Vocabulary
+from ui.views import get_vocabularies
 from learningresources.models import (
     Repository,
     LearningResourceType,
@@ -760,3 +766,107 @@ class LearningResourceExportTaskDetail(RetrieveAPIView):
             raise Http404
 
         return create_task_result_dict(initial_dict)
+
+
+class RepositorySearchList(GenericViewSet):
+    """
+    View of search results for repository search.
+    """
+    serializer_class = RepositorySearchSerializer
+    permission_classes = (ViewRepoPermission, IsAuthenticated)
+
+    def get_queryset(self):
+        query = self.request.GET.get('q', '')
+        queryset = SearchQuerySet()
+
+        selected_facets = self.request.GET.getlist('selected_facets')
+        kwargs = {}
+        for facet in selected_facets:
+            queryset = queryset.narrow(facet)
+
+        if query != "":
+            kwargs["content"] = query
+
+        queryset = queryset.filter(**kwargs)
+
+        repo_slug = self.kwargs['repo_slug']
+        queryset = queryset.filter(repository=Exact(repo_slug))
+
+        order_by = self.request.GET.get('sortby', '')
+        if order_by == "":
+            order_by = LoreSortingFields.DEFAULT_SORTING_FIELD
+        if order_by.startswith("-"):
+            order_by = order_by[1:]
+        else:
+            order_by = "-{0}".format(order_by)
+        queryset = queryset.order_by(
+            order_by, LoreSortingFields.BASE_SORTING_FIELD)
+
+        return queryset
+
+    def make_facet_counts(self, queryset):
+        """
+        Facets on every facet available and provides a data structure
+        of facet count information ready for API use.
+        """
+        for facet in ('course', 'run', 'resource_type'):
+            queryset = queryset.facet(facet)
+
+        repo_slug = self.kwargs['repo_slug']
+        vocabularies = Vocabulary.objects.filter(repository__slug=repo_slug)
+
+        for vocabulary in vocabularies:
+            queryset = queryset.facet(vocabulary.id)
+
+        facet_counts = queryset.facet_counts()
+        ret = get_vocabularies(facet_counts)
+
+        # Reformat facet_counts to match term counts.
+        for key, label in (
+                ("course", "Course"),
+                ("run", "Run"),
+                ("resource_type", "Item Type")
+        ):
+            if 'fields' in facet_counts:
+                values = [(name, name, count) for name, count
+                          in facet_counts['fields'][key]]
+            else:
+                values = []
+            ret[(key, label)] = values
+
+        def reformat(key, values):
+            """Convert tuples to dictionaries so we can use keys."""
+            return {
+                "facet": {"key": str(key[0]), "label": key[1]},
+                "values": [
+                    {
+                        "label": value_label,
+                        "key": str(value_key),
+                        "count": count
+                    } for value_key, value_label, count in values
+                ]
+            }
+        return {
+            str(key[0]): reformat(key, values)
+            for key, values in ret.items()
+            }
+
+    def list(self, *args, **kwargs):  # pylint: disable=unused-argument
+        """
+        Returns response object containing search results, including
+        an extra value for facet_counts.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        facet_counts = self.make_facet_counts(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+            response = Response(serializer.data)
+
+        data = response.data
+        data['facet_counts'] = facet_counts
+        return Response(data)
