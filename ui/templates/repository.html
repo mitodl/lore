@@ -28,22 +28,7 @@
 
 <div class="row">
   <div class="col-md-12">
-    <div class="lore-pagination">
-      {% if page.has_other_pages %}
-      {% if page.has_previous %}
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}page={{ page.previous_page_number }}&sortby={{ sorting_options.current.0 }}">
-        <i class="fa fa-angle-left"></i>
-      </a>
-      {% endif %}
-      <a id="repo_page_status" class="repo-page-status" data-page-num="{{ page.number }}" data-max-page-num="{{ page.paginator.num_pages }}">
-          Page {{ page.number }} of {{ page.paginator.num_pages }}
-      </a>
-      {% if page.has_next %}
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix}}page={{ page.next_page_number }}&sortby={{ sorting_options.current.0 }}">
-        <i class="fa fa-angle-right"></i>
-      </a>
-      {% endif %}
-      {% endif %}
+    <div class="lore-pagination" id="lore-pagination">
     </div>
   </div>
 </div>
@@ -78,6 +63,9 @@
         src="{% static "ui/js/listing_resources.jsx" %}">
 </script>
 <script type="text/jsx"
+        src="{% static "ui/js/pagination.jsx" %}">
+</script>
+<script type="text/jsx"
         src="{% static "ui/js/utils.jsx" %}">
 </script>
 {% endcompress %}
@@ -93,8 +81,11 @@ require(["listing", "jquery"], function(Listing, $) {
     imageDir: "{% static "ui/images"|escapejs %}",
     facetCounts: {{ facet_counts_json|safe }}
   };
+  var pageNum = {{ page.number }};
+  var numPages = {{ page.paginator.num_pages }};
+
   $(function() {
-    Listing.loader(listingOptions, $("#listing")[0]);
+    Listing.loader(listingOptions, pageNum, numPages, $("#listing")[0]);
   });
 });
 </script>
