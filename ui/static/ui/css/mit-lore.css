@@ -554,3 +554,26 @@ input.repo-page-status {
     top: 27%;
     transform: translateY(-27%);
 }
+
+.modal-dialog {
+    position: absolute;
+    right: 0;
+    left: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.modal.fade .modal-dialog {
+    transition: top 0.4s ease-out;
+    transform: translate(0, -50%);
+    top: 0;
+}
+
+.modal.in .modal-dialog {
+    transform: translate(0, -50%);
+    top: 50%;
+}
+
+.modal-dialog p {
+    font-size: medium;
+}

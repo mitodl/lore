@@ -32,7 +32,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
               <span className="utility-features">
                 <a href="#">
                   <i className="fa fa-pencil"></i>
-                </a> <a href="#">
+                </a>
+                <a data-toggle="modal" data-target="#confirm-delete"
+                  onClick={this.onDeleteHandler} className="delete-vocabulary">
                   <i className="fa fa-remove"></i>
                 </a>
               </span> <a className="accordion-toggle vocab-title"
@@ -67,6 +69,35 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
             </div>
           </div>
       </div>;
+    },
+    onDeleteHandler: function() {
+      var options = {
+        actionButtonName: "Delete",
+        actionButtonClass: "btn btn-danger btn-ok",
+        title: "Confirm Delete",
+        message: "Are you sure you want to delete vocabulary '" +
+          this.props.vocabulary.name + "'?",
+        confirmationHandler: this.confirmedDeleteResponse
+      };
+      this.props.renderConfirmationDialog(options);
+    },
+    confirmedDeleteResponse: function(success) {
+      var method = "DELETE";
+      var thiz = this;
+      if (success) {
+        var vocab = this.props.vocabulary;
+        var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+          '/vocabularies/' + vocab.slug + '/';
+        $.ajax({
+          type: method,
+          url: API_ROOT_VOCAB_URL
+        }).fail(function () {
+          var message = "Unable to delete vocabulary '" + vocab.name + "'";
+          thiz.props.reportMessage({error: message});
+        }).then(function () {
+          thiz.props.deleteVocabulary(vocab.slug);
+        });
+      }
     },
     onKeyUp: function(e) {
       if (e.key === "Enter") {
@@ -115,11 +146,13 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       var items = _.map(this.props.vocabularies, function (obj) {
         return <VocabularyComponent
           vocabulary={obj.vocabulary}
+          deleteVocabulary={thiz.props.deleteVocabulary}
           terms={obj.terms}
           key={obj.vocabulary.slug}
           repoSlug={repoSlug}
           reportMessage={thiz.reportMessage}
           addTerm={thiz.props.addTerm}
+          renderConfirmationDialog={thiz.props.renderConfirmationDialog}
           />;
       });
       return <div className="panel-group lore-panel-group">
@@ -338,6 +371,12 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       });
       this.setState({vocabularies: vocabularies});
     },
+    deleteVocabulary: function(vocabSlug) {
+      var vocabularies = _.filter(this.state.vocabularies, function(tuple) {
+        return tuple.vocabulary.slug !== vocabSlug;
+      });
+      this.setState({vocabularies: vocabularies});
+    },
     render: function() {
       return (
         <div className="tab-content drawer-tab-content">
@@ -345,6 +384,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
             <AddTermsComponent
               vocabularies={this.state.vocabularies}
               repoSlug={this.props.repoSlug}
+              renderConfirmationDialog={this.props.renderConfirmationDialog}
+              deleteVocabulary={this.deleteVocabulary}
               addTerm={this.addTerm} />
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
@@ -388,9 +429,10 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     'AddTermsComponent': AddTermsComponent,
     'AddVocabulary': AddVocabulary,
     'TaxonomyComponent': TaxonomyComponent,
-    'loader': function (repoSlug, container) {
+    'loader': function (repoSlug, container, showConfirmationDialog) {
       React.render(
-        <TaxonomyComponent repoSlug={repoSlug}/>,
+        <TaxonomyComponent repoSlug={repoSlug}
+          renderConfirmationDialog={showConfirmationDialog}/>,
         container
       );
     }
