@@ -235,8 +235,10 @@ class TestSearch(RESTTestCase):
         term1 = Term.objects.create(vocabulary=vocab, label='term1', weight=1)
         term2 = Term.objects.create(vocabulary=vocab, label='term2', weight=1)
 
+        # getting two specific type of learning resources
         resources = LearningResource.objects.filter(
-            course__repository__id=self.repo.id
+            course__repository__id=self.repo.id,
+            learning_resource_type__name='html'
         ).all()
 
         resource1 = resources[0]
@@ -307,6 +309,77 @@ class TestSearch(RESTTestCase):
             )['count']
         )
 
+        # Facets with missing counts for vocabularies
+        results = self.get_results()
+        facet_counts = results['facet_counts']
+        # No missing count for facets that are not vocabularies
+        self.assertEqual(
+            facet_counts['run']['facet'],
+            {'key': 'run', 'label': 'Run'}
+        )
+        self.assertEqual(
+            facet_counts['course']['facet'],
+            {'key': 'course', 'label': 'Course'}
+        )
+        self.assertEqual(
+            facet_counts['resource_type']['facet'],
+            {'key': 'resource_type', 'label': 'Item Type'}
+        )
+        # And missing count for vocabulary
+        # Note there are two learning resources tagged with
+        # terms at the beginning of this test
+        self.assertEqual(
+            facet_counts[str(vocab.id)]['facet'],
+            {
+                'key': str(vocab.id),
+                'label': vocab.name,
+                'missing_count': results['count'] - 2
+            }
+        )
+        # the missing count reflects the filtering
+        # both html LR have a term
+        results = self.get_results(
+            selected_facets=['resource_type_exact:html'])
+        facet_counts = results['facet_counts']
+        self.assertEqual(results['count'], 2)
+        self.assertEqual(
+            facet_counts[str(vocab.id)]['facet'],
+            {
+                'key': str(vocab.id),
+                'label': vocab.name,
+                'missing_count': 0
+            }
+        )
+        # no chapter LR has a term
+        results = self.get_results(
+            selected_facets=['resource_type_exact:chapter'])
+        facet_counts = results['facet_counts']
+        self.assertEqual(results['count'], 2)
+        self.assertEqual(
+            facet_counts[str(vocab.id)]['facet'],
+            {
+                'key': str(vocab.id),
+                'label': vocab.name,
+                'missing_count': 2
+            }
+        )
+        # filtering by missing vocabulary
+        results = self.get_results(
+            selected_facets=['_missing_:{0}_exact'.format(vocab.id)])
+        facet_counts = results['facet_counts']
+        self.assertEqual(results['count'], 17)
+        self.assertEqual(
+            facet_counts[str(vocab.id)],
+            {
+                'facet': {
+                    'key': str(vocab.id),
+                    'label': vocab.name,
+                    'missing_count': 17
+                },
+                'values': []
+            }
+        )
+
         # Facet count
         facet_counts = self.get_results(
             selected_facets=["{v}_exact:{t}".format(
@@ -353,7 +426,11 @@ class TestSearch(RESTTestCase):
         self.assertEqual(
             facet_counts[str(vocab.id)],
             {
-                'facet': {'key': str(vocab.id), 'label': vocab.name},
+                'facet': {
+                    'key': str(vocab.id),
+                    'label': vocab.name,
+                    'missing_count': 0
+                },
                 'values': [{
                     'count': 1,
                     'key': str(term1.id),

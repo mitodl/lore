@@ -26,6 +26,7 @@ from celery.states import FAILURE, SUCCESS, REVOKED
 from celery.result import AsyncResult
 from haystack.inputs import Exact
 from haystack.query import SearchQuerySet
+from statsd.defaults.django import statsd
 
 from exporter.tasks import export_resources
 from roles.permissions import GroupTypes, BaseGroupTypes
@@ -804,11 +805,30 @@ class RepositorySearchList(GenericViewSet):
 
         return queryset
 
-    def make_facet_counts(self, queryset):
+    def make_facet_counts(self, queryset):  # pylint: disable=too-many-locals
         """
         Facets on every facet available and provides a data structure
         of facet count information ready for API use.
         """
+        def reformat(key, values, missing_count=None):
+            """Convert tuples to dictionaries so we can use keys."""
+            reformatted = {
+                "facet": {
+                    "key": str(key[0]),
+                    "label": key[1]
+                },
+                "values": [
+                    {
+                        "label": value_label,
+                        "key": str(value_key),
+                        "count": count
+                    } for value_key, value_label, count in values
+                ]
+            }
+            if missing_count is not None:
+                reformatted["facet"]["missing_count"] = missing_count
+            return reformatted
+
         for facet in ('course', 'run', 'resource_type'):
             queryset = queryset.facet(facet)
 
@@ -819,7 +839,17 @@ class RepositorySearchList(GenericViewSet):
             queryset = queryset.facet(vocabulary.id)
 
         facet_counts = queryset.facet_counts()
-        ret = get_vocabularies(facet_counts)
+        vocabs = get_vocabularies(facet_counts)
+
+        # return dictionary
+        ret_dict = {}
+
+        # process vocabularies
+        for key, values in vocabs.items():
+            missing_count = queryset.filter(
+                _missing_='{0}_exact'.format(key[0])).count()
+            ret_dict[key[0]] = reformat(
+                key, values, missing_count=missing_count)
 
         # Reformat facet_counts to match term counts.
         for key, label in (
@@ -832,25 +862,11 @@ class RepositorySearchList(GenericViewSet):
                           in facet_counts['fields'][key]]
             else:
                 values = []
-            ret[(key, label)] = values
+            ret_dict[key] = reformat((key, label), values)
 
-        def reformat(key, values):
-            """Convert tuples to dictionaries so we can use keys."""
-            return {
-                "facet": {"key": str(key[0]), "label": key[1]},
-                "values": [
-                    {
-                        "label": value_label,
-                        "key": str(value_key),
-                        "count": count
-                    } for value_key, value_label, count in values
-                ]
-            }
-        return {
-            str(key[0]): reformat(key, values)
-            for key, values in ret.items()
-            }
+        return ret_dict
 
+    @statsd.timer('lore.rest.repository_search_list')
     def list(self, *args, **kwargs):  # pylint: disable=unused-argument
         """
         Returns response object containing search results, including
