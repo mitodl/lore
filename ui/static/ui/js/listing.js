@@ -1,15 +1,18 @@
 define('listing',
-  ['jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
+  ['csrf', 'jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
     'learning_resources', 'static_assets', 'utils',
     'lr_exports', 'listing_resources', 'pagination',
-    'bootstrap', 'icheck', 'csrf'],
-  function ($, _, URI, History, ManageTaxonomies, LearningResources,
-            StaticAssets, Utils, Exports, ListingResources, Pagination) {
+    'bootstrap', 'icheck'],
+  function (CSRF, $, _, URI, History,
+            ManageTaxonomies, LearningResources, StaticAssets,
+            Utils, Exports, ListingResources, Pagination) {
     'use strict';
 
     var loader = function (listingOptions, container) {
       var repoSlug = listingOptions.repoSlug;
       var loggedInUsername = listingOptions.loggedInUsername;
+
+      CSRF.setupCSRF();
 
       var EMAIL_EXTENSION = '@mit.edu';
 
