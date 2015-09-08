@@ -3,6 +3,8 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
   function (QUnit, $, ListingResources, React, TestUtils, _) {
     'use strict';
 
+    var imageRoot = "/base/ui/static/ui/images";
+
     var facetCounts = {
       "1": {
         "facet": {"key": "1", "label": "a"},
@@ -176,7 +178,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       React.addons.TestUtils.renderIntoDocument(<Facets
         facetCounts={facetCounts}
         selectedFacets={selectedFacets}
-        imageDir="/images"
+        imageDir={imageRoot}
         updateFacets={updateFacets}
         ref={afterMount}
         />);
@@ -214,7 +216,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
         React.addons.TestUtils.renderIntoDocument(<Facets
           facetCounts={emptyFacetCounts}
           selectedFacets={selectedFacets}
-          imageDir="/images"
+          imageDir={imageRoot}
           updateFacets={updateFacets}
           ref={afterMount}
           />);
@@ -268,7 +270,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
         React.addons.TestUtils.renderIntoDocument(<Facets
           facetCounts={facetCounts}
           selectedFacets={selectedFacets}
-          imageDir="/images"
+          imageDir={imageRoot}
           updateFacets={updateFacets}
           ref={afterMountUncheck}
           />);
@@ -277,7 +279,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       React.addons.TestUtils.renderIntoDocument(<Facets
         facetCounts={facetCounts}
         selectedFacets={selectedFacets}
-        imageDir="/images"
+        imageDir={imageRoot}
         updateFacets={updateFacets}
         ref={afterMountCheck}
         />);

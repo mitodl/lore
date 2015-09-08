@@ -3,6 +3,8 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
   function (QUnit, $, ListingResources, React, TestUtils, _) {
     'use strict';
 
+    var imageRoot = "/base/ui/static/ui/images";
+
     var Listing = ListingResources.Listing;
     var ListingResource = ListingResources.ListingResource;
     var SortingDropdown = ListingResources.SortingDropdown;
@@ -77,7 +79,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       sortingOptions: sortingOptions,
       loggedInUsername: "user",
       qsPrefix: "qs",
-      imageDir: "images",
+      imageDir: imageRoot,
       facetCounts: emptyFacetCounts
     };
 
