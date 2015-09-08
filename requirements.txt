@@ -9,6 +9,7 @@ djangorestframework==3.2.2
 dj-database-url==0.3.0
 dj-static==0.0.6
 elasticsearch==1.6.0
+elasticsearch-dsl==0.0.8
 git+https://github.com/bpeschier/django-compressor-requirejs@889d5edc4f2acaa961c170084f1171c700649519#egg=githubdjango-compressor-requirejs-develop==0.4.1-odl
 psycopg2==2.6.1
 PyYAML==3.11

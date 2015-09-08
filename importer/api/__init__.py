@@ -25,8 +25,10 @@ from learningresources.api import (
     create_static_asset,
     get_video_sub,
     join_description_paths,
+    get_resources,
 )
 from learningresources.models import StaticAsset, course_asset_basepath
+from search.utils import index_resources
 
 log = logging.getLogger(__name__)
 
@@ -119,7 +121,6 @@ def import_course(bundle, repo_id, user_id, static_dir):
         learningresources.models.Course
     """
     src = bundle.course
-
     course = create_course(
         org=src.attrib["org"],
         repo_id=repo_id,
@@ -130,6 +131,10 @@ def import_course(bundle, repo_id, user_id, static_dir):
     import_static_assets(course, static_dir)
     import_children(course, src, None, '')
     populate_xanalytics_fields.delay(course.id)
+    # This triggers a bulk indexing of all LearningResource instances
+    # for the course at once.
+    index_resources(
+        get_resources(repo_id).filter(course__id=course.id))
     return course
 
 

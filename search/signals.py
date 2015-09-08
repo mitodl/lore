@@ -8,12 +8,10 @@ many-to-many fields.
 
 import logging
 
-from django.db.models.signals import m2m_changed
+from django.db.models.signals import m2m_changed, post_save, post_delete
 from django.dispatch import receiver
 from haystack.signals import RealtimeSignalProcessor
 from statsd.defaults.django import statsd
-
-from search.search_indexes import LearningResourceIndex, get_vocabs
 
 log = logging.getLogger(__name__)
 
@@ -40,9 +38,38 @@ class LoreRealTimeSignalProcessor(RealtimeSignalProcessor):
 @receiver(m2m_changed)
 def handle_m2m_save(sender, **kwargs):
     """Update index when taxonomies are updated."""
+    from search.search_indexes import LearningResourceIndex, get_vocabs
     instance = kwargs.pop("instance", None)
     if instance.__class__.__name__ != "LearningResource":
         return
     # Update cache for the LearningResource if it's already set.
     get_vocabs(instance.id)
     LearningResourceIndex().update_object(instance)
+    # Update Elasticsearch index:
+    from search.utils import index_resources
+    index_resources([instance])
+
+
+@statsd.timer('lore.elasticsearch.taxonomy_update')
+@receiver(post_save)
+def handle_resource_update(sender, **kwargs):
+    """Update index when a LearningResource is updated."""
+    if kwargs["created"]:
+        # Don't index upon create; update only.
+        return
+    instance = kwargs.pop("instance", None)
+    if instance.__class__.__name__ != "LearningResource":
+        return
+    from search.utils import index_resources
+    index_resources([instance])
+
+
+@statsd.timer('lore.elasticsearch.taxonomy_delete')
+@receiver(post_delete)
+def handle_resource_deletion(sender, **kwargs):
+    """Delete index when instance is deleted."""
+    instance = kwargs.pop("instance", None)
+    if instance.__class__.__name__ != "LearningResource":
+        return
+    from search.utils import delete_index
+    delete_index(instance)
