@@ -30,10 +30,12 @@ class SearchTestCase(LoreTestCase):
         """
         Helper function to perform a search
         """
+        sort_order = LoreSortingFields.get_sorting_option(sorting)[2]
         form = SearchForm(
             data={"q": query},
             repo_slug=self.repo.slug,
-            sortby=sorting
+            sortby=sorting,
+            sort_order=sort_order
         )
         return form.search()
 
@@ -44,9 +46,12 @@ class SearchTestCase(LoreTestCase):
     def count_faceted_results(self, vocab, term):
         """Return count of matching indexed records by facet."""
         facet_query = "{0}_exact:{1}".format(vocab, term)
+        sorting = LoreSortingFields.DEFAULT_SORTING_FIELD
+        sort_order = LoreSortingFields.get_sorting_option(sorting)[2]
         form = SearchForm(
             selected_facets=[facet_query],
             repo_slug=self.repo.slug,
-            sortby=LoreSortingFields.DEFAULT_SORTING_FIELD
+            sortby=sorting,
+            sort_order=sort_order
         )
         return form.search().count()

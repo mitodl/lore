@@ -795,10 +795,10 @@ class RepositorySearchList(GenericViewSet):
         order_by = self.request.GET.get('sortby', '')
         if order_by == "":
             order_by = LoreSortingFields.DEFAULT_SORTING_FIELD
-        if order_by.startswith("-"):
-            order_by = order_by[1:]
-        else:
-            order_by = "-{0}".format(order_by)
+        # default values in case of weird sorting options
+        order_by, _, order_direction = LoreSortingFields.get_sorting_option(
+            order_by)
+        order_by = "{0}{1}".format(order_direction, order_by)
         queryset = queryset.order_by(
             order_by, LoreSortingFields.BASE_SORTING_FIELD)
 

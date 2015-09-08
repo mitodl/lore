@@ -85,7 +85,9 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     avg_grade = indexes.FloatField(model_attr="xa_avg_grade")
 
     lid = indexes.IntegerField(model_attr="id", indexed=False)
-    title = indexes.CharField(model_attr="title", indexed=False)
+    # title set in this way because of a known bug in haystack
+    # http://bit.ly/1ENeElY
+    title = indexes.CharField(model_attr="title", indexed=False, stored=True)
     description = indexes.CharField(model_attr="description", indexed=False)
     description_path = indexes.CharField(
         model_attr="description_path",

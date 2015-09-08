@@ -14,18 +14,21 @@ class SearchForm(FacetedSearchForm):
         """__init__ override to get repo slug and sorting."""
         self.repo_slug = kwargs.pop("repo_slug")
         self.sortby = kwargs.pop("sortby")
+        self.sort_order = kwargs.pop("sort_order")
         super(SearchForm, self).__init__(*args, **kwargs)
 
     def search(self):
         """Override search to filter on repository."""
         sqs = super(SearchForm, self).search()
         sqs = sqs.narrow("repository_exact:{0}".format(self.repo_slug))
-        return sqs.order_by('-{0}'.format(self.sortby)).order_by(
-            LoreSortingFields.BASE_SORTING_FIELD)
+        return sqs.order_by(
+            '{0}{1}'.format(self.sort_order, self.sortby)
+            ).order_by(LoreSortingFields.BASE_SORTING_FIELD)
 
     def no_query_found(self):
         """We want to return everything, not nothing (the default)."""
         sqs = self.searchqueryset.narrow(
             "repository_exact:{0}".format(self.repo_slug))
-        return sqs.order_by('-{0}'.format(self.sortby)).order_by(
-            LoreSortingFields.BASE_SORTING_FIELD)
+        return sqs.order_by(
+            '{0}{1}'.format(self.sort_order, self.sortby)
+            ).order_by(LoreSortingFields.BASE_SORTING_FIELD)

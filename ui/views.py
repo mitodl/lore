@@ -204,6 +204,8 @@ class RepositoryView(FacetedSearchView):
         else:
             # default value
             self.sortby = LoreSortingFields.DEFAULT_SORTING_FIELD
+        self.sort_order = LoreSortingFields.get_sorting_option(
+            self.sortby)[2]
         return super(RepositoryView, self).__call__(request)
 
     def dispatch(self, *args, **kwargs):
@@ -326,6 +328,7 @@ class RepositoryView(FacetedSearchView):
             form_kwargs = {}
         form_kwargs["repo_slug"] = self.repo.slug
         form_kwargs["sortby"] = self.sortby
+        form_kwargs["sort_order"] = self.sort_order
         return super(RepositoryView, self).build_form(form_kwargs)
 
 
