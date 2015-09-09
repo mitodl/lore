@@ -9,51 +9,59 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
     mixins: [React.addons.LinkedStateMixin],
     getInitialState: function() {
       return {
-        formatActionClassName: 'fa fa-pencil no-select',
-        formatActionState: 'edit',
-        editTextClass: 'form-control edit-term-box-hide',
-        listClassName: 'form-group',
+        formatActionState: 'show',
         label: this.props.term.label,
-        errorMessage: ''
+        errorMessage: '',
       };
     },
     render: function () {
-      return <li className={this.state.listClassName}>
+
+      var label = null;
+      var formatActionClassName = null;
+      if (this.state.formatActionState === 'edit') {
+        label = <label className="help-inline control-label"> <input
+          ref="editText"
+          type="text"
+          valueLink={this.linkState('label')}
+          className='form-control edit-term-box' /> {this.state.errorMessage}
+        </label>;
+        formatActionClassName = "fa fa-save no-select";
+      }
+      else if (this.state.formatActionState === 'show') {
+        label = <label className="term-title"
+          htmlFor="minimal-checkbox-1-11">{this.state.label}</label>;
+        formatActionClassName = "fa fa-pencil no-select";
+      }
+
+      var listClassName = "form-group";
+      if (this.state.errorMessage !== '') {
+        listClassName = "form-group has-error";
+      }
+
+      return <li className={listClassName}>
         <span className="utility-features">
           <a onClick={this.formatHandler} className="format-button">
-            <i className={this.state.formatActionClassName}></i>
+            <i className={formatActionClassName}></i>
           </a> <a onClick={this.revertHandler} className="revert-button">
             <i className="fa fa-remove"></i>
           </a>
-        </span>
-        <label className="term-title" data-label-number={this.props.term.id}
-          htmlFor="minimal-checkbox-1-11">{this.state.label}</label>
-        <label className="help-inline control-label"> <input
-          type="text" data-id={this.props.term.id}
-          valueLink={this.linkState('label')}
-          className={this.state.editTextClass}/> {this.state.errorMessage}
-        </label>
-      </li>;
+        </span>{label}</li>;
     },
     /**
      * If user selects edit button then open edit mode
      * Else call api to update term.
      */
     formatHandler: function() {
-      var termId = this.props.term.id;
       var formatActionState = this.state.formatActionState;
-      var replaceWith = $("[data-id='" + termId + "']");
-      var labelSelector = $("[data-label-number='" + termId + "']");
 
-      if (formatActionState === 'edit') {
+      if (formatActionState === 'show') {
         this.setState({
-          formatActionClassName: "fa fa-save no-select",
-          formatActionState: 'save',
-          editTextClass: 'form-control edit-term-box-show'
+          formatActionState: 'edit',
+        }, function() {
+          var $editText = $(React.findDOMNode(this.refs.editText));
+          $editText.focus();
         });
-        labelSelector.hide();
-        replaceWith.focus();
-      } else if (formatActionState === 'save') {
+      } else if (formatActionState === 'edit') {
         if (this.state.label !== this.props.term.label) {
           this.updateTermSubmit();
         } else {
@@ -66,20 +74,16 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
     */
     revertHandler : function() {
       var formatActionState = this.state.formatActionState;
-      if (formatActionState === 'save') {
+      if (formatActionState === 'edit') {
         // user is in edit mode. Cancel edit if user presses cross icon.
         this.resetUtilityFeatures();
-        this.setState({label: this.props.term.label});
       }
     },
     /**
      * Reset term edit UI
      */
     resetUtilityFeatures: function() {
-      var termId = this.props.term.id;
-      var labelSelector = $("[data-label-number='" + termId + "']");
       this.setState(this.getInitialState());
-      labelSelector.show();
     },
     /**
      * Api call to save term and update parent component
@@ -87,7 +91,6 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
     updateTermSubmit: function() {
       if (_.isEmpty(this.state.label)) {
         this.setState({
-          listClassName: 'form-group has-error',
           errorMessage: "Can't save empty term. If you want to revert then" +
             " please click the cancel button (x)"
         });
@@ -108,7 +111,6 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
         contentType: "application/json"
       }).fail(function() {
         thiz.setState({
-          listClassName: 'form-group has-error',
           errorMessage: 'Unable to update term'
         });
       }).done(function(term) {

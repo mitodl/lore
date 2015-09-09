@@ -555,13 +555,9 @@ input.repo-page-status {
     transform: translateY(-27%);
 }
 
-.edit-term-box-show {
+.edit-term-box {
     width: 50%;
     display: inline;
-}
-
-.edit-term-box-hide {
-    display: none;
 }
 
 .no-select {

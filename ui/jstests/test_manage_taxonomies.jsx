@@ -217,7 +217,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         var termLabel = labels[0];
         var label = termLabel.getDOMNode();
         assert.equal(label.innerHTML, term.label);
-        assert.equal(component.state.formatActionState, 'edit');
+        assert.equal(component.state.formatActionState, 'show');
 
         var formatButton = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
@@ -229,17 +229,17 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             component,
             'revert-button'
         );
-        var editTermBox = React.addons.TestUtils.
-        findRenderedDOMComponentWithTag(
-          component,
-          'input'
-        );
 
         //open edit mode
         React.addons.TestUtils.Simulate.click(formatButton);
         component.forceUpdate(function() {
-          assert.equal(component.state.formatActionState, 'save');
+          assert.equal(component.state.formatActionState, 'edit');
           //edit term
+          var editTermBox = React.addons.TestUtils.
+            findRenderedDOMComponentWithTag(
+            component,
+            'input'
+          );
           React.addons.TestUtils.Simulate.change(
             editTermBox, {target: {value: "TestB"}}
           );
@@ -251,14 +251,19 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
               //after saved term using api
               waitForAjax(1, function() {
                 //term state reset
-                assert.equal(component.state.formatActionState, 'edit');
+                assert.equal(component.state.formatActionState, 'show');
                 // term is update in parent
                 assert.equal(parentUpdateCount, 1);
 
                 // Edit term again
                 React.addons.TestUtils.Simulate.click(formatButton);
                 component.forceUpdate(function() {
-                  assert.equal(component.state.formatActionState, 'save');
+                  assert.equal(component.state.formatActionState, 'edit');
+                  editTermBox = React.addons.TestUtils.
+                    findRenderedDOMComponentWithTag(
+                    component,
+                    'input'
+                  );
                   React.addons.TestUtils.Simulate.change(
                     editTermBox, {target: {value: "TestB"}}
                   );
@@ -267,17 +272,25 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                     React.addons.TestUtils.Simulate.click(cancelButton);
 
                     component.forceUpdate(function () {
-                      assert.equal(component.state.formatActionState, 'edit');
+                      assert.equal(component.state.formatActionState, 'show');
                       //assert editbox is hide (UI reset)
-                      assert.equal(
-                        component.state.editTextClass,
-                        'form-control edit-term-box-hide'
+                      var editTermBoxes = React.addons.TestUtils.
+                        scryRenderedDOMComponentsWithTag(
+                        component,
+                        'input'
                       );
+
+                      assert.equal(editTermBoxes.length, 0);
 
                       // Edit again term with same label
                       React.addons.TestUtils.Simulate.click(formatButton);
                       component.forceUpdate(function() {
-                        assert.equal(component.state.formatActionState, 'save');
+                        assert.equal(component.state.formatActionState, 'edit');
+                        editTermBox = React.addons.TestUtils.
+                          findRenderedDOMComponentWithTag(
+                          component,
+                          'input'
+                        );
                         React.addons.TestUtils.Simulate.change(
                           editTermBox, {target: {value: "test"}}
                         );
@@ -288,10 +301,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
 
                           component.forceUpdate(function() {
                             //assert editbox is hide (UI reset)
-                            assert.equal(
-                              component.state.editTextClass,
-                              'form-control edit-term-box-hide'
+                            editTermBoxes = React.addons.TestUtils.
+                              scryRenderedDOMComponentsWithTag(
+                              component,
+                              'input'
                             );
+                            assert.equal(editTermBoxes.length, 0);
                             done();
                           });
                         });
@@ -348,7 +363,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         var termLabel = labels[0];
         var label = termLabel.getDOMNode();
         assert.equal(label.innerHTML, term.label);
-        assert.equal(component.state.formatActionState, 'edit');
+        assert.equal(component.state.formatActionState, 'show');
         var formatButton = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
             component,
@@ -359,14 +374,14 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             component,
             'revert-button'
         );
-        var editTermBox = React.addons.TestUtils.
-        findRenderedDOMComponentWithTag(
-          component,
-          'input'
-        );
         React.addons.TestUtils.Simulate.click(formatButton);
         component.forceUpdate(function() {
-          assert.equal(component.state.formatActionState, 'save');
+          assert.equal(component.state.formatActionState, 'edit');
+          var editTermBox = React.addons.TestUtils.
+          findRenderedDOMComponentWithTag(
+            component,
+            'input'
+          );
           React.addons.TestUtils.Simulate.change(
             editTermBox, {target: {value: "TestB"}}
           );
@@ -379,22 +394,30 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                 assert.equal(
                   component.state.errorMessage, 'Unable to update term'
                 );
-                assert.equal(component.state.formatActionState, 'save');
+                assert.equal(component.state.formatActionState, 'edit');
                 assert.equal(parentUpdateCount, 0);
+
+                editTermBox = React.addons.TestUtils.
+                  findRenderedDOMComponentWithTag(
+                  component,
+                  'input'
+                );
                 React.addons.TestUtils.Simulate.change(
-                    editTermBox, {target: {value: "TestB"}}
+                  editTermBox, {target: {value: "TestB"}}
                 );
                 //after unable to save you can reset edit mode
                 component.forceUpdate(function () {
                   React.addons.TestUtils.Simulate.click(cancelButton);
                   component.forceUpdate(function () {
                     assert.equal(component.state.label, "test");
-                    assert.equal(component.state.formatActionState, 'edit');
+                    assert.equal(component.state.formatActionState, 'show');
                     //assert editbox is hide (UI reset)
-                    assert.equal(
-                      component.state.editTextClass,
-                      'form-control edit-term-box-hide'
+                    var editTermBoxes = React.addons.TestUtils.
+                      scryRenderedDOMComponentsWithTag(
+                      component,
+                      'input'
                     );
+                    assert.equal(editTermBoxes.length, 0);
                     done();
                   });
                 });
@@ -452,9 +475,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             component,
             'input'
         );
-        var addTermInputBox = inputNodes[
-          vocabulary.terms.length
-        ];
+        var addTermInputBox = inputNodes[0];
         React.addons.TestUtils.Simulate.change(
           addTermInputBox,
           {target: {value: 'test12'}}
@@ -1217,15 +1238,15 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             'format-button'
           );
           var formatButton = formatButtons[0];
-          var editTermBoxes = React.addons.TestUtils.
-          scryRenderedDOMComponentsWithClass(
-            component,
-            'edit-term-box-hide'
-          );
-          var editTermBox = editTermBoxes[0];
           //open edit mode
           React.addons.TestUtils.Simulate.click(formatButton);
           component.forceUpdate(function() {
+            var editTermBoxes = React.addons.TestUtils.
+            scryRenderedDOMComponentsWithClass(
+              component,
+              'edit-term-box'
+            );
+            var editTermBox = editTermBoxes[0];
             //edit term
             React.addons.TestUtils.Simulate.change(
               editTermBox, {target: {value: "TestB"}}
