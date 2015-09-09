@@ -9,20 +9,15 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
     mixins: [React.addons.LinkedStateMixin],
     getInitialState: function() {
       return {
-        formatActionClassName: 'fa fa-pencil',
+        formatActionClassName: 'fa fa-pencil no-select',
         formatActionState: 'edit',
         editTextClass: 'form-control edit-term-box-hide',
         listClassName: 'form-group',
-        label: ''
+        label: this.props.term.label,
+        errorMessage: ''
       };
     },
-    componentWillMount: function() {
-      if (this.props.term.label) {
-        this.setState({label: this.props.term.label});
-      }
-    },
     render: function () {
-      var editBoxId = "edit_" + this.props.term.id;
       return <li className={this.state.listClassName}>
         <span className="utility-features">
           <a onClick={this.formatHandler} className="format-button">
@@ -31,22 +26,28 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
             <i className="fa fa-remove"></i>
           </a>
         </span>
-        <label className="term-title" id={this.props.term.id}
-        htmlFor="minimal-checkbox-1-11">{this.state.label}</label> <input
-        name="exit_term_temp" type="text" id={editBoxId}
+        <label className="term-title" data-label-number={this.props.term.id}
+          htmlFor="minimal-checkbox-1-11">{this.state.label}</label>
+        <label className="help-inline control-label"> <input
+          type="text" data-id={this.props.term.id}
           valueLink={this.linkState('label')}
-          className={this.state.editTextClass}/> <label htmlFor={editBoxId}
-        className="help-inline control-label">{this.state.errorMessage}</label>
+          className={this.state.editTextClass}/> {this.state.errorMessage}
+        </label>
       </li>;
     },
+    /**
+     * If user selects edit button then open edit mode
+     * Else call api to update term.
+     */
     formatHandler: function() {
+      var termId = this.props.term.id;
       var formatActionState = this.state.formatActionState;
-      var replaceWith = $('#edit_' + this.props.term.id);
-      var labelSelector = $('#' + this.props.term.id);
+      var replaceWith = $("[data-id='" + termId + "']");
+      var labelSelector = $("[data-label-number='" + termId + "']");
 
       if (formatActionState === 'edit') {
         this.setState({
-          formatActionClassName: "fa fa-save",
+          formatActionClassName: "fa fa-save no-select",
           formatActionState: 'save',
           editTextClass: 'form-control edit-term-box-show'
         });
@@ -60,6 +61,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
         }
       }
     },
+    /**
+     * On Close button select reset term UI
+    */
     revertHandler : function() {
       var formatActionState = this.state.formatActionState;
       if (formatActionState === 'save') {
@@ -68,28 +72,37 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
         this.setState({label: this.props.term.label});
       }
     },
+    /**
+     * Reset term edit UI
+     */
     resetUtilityFeatures: function() {
-      var labelSelector = $('#' + this.props.term.id);
-      this.setState({
-        formatActionClassName: "fa fa-pencil",
-        formatActionState: 'edit',
-        editTextClass: 'form-control edit-term-box-hide',
-        listClassName: 'form-group',
-        errorMessage: ''
-      });
+      var termId = this.props.term.id;
+      var labelSelector = $("[data-label-number='" + termId + "']");
+      this.setState(this.getInitialState());
       labelSelector.show();
     },
+    /**
+     * Api call to save term and update parent component
+     */
     updateTermSubmit: function() {
+      if (_.isEmpty(this.state.label)) {
+        this.setState({
+          listClassName: 'form-group has-error',
+          errorMessage: "Can't save empty term. If you want to revert then" +
+            " please click the cancel button (x)"
+        });
+        return;
+      }
       var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
         '/vocabularies/' + this.props.vocabularySlug + '/terms/' +
-        this.props.term.slug;
+        this.props.term.slug + "/";
       var thiz = this;
       var termData = {
         label: this.state.label,
         weight: this.props.term.weight
       };
       $.ajax({
-        type: 'PUT',
+        type: 'PATCH',
         url: API_ROOT_VOCAB_URL,
         data: JSON.stringify(termData),
         contentType: "application/json"
@@ -99,8 +112,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
           errorMessage: 'Unable to update term'
         });
       }).done(function(term) {
-        thiz.props.updateTerm(thiz.props.vocabularySlug, term);
         thiz.resetUtilityFeatures();
+        thiz.props.updateTerm(thiz.props.vocabularySlug, term);
       });
     }
   });
@@ -432,20 +445,23 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils'],
       this.setState({vocabularies: vocabularies});
     },
     updateTerm: function(vocabSlug, term) {
-      var vocabularies = this.state.vocabularies;
-      var vocabIndex = _.findIndex(vocabularies, function(vocabularyObj) {
-        return vocabularyObj.vocabulary.slug === vocabSlug;
-      });
-      if (vocabIndex > -1) {
-        var terms = vocabularies[vocabIndex].terms;
-        var termIndex = _.findIndex(terms, function(termObj) {
-          return termObj.id === term.id;
-        });
-        if (termIndex > -1) {
-          vocabularies[vocabIndex].terms[termIndex] = term;
+      var vocabularies = _.map(this.state.vocabularies, function(tuple) {
+        if (tuple.vocabulary.slug === vocabSlug) {
+          var terms = _.map(tuple.terms, function (tupleTerm) {
+            if (tupleTerm.id === term.id) {
+              return term;
+            }
+            return tupleTerm;
+          });
+          return {
+            terms: terms,
+            vocabulary: tuple.vocabulary
+          };
+        } else {
+          return tuple;
         }
-        this.setState({vocabularies: vocabularies});
-      }
+      });
+      this.setState({vocabularies: vocabularies});
     },
     render: function() {
       return (

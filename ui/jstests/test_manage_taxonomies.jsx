@@ -202,9 +202,9 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         parentUpdateCount += 1;
       };
       TestUtils.initMockjax({
-        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test",
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test/",
         responseText: term,
-        type: "PUT"
+        type: "PATCH"
       });
       var afterMount = function(component) {
         var labels = React.addons.TestUtils.
@@ -212,11 +212,13 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
           component,
           'label'
         );
+
         //testing label value render
-        var termLable = labels[0];
-        var label = termLable.getDOMNode();
+        var termLabel = labels[0];
+        var label = termLabel.getDOMNode();
         assert.equal(label.innerHTML, term.label);
         assert.equal(component.state.formatActionState, 'edit');
+
         var formatButton = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
             component,
@@ -232,6 +234,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
           component,
           'input'
         );
+
         //open edit mode
         React.addons.TestUtils.Simulate.click(formatButton);
         component.forceUpdate(function() {
@@ -241,15 +244,17 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             editTermBox, {target: {value: "TestB"}}
           );
           component.forceUpdate(function() {
+            assert.equal(component.state.label, "TestB");
             //save term
             React.addons.TestUtils.Simulate.click(formatButton);
             component.forceUpdate(function() {
-              //afer saved term using api
+              //after saved term using api
               waitForAjax(1, function() {
                 //term state reset
                 assert.equal(component.state.formatActionState, 'edit');
                 // term is update in parent
                 assert.equal(parentUpdateCount, 1);
+
                 // Edit term again
                 React.addons.TestUtils.Simulate.click(formatButton);
                 component.forceUpdate(function() {
@@ -260,6 +265,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                   component.forceUpdate(function () {
                     // press cancel button and assert term layout is reset.
                     React.addons.TestUtils.Simulate.click(cancelButton);
+
                     component.forceUpdate(function () {
                       assert.equal(component.state.formatActionState, 'edit');
                       //assert editbox is hide (UI reset)
@@ -267,6 +273,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                         component.state.editTextClass,
                         'form-control edit-term-box-hide'
                       );
+
                       // Edit again term with same label
                       React.addons.TestUtils.Simulate.click(formatButton);
                       component.forceUpdate(function() {
@@ -274,9 +281,11 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                         React.addons.TestUtils.Simulate.change(
                           editTermBox, {target: {value: "test"}}
                         );
+
                         component.forceUpdate(function() {
                           // save term with label equals to previous label
                           React.addons.TestUtils.Simulate.click(formatButton);
+
                           component.forceUpdate(function() {
                             //assert editbox is hide (UI reset)
                             assert.equal(
@@ -324,9 +333,9 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         parentUpdateCount += 1;
       };
       TestUtils.initMockjax({
-        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test",
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test/",
         responseText: term,
-        type: "PUT",
+        type: "PATCH",
         status: 400
       });
       var afterMount = function(component) {
@@ -336,8 +345,8 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
           'label'
         );
         //testing label value render
-        var termLable = labels[0];
-        var label = termLable.getDOMNode();
+        var termLabel = labels[0];
+        var label = termLabel.getDOMNode();
         assert.equal(label.innerHTML, term.label);
         assert.equal(component.state.formatActionState, 'edit');
         var formatButton = React.addons.TestUtils.
@@ -362,9 +371,11 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             editTermBox, {target: {value: "TestB"}}
           );
           component.forceUpdate(function() {
+            assert.equal(component.state.label, "TestB");
             React.addons.TestUtils.Simulate.click(formatButton);
             component.forceUpdate(function() {
               waitForAjax(1, function() {
+                assert.equal(component.state.label, "TestB");
                 assert.equal(
                   component.state.errorMessage, 'Unable to update term'
                 );
@@ -377,6 +388,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                 component.forceUpdate(function () {
                   React.addons.TestUtils.Simulate.click(cancelButton);
                   component.forceUpdate(function () {
+                    assert.equal(component.state.label, "test");
                     assert.equal(component.state.formatActionState, 'edit');
                     //assert editbox is hide (UI reset)
                     assert.equal(
@@ -1193,11 +1205,11 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
           );
           var updateTermUrl = "/api/v1/repositories/repo/vocabularies/" +
               component.state.vocabularies[0].vocabulary.slug + "/terms/" +
-              component.state.vocabularies[0].terms[0].slug;
+              component.state.vocabularies[0].terms[0].slug + "/";
           TestUtils.initMockjax({
             url: updateTermUrl,
             responseText: term,
-            type: "PUT"
+            type: "PATCH"
           });
           var formatButtons = React.addons.TestUtils.
           scryRenderedDOMComponentsWithClass(
@@ -1220,6 +1232,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             );
             component.forceUpdate(function() {
               //save term
+              assert.equal($(React.findDOMNode(editTermBox)).val(), "TestB");
               React.addons.TestUtils.Simulate.click(formatButton);
               component.forceUpdate(function() {
                 //after saved term using api
