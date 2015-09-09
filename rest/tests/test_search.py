@@ -181,16 +181,19 @@ class TestSearch(RESTTestCase):
         resource1.xa_avg_grade = 2.0
         resource1.xa_nr_attempts = 4
         resource1.xa_nr_views = 1000
+        resource1.title = '22222'
         resource1.save()
 
         resource2.xa_avg_grade = 4.0
         resource2.xa_nr_attempts = 1
         resource2.xa_nr_views = 100
+        resource2.title = '11111'
         resource2.save()
 
         resource3.xa_avg_grade = 2.0
         resource3.xa_nr_attempts = 4
         resource3.xa_nr_views = 1000
+        resource3.title = '00000'
         resource3.save()
 
         # Default sorting should be by nr_views, descending, then id ascending.
@@ -212,10 +215,10 @@ class TestSearch(RESTTestCase):
         self.assertEqual(avg_grade_results[1]['lid'], resource3.id)
         self.assertEqual(avg_grade_results[2]['lid'], resource2.id)
 
-        avg_grade_results = self.get_results(sortby="-lid")['results']
-        self.assertEqual(avg_grade_results[0]['lid'], resource1.id)
-        self.assertEqual(avg_grade_results[1]['lid'], resource2.id)
-        self.assertEqual(avg_grade_results[2]['lid'], resource3.id)
+        title_results = self.get_results(sortby="title")['results']
+        self.assertEqual(title_results[0]['lid'], resource3.id)
+        self.assertEqual(title_results[1]['lid'], resource2.id)
+        self.assertEqual(title_results[2]['lid'], resource1.id)
 
     def test_facets(self):
         """
