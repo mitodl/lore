@@ -12,7 +12,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 
 import ui.urls
-from learningresources.models import Repository, StaticAsset, get_preview_url
+from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
 from search.sorting import LoreSortingFields
@@ -256,14 +256,18 @@ class TestViews(LoreTestCase):
         """
         url = self.repository_url + "?sortby={0}"
 
+        def get_sorting_options(resp):
+            """Helper function to decode JSON sorting options."""
+            return json.loads(resp.context['sorting_options_json'])
+
         # test no sort type
         resp = self.client.get(self.repository_url, follow=True)
         self.assertEqual(resp.status_code, HTTP_OK)
         self.assertEqual(
-            resp.context['sorting_options']['current'],
-            LoreSortingFields.get_sorting_option(
+            get_sorting_options(resp)['current'],
+            list(LoreSortingFields.get_sorting_option(
                 LoreSortingFields.DEFAULT_SORTING_FIELD
-            )
+            ))
         )
         # test all the allowed sort types
         for sort_option in LoreSortingFields.all_sorting_options():
@@ -271,31 +275,19 @@ class TestViews(LoreTestCase):
             resp = self.client.get(sort_url, follow=True)
             self.assertEqual(resp.status_code, HTTP_OK)
             self.assertEqual(
-                resp.context['sorting_options']['current'],
-                sort_option
+                get_sorting_options(resp)['current'],
+                list(sort_option)
             )
         # test sorting by not allowed sort type
         url_not_allowed_sort_type = url.format('foo_field')
         resp = self.client.get(url_not_allowed_sort_type, follow=True)
         self.assertEqual(resp.status_code, HTTP_OK)
         self.assertEqual(
-            resp.context['sorting_options']['current'],
-            LoreSortingFields.get_sorting_option(
+            get_sorting_options(resp)['current'],
+            list(LoreSortingFields.get_sorting_option(
                 LoreSortingFields.DEFAULT_SORTING_FIELD
-            )
+            ))
         )
-
-    def test_resource(self):
-        """Tests that the resource is in the listing page"""
-        resp = self.client.get(self.repository_url, follow=True)
-        self.assertEqual(resp.status_code, HTTP_OK)
-        resource = json.loads(resp.context['resources_json'])[0]
-        self.assertEqual(self.resource.id, resource['lid'])
-        self.assertEqual(
-            self.resource.description_path, resource['description_path'])
-        self.assertEqual(self.resource.description, resource['description'])
-        self.assertEqual(
-            get_preview_url(self.resource), resource['preview_url'])
 
     def test_serve_media(self):
         """Hit serve media"""

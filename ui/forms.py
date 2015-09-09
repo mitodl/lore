@@ -15,7 +15,7 @@ from django.forms import (
 from django.db import transaction
 
 from importer.tasks import import_file
-from learningresources.models import Course, Repository
+from learningresources.models import Repository
 
 log = logging.getLogger(__name__)
 
@@ -67,17 +67,6 @@ class UploadForm(Form):
             uploaded_file
         )
         import_file.delay(path, repo_id, user_id)
-
-
-class CourseForm(ModelForm):
-    """
-    Form for the Course object.
-    """
-    class Meta:  # pylint: disable=missing-docstring
-        model = Course
-        fields = (
-            "repository", "org", "course_number", "run", "imported_by"
-        )
 
 
 class RepositoryForm(ModelForm):

@@ -78,7 +78,6 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       allExports: allExports,
       sortingOptions: sortingOptions,
       loggedInUsername: "user",
-      qsPrefix: "qs",
       imageDir: imageRoot,
       facetCounts: emptyFacetCounts
     };
@@ -237,7 +236,6 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       React.addons.TestUtils.renderIntoDocument(
         <SortingDropdown
           sortingOptions={sortingOptions}
-          qsPrefix="?"
           repoSlug="test"
           ref={afterMount}
           />
