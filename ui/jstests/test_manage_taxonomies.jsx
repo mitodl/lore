@@ -181,6 +181,10 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         dataType: 'json',
         type: "GET"
       });
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/",
+        type: "DELETE"
+      });
     },
     afterEach: function() {
       TestUtils.cleanup();
@@ -219,6 +223,10 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       assert.ok(VocabularyComponent, "class object not found");
       var done = assert.async();
 
+      var showConfirmationDialog = function (options) {
+        options.confirmationHandler(true);
+      };
+
       var addTermCalled = 0;
       var deleteVocabularyCalled = 0;
       var addTerm = function() {
@@ -256,32 +264,34 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         );
         var deleteVocabularyButton = actionButtons[0];
         React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
-        component.forceUpdate(function() {
-          assert.equal(deleteVocabularyCalled, 1);
-          //test enter text in input text
-          var inputNode = React.addons.TestUtils.
-            findRenderedDOMComponentWithTag(
+        component.forceUpdate(function () {
+          waitForAjax(1, function () {
+            assert.equal(deleteVocabularyCalled, 1);
+            //test enter text in input text
+            var inputNode = React.addons.TestUtils.
+              findRenderedDOMComponentWithTag(
               component,
               'input'
-          );
-          React.addons.TestUtils.Simulate.change(
-            inputNode,
-            {target: {value: 'test12'}}
-          );
-          component.forceUpdate(function() {
-            node = React.findDOMNode(component);
-            var textbox = $(node).find("input")[0];
-            assert.equal(
-              'test12',
-              component.state.newTermLabel
             );
-            React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
-            assert.equal(addTermCalled, 0);
+            React.addons.TestUtils.Simulate.change(
+              inputNode,
+              {target: {value: 'test12'}}
+            );
+            component.forceUpdate(function () {
+              node = React.findDOMNode(component);
+              var textbox = $(node).find("input")[0];
+              assert.equal(
+                'test12',
+                component.state.newTermLabel
+              );
+              React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
+              assert.equal(addTermCalled, 0);
 
-            React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
-            waitForAjax(1, function() {
-              assert.equal(addTermCalled, 1);
-              done();
+              React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
+              waitForAjax(1, function () {
+                assert.equal(addTermCalled, 1);
+                done();
+              });
             });
           });
         });
@@ -293,6 +303,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             terms={vocabulary.terms}
             reportMessage={reportMessage}
             deleteVocabulary={deleteVocabulary}
+            renderConfirmationDialog={showConfirmationDialog}
             addTerm={addTerm}
             repoSlug="repo"
             ref={afterMount}
@@ -718,12 +729,14 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         );
         React.addons.TestUtils.Simulate.submit(formNode);
         waitForAjax(1, function() {
-          // Error is caused by a 400 status code
-          assert.deepEqual(
-            component.state.message,
-            {error: "There was a problem adding the Vocabulary."}
-          );
-          done();
+          component.forceUpdate(function() {
+            // Error is caused by a 400 status code
+            assert.deepEqual(
+              component.state.message,
+              {error: "There was a problem adding the Vocabulary."}
+            );
+            done();
+          });
         });
       };
       React.addons.TestUtils.
@@ -878,6 +891,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         <TaxonomyComponent
           vocabularies={vocabularies}
           repoSlug="repo"
+          renderConfirmationDialog={function() {}}
           ref={afterMount}
         />
       );
@@ -982,6 +996,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         <TaxonomyComponent
           vocabularies={vocabularies}
           repoSlug="repo"
+          renderConfirmationDialog={function() {}}
           ref={afterMount}
         />
       );
@@ -994,14 +1009,9 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       var done = assert.async();
       var userSelectedConfirm = 0;
       var showConfirmationDialog = function (options) {
-        options.confirmationSuccess(true, vocabulary);
+        options.confirmationHandler(true);
         userSelectedConfirm += 1;
       };
-
-      TestUtils.initMockjax({
-        url: "/api/v1/repositories/repo/vocabularies/" + vocabulary.slug,
-        type: "DELETE"
-      });
 
       var afterMount = function(component) {
         waitForAjax(2, function() {
@@ -1046,12 +1056,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       var done = assert.async();
       var userSelectedConfirm = 0;
       var showConfirmationDialog = function (options) {
-        options.confirmationSuccess(true, vocabulary);
+        options.confirmationHandler(true);
         userSelectedConfirm += 1;
       };
 
-      TestUtils.initMockjax({
-        url: "/api/v1/repositories/repo/vocabularies/" + vocabulary.slug,
+      TestUtils.replaceMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/" + vocabulary.slug + "/",
         type: "DELETE",
         status: 400
       });
@@ -1069,18 +1079,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
           );
           var deleteVocabularyButton = actionButtons[0];
           React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
-          component.forceUpdate(function() {
-            waitForAjax(1, function() {
+          waitForAjax(1, function() {
+            component.forceUpdate(function() {
               assert.equal(userSelectedConfirm, 1);
               assert.equal(
                 component.state.vocabularies.length,
                 1
-              );
-              var message = "Unable to delete vocabulary '" +
-                vocabulary.name + "'";
-              assert.deepEqual(
-                component.state.message,
-                {error: message}
               );
               done();
             });

@@ -71,7 +71,33 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       </div>;
     },
     onDeleteHandler: function() {
-      this.props.deleteVocabulary(this.props.vocabulary, "confirm-delete");
+      var options = {
+        actionButtonName: "Delete",
+        actionButtonClass: "btn btn-danger btn-ok",
+        title: "Confirm Delete",
+        message: "Are you sure you want to delete vocabulary '" +
+          this.props.vocabulary.name + "'?",
+        confirmationHandler: this.confirmedDeleteResponse
+      };
+      this.props.renderConfirmationDialog(options);
+    },
+    confirmedDeleteResponse: function(success) {
+      var method = "DELETE";
+      var thiz = this;
+      if (success) {
+        var vocab = this.props.vocabulary;
+        var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+          '/vocabularies/' + vocab.slug + '/';
+        $.ajax({
+          type: method,
+          url: API_ROOT_VOCAB_URL
+        }).fail(function () {
+          var message = "Unable to delete vocabulary '" + vocab.name + "'";
+          thiz.props.reportMessage({error: message});
+        }).then(function () {
+          thiz.props.deleteVocabulary(vocab.slug);
+        });
+      }
     },
     onKeyUp: function(e) {
       if (e.key === "Enter") {
@@ -120,12 +146,13 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       var items = _.map(this.props.vocabularies, function (obj) {
         return <VocabularyComponent
           vocabulary={obj.vocabulary}
-          deleteVocabulary={thiz.deleteVocabularyHandler}
+          deleteVocabulary={thiz.props.deleteVocabulary}
           terms={obj.terms}
           key={obj.vocabulary.slug}
           repoSlug={repoSlug}
           reportMessage={thiz.reportMessage}
           addTerm={thiz.props.addTerm}
+          renderConfirmationDialog={thiz.props.renderConfirmationDialog}
           />;
       });
       return <div className="panel-group lore-panel-group">
@@ -135,9 +162,6 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         {items}
       </div>;
 
-    },
-    deleteVocabularyHandler: function(vocab, dialogId) {
-      this.props.deleteVocabulary(vocab, dialogId);
     },
     reportMessage: function(message) {
       this.setState({message: message});
@@ -323,50 +347,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     getInitialState: function() {
       return {
         vocabularies: [],
-        learningResourceTypes: [],
-        message: ''
+        learningResourceTypes: []
       };
-    },
-    deleteVocabulary: function(vocab, dialogId) {
-      if (this.isMounted() && vocab && dialogId) {
-        var options = {
-          tag: vocab,
-          confirmationDialogId: dialogId,
-          confirmationDialogActionButtonName: "Delete",
-          actionButtonClass: "btn btn-danger btn-ok",
-          confirmationDialogTitle: "Confirm Delete",
-          confirmationDialogMessage:
-          "Are you sure you want to delete vocabulary" +
-          " '" +  vocab.name + "'.",
-          confirmationSuccess: this.confirmationDeleteResponse
-        };
-        this.props.renderConfirmationDialog(options);
-      }
-    },
-    confirmationDeleteResponse: function(status, vocab) {
-      var method = "DELETE";
-      var thiz = this;
-      if (status && vocab) {
-        var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
-        '/vocabularies/' + vocab.slug;
-        $.ajax({
-          type: method,
-          url: API_ROOT_VOCAB_URL
-        }).fail(function() {
-          var message = "Unable to delete vocabulary '" + vocab.name + "'";
-          thiz.setState({message: {error: message}});
-        }).done(function() {
-          var editIndex = -1;
-          var vocabularies = thiz.state.vocabularies;
-          editIndex = _.findIndex(vocabularies, function(vocabularyObj) {
-            return vocabularyObj.vocabulary.id === vocab.id;
-          });
-          if (editIndex > -1) {
-            vocabularies.splice(editIndex, 1);
-            thiz.setState({vocabularies: vocabularies});
-          }
-        });
-      }
     },
     addVocabulary: function(vocab) {
       // Wrap vocab in expected structure
@@ -389,14 +371,20 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       });
       this.setState({vocabularies: vocabularies});
     },
+    deleteVocabulary: function(vocabSlug) {
+      var vocabularies = _.filter(this.state.vocabularies, function(tuple) {
+        return tuple.vocabulary.slug !== vocabSlug;
+      });
+      this.setState({vocabularies: vocabularies});
+    },
     render: function() {
       return (
         <div className="tab-content drawer-tab-content">
-          <StatusBox message={this.state.message} />
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
               vocabularies={this.state.vocabularies}
               repoSlug={this.props.repoSlug}
+              renderConfirmationDialog={this.props.renderConfirmationDialog}
               deleteVocabulary={this.deleteVocabulary}
               addTerm={this.addTerm} />
           </div>

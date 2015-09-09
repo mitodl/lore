@@ -131,50 +131,27 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
    *       message={confirmationDialogMessage}
    *       confirmationSuccess={confirmationSuccess} />,
    *
-   * @param {String} id - Bootstrap dialog id
    * @param {String} actionButtonName - Name of action button can be any of delete, remove, ok etc
    * @param {String} actionButtonClass - Class(es) for action button
    * @param {String} title - Title/heading of confirmation dialog
    * @param {String} message - Content of dialog
    * @param {confirmationResponse} confirmationSuccess - Call back that sends confirmation status
   */
-  var ConfirmationDialog =  React.createClass({
-    getInitialState: function() {
+  var ConfirmationDialog = React.createClass({
+    getDefaultProps: function() {
       return {
-        id: 'confirm-box',
-        className: 'modal fade',
         actionButtonName: 'Confirm',
         actionButtonClass: 'btn btn-ok'
       };
     },
-    componentWillMount: function() {
-      if (this.props.actionButtonName) {
-        this.setState({actionButtonName: this.props.actionButtonName});
-      }
-
-      if (this.props.actionButtonClass) {
-        this.setState({actionButtonClass: this.props.actionButtonClass});
-      }
-
-      if (this.props.id) {
-        this.setState({id: this.props.id});
-      }
-
-      if (this.props.className) {
-        this.setState({className: this.props.className});
-      }
-    },
     render: function() {
-      if (!this.props || !this.props.message) {
-        return null;
-      }
       var title = '';
       if (this.props.title) {
         title = <h4 className="modal-title">{this.props.title}</h4>;
       }
 
       return (
-        <div className={this.state.className} id={this.state.id}>
+        <div className="modal fade">
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
@@ -189,10 +166,10 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
                 <button type="button" className="btn btn-default"
                   data-dismiss="modal"
                   onClick={this.confirmationFailure}>Cancel</button>
-                <button className={this.state.actionButtonClass}
+                <button className={this.props.actionButtonClass}
                   data-dismiss="modal"
                   onClick={this.confirmationSuccess}
-                >{this.state.actionButtonName}</button>
+                >{this.props.actionButtonName}</button>
               </div>
             </div>
           </div>
@@ -200,21 +177,13 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
       );
     },
     componentDidMount : function() {
-      $("#" + this.state.id).modal('show');
+      $(React.findDOMNode(this)).modal('show');
     },
     confirmationSuccess: function() {
-      if (this.props.tag) {
-        this.props.confirmationSuccess(true, this.props.tag);
-      } else {
-        this.props.confirmationSuccess(true);
-      }
+      this.props.confirmationHandler(true, this.props.tag);
     },
     confirmationFailure: function() {
-      if (this.props.tag) {
-        this.props.confirmationSuccess(false, this.props.tag);
-      } else {
-        this.props.confirmationSuccess(false);
-      }
+      this.props.confirmationHandler(false, this.props.tag);
     }
   });
 
@@ -368,17 +337,12 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
     ICheckbox: ICheckbox,
     Select2: Select2,
     InfiniteList: InfiniteList,
-    showConfirmationDialog: function(options, containter) {
+    ConfirmationDialog: ConfirmationDialog,
+    showConfirmationDialog: function(options, container) {
+      React.unmountComponentAtNode(container);
       React.render(
-        <ConfirmationDialog
-          tag={options.tag}
-          actionButtonClass={options.actionButtonClass}
-          id={options.confirmationDialogId}
-          actionButtonName={options.confirmationDialogActionButtonName}
-          title={options.confirmationDialogTitle}
-          message={options.confirmationDialogMessage}
-          confirmationSuccess={options.confirmationSuccess} />,
-        containter
+        <ConfirmationDialog {...options} />,
+        container
       );
     }
   };
