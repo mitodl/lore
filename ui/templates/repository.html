@@ -14,7 +14,8 @@
            {% if form.q.value %}value="{{ form.q.value }}"{% endif %}
          >
         <span class="input-group-btn">
-          <button type="submit" class="btn btn-default btn-lg">
+          <button type="submit" class="btn btn-default btn-lg"
+                  id="search_button">
             <i class="fa fa-search"></i>
           </button>
         </span>
@@ -74,13 +75,12 @@
 require(["listing", "jquery"], function(Listing, $) {
   var listingOptions = {
     repoSlug: "{{ repo.slug|escapejs }}",
-    resources: {{ resources_json|safe }},
     allExports: {{ exports_json|safe }},
     sortingOptions: {{ sorting_options_json|safe }},
     loggedInUsername: "{{ request.user.username|escapejs }}",
     qsPrefix: "{{ qs_prefix|escapejs }}",
     imageDir: "{% static "ui/images"|escapejs %}",
-    facetCounts: {{ facet_counts_json|safe }}
+    pageSize: {{ page_size_json|safe }}
   };
   var pageNum = {{ page.number }};
   var numPages = {{ page.paginator.num_pages }};

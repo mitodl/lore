@@ -139,11 +139,12 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
 
         var sortingLinks = _.map(this.props.sortingOptions.all,
           function (sortingOption) {
-            var url = "/repositories/" + thiz.props.repoSlug +
-              "/" + thiz.props.qsPrefix + "sortby=" +
-              encodeURIComponent(sortingOption[0]);
+            var onClick = function(e) {
+              e.preventDefault();
+              return thiz.props.updateSort(sortingOption[0]);
+            };
             return <li key={sortingOption[0]}>
-              <a href={url}>{sortingOption[1]}</a>
+              <a href="#" onClick={onClick}>{sortingOption[1]}</a>
             </li>;
           }
         );
@@ -315,7 +316,8 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
           sortingDropdown = <SortingDropdown
             repoSlug={this.props.repoSlug}
             qsPrefix={this.props.qsPrefix}
-            sortingOptions={this.props.sortingOptions} />;
+            sortingOptions={this.props.sortingOptions}
+            updateSort={this.props.updateSort} />;
         }
 
         var exportButton = null;
@@ -404,13 +406,15 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
 
     return {
       loader: function(listingOptions, container, openExportsPanel,
-                       openResourcePanel, updateFacets, selectedFacets) {
+                       openResourcePanel, updateFacets, selectedFacets,
+                       updateSort) {
         return React.render(
           <ListingPage {...listingOptions}
                    openExportsPanel={openExportsPanel}
                    openResourcePanel={openResourcePanel}
                    updateFacets={updateFacets}
                    selectedFacets={selectedFacets}
+                   updateSort={updateSort}
             />,
           container
         );

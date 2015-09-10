@@ -329,16 +329,23 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     function(assert) {
       var done = assert.async();
 
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(3, function () {
           var $node = $(React.findDOMNode(component));
 
+          assert.equal(refreshCount, 0);
           var saveButton = $node.find("button")[0];
           React.addons.TestUtils.Simulate.click(saveButton);
           waitForAjax(1, function() {
             assert.equal(component.state.message,
               "Form saved successfully!");
+            assert.equal(refreshCount, 1);
             done();
           });
         });
@@ -347,6 +354,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
         learningResourceId="1"
+        refreshFromAPI={refreshFromAPI}
         ref={afterMount} />);
     }
   );
@@ -354,10 +362,18 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     'An error should show up on AJAX failure while saving form',
     function(assert) {
       var done = assert.async();
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(3, function () {
           var $node = $(React.findDOMNode(component));
+
+          assert.equal(0, refreshCount);
 
           TestUtils.replaceMockjax({
             url: '/api/v1/repositories/repo/learning_resources/1/',
@@ -371,6 +387,8 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
               component.state.message,
               {error: "Unable to save form"}
             );
+
+            assert.equal(0, refreshCount);
             done();
           });
         });
@@ -379,6 +397,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
         learningResourceId="1"
+        refreshFromAPI={refreshFromAPI}
         ref={afterMount} />);
     }
   );
@@ -481,7 +500,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     function(assert) {
       var div = document.createElement("div");
       assert.equal(0, $(div).find("textarea").size());
-      LearningResources.loader("repo", "1", div);
+      LearningResources.loader("repo", "1", function() {}, div);
       assert.equal(2, $(div).find("textarea").size());
     }
   );

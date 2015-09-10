@@ -13,6 +13,8 @@ var REQUIRE_PATHS = {
   punycode: "uri.js/src/punycode",
   IPv6: "uri.js/src/IPv6",
   SecondLevelDomains: "uri.js/src/SecondLevelDomains",
+  history: "history.js/scripts/uncompressed/history",
+  historyadapter: "history.js/scripts/uncompressed/history.adapter.jquery",
   csrf: "../ui/js/csrf",
   listing: "../ui/js/listing",
   manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
@@ -26,6 +28,8 @@ var REQUIRE_PATHS = {
 var SHIMS = {
   "icheck": {"deps": ["jquery"]},
   "bootstrap": {"deps": ["jquery"]},
-  "react_infinite": {"deps": ["react"]}
+  "react_infinite": {"deps": ["react"]},
+  "historyadapter": {"deps": ["jquery"]},
+  "history": {"deps": ["historyadapter"], "exports": "History"}
 };
 /* jshint ignore:end */

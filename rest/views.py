@@ -769,6 +769,29 @@ class LearningResourceExportTaskDetail(RetrieveAPIView):
         return create_task_result_dict(initial_dict)
 
 
+def calculate_selected_facets(selected_facet_params, facet_counts):
+    """
+    Given facet counts and the facet query parameters,
+    return a dictionary of selected facets.
+    """
+    selected_facets = {}
+
+    for counts in facet_counts.values():
+        facet_id = counts['facet']['key']
+        selected_facets[facet_id] = {}
+
+        for value in counts['values']:
+            value_id = value['key']
+            param_value = "{facet}_exact:{value}".format(
+                facet=facet_id,
+                value=value_id
+            )
+            if param_value in selected_facet_params:
+                selected_facets[facet_id][value_id] = True
+
+    return selected_facets
+
+
 class RepositorySearchList(GenericViewSet):
     """
     View of search results for repository search.
@@ -885,4 +908,8 @@ class RepositorySearchList(GenericViewSet):
 
         data = response.data
         data['facet_counts'] = facet_counts
+        data['selected_facets'] = calculate_selected_facets(
+            self.request.GET.getlist('selected_facets'),
+            facet_counts
+        )
         return Response(data)

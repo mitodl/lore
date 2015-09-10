@@ -35,6 +35,7 @@ from learningresources.models import (
     StaticAsset,
     STATIC_ASSET_PREFIX,
 )
+from lore.settings import REST_FRAMEWORK
 from roles.permissions import RepoPermission
 from search import get_sqs
 from search.sorting import LoreSortingFields
@@ -313,7 +314,8 @@ class RepositoryView(FacetedSearchView):
             "sorting_options_json": json.dumps(sorting_options),
             "resources_json": json.dumps(resources),
             "exports_json": json.dumps(exports),
-            "facet_counts_json": json.dumps(facet_counts)
+            "facet_counts_json": json.dumps(facet_counts),
+            "page_size_json": json.dumps(REST_FRAMEWORK['PAGE_SIZE'])
         })
         return context
 

@@ -222,12 +222,14 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
           $buttonGroup.find("button").first().text(),
           sortingOptions.current[1]
         );
-        var actual = _.map($(node).find(".dropdown-menu li a"), function(link) {
-          var id = $(link).attr('href').replace(
-            "/repositories/test/?sortby=", "");
-          return [id, $(link).text()];
-        });
-        assert.deepEqual(actual, sortingOptions.all);
+        var sortText = _.map($(node).find(".dropdown-menu li a"),
+          function(link) {
+            return $(link).text();
+          }
+        );
+        assert.deepEqual(sortText, _.map(sortingOptions.all, function(option) {
+          return option[1];
+        }));
 
         done();
       };
