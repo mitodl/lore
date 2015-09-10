@@ -13,7 +13,7 @@ class LoreSortingFields(object):
     SORT_BY_NR_VIEWS = ('nr_views', 'Number of Views (desc)', '-')
     SORT_BY_NR_ATTEMPTS = ('nr_attempts', 'Number of Attempts (desc)', '-')
     SORT_BY_AVG_GRADE = ('avg_grade', 'Average Grade (desc)', '-')
-    SORT_BY_TITLE = ('title', 'Title (asc)', '')
+    SORT_BY_TITLE = ('titlesort', 'Title (asc)', '')
 
     DEFAULT_SORTING_FIELD = SORT_BY_NR_VIEWS[0]
 

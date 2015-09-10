@@ -18,6 +18,7 @@ from rest.tests.base import (
     REPO_BASE,
     as_json,
 )
+from search.sorting import LoreSortingFields
 from taxonomy.models import Term, Vocabulary
 
 
@@ -177,6 +178,10 @@ class TestSearch(RESTTestCase):
         resource1 = all_resources[0]
         resource2 = all_resources[1]
         resource3 = all_resources[2]
+        # remove all the learning resources we do not need to
+        # avoid interferences
+        for resource in all_resources[3:]:
+            resource.delete()
 
         resource1.xa_avg_grade = 2.0
         resource1.xa_nr_attempts = 4
@@ -202,23 +207,40 @@ class TestSearch(RESTTestCase):
         self.assertEqual(default_results[1]['lid'], resource3.id)
         self.assertEqual(default_results[2]['lid'], resource2.id)
 
-        nr_views_results = self.get_results(sortby="nr_views")['results']
+        nr_views_results = self.get_results(
+            sortby=LoreSortingFields.SORT_BY_NR_VIEWS[0])['results']
         self.assertEqual(default_results, nr_views_results)
 
-        avg_grade_results = self.get_results(sortby="avg_grade")['results']
+        avg_grade_results = self.get_results(
+            sortby=LoreSortingFields.SORT_BY_AVG_GRADE[0])['results']
         self.assertEqual(avg_grade_results[0]['lid'], resource2.id)
         self.assertEqual(avg_grade_results[1]['lid'], resource1.id)
         self.assertEqual(avg_grade_results[2]['lid'], resource3.id)
 
-        avg_grade_results = self.get_results(sortby="nr_attempts")['results']
+        avg_grade_results = self.get_results(
+            sortby=LoreSortingFields.SORT_BY_NR_ATTEMPTS[0])['results']
         self.assertEqual(avg_grade_results[0]['lid'], resource1.id)
         self.assertEqual(avg_grade_results[1]['lid'], resource3.id)
         self.assertEqual(avg_grade_results[2]['lid'], resource2.id)
 
-        title_results = self.get_results(sortby="title")['results']
+        title_results = self.get_results(
+            sortby=LoreSortingFields.SORT_BY_TITLE[0])['results']
         self.assertEqual(title_results[0]['lid'], resource3.id)
         self.assertEqual(title_results[1]['lid'], resource2.id)
         self.assertEqual(title_results[2]['lid'], resource1.id)
+
+        # special case for sorting by title
+        resource1.title = ' uuuu'  # space at the beginning
+        resource1.save()
+        resource2.title = ''  # empty title
+        resource2.save()
+        resource3.title = '    aaa '  # many spaces around
+        resource3.save()
+        title_results = self.get_results(
+            sortby=LoreSortingFields.SORT_BY_TITLE[0])['results']
+        self.assertEqual(title_results[0]['lid'], resource3.id)
+        self.assertEqual(title_results[1]['lid'], resource1.id)
+        self.assertEqual(title_results[2]['lid'], resource2.id)
 
     def test_facets(self):
         """
