@@ -181,6 +181,10 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         dataType: 'json',
         type: "GET"
       });
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/",
+        type: "DELETE"
+      });
     },
     afterEach: function() {
       TestUtils.cleanup();
@@ -219,9 +223,17 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       assert.ok(VocabularyComponent, "class object not found");
       var done = assert.async();
 
+      var showConfirmationDialog = function (options) {
+        options.confirmationHandler(true);
+      };
+
       var addTermCalled = 0;
+      var deleteVocabularyCalled = 0;
       var addTerm = function() {
         addTermCalled += 1;
+      };
+      var deleteVocabulary = function() {
+        deleteVocabularyCalled += 1;
       };
       var reportMessage = function() {};
       var afterMount = function(component) {
@@ -244,30 +256,43 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             'li'
         );
         assert.equal(itemList.length, 3);
-        //test enter text in input text
-        var inputNode = React.addons.TestUtils.
-          findRenderedDOMComponentWithTag(
-            component,
-            'input'
-        );
-        React.addons.TestUtils.Simulate.change(
-          inputNode,
-          {target: {value: 'test12'}}
-        );
-        component.forceUpdate(function() {
-          node = React.findDOMNode(component);
-          var textbox = $(node).find("input")[0];
-          assert.equal(
-            'test12',
-            component.state.newTermLabel
-          );
-          React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
-          assert.equal(addTermCalled, 0);
 
-          React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
-          waitForAjax(1, function() {
-            assert.equal(addTermCalled, 1);
-            done();
+        var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+          component,
+          'delete-vocabulary'
+        );
+        var deleteVocabularyButton = actionButtons[0];
+        React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+        component.forceUpdate(function () {
+          waitForAjax(1, function () {
+            assert.equal(deleteVocabularyCalled, 1);
+            //test enter text in input text
+            var inputNode = React.addons.TestUtils.
+              findRenderedDOMComponentWithTag(
+              component,
+              'input'
+            );
+            React.addons.TestUtils.Simulate.change(
+              inputNode,
+              {target: {value: 'test12'}}
+            );
+            component.forceUpdate(function () {
+              node = React.findDOMNode(component);
+              var textbox = $(node).find("input")[0];
+              assert.equal(
+                'test12',
+                component.state.newTermLabel
+              );
+              React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
+              assert.equal(addTermCalled, 0);
+
+              React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
+              waitForAjax(1, function () {
+                assert.equal(addTermCalled, 1);
+                done();
+              });
+            });
           });
         });
       };
@@ -277,6 +302,8 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             vocabulary={vocabulary}
             terms={vocabulary.terms}
             reportMessage={reportMessage}
+            deleteVocabulary={deleteVocabulary}
+            renderConfirmationDialog={showConfirmationDialog}
             addTerm={addTerm}
             repoSlug="repo"
             ref={afterMount}
@@ -702,12 +729,14 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         );
         React.addons.TestUtils.Simulate.submit(formNode);
         waitForAjax(1, function() {
-          // Error is caused by a 400 status code
-          assert.deepEqual(
-            component.state.message,
-            {error: "There was a problem adding the Vocabulary."}
-          );
-          done();
+          component.forceUpdate(function() {
+            // Error is caused by a 400 status code
+            assert.deepEqual(
+              component.state.message,
+              {error: "There was a problem adding the Vocabulary."}
+            );
+            done();
+          });
         });
       };
       React.addons.TestUtils.
@@ -862,6 +891,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         <TaxonomyComponent
           vocabularies={vocabularies}
           repoSlug="repo"
+          renderConfirmationDialog={function() {}}
           ref={afterMount}
         />
       );
@@ -966,6 +996,106 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         <TaxonomyComponent
           vocabularies={vocabularies}
           repoSlug="repo"
+          renderConfirmationDialog={function() {}}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that delete vocabulary works in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var userSelectedConfirm = 0;
+      var showConfirmationDialog = function (options) {
+        options.confirmationHandler(true);
+        userSelectedConfirm += 1;
+      };
+
+      var afterMount = function(component) {
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'delete-vocabulary'
+          );
+          var deleteVocabularyButton = actionButtons[0];
+          React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+          component.forceUpdate(function() {
+            waitForAjax(1, function() {
+              assert.equal(userSelectedConfirm, 1);
+              assert.equal(
+                component.state.vocabularies.length,
+                0
+              );
+              done();
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
+          repoSlug="repo"
+          renderConfirmationDialog={showConfirmationDialog}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that delete vocabulary ajax call' +
+    ' fail in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var userSelectedConfirm = 0;
+      var showConfirmationDialog = function (options) {
+        options.confirmationHandler(true);
+        userSelectedConfirm += 1;
+      };
+
+      TestUtils.replaceMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/" + vocabulary.slug + "/",
+        type: "DELETE",
+        status: 400
+      });
+
+      var afterMount = function(component) {
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'delete-vocabulary'
+          );
+          var deleteVocabularyButton = actionButtons[0];
+          React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+          waitForAjax(1, function() {
+            component.forceUpdate(function() {
+              assert.equal(userSelectedConfirm, 1);
+              assert.equal(
+                component.state.vocabularies.length,
+                1
+              );
+              done();
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
+          repoSlug="repo"
+          renderConfirmationDialog={showConfirmationDialog}
           ref={afterMount}
         />
       );

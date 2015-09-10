@@ -116,6 +116,78 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
   });
 
   /**
+  * Callback to send confirmation status.
+  *
+  * @callback confirmationResponse - Call back that sends confirmation status
+  * @param {bool} status - Confirmation status
+  */
+
+  /**
+   * Generic confirmation dialog.
+   * <ConfirmationDialog
+   *       id={confirmationDialogId}
+   *       actionButtonName={confirmationDialogActionButtonName}
+   *       title={confirmationDialogTitle}
+   *       message={confirmationDialogMessage}
+   *       confirmationSuccess={confirmationSuccess} />,
+   *
+   * @param {String} actionButtonName - Name of action button can be any of delete, remove, ok etc
+   * @param {String} actionButtonClass - Class(es) for action button
+   * @param {String} title - Title/heading of confirmation dialog
+   * @param {String} message - Content of dialog
+   * @param {confirmationResponse} confirmationSuccess - Call back that sends confirmation status
+  */
+  var ConfirmationDialog = React.createClass({
+    getDefaultProps: function() {
+      return {
+        actionButtonName: 'Confirm',
+        actionButtonClass: 'btn btn-ok'
+      };
+    },
+    render: function() {
+      var title = '';
+      if (this.props.title) {
+        title = <h4 className="modal-title">{this.props.title}</h4>;
+      }
+
+      return (
+        <div className="modal fade">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <button type="button" className="close"
+                   data-dismiss="modal"><i className="fa fa-remove"/></button>
+                {title}
+              </div>
+              <div className="modal-body">
+                <p>{this.props.message}</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-default"
+                  data-dismiss="modal"
+                  onClick={this.confirmationFailure}>Cancel</button>
+                <button className={this.props.actionButtonClass}
+                  data-dismiss="modal"
+                  onClick={this.confirmationSuccess}
+                >{this.props.actionButtonName}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    },
+    componentDidMount : function() {
+      $(React.findDOMNode(this)).modal('show');
+    },
+    confirmationSuccess: function() {
+      this.props.confirmationHandler(true, this.props.tag);
+    },
+    confirmationFailure: function() {
+      this.props.confirmationHandler(false, this.props.tag);
+    }
+  });
+
+  /**
    * Component for checkboxes using ICheckbox and integrating with React
    * appropriately.
    */
@@ -264,6 +336,14 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
     StatusBox: StatusBox,
     ICheckbox: ICheckbox,
     Select2: Select2,
-    InfiniteList: InfiniteList
+    InfiniteList: InfiniteList,
+    ConfirmationDialog: ConfirmationDialog,
+    showConfirmationDialog: function(options, container) {
+      React.unmountComponentAtNode(container);
+      React.render(
+        <ConfirmationDialog {...options} />,
+        container
+      );
+    }
   };
 });
