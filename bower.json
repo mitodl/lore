@@ -20,6 +20,7 @@
     "select2-bootstrap-theme": "~0.1.0-beta.4",
     "lodash": "~3.9.3",
     "react-infinite": "~0.4.1",
-    "uri.js": "~1.16.0"
+    "uri.js": "~1.16.0",
+    "history.js": "~1.8.0"
   }
 }
