@@ -29,3 +29,11 @@ Taxonomy
     :undoc-members:
     :show-inheritance:
 
+Membership
+==========
+
+.. automodule:: roles.api
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
