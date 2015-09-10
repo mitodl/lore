@@ -34,6 +34,7 @@ from learningresources.api import (
 from importer.tasks import import_file
 
 
+# pylint: disable=too-many-locals
 def assert_resource_directory(test_case, resources, tempdir):
     """Assert that files are present with correct content."""
     def make_name(resource):
@@ -59,7 +60,13 @@ def assert_resource_directory(test_case, resources, tempdir):
 
         # Verify static asset placement.
         for static_asset in resource.static_assets.all():
-            static_filename = os.path.basename(static_asset.asset.name)
+            prefix = STATIC_ASSET_BASEPATH.format(
+                org=static_asset.course.org,
+                course_number=static_asset.course.course_number,
+                run=static_asset.course.run
+            )
+            static_filename = static_asset.asset.name[len(prefix):]
+
             if static_filename in asset_map:
                 count = asset_map[static_filename]
                 asset_map[static_filename] += 1
