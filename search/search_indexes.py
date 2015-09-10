@@ -85,9 +85,8 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     avg_grade = indexes.FloatField(model_attr="xa_avg_grade")
 
     lid = indexes.IntegerField(model_attr="id", indexed=False)
-    # title set in this way because of a known bug in haystack
-    # http://bit.ly/1ENeElY
-    title = indexes.CharField(model_attr="title", indexed=False, stored=True)
+    title = indexes.CharField(model_attr="title", indexed=False)
+    titlesort = indexes.CharField(indexed=False)
     description = indexes.CharField(model_attr="description", indexed=False)
     description_path = indexes.CharField(
         model_attr="description_path",
@@ -136,6 +135,16 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
             course_number=data["course_number"],
             run=data["run"],
         )
+
+    def prepare_titlesort(self, obj):  # pylint: disable=no-self-use
+        """Define what goes into the "titlesort" index."""
+        title = obj.title.strip()
+        # hack to handle empty titles
+        # to show up at the bottom of the sorted list
+        if title:
+            title = '0{0}'.format(title)
+            return title.lower()
+        return '1'
 
     @staticmethod
     def prepare_course(obj):
