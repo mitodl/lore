@@ -6,24 +6,130 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
   var ICheckbox = Utils.ICheckbox;
 
   var TermComponent = React.createClass({
+    mixins: [React.addons.LinkedStateMixin],
+    getInitialState: function() {
+      return {
+        formatActionState: 'show',
+        label: this.props.term.label,
+        errorMessage: '',
+      };
+    },
     render: function () {
-      return <li>
+
+      var label = null;
+      var formatActionClassName = null;
+      if (this.state.formatActionState === 'edit') {
+        label = <label className="help-inline control-label"> <input
+          ref="editText"
+          type="text"
+          valueLink={this.linkState('label')}
+          className='form-control edit-term-box' /> {this.state.errorMessage}
+        </label>;
+        formatActionClassName = "fa fa-save no-select";
+      } else if (this.state.formatActionState === 'show') {
+        label = <label className="term-title"
+          htmlFor="minimal-checkbox-1-11">{this.state.label}</label>;
+        formatActionClassName = "fa fa-pencil no-select";
+      }
+
+      var listClassName = "form-group";
+      if (this.state.errorMessage !== '') {
+        listClassName = "form-group has-error";
+      }
+
+      return <li className={listClassName}>
         <span className="utility-features">
-          <a href="#">
-            <i className="fa fa-pencil"></i>
-          </a> <a href="#">
+          <a onClick={this.formatHandler} className="format-button">
+            <i className={formatActionClassName}></i>
+          </a> <a onClick={this.revertHandler} className="revert-button">
             <i className="fa fa-remove"></i>
           </a>
-        </span> <label className="term-title"
-        htmlFor="minimal-checkbox-1-11">{this.props.term.label}</label></li>;
+        </span>{label}</li>;
+    },
+    /**
+     * If user selects edit button then open edit mode
+     * Else call api to update term.
+     */
+    formatHandler: function() {
+      var formatActionState = this.state.formatActionState;
+
+      if (formatActionState === 'show') {
+        this.setState({
+          formatActionState: 'edit',
+        }, function() {
+          var $editText = $(React.findDOMNode(this.refs.editText));
+          $editText.focus();
+        });
+      } else if (formatActionState === 'edit') {
+        if (this.state.label !== this.props.term.label) {
+          this.updateTermSubmit();
+        } else {
+          this.resetUtilityFeatures();
+        }
+      }
+    },
+    /**
+     * On Close button select reset term UI
+    */
+    revertHandler : function() {
+      var formatActionState = this.state.formatActionState;
+      if (formatActionState === 'edit') {
+        // user is in edit mode. Cancel edit if user presses cross icon.
+        this.resetUtilityFeatures();
+      }
+    },
+    /**
+     * Reset term edit UI
+     */
+    resetUtilityFeatures: function() {
+      this.setState(this.getInitialState());
+    },
+    /**
+     * Api call to save term and update parent component
+     */
+    updateTermSubmit: function() {
+      if (_.isEmpty(this.state.label)) {
+        this.setState({
+          errorMessage: "Can't save empty term. If you want to revert then" +
+            " please click the cancel button (x)"
+        });
+        return;
+      }
+      var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/' + this.props.vocabularySlug + '/terms/' +
+        this.props.term.slug + "/";
+      var thiz = this;
+      var termData = {
+        label: this.state.label,
+        weight: this.props.term.weight
+      };
+      $.ajax({
+        type: 'PATCH',
+        url: API_ROOT_VOCAB_URL,
+        data: JSON.stringify(termData),
+        contentType: "application/json"
+      }).fail(function() {
+        thiz.setState({
+          errorMessage: 'Unable to update term'
+        });
+      }).done(function(term) {
+        thiz.resetUtilityFeatures();
+        thiz.props.updateTerm(thiz.props.vocabularySlug, term);
+      });
     }
   });
 
   var VocabularyComponent = React.createClass({
     mixins: [React.addons.LinkedStateMixin],
     render: function () {
+      var thiz = this;
       var items = _.map(this.props.terms, function (term) {
-        return <TermComponent term={term} key={term.slug} />;
+        return <TermComponent
+          updateTerm={thiz.props.updateTerm}
+          vocabularySlug={thiz.props.vocabulary.slug}
+          repoSlug={thiz.props.repoSlug}
+          term={term}
+          key={term.slug} />;
       });
 
       return <div className="panel panel-default">
@@ -145,6 +251,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       var thiz = this;
       var items = _.map(this.props.vocabularies, function (obj) {
         return <VocabularyComponent
+          updateTerm={thiz.props.updateTerm}
           vocabulary={obj.vocabulary}
           deleteVocabulary={thiz.props.deleteVocabulary}
           terms={obj.terms}
@@ -372,8 +479,27 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       this.setState({vocabularies: vocabularies});
     },
     deleteVocabulary: function(vocabSlug) {
-      var vocabularies = _.filter(this.state.vocabularies, function(tuple) {
+      var vocabularies = _.filter(this.state.vocabularies, function (tuple) {
         return tuple.vocabulary.slug !== vocabSlug;
+      });
+      this.setState({vocabularies: vocabularies});
+    },
+    updateTerm: function(vocabSlug, term) {
+      var vocabularies = _.map(this.state.vocabularies, function(tuple) {
+        if (tuple.vocabulary.slug === vocabSlug) {
+          var terms = _.map(tuple.terms, function (tupleTerm) {
+            if (tupleTerm.id === term.id) {
+              return term;
+            }
+            return tupleTerm;
+          });
+          return {
+            terms: terms,
+            vocabulary: tuple.vocabulary
+          };
+        } else {
+          return tuple;
+        }
       });
       this.setState({vocabularies: vocabularies});
     },
@@ -382,6 +508,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
+              updateTerm={this.updateTerm}
               vocabularies={this.state.vocabularies}
               repoSlug={this.props.repoSlug}
               renderConfirmationDialog={this.props.renderConfirmationDialog}

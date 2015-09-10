@@ -577,3 +577,17 @@ input.repo-page-status {
 .modal-dialog p {
     font-size: medium;
 }
+
+.edit-term-box {
+    width: 50%;
+    display: inline;
+}
+
+.no-select {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
