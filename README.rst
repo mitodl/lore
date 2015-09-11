@@ -142,3 +142,9 @@ To build the sphinx documentation project, run:
 
 This will build it on your local machine and you should be able to
 point your browser at ``</path/to/lore/repo>/docs/_build/index.html``.
+
+RESTful API Documentation
+=========================
+
+LORE has a RESTful API that is documented on Apiary
+`http://docs.lore.apiary.io <http://docs.lore.apiary.io>`_ .
