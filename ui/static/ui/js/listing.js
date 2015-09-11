@@ -193,6 +193,7 @@ define('listing',
 
       // Will be set in refreshFromAPI
       var selectedFacets;
+      var selectedMissingFacets;
 
       var openResourcePanel = function(resourceId) {
         LearningResources.loader(
@@ -219,6 +220,7 @@ define('listing',
           listingOptions.resources = collection.results;
           listingOptions.facetCounts = collection.facet_counts;
           selectedFacets = collection.selected_facets;
+          selectedMissingFacets = collection.selected_missing_facets;
 
           numPages = Math.ceil(collection.count / listingOptions.pageSize);
           if (pageNum > numPages) {
@@ -240,19 +242,7 @@ define('listing',
         });
       };
 
-      /**
-       * Update queryMap with updated facet information, then refresh from API.
-       *
-       * @param facetId {String} Facet key
-       * @param valueId {String} Facet value
-       * @param selected {bool} Value for facet checkbox
-       *
-       * @returns {jQuery.Deferred} Promise which is resolved or rejected after
-       * refresh occurs.
-       */
-      var updateFacets = function(facetId, valueId, selected) {
-        var param = facetId + "_exact:" + valueId;
-
+      var updateFacetParam = function(param, selected) {
         queryMap = $.extend({}, queryMap);
         queryMap.page = undefined;
 
@@ -272,6 +262,28 @@ define('listing',
         }
 
         return refreshFromAPI();
+      };
+
+      /**
+       * Update queryMap with updated facet information, then refresh from API.
+       *
+       * @param facetId {String} Facet key
+       * @param valueId {String} Facet value
+       * @param selected {bool} Value for facet checkbox
+       *
+       * @returns {jQuery.Deferred} Promise which is resolved or rejected after
+       * refresh occurs.
+       */
+      var updateFacets = function(facetId, valueId, selected) {
+        var param = facetId + "_exact:" + valueId;
+
+        return updateFacetParam(param, selected);
+      };
+
+      var updateMissingFacets = function(facetId, selected) {
+        var param = "_missing_:" + facetId + "_exact";
+
+        return updateFacetParam(param, selected);
       };
 
       /**
@@ -308,7 +320,8 @@ define('listing',
       renderListingResources = function() {
         return ListingResources.loader(listingOptions,
         container, openExportsPanel, openResourcePanel,
-        updateFacets, selectedFacets, updateSort);
+        updateFacets, updateMissingFacets,
+          selectedFacets, selectedMissingFacets, updateSort);
       };
 
       /**

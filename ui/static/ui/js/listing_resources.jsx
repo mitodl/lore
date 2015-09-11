@@ -51,6 +51,29 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       }
     });
 
+    var MissingCount = React.createClass({
+      render: function() {
+        var id = "check-" + this.props.facetId + "-missing";
+        return <li>
+          <ICheckbox
+            id={id}
+            tabIndex="add"
+            className="icheck-11" onChange={this.handleChange}
+            checked={this.props.selected}
+            />
+          <label htmlFor={id}>
+            {this.props.label}
+          </label>
+          <span className="badge">
+            {this.props.count}
+          </span>
+        </li>;
+      },
+      handleChange: function(e) {
+        this.props.updateMissingFacets(this.props.facetId, e.target.checked);
+      }
+    });
+
     var FacetGroup = React.createClass({
       render: function() {
         var thiz = this;
@@ -61,12 +84,25 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
                         id={value.key}
                         count={value.count}
                         key={value.key}
-                        facetId={thiz.props.id}
+                        facetId={thiz.props.facet.key}
                         imageDir={thiz.props.imageDir}
                         updateFacets={thiz.props.updateFacets}
                         selected={selected}
             />;
         });
+
+        var missingFacet = null;
+        if (this.props.facet.missing_count) {
+          var selected = thiz.props.selectedMissingFacets[this.props.facet.key];
+
+          missingFacet = <MissingCount
+            count={this.props.facet.missing_count}
+            facetId={this.props.facet.key}
+            updateMissingFacets={this.props.updateMissingFacets}
+            selected={selected}
+            label={"not tagged"}
+            />;
+        }
 
         var collapseId = "collapse-" + this.props.id;
 
@@ -78,13 +114,14 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
                  data-parent="#accordion"
                  data-toggle="collapse"
                 >
-                {this.props.label}
+                {this.props.facet.label}
               </a>
             </h4>
           </div>
           <div className="panel-collapse collapse in" id={collapseId}>
             <div className="panel-body">
               <ul className="icheck-list">
+                {missingFacet}
                 {facets}
               </ul>
             </div>
@@ -99,7 +136,8 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
         var facets = [];
 
         var makeFacetGroup = function(values) {
-          if (!values.values.length) {
+          if (!values.values.length &&
+              !values.facet.missing_count) {
             return null;
           }
           var selectedFacets = {};
@@ -109,12 +147,13 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
 
           return <FacetGroup
             values={values.values}
-            label={values.facet.label}
-            id={values.facet.key}
+            facet={values.facet}
             key={values.facet.key}
             updateFacets={thiz.props.updateFacets}
+            updateMissingFacets={thiz.props.updateMissingFacets}
             imageDir={thiz.props.imageDir}
             selectedFacets={selectedFacets}
+            selectedMissingFacets={thiz.props.selectedMissingFacets}
             />;
         };
 
@@ -392,7 +431,9 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
             <div className="panel-group lore-panel-group">
               <Facets facetCounts={this.props.facetCounts}
                       updateFacets={this.props.updateFacets}
+                      updateMissingFacets={this.props.updateMissingFacets}
                       selectedFacets={this.props.selectedFacets}
+                      selectedMissingFacets={this.props.selectedMissingFacets}
                       imageDir={this.props.imageDir} />
             </div>
           </div>
@@ -405,14 +446,16 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
 
     return {
       loader: function(listingOptions, container, openExportsPanel,
-                       openResourcePanel, updateFacets, selectedFacets,
-                       updateSort) {
+                       openResourcePanel, updateFacets, updateMissingFacets,
+                       selectedFacets, selectedMissingFacets, updateSort) {
         return React.render(
           <ListingPage {...listingOptions}
                    openExportsPanel={openExportsPanel}
                    openResourcePanel={openResourcePanel}
                    updateFacets={updateFacets}
+                   updateMissingFacets={updateMissingFacets}
                    selectedFacets={selectedFacets}
+                   selectedMissingFacets={selectedMissingFacets}
                    updateSort={updateSort}
             />,
           container
@@ -427,7 +470,8 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       ListingPage: ListingPage,
       FacetGroup: FacetGroup,
       Facet: Facet,
-      Facets: Facets
+      Facets: Facets,
+      MissingCount: MissingCount
     };
   }
 );

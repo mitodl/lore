@@ -511,3 +511,16 @@ class TestSearch(RESTTestCase):
                 'run': {}
             }
         )
+
+        selected_missing_facets = self.get_results(
+            selected_facets=["_missing_:{v}_exact".format(v=vocab.id)]
+        )['selected_missing_facets']
+        self.assertEqual(
+            selected_missing_facets,
+            {
+                "{v}".format(v=vocab.id): True
+            }
+        )
+
+        selected_missing_facets = self.get_results()['selected_missing_facets']
+        self.assertEqual(selected_missing_facets, {})
