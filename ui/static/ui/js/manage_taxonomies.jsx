@@ -115,6 +115,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       }).done(function(term) {
         thiz.resetUtilityFeatures();
         thiz.props.updateTerm(thiz.props.vocabularySlug, term);
+        thiz.props.refreshFromAPI();
       });
     }
   });
@@ -129,7 +130,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           vocabularySlug={thiz.props.vocabulary.slug}
           repoSlug={thiz.props.repoSlug}
           term={term}
-          key={term.slug} />;
+          key={term.slug}
+          refreshFromAPI={thiz.props.refreshFromAPI}
+          />;
       });
 
       return <div className="panel panel-default">
@@ -188,20 +191,21 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       this.props.renderConfirmationDialog(options);
     },
     confirmedDeleteResponse: function(success) {
-      var method = "DELETE";
       var thiz = this;
       if (success) {
         var vocab = this.props.vocabulary;
         var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
           '/vocabularies/' + vocab.slug + '/';
         $.ajax({
-          type: method,
+          type: "DELETE",
           url: API_ROOT_VOCAB_URL
         }).fail(function () {
           var message = "Unable to delete vocabulary '" + vocab.name + "'";
           thiz.props.reportMessage({error: message});
         }).then(function () {
           thiz.props.deleteVocabulary(vocab.slug);
+
+          thiz.props.refreshFromAPI();
         });
       }
     },
@@ -236,6 +240,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
 
           // clear errors
           thiz.props.reportMessage(null);
+          thiz.props.refreshFromAPI();
         });
     },
     getInitialState: function() {
@@ -260,6 +265,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           reportMessage={thiz.reportMessage}
           addTerm={thiz.props.addTerm}
           renderConfirmationDialog={thiz.props.renderConfirmationDialog}
+          refreshFromAPI={thiz.props.refreshFromAPI}
           />;
       });
       return <div className="panel-group lore-panel-group">
@@ -373,6 +379,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           {scrollTop: scrollableDiv.prop('scrollHeight')},
           500
         );
+        thiz.props.refreshFromAPI();
       });
     },
     render: function() {
@@ -513,13 +520,17 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
               repoSlug={this.props.repoSlug}
               renderConfirmationDialog={this.props.renderConfirmationDialog}
               deleteVocabulary={this.deleteVocabulary}
-              addTerm={this.addTerm} />
+              refreshFromAPI={this.props.refreshFromAPI}
+              addTerm={this.addTerm}
+              />
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
             <AddVocabulary
               updateParent={this.addVocabulary}
               learningResourceTypes={this.state.learningResourceTypes}
-              repoSlug={this.props.repoSlug}/>
+              repoSlug={this.props.repoSlug}
+              refreshFromAPI={this.props.refreshFromAPI}
+              />
           </div>
         </div>
       );
@@ -556,9 +567,12 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     'AddTermsComponent': AddTermsComponent,
     'AddVocabulary': AddVocabulary,
     'TaxonomyComponent': TaxonomyComponent,
-    'loader': function (repoSlug, container, showConfirmationDialog) {
+    'loader': function (repoSlug, refreshFromAPI, showConfirmationDialog,
+                        container) {
       React.render(
-        <TaxonomyComponent repoSlug={repoSlug}
+        <TaxonomyComponent
+          repoSlug={repoSlug}
+          refreshFromAPI={refreshFromAPI}
           renderConfirmationDialog={showConfirmationDialog}/>,
         container
       );

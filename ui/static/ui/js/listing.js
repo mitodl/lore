@@ -495,8 +495,9 @@ define('listing',
       refreshFromAPI();
       ManageTaxonomies.loader(
         repoSlug,
-        $('#taxonomy-component')[0],
-        showConfirmationDialog);
+        refreshFromAPI,
+        showConfirmationDialog,
+        $('#taxonomy-component')[0]);
     };
 
     return {
