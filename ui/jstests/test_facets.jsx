@@ -129,6 +129,9 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
     };
 
     var Facets = ListingResources.Facets;
+    var FacetGroup = ListingResources.FacetGroup;
+    var Facet = ListingResources.Facet;
+    var MissingCount = ListingResources.MissingCount;
 
     QUnit.module('Test listing facets', {
       beforeEach: function () {
@@ -238,9 +241,12 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
         var $node = $(React.findDOMNode(component));
 
         // iCheckbox uses ins elements to contain their checkbox.
-        var $firstCheckbox = $node.find("ins").first();
+        var $firstCourseLi = $node.find("li").first();
+        assert.equal($firstCourseLi.find("label").text(), "0.001");
+        var $firstCourseCheckbox = $firstCourseLi.find("ins").first();
+
         assert.deepEqual(selectedFacets, {});
-        $firstCheckbox.click();
+        $firstCourseCheckbox.click();
         assert.deepEqual(selectedFacets, {
           course: {
             "0.001": true
@@ -285,5 +291,159 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
         />);
     });
 
+    QUnit.test("Assert facet component", function(assert) {
+      var done = assert.async();
+      var facetSelections = {};
+      var updateFacets = function(facetId, valueId, selected) {
+        if (!_.has(facetSelections, facetId)) {
+          facetSelections[facetId] = {};
+        }
+        if (!_.has(facetSelections[facetId], valueId)) {
+          facetSelections[facetId][valueId] = {};
+        }
+
+        facetSelections[facetId][valueId] = selected;
+      };
+
+      var badgeCount = 3;
+      var expectedLabel = "Facet";
+
+      var afterMount = function(component) {
+        var $node = $(React.findDOMNode(component));
+        // since it's resource_type, it should have an image with it
+        assert.equal($node.find("img").size(), 1);
+        assert.equal($node.find(".badge").text(), badgeCount);
+        assert.equal($node.find("label").text(), expectedLabel);
+
+        var $ins = $(React.findDOMNode(component)).find("ins");
+        $ins.click();
+
+        component.forceUpdate(function() {
+          assert.deepEqual(facetSelections,
+            {
+              "resource_type": {
+                "chapter": false
+              }
+            });
+
+          done();
+        });
+      };
+
+      React.addons.TestUtils.renderIntoDocument(<Facet
+        facetId={"resource_type"}
+        id={"chapter"}
+        imageDir={imageRoot}
+        selected={true}
+        label={expectedLabel}
+        count={badgeCount}
+        updateFacets={updateFacets}
+        ref={afterMount}
+      />);
+    });
+
+    QUnit.test("Assert MissingCount component", function(assert) {
+      var done = assert.async();
+      var missingFacetSelections = {};
+      var updateMissingFacets = function(facetId, selected) {
+        if (!_.has(missingFacetSelections, facetId)) {
+          missingFacetSelections[facetId] = {};
+        }
+
+        missingFacetSelections[facetId] = selected;
+      };
+
+      var badgeCount = 456;
+
+      var afterMount = function(component) {
+        var $node = $(React.findDOMNode(component));
+        assert.equal($node.find("img").size(), 0);
+        assert.equal($node.find(".badge").text(), badgeCount);
+        assert.equal($node.find("label").text(), "not tagged");
+
+        var $ins = $node.find("ins");
+        $ins.click();
+
+        component.forceUpdate(function() {
+          assert.deepEqual(missingFacetSelections,
+            {
+              "1": false
+            });
+
+          done();
+        });
+      };
+
+      React.addons.TestUtils.renderIntoDocument(<MissingCount
+        facetId={"1"}
+        updateMissingFacets={updateMissingFacets}
+        selected={true}
+        label={"not tagged"}
+        count={badgeCount}
+        ref={afterMount}
+      />);
+    });
+
+    QUnit.test("Assert Facets component", function(assert) {
+      var valuesWithMissing = {
+        "facet": {"key": "1", "label": "a", "missing_count": 3},
+        "values": [
+          {"count": 2, "key": "1", "label": "t1"},
+          {"count": 2, "key": "2", "label": "t2"}
+        ]
+      };
+      var valuesWithNoMissing = {
+        "facet": {"key": "1", "label": "a", "missing_count": 0},
+        "values": [
+          {"count": 2, "key": "1", "label": "t1"},
+          {"count": 2, "key": "2", "label": "t2"}
+        ]
+      };
+      var valuesWithoutMissing = {
+        "facet": {"key": "1", "label": "a"},
+        "values": [
+          {"count": 2, "key": "1", "label": "t1"},
+          {"count": 2, "key": "2", "label": "t2"}
+        ]
+      };
+
+      var selectedFacets = {
+        "1": {"2": true}
+      };
+      var selectedMissingFacets = {
+        "1": true
+      };
+
+      var runAssert = function(values, expectedLabels) {
+        var done = assert.async();
+
+        var afterMount = function(component) {
+          var $node = $(React.findDOMNode(component));
+          assert.deepEqual(
+            _.map($node.find("label"), function(x) { return $(x).text(); }),
+            expectedLabels
+          );
+
+          done();
+        };
+
+        React.addons.TestUtils.renderIntoDocument(<FacetGroup
+          values={values.values}
+          facet={values.facet}
+          key={values.facet.key}
+          updateFacets={function() {}}
+          updateMissingFacets={function() {}}
+          imageDir={imageRoot}
+          selectedFacets={selectedFacets}
+          selectedMissingFacets={selectedMissingFacets}
+          ref={afterMount}
+        />);
+
+      };
+
+      runAssert(valuesWithMissing, ["not tagged", "t1", "t2"]);
+      runAssert(valuesWithNoMissing, ["t1", "t2"]);
+      runAssert(valuesWithoutMissing, ["t1", "t2"]);
+    });
   }
 );

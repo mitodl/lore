@@ -789,6 +789,22 @@ def calculate_selected_facets(selected_facet_params, facet_counts):
     return selected_facets
 
 
+def calculate_selected_missing_facets(selected_facet_params, facet_counts):
+    """
+    Given facet counts and the facet query parameters,
+    return a dictionary of selected 'not tagged' facets.
+    """
+    selected_missing_facets = {}
+
+    for counts in facet_counts.values():
+        facet_id = counts['facet']['key']
+        param = "_missing_:{facet}_exact".format(facet=facet_id)
+        if param in selected_facet_params:
+            selected_missing_facets[facet_id] = True
+
+    return selected_missing_facets
+
+
 class RepositorySearchList(GenericViewSet):
     """
     View of search results for repository search.
@@ -824,6 +840,10 @@ class RepositorySearchList(GenericViewSet):
         data = response.data
         data['facet_counts'] = facet_counts
         data['selected_facets'] = calculate_selected_facets(
+            self.request.GET.getlist('selected_facets'),
+            facet_counts
+        )
+        data['selected_missing_facets'] = calculate_selected_missing_facets(
             self.request.GET.getlist('selected_facets'),
             facet_counts
         )
