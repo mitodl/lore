@@ -28,7 +28,7 @@ git+https://github.com/mitodl/django-guardian@de7ca5c39dfd0870067497f5843581e9cd
 git+https://github.com/mingchen/django-cas-ng@69463fe7c23f025be7165c2967f4ceb983d60472#egg=django-cas-ng==3.4.3-odl
 
 # Importer application requirements
-xbundle==0.3.0
+git+https://github.com/mitodl/xbundle@0e6d87b6d87bf0c366b3e87865df2327d57c6525#egg=xbundle==0.3.1
 git+https://github.com/gdub/python-archive.git@61b9afde21621a8acce964d3336a7fb5d2d07ca6#egg=python-archive==0.3.1-odl
 django-storages-redux==1.3
 python-magic==0.4.6
