@@ -78,15 +78,12 @@ require(["listing", "jquery"], function(Listing, $) {
     allExports: {{ exports_json|safe }},
     sortingOptions: {{ sorting_options_json|safe }},
     loggedInUsername: "{{ request.user.username|escapejs }}",
-    qsPrefix: "{{ qs_prefix|escapejs }}",
     imageDir: "{% static "ui/images"|escapejs %}",
     pageSize: {{ page_size_json|safe }}
   };
-  var pageNum = {{ page.number }};
-  var numPages = {{ page.paginator.num_pages }};
 
   $(function() {
-    Listing.loader(listingOptions, pageNum, numPages, $("#listing")[0]);
+    Listing.loader(listingOptions, $("#listing")[0]);
   });
 });
 </script>

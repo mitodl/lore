@@ -24,8 +24,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 from celery.states import FAILURE, SUCCESS, REVOKED
 from celery.result import AsyncResult
-from haystack.inputs import Exact
-from haystack.query import SearchQuerySet
 from statsd.defaults.django import statsd
 
 from exporter.tasks import export_resources
@@ -63,9 +61,8 @@ from rest.permissions import (
     ViewStaticAssetPermission,
 )
 from rest.util import CheckValidMemberParamMixin
-from search.sorting import LoreSortingFields
+from search.api import construct_queryset, make_facet_counts
 from taxonomy.models import Vocabulary
-from ui.views import get_vocabularies
 from learningresources.models import (
     Repository,
     LearningResourceType,
@@ -800,94 +797,11 @@ class RepositorySearchList(GenericViewSet):
     permission_classes = (ViewRepoPermission, IsAuthenticated)
 
     def get_queryset(self):
+        repo_slug = self.kwargs['repo_slug']
         query = self.request.GET.get('q', '')
-        queryset = SearchQuerySet()
-
         selected_facets = self.request.GET.getlist('selected_facets')
-        kwargs = {}
-        for facet in selected_facets:
-            queryset = queryset.narrow(facet)
-
-        if query != "":
-            kwargs["content"] = query
-
-        queryset = queryset.filter(**kwargs)
-
-        repo_slug = self.kwargs['repo_slug']
-        queryset = queryset.filter(repository=Exact(repo_slug))
-
-        order_by = self.request.GET.get('sortby', '')
-        if order_by == "":
-            order_by = LoreSortingFields.DEFAULT_SORTING_FIELD
-        # default values in case of weird sorting options
-        order_by, _, order_direction = LoreSortingFields.get_sorting_option(
-            order_by)
-        order_by = "{0}{1}".format(order_direction, order_by)
-        queryset = queryset.order_by(
-            order_by, LoreSortingFields.BASE_SORTING_FIELD)
-
-        return queryset
-
-    def make_facet_counts(self, queryset):  # pylint: disable=too-many-locals
-        """
-        Facets on every facet available and provides a data structure
-        of facet count information ready for API use.
-        """
-        def reformat(key, values, missing_count=None):
-            """Convert tuples to dictionaries so we can use keys."""
-            reformatted = {
-                "facet": {
-                    "key": str(key[0]),
-                    "label": key[1]
-                },
-                "values": [
-                    {
-                        "label": value_label,
-                        "key": str(value_key),
-                        "count": count
-                    } for value_key, value_label, count in values
-                ]
-            }
-            if missing_count is not None:
-                reformatted["facet"]["missing_count"] = missing_count
-            return reformatted
-
-        for facet in ('course', 'run', 'resource_type'):
-            queryset = queryset.facet(facet)
-
-        repo_slug = self.kwargs['repo_slug']
-        vocabularies = Vocabulary.objects.filter(repository__slug=repo_slug)
-
-        for vocabulary in vocabularies:
-            queryset = queryset.facet(vocabulary.id)
-
-        facet_counts = queryset.facet_counts()
-        vocabs = get_vocabularies(facet_counts)
-
-        # return dictionary
-        ret_dict = {}
-
-        # process vocabularies
-        for key, values in vocabs.items():
-            missing_count = queryset.filter(
-                _missing_='{0}_exact'.format(key[0])).count()
-            ret_dict[key[0]] = reformat(
-                key, values, missing_count=missing_count)
-
-        # Reformat facet_counts to match term counts.
-        for key, label in (
-                ("course", "Course"),
-                ("run", "Run"),
-                ("resource_type", "Item Type")
-        ):
-            if 'fields' in facet_counts:
-                values = [(name, name, count) for name, count
-                          in facet_counts['fields'][key]]
-            else:
-                values = []
-            ret_dict[key] = reformat((key, label), values)
-
-        return ret_dict
+        sortby = self.request.GET.get('sortby', '')
+        return construct_queryset(repo_slug, query, selected_facets, sortby)
 
     @statsd.timer('lore.rest.repository_search_list')
     def list(self, *args, **kwargs):  # pylint: disable=unused-argument
@@ -896,7 +810,8 @@ class RepositorySearchList(GenericViewSet):
         an extra value for facet_counts.
         """
         queryset = self.filter_queryset(self.get_queryset())
-        facet_counts = self.make_facet_counts(queryset)
+        repo_slug = self.kwargs['repo_slug']
+        facet_counts = make_facet_counts(repo_slug, queryset)
 
         page = self.paginate_queryset(queryset)
         if page is not None:

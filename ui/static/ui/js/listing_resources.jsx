@@ -315,7 +315,6 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
         if (this.props.resources.length > 0) {
           sortingDropdown = <SortingDropdown
             repoSlug={this.props.repoSlug}
-            qsPrefix={this.props.qsPrefix}
             sortingOptions={this.props.sortingOptions}
             updateSort={this.props.updateSort} />;
         }

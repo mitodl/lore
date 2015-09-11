@@ -7,7 +7,7 @@ define('listing',
             StaticAssets, Utils, Exports, ListingResources, Pagination) {
     'use strict';
 
-    var loader = function (listingOptions, pageNum, numPages, container) {
+    var loader = function (listingOptions, container) {
       var repoSlug = listingOptions.repoSlug;
       var loggedInUsername = listingOptions.loggedInUsername;
 
@@ -154,6 +154,13 @@ define('listing',
           queryMap[k] = v;
         }
       });
+
+      // This should get updated after the first API call
+      var numPages = 0;
+      var pageNum = 1;
+      if (queryMap.page !== undefined) {
+        pageNum = queryMap.page[0];
+      }
 
       /**
        * Clears exports on page. Assumes DELETE to clear on server already
