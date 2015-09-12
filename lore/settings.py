@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.9.0'
+VERSION = '0.10.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
