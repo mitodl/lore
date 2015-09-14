@@ -172,7 +172,7 @@ define('listing',
         listingOptions.allExports = [];
 
         var listingResources = renderListingResources();
-        listingResources.setState({exportSelection: {}});
+        listingResources.clearSelectedExports();
       };
 
       var openExportsPanel = function(exportCount) {
