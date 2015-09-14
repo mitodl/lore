@@ -28,6 +28,7 @@ from roles.permissions import BaseGroupTypes
 from taxonomy.models import Vocabulary, Term
 from learningresources.models import (
     Repository,
+    Course,
     LearningResource,
     StaticAsset,
     LearningResourceType,
@@ -58,6 +59,23 @@ class RepositorySerializer(ModelSerializer):
             'id',
             'slug',
             'date_created',
+        )
+
+
+class CourseSerializer(ModelSerializer):
+    """Serializer for Course."""
+
+    class Meta:
+        # pylint: disable=missing-docstring
+        model = Course
+        fields = (
+            'id',
+            'org',
+            'course_number',
+            'run',
+        )
+        read_only_fields = (
+            'id',
         )
 
 

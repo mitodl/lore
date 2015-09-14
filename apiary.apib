@@ -156,6 +156,28 @@ Create a repository by providing its JSON representation.
             "create_date": "2015-06-22"
         }
 
+## Group Courses
+
+## Course Collection [/repositories/{repo_slug}/courses/]
+
+### List All Courses [GET]
+
++ Response 200 (application/json)
+
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "id": 1,
+                    "org": "MITx",
+                    "course_number": "1.Mech",
+                    "run": "1T2010"
+                }
+            ]
+        }
+
 ## Group SearchResults
 
 ## SearchResult Collection [/repositories/{repo_slug}/search/{?q,sortby,selected_facets}]

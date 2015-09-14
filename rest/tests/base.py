@@ -180,6 +180,19 @@ class RESTTestCase(LoreTestCase):
         ))
         self.assertEqual(expected_status, resp.status_code)
 
+    def get_courses(self, repo_slug, expected_status=HTTP_200_OK):
+        """Get courses"""
+        url = '{repo_base}{slug}/courses/'.format(
+            slug=repo_slug,
+            repo_base=REPO_BASE,
+        )
+        self.assert_options_head(url, expected_status=expected_status)
+
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            return as_json(resp)
+
     def get_vocabularies(self, repo_slug, expected_status=HTTP_200_OK):
         """Get list of vocabularies."""
         url = '{repo_base}{slug}/vocabularies/'.format(
