@@ -1,6 +1,13 @@
 Release Notes
 -------------
 
+Version 0.10.1
+==============
+
+- Fixed exact repository search bug
+- Fixed clear export bug
+
+
 Version 0.10.0
 ==============
 
@@ -36,7 +43,6 @@ Version 0.10.0
 - Fixed migration to bulk create rows in through table.
 - Refactored listing resources to use React.
 - Added bootstrap as requirement for manage taxonomies.
-- Created 'curation status' vocabulary.
 - Optimized Dockerfile to reduce build times.
 - Added support for free tagging for terms.
 - [requires.io] dependency update.
