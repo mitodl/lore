@@ -113,7 +113,8 @@
       require.config({
         baseUrl: "{% static "bower"%}",
         shim: SHIMS,
-        paths: REQUIRE_PATHS
+        paths: REQUIRE_PATHS,
+        waitSeconds: 200
       });
       require(["jquery", "bootstrap"]);
     </script>
