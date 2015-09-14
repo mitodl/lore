@@ -4,7 +4,6 @@ Functions for search functionality.
 
 from __future__ import unicode_literals
 
-from haystack.inputs import Exact
 from haystack.query import SearchQuerySet
 
 from search.sorting import LoreSortingFields
@@ -40,7 +39,8 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
 
     queryset = queryset.filter(**kwargs)
 
-    queryset = queryset.filter(repository=Exact(repo_slug))
+    queryset = queryset.narrow("repository_exact:{slug}".format(
+        slug=repo_slug))
 
     if sortby == "":
         sortby = LoreSortingFields.DEFAULT_SORTING_FIELD
