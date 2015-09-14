@@ -421,6 +421,9 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
             updateCheck();
           });
         }
+      },
+      clearSelectedExports: function() {
+        this.setState({exportSelection: {}});
       }
     });
 
@@ -438,9 +441,12 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
             </div>
           </div>
           <div className="col-md-9 col-results">
-            <Listing {...this.props} />
+            <Listing {...this.props} ref="listing" />
           </div>
         </div>;
+      },
+      clearSelectedExports: function() {
+        this.refs.listing.clearSelectedExports();
       }
     });
 
