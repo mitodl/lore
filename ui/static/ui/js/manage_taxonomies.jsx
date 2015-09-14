@@ -49,7 +49,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         <span className="utility-features">
           <a href="#" onClick={this.editTerm} className={editButtonClass}>
             <i className={formatActionClassName}></i>
-          </a> <a href="#" className={deleteButtonClass}>
+          </a> <a className={deleteButtonClass} onClick={this.deleteTerm}>
             <i className="fa fa-remove"></i>
           </a>
         </span>{label}</li>;
@@ -78,11 +78,21 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
      * On Close button select reset term UI
     */
     cancelAction : function() {
-      var formatActionState = this.state.formatActionState;
-      if (formatActionState === 'edit') {
-        // user is in edit mode. Cancel edit if user presses cross icon.
-        this.resetUtilityFeatures();
-      }
+      // user is in edit mode. Cancel edit if user presses cross icon.
+      this.resetUtilityFeatures();
+    },
+    deleteTerm: function() {
+      var options = {
+        actionButtonName: "Delete",
+        actionButtonClass: "btn btn-danger btn-ok",
+        title: "Confirm Delete",
+        message: "Are you sure you want to delete term '" +
+         this.props.term.label + "'?",
+        description: "Deleting this term will remove it from all " +
+          "learning resources.",
+        confirmationHandler: this.confirmedDeleteResponse
+      };
+      this.props.renderConfirmationDialog(options);
     },
     /**
      * Reset term edit UI
@@ -120,6 +130,26 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         thiz.props.updateTerm(thiz.props.vocabulary.id, term);
         thiz.props.refreshFromAPI();
       });
+    },
+    confirmedDeleteResponse: function(success) {
+      var thiz = this;
+      if (success) {
+        var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/' + this.props.vocabulary.slug + '/terms/' +
+        this.props.term.slug + "/";
+        $.ajax({
+          type: 'DELETE',
+          url: API_ROOT_VOCAB_URL,
+          contentType: "application/json"
+        }).fail(function() {
+          thiz.setState({
+            errorMessage: 'Unable to delete term.'
+          });
+        }).done(function() {
+          thiz.props.deleteTerm(thiz.props.vocabulary.id, thiz.props.term);
+          thiz.props.refreshFromAPI();
+        });
+      }
     }
   });
 
@@ -129,11 +159,13 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
       var thiz = this;
       var items = _.map(this.props.terms, function (term) {
         return <TermComponent
+          deleteTerm={thiz.props.deleteTerm}
           updateTerm={thiz.props.updateTerm}
           vocabulary={thiz.props.vocabulary}
           repoSlug={thiz.props.repoSlug}
           term={term}
           key={term.id}
+          renderConfirmationDialog={thiz.props.renderConfirmationDialog}
           refreshFromAPI={thiz.props.refreshFromAPI}
           />;
       });
@@ -270,6 +302,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
       var thiz = this;
       var items = _.map(this.props.vocabularies, function (obj) {
         return <VocabularyComponent
+          deleteTerm={thiz.props.deleteTerm}
           updateTerm={thiz.props.updateTerm}
           vocabulary={obj.vocabulary}
           deleteVocabulary={thiz.props.deleteVocabulary}
@@ -678,6 +711,22 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
       });
       this.setState({vocabularies: vocabularies});
     },
+    deleteTerm: function(vocabId, term) {
+      var vocabularies = _.map(this.state.vocabularies, function(tuple) {
+        if (tuple.vocabulary.id === vocabId) {
+          var terms = _.filter(tuple.terms, function (tupleTerm) {
+            return tupleTerm.id !== term.id;
+          });
+          return {
+            terms: terms,
+            vocabulary: tuple.vocabulary
+          };
+        } else {
+          return tuple;
+        }
+      });
+      this.setState({vocabularies: vocabularies});
+    },
     render: function() {
       var editVocabulary;
       var thiz = this;
@@ -705,6 +754,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
+              deleteTerm={this.deleteTerm}
               updateTerm={this.updateTerm}
               editVocabulary={this.editVocabulary}
               vocabularies={this.state.vocabularies}
