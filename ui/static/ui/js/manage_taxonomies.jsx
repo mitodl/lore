@@ -188,7 +188,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         actionButtonClass: "btn btn-danger btn-ok",
         title: "Confirm Delete",
         message: "Are you sure you want to delete vocabulary '" +
-          this.props.vocabulary.name + "'?",
+          this.props.vocabulary.name + "'? ",
+        description: "Deleting this vocabulary will remove it from all " +
+          "learning resources.",
         confirmationHandler: this.confirmedDeleteResponse
       };
       this.props.renderConfirmationDialog(options);
@@ -507,9 +509,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
             terms: terms,
             vocabulary: tuple.vocabulary
           };
-        } else {
-          return tuple;
         }
+        return tuple;
       });
       this.setState({vocabularies: vocabularies});
     },

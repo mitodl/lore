@@ -125,16 +125,17 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
   /**
    * Generic confirmation dialog.
    * <ConfirmationDialog
-   *       id={confirmationDialogId}
    *       actionButtonName={confirmationDialogActionButtonName}
    *       title={confirmationDialogTitle}
    *       message={confirmationDialogMessage}
+   *       description={description}
    *       confirmationSuccess={confirmationSuccess} />,
    *
    * @param {String} actionButtonName - Name of action button can be any of delete, remove, ok etc
    * @param {String} actionButtonClass - Class(es) for action button
    * @param {String} title - Title/heading of confirmation dialog
    * @param {String} message - Content of dialog
+   * @param {String} description - Description of message
    * @param {confirmationResponse} confirmationSuccess - Call back that sends confirmation status
   */
   var ConfirmationDialog = React.createClass({
@@ -146,10 +147,16 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
     },
     render: function() {
       var title = '';
+      var description = '';
       if (this.props.title) {
         title = <h4 className="modal-title">{this.props.title}</h4>;
       }
 
+      if (this.props.description) {
+        description = <p className="confirmation-description">
+          {this.props.description}
+        </p>;
+      }
       return (
         <div className="modal fade">
           <div className="modal-dialog">
@@ -161,6 +168,7 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
               </div>
               <div className="modal-body">
                 <p>{this.props.message}</p>
+                {description}
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-default"

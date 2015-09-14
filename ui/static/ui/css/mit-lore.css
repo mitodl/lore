@@ -602,3 +602,8 @@ a.disabled {
     opacity: .65;
 }
 
+p.confirmation-description {
+    font-size: small;
+    font-style: normal;
+    font-weight: normal;
+}
