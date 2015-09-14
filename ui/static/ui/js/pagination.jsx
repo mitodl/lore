@@ -77,6 +77,7 @@ define('pagination', ['jquery', 'lodash', 'react'], function ($, _, React) {
       if (pageNum >= 1 && pageNum <= this.props.numPages &&
         pageNum !== this.props.pageNum) {
         this.props.updatePage(pageNum);
+        this.setState({textPageNum: pageNum});
       } else {
         // Reset page number
         this.setState({
