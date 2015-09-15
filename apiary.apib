@@ -67,6 +67,28 @@ Page numbering is 1-based. Omitting the `?page` parameter will return the first 
 
 # LORE API
 
+## Group LearningResourceTypes
+
+## LearningResourceType Collection [/learning_resource_types/]
+
+### List All LearningResourceTypes [GET]
+
++ Response 200 (application/json)
+
+        {
+            "count": 2,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "name": "course"
+                },
+                {
+                    "name": "chapter"
+                }
+            ]
+        }
+
 ## Group Repositories
 
 ## Repository Collection [/repositories/]
@@ -134,14 +156,91 @@ Create a repository by providing its JSON representation.
             "create_date": "2015-06-22"
         }
 
-## Group LearningResources
+## Group SearchResults
 
-## LearningResource Collection [/repositories/{repo_slug}/learning_resources/{?type_name}]
+## SearchResult Collection [/repositories/{repo_slug}/search/{?q,sortby,selected_facets}]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
-    + type_name: `chapter` (string, optional) - type of learning resource
-    + ids: `1,9` (string, optional) - comma separated list of LearningResource ids. Will filter out LearningResources not in this list.
+    + q: `zebra` (string, optional) - a piece of text to search with. If this is blank or omitted all results will be returned.
+    + sortby: `nr_views` (string, optional) - a column to sort results by. This is descending by default, add prefix '-' to sort in ascending order. May be one of: nr_views, nr_attempts, avg_grade.
+    + selected_facets: `course:DemoX` (string, optional) - a facet to narrow searches. Param may be specified more than once to narrow on multiple facets.
+
+### List SearchResults [GET]
+
++ Response 200 (application/json)
+
+    + Body
+
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "resource_type": "discussion",
+                    "course": "DemoX",
+                    "run": "Demo_Course",
+                    "xa_nr_views": 12,
+                    "xa_nr_attempts": 1,
+                    "xa_avg_grade": 4.0,
+                    "lid": 91,
+                    "title": "Peer Grading",
+                    "description": "",
+                    "description_path": "...",
+                    "preview_url": "..."
+                }
+            ],
+            "facet_counts": {
+                "course": {
+                    "facet": {
+                        "key": "course",
+                        "label": "Course"
+                    },
+                    "values": [
+                        {
+                            "count": 1,
+                            "key": "DemoX",
+                            "label": "DemoX"
+                        }
+                    ]
+                },
+                "run": {
+                    "facet": {
+                        "key": "run",
+                        "label": "Run"
+                    },
+                    "values": [
+                        {
+                            "count": 1,
+                            "key": "Demo_Course",
+                            "label": "Demo_Course"
+                        }
+                    ]
+                },
+                "resource_type": {
+                    "facet": {
+                        "key": "resource_type",
+                        "label": "Item Type"
+                    },
+                    "values": [
+                        {
+                            "count": 1,
+                            "key": "discussion",
+                            "label": "discussion"
+                        }
+                    ]
+                }
+            }
+        }
+
+## Group LearningResources
+
+## LearningResource Collection [/repositories/{repo_slug}/learning_resources/{?id}]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + id: `1,9` (string, optional) - comma separated list of LearningResource ids. Will filter out LearningResources not in this list.
 
 ### List LearningResources [GET]
 
@@ -274,7 +373,7 @@ List of LearningResources to be exported. This is stored per user and is deleted
     + repo_slug: `physics-1` (string, required) - slug for the repository
     + username: `sarah` (string, required) - owner of exports (must be logged in user)
 
-### List LearningResourceExports [GET]
+### List All LearningResourceExports [GET]
 
 + Response 200 (application/json)
 
@@ -329,6 +428,64 @@ Clears the export list for this repository.
 
 + Response 204 (application/json)
 
+## Group LearningResourceExportTasks
+
+## LearningResourceExportTasks Collection [/repositories/{repo_slug}/learning_resource_export_tasks/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+
+### List All LearningResourceExportTasks [GET]
+
+List all recent LearningResourceExportTasks for a user.
+
++ Response 200 (application/json)
+
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "id": "45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3",
+                    "status": "processing",
+                    "url": "/media/resource_exports/sarah_exports.tar.gz"
+                }
+            ]
+        }
+
+### Create a New LearningResourceExportTask [POST]
+
+Queue a new LearningResourceExportTask task for the given LearningResource ids.
+
++ Request (application/json)
+
+        {
+            "ids": [1]
+        }
+
++ Response 200 (application/json)
+
+        {
+            "id": "45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3"
+        }
+
+## LearningResourceExportTask [/repositories/{repo_slug}/learning_resource_export_tasks/{task_id}/
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + task_id: `45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3` (string, required) - task identifier
+
+### Retrieve a LearningResourceExportTask [GET]
+
++ Response 200 (application/json)
+
+        {
+            "id": "45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3",
+            "status": "success",
+            "url": "/media/resource_exports/sarah_exports.tar.gz"
+        }
+
 ## Group StaticAssets
 
 ## StaticAssets Collection [/repositories/{repo_slug}/learning_resources/{learningresource_id}/static_assets/]
@@ -348,7 +505,8 @@ Clears the export list for this repository.
             "results": [
                 {
                     "id": 1,
-                    "asset": "assets/edX/DemoX/Demo_Course/L9_buckets.png"
+                    "asset": "assets/edX/DemoX/Demo_Course/L9_buckets.png",
+                    "name": "L9_buckets.png"
                 }
             ]
         }
@@ -366,15 +524,17 @@ Clears the export list for this repository.
 
         {
             "id": 1,
-            "asset": "assets/edX/DemoX/Demo_Course/L9_buckets.png"
+            "asset": "assets/edX/DemoX/Demo_Course/L9_buckets.png",
+            "name": "L9_buckets.png"
         }
 
 ## Group Vocabularies
 
-## Vocabularies Collection [/repositories/{repo_slug}/vocabularies/]
+## Vocabularies Collection [/repositories/{repo_slug}/vocabularies/{?type_name}]
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
+    + type_name: `Problem` (string, optional) - if specified, filter by this learning resource type
 
 ### List All Vocabularies [GET]
 
@@ -398,7 +558,16 @@ Clears the export list for this repository.
                     "learning_resource_types": [
                         "Problem",
                         "Vertical"
-                    ]
+                    ],
+                    "terms": [
+                        {
+                            "id": 1,
+                            "slug": "easy",
+                            "label": "Easy",
+                            "weight": 1
+                        }
+                    ],
+                    "multi_terms": false
                 }
             ]
         }
@@ -416,7 +585,8 @@ Clears the export list for this repository.
             "learning_resource_types": [
                 "Problem",
                 "Vertical"
-            ]
+            ],
+            "multi_terms": false
         }
 
 + Response 201 (application/json)
@@ -438,7 +608,9 @@ Clears the export list for this repository.
             "learning_resource_types": [
                 "Problem",
                 "Vertical"
-            ]
+            ],
+            "terms": [],
+            "multi_terms": false
         }
 
 
@@ -464,7 +636,16 @@ Clears the export list for this repository.
             "learning_resource_types": [
                 "Problem",
                 "Vertical"
-            ]
+            ],
+            "terms": [
+                {
+                    "id": 1,
+                    "slug": "easy",
+                    "label": "Easy",
+                    "weight": 1
+                }
+            ],
+            "multi_terms": false
         }
 
 ### Partially Update a Vocabulary [PATCH]
@@ -488,7 +669,16 @@ Clears the export list for this repository.
             "learning_resource_types": [
                 "Problem",
                 "Vertical"
-            ]
+            ],
+            "terms": [
+                {
+                    "id": 1,
+                    "slug": "easy",
+                    "label": "Easy",
+                    "weight": 1
+                }
+            ],
+            "multi_terms": false
         }
 
 ### Update a Vocabulary [PUT]
@@ -502,7 +692,12 @@ Clears the export list for this repository.
             "description": "Learning resource difficulty",
             "vocabulary_type": "f",
             "required": false,
-            "weight": 123
+            "weight": 123,
+            "learning_resource_types": [
+                "Problem",
+                "Vertical"
+            ],
+            "multi_terms": false
         }
 
 + Response 200 (application/json)
@@ -514,8 +709,21 @@ Clears the export list for this repository.
             "name": "difficulty",
             "description": "Learning resource difficulty",
             "vocabulary_type": "f",
-            "required": false,
-            "weight": 123
+            "required": true,
+            "weight": 1,
+            "learning_resource_types": [
+                "Problem",
+                "Vertical"
+            ],
+            "terms": [
+                {
+                    "id": 1,
+                    "slug": "easy",
+                    "label": "Easy",
+                    "weight": 1
+                }
+            ],
+            "multi_terms": false
         }
 
 ## Group Terms

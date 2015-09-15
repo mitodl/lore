@@ -25,6 +25,7 @@ from learningresources.models import (
     LearningResource,
     LearningResourceType,
     Repository,
+    get_preview_url,
 )
 from importer.tasks import import_file
 from taxonomy.models import Vocabulary
@@ -166,8 +167,10 @@ class TestLearningResource(RESTTestCase):
         unsupported_term_slug = self.create_term(
             self.repo.slug, vocab2_slug)['slug']
 
-        self.assertEqual([], self.get_learning_resource(
-            self.repo.slug, lr_id)['terms'])
+        self.assertEqual(
+            [],
+            self.get_learning_resource(self.repo.slug, lr_id)['terms']
+        )
 
         self.patch_learning_resource(
             self.repo.slug, lr_id, {"terms": [supported_term_slug]})
@@ -263,7 +266,7 @@ class TestLearningResource(RESTTestCase):
         )
         self.assertEqual(
             expected_jump_to_id_url,
-            learning_resource.get_preview_url()
+            get_preview_url(learning_resource)
         )
 
         resource_dict = self.get_learning_resource(
@@ -275,7 +278,7 @@ class TestLearningResource(RESTTestCase):
         self.assertEqual(
             "https://www.sandbox.edx.org/courses/"
             "test-org/infinity/Febtober/courseware",
-            learning_resource.get_preview_url()
+            get_preview_url(learning_resource)
         )
 
     def test_learning_resource_exports_invalid_methods(self):

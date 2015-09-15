@@ -3,11 +3,15 @@ Signals handlers
 """
 from __future__ import unicode_literals
 
+import logging
+
 from django.db.models.signals import post_migrate, post_save
 from django.dispatch import receiver
 
 from learningresources.models import Repository
 from roles.utils import sync_groups_permissions
+
+log = logging.getLogger(__name__)
 
 
 # pylint: disable=unused-argument

@@ -225,8 +225,8 @@ def get_resource(resource_id, user_id):
         user_id (int): Primary key of the user requesting the resource
     Returns:
         resource (learningresources.LearningResource): Resource
-            May be None if the resource does not exist or the user does
-            not have permissions.
+        May be None if the resource does not exist or the user does
+        not have permissions.
     """
     try:
         resource = LearningResource.objects.get(id=resource_id)

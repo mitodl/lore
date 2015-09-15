@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 
 import logging
 import mimetypes
+import json
 import os
 
 from django.conf import settings
@@ -18,7 +19,6 @@ from django.shortcuts import (
     redirect,
     get_object_or_404,
 )
-from haystack.views import FacetedSearchView
 from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import get_perms
 from statsd.defaults.django import statsd
@@ -30,13 +30,12 @@ from learningresources.api import (
     PermissionDenied as LorePermissionDenied,
 )
 from learningresources.models import (
-    LearningResource,
     Repository,
     StaticAsset,
     STATIC_ASSET_PREFIX,
 )
+from lore.settings import REST_FRAMEWORK
 from roles.permissions import RepoPermission
-from search import get_sqs
 from search.sorting import LoreSortingFields
 from taxonomy.models import Vocabulary, Term
 from ui.forms import UploadForm, RepositoryForm
@@ -174,96 +173,55 @@ def get_vocabularies(facets):
         vocabularies[vocab] = []
         for t_id, count in term_data:
             vocabularies[vocab].append((t_id, terms[int(t_id)], count))
+        # By default, sort alphabetically.
+        vocabularies[vocab].sort(key=lambda x: x[1])
     return vocabularies
 
 
-class RepositoryView(FacetedSearchView):
-    """Subclass of haystack.views.FacetedSearchView."""
+@statsd.timer('lore.repository_view')
+@login_required
+def repository_view(request, repo_slug):
+    """
+    View for repository page.
+    """
+    try:
+        repo = get_repo(repo_slug, request.user.id)
+    except NotFound:
+        raise Http404
+    except LorePermissionDenied:
+        raise PermissionDenied
 
-    # pylint: disable=arguments-differ
-    # We need the extra kwarg.
-    @statsd.timer('lore.repository_view')
-    def __call__(self, request, repo_slug):
-        # Get arguments from the URL
-        # It's a subclass of an external class, so we don't have
-        # repo_slug in __init__.
-        # pylint: disable=attribute-defined-outside-init
-        try:
-            self.repo = get_repo(repo_slug, request.user.id)
-        except NotFound:
-            raise Http404()
-        except LorePermissionDenied:
-            raise PermissionDenied('unauthorized')
-        # get sorting from params if it's there
-        sortby = dict(request.GET.copy()).get('sortby', [])
-        if (len(sortby) > 0 and
-                sortby[0] in LoreSortingFields.all_sorting_fields()):
-            self.sortby = sortby[0]
-        else:
-            # default value
-            self.sortby = LoreSortingFields.DEFAULT_SORTING_FIELD
-        return super(RepositoryView, self).__call__(request)
+    exports = request.session.get(
+        'learning_resource_exports', {}).get(repo.slug, [])
 
-    def dispatch(self, *args, **kwargs):
-        """Override for the purpose of having decorators in views.py."""
-        super(RepositoryView, self).dispatch(*args, **kwargs)
+    sortby = dict(request.GET.copy()).get('sortby', [])
+    if (len(sortby) > 0 and
+            sortby[0] in LoreSortingFields.all_sorting_fields()):
+        sortby_field = sortby[0]
+    else:
+        # default value
+        sortby_field = LoreSortingFields.DEFAULT_SORTING_FIELD
 
-    def extra_context(self):
-        """Add to the context."""
-        context = super(RepositoryView, self).extra_context()
-        params = dict(self.request.GET.copy())
-        qs_prefix = "?"
-        # Chop out page number so we don't end up with
-        # something like ?page=2&page=3&page=4.
-        if "page" in params:
-            params.pop("page")
-        # for the same reason I remove the sorting
-        if "sortby" in params:
-            params.pop("sortby")
-        if len(params) > 0:
-            qs_prefix = []
-            for key in params.keys():
-                qs_prefix.append(
-                    "&".join([
-                        "{0}={1}".format(key, val)
-                        for val in params[key]
-                    ])
-                )
-            qs_prefix = "?{0}&".format("&".join(qs_prefix))
+    sorting_options = {
+        "current": LoreSortingFields.get_sorting_option(
+            sortby_field),
+        "all": LoreSortingFields.all_sorting_options_but(
+            sortby_field)
+    }
 
-        show_export_button = LearningResource.objects.filter(
-            course__repository__id=self.repo.id
-        ).exists()
+    context = {
+        "repo": repo,
+        "perms_on_cur_repo": get_perms(request.user, repo),
+        "sorting_options_json": json.dumps(sorting_options),
+        "exports_json": json.dumps(exports),
+        "page_size_json": json.dumps(REST_FRAMEWORK['PAGE_SIZE'])
+    }
 
-        context.update({
-            "repo": self.repo,
-            "perms_on_cur_repo": get_perms(self.request.user, self.repo),
-            "vocabularies": get_vocabularies(context["facets"]),
-            "qs_prefix": qs_prefix,
-            "sorting_options": {
-                "current": LoreSortingFields.get_sorting_option(
-                    self.sortby),
-                "all": LoreSortingFields.all_sorting_options_but(
-                    self.sortby)
-            },
-            "exports": self.request.session.get(
-                'learning_resource_exports', {}).get(self.repo.slug, []),
-            "show_export_button": show_export_button
-        })
-        return context
-
-    def build_form(self, form_kwargs=None):
-        """Override of FacetedSearchView.build_form to inject repo slug."""
-        # get_sqs must be called here instead of putting it in urls.py as
-        # would be the default. This is because vocabularies could be added
-        # by the user at runtime, and we need to be able to search on those
-        # facets without restarting Django.
-        self.searchqueryset = get_sqs()
-        if form_kwargs is None:
-            form_kwargs = {}
-        form_kwargs["repo_slug"] = self.repo.slug
-        form_kwargs["sortby"] = self.sortby
-        return super(RepositoryView, self).build_form(form_kwargs)
+    return render(
+        request,
+        "repository.html",
+        context
+    )
 
 
 @login_required

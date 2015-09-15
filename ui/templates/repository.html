@@ -14,7 +14,8 @@
            {% if form.q.value %}value="{{ form.q.value }}"{% endif %}
          >
         <span class="input-group-btn">
-          <button type="submit" class="btn btn-default btn-lg">
+          <button type="submit" class="btn btn-default btn-lg"
+                  id="search_button">
             <i class="fa fa-search"></i>
           </button>
         </span>
@@ -22,62 +23,13 @@
     </form>
   </div>
 </div>
-<div class="col-md-3">
-  <div class="panel-group lore-panel-group">
-    {% include "includes/facet_panel.html" %}
-  </div>
-</div>
-<div class="col-md-9 col-results">
-  <div class="row grid-row-top">
-    <div class="col-md-5">
-      {% if page.object_list %}
-      <!-- Split button -->
-      <span>Sort by</span>
-      <div class="btn-group">
-        <button type="button" class="btn btn-default">{{ sorting_options.current.1 }}</button>
-        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <span class="caret"></span>
-          <span class="sr-only">Toggle Dropdown</span>
-        </button>
-        <ul class="dropdown-menu">
-          {% for sorting_option in sorting_options.all %}
-          <li><a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}sortby={{ sorting_option.0 }}">{{ sorting_option.1 }}</a></li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endif %}
-    </div>
-    <div class="col-md-7 text-right"></div>
-    <div class="col-md-5"></div>
-    <div class="col-md-7 text-right">
-      {% if show_export_button %}
-      <button id="export_button" class="btn btn-primary" type="button" data-export-count="{{ exports|length }}" data-logged-in-user="{{ request.user.username }}">Export </button>
-      {% endif %}
-    </div>
-  </div>
-  {% for result in page.object_list %}
-    {% include "includes/learning_resource.html" %}
-  {% endfor %}
+<div id="listing">
+
 </div>
 
 <div class="row">
   <div class="col-md-12">
-    <div class="lore-pagination">
-      {% if page.has_other_pages %}
-      {% if page.has_previous %}
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix }}page={{ page.previous_page_number }}&sortby={{ sorting_options.current.0 }}">
-        <i class="fa fa-angle-left"></i>
-      </a>
-      {% endif %}
-      <a id="repo_page_status" class="repo-page-status" data-page-num="{{ page.number }}" data-max-page-num="{{ page.paginator.num_pages }}">
-          Page {{ page.number }} of {{ page.paginator.num_pages }}
-      </a>
-      {% if page.has_next %}
-      <a href="{% url 'repositories' repo.slug %}{{ qs_prefix}}page={{ page.next_page_number }}&sortby={{ sorting_options.current.0 }}">
-        <i class="fa fa-angle-right"></i>
-      </a>
-      {% endif %}
-      {% endif %}
+    <div class="lore-pagination" id="lore-pagination">
     </div>
   </div>
 </div>
@@ -92,6 +44,7 @@
   <div class="modal-dialog" role="document">
   </div>
 </div>
+<div id="confirmation-container"></div>
 {% endblock %}
 {% block postcontent %}
 {{ block.super }}
@@ -109,10 +62,29 @@
         src="{% static "ui/js/lr_exports.jsx" %}">
 </script>
 <script type="text/jsx"
+        src="{% static "ui/js/listing_resources.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/pagination.jsx" %}">
+</script>
+<script type="text/jsx"
         src="{% static "ui/js/utils.jsx" %}">
 </script>
-<script type="text/javascript">
-  require(["listing"]);
-</script>
 {% endcompress %}
+<script type="text/javascript">
+require(["listing", "jquery"], function(Listing, $) {
+  var listingOptions = {
+    repoSlug: "{{ repo.slug|escapejs }}",
+    allExports: {{ exports_json|safe }},
+    sortingOptions: {{ sorting_options_json|safe }},
+    loggedInUsername: "{{ request.user.username|escapejs }}",
+    imageDir: "{% static "ui/images"|escapejs %}",
+    pageSize: {{ page_size_json|safe }}
+  };
+
+  $(function() {
+    Listing.loader(listingOptions, $("#listing")[0]);
+  });
+});
+</script>
 {% endblock %}

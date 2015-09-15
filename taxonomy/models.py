@@ -58,6 +58,7 @@ class Vocabulary(BaseModel):
                 slug = "{0}{1}".format(slugify(self.name), count)
                 count += 1
             self.slug = slug
+
         return super(Vocabulary, self).save(*args, **kwargs)
 
 

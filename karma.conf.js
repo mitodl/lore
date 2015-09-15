@@ -18,6 +18,11 @@ module.exports = function(config) {
       'ui/static/ui/js/require_config.js',
       'ui/jstests/test-main.js',
       {
+        pattern: 'ui/static/ui/images/*',
+        served: true,
+        included: false
+      },
+      {
         pattern: 'ui/static/bower/**/*.js',
         included: false
       },

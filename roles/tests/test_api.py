@@ -92,24 +92,6 @@ class TestRoleApi(LoreTestCase):
             sorted(RepoPermission.author_permissions())
         )
 
-    def test_roles_init_new_repo_fake_permission_admin(self):
-        """
-        Non existing permissions for admin
-        """
-        with patch.object(api.RepoPermission,
-                          'administrator_permissions') as mock_method:
-            mock_method.return_value = ['fake_permission']
-            repo = create_repo(
-                name=self.repo_name,
-                description=self.repo_desc,
-                user_id=self.user.id,
-            )
-            admin = Group.objects.get(name=self.group_admin)
-            self.assertListEqual(
-                get_perms(admin, repo),
-                []
-            )
-
     def test_roles_init_new_repo_fake_permission_curator(self):
         """
         Non existing permissions for curator

@@ -7,10 +7,13 @@ from __future__ import unicode_literals
 class LoreSortingFields(object):
     """
     Definition of possible sorting fields
+    Tuple of index name, sorting title for ui, sording order
+    ('-' = desc, '' = asc)
     """
-    SORT_BY_NR_VIEWS = ('nr_views', 'Number of Views (desc)')
-    SORT_BY_NR_ATTEMPTS = ('nr_attempts', 'Number of Attempts (desc)')
-    SORT_BY_AVG_GRADE = ('avg_grade', 'Average Grade (desc)')
+    SORT_BY_NR_VIEWS = ('nr_views', 'Number of Views (desc)', '-')
+    SORT_BY_NR_ATTEMPTS = ('nr_attempts', 'Number of Attempts (desc)', '-')
+    SORT_BY_AVG_GRADE = ('avg_grade', 'Average Grade (desc)', '-')
+    SORT_BY_TITLE = ('titlesort', 'Title (asc)', '')
 
     DEFAULT_SORTING_FIELD = SORT_BY_NR_VIEWS[0]
 
@@ -26,6 +29,7 @@ class LoreSortingFields(object):
             cls.SORT_BY_NR_VIEWS,
             cls.SORT_BY_NR_ATTEMPTS,
             cls.SORT_BY_AVG_GRADE,
+            cls.SORT_BY_TITLE
         ]
 
     @classmethod
@@ -44,7 +48,10 @@ class LoreSortingFields(object):
         """
         if field not in cls.all_sorting_fields():
             field = cls.DEFAULT_SORTING_FIELD
-        return (field, dict(cls.all_sorting_options()).get(field))
+        # this will always return something
+        for sorting in cls.all_sorting_options():
+            if sorting[0] == field:
+                return sorting
 
     @classmethod
     def all_sorting_options_but(cls, field):

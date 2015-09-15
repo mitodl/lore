@@ -49,6 +49,12 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     "label": "notrequired",
     "weight": 1
   };
+  var termResponseMedium = {
+    "id": 5,
+    "slug": "medium",
+    "label": "medium",
+    "weight": 1
+  };
   var vocabularyResponsePrereq = {
     "id": 1,
     "slug": "prerequisite",
@@ -120,6 +126,11 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
         url: '/api/v1/repositories/repo/vocabularies/?type_name=course&page=2',
         type: 'GET',
         responseText: vocabulariesResponseSecond
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/repo/vocabularies/difficulty/terms/',
+        type: 'POST',
+        responseText: termResponseMedium
       });
     },
     afterEach: function() {
@@ -220,38 +231,88 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
           // TestUtils.Simulate.change only simulates a change event,
           // we need to update the value first ourselves
           $vocabSelect.val("prerequisite").trigger('change');
-          React.addons.TestUtils.Simulate.change($vocabSelect);
           component.forceUpdate(function() {
             assert.equal($vocabOptions[0].selected, false);
             assert.equal($vocabOptions[1].selected, true);
-            // on selection of the second vocabulary, make sure the term selector updates.
+            // re-fetch the selects to get the prerequisite one
+            $allSelects = $node.find("#vocabularies select");
             var termsSelect = $allSelects[1];
             var $termsOptions = $(termsSelect).find("option");
             assert.equal($termsOptions.size(), 2);
-            assert.equal($termsOptions[0].selected, false);
+            assert.equal($termsOptions[0].selected, true);
             assert.equal($termsOptions[1].selected, false);
-            // the second vocabulary can be a multi select
-            $(termsSelect)
-              .val(["hard", "easy"])
-              .trigger('change');
-            React.addons.TestUtils.Simulate.change(termsSelect);
+            assert.equal($(termsSelect).val(), "required");
+
+            // remove selection for this vocabulary to not interfere to the rest of the test
+            $(termsSelect).val("").trigger('change');
             component.forceUpdate(function() {
-              assert.equal($termsOptions[0].selected, true);
-              assert.equal($termsOptions[1].selected, true);
-              // be sure that the state reflects the selection
-              var terms = _.map(component.state.vocabulariesAndTerms,
-                function (tuple) {
-                  return tuple.selectedTerms;
+              // Switch to difficulty
+              $vocabSelect.val("difficulty").trigger('change');
+              component.forceUpdate(function() {
+                // re-fetch the selects to get the difficulty one
+                $allSelects = $node.find("#vocabularies select");
+                // update the term select
+                termsSelect = $allSelects[1];
+                $termsOptions = $(termsSelect).find("option");
+
+                assert.equal($termsOptions.size(), 2);
+                assert.equal($termsOptions[0].selected, false);
+                assert.equal($termsOptions[1].selected, false);
+                // the second vocabulary can be a multi select
+                $(termsSelect)
+                  .val(["hard", "easy"])
+                  .trigger('change');
+                component.forceUpdate(function () {
+                  assert.equal($termsOptions[0].selected, true);
+                  assert.equal($termsOptions[1].selected, true);
+                  // be sure that the state reflects the selection
+                  var terms = _.map(component.state.vocabulariesAndTerms,
+                    function (tuple) {
+                      return tuple.selectedTerms;
+                    });
+                  terms = _.flatten(terms);
+                  terms.sort();
+                  var expectedTerms = [
+                    $termsOptions[0].value,
+                    $termsOptions[1].value
+                  ];
+                  expectedTerms.sort();
+                  assert.deepEqual(terms, expectedTerms);
+
+                  // the second vocabulary also allows free tagging
+                  $(termsSelect)
+                    // hack to simulate the free tagging
+                    .append($('<option />', {value: 'medium'}))
+                    .val(["hard", "easy", "medium"])
+                    .trigger('change');
+                  waitForAjax(1, function () {
+                    component.forceUpdate(function () {
+                      // check if the new option has been added
+                      $termsOptions = $(termsSelect).find("option");
+                      assert.equal($termsOptions.size(), 3);
+                      assert.equal($termsOptions[0].selected, true);
+                      assert.equal($termsOptions[1].selected, true);
+                      assert.equal($termsOptions[2].selected, true);
+                      // be sure that the state reflects the selection
+                      var terms = _.map(component.state.vocabulariesAndTerms,
+                        function (tuple) {
+                          return tuple.selectedTerms;
+                        });
+                      terms = _.flatten(terms);
+                      terms.sort();
+                      var expectedTerms = [
+                        $termsOptions[0].value,
+                        $termsOptions[1].value,
+                        $termsOptions[2].value
+                      ];
+                      expectedTerms.sort();
+                      assert.deepEqual(terms, expectedTerms);
+                      done();
+                    });
+                  });
+
                 });
-              terms = _.flatten(terms);
-              terms.sort();
-              var expectedTerms = [
-                $termsOptions[0].value,
-                $termsOptions[1].value
-              ];
-              expectedTerms.sort();
-              assert.deepEqual(terms, expectedTerms);
-              done();
+              });
             });
           });
         });
@@ -268,16 +329,23 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     function(assert) {
       var done = assert.async();
 
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(3, function () {
           var $node = $(React.findDOMNode(component));
 
+          assert.equal(refreshCount, 0);
           var saveButton = $node.find("button")[0];
           React.addons.TestUtils.Simulate.click(saveButton);
           waitForAjax(1, function() {
             assert.equal(component.state.message,
               "Form saved successfully!");
+            assert.equal(refreshCount, 1);
             done();
           });
         });
@@ -286,6 +354,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
         learningResourceId="1"
+        refreshFromAPI={refreshFromAPI}
         ref={afterMount} />);
     }
   );
@@ -293,10 +362,18 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     'An error should show up on AJAX failure while saving form',
     function(assert) {
       var done = assert.async();
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(3, function () {
           var $node = $(React.findDOMNode(component));
+
+          assert.equal(0, refreshCount);
 
           TestUtils.replaceMockjax({
             url: '/api/v1/repositories/repo/learning_resources/1/',
@@ -310,6 +387,8 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
               component.state.message,
               {error: "Unable to save form"}
             );
+
+            assert.equal(0, refreshCount);
             done();
           });
         });
@@ -318,6 +397,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
         learningResourceId="1"
+        refreshFromAPI={refreshFromAPI}
         ref={afterMount} />);
     }
   );
@@ -420,7 +500,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     function(assert) {
       var div = document.createElement("div");
       assert.equal(0, $(div).find("textarea").size());
-      LearningResources.loader("repo", "1", div);
+      LearningResources.loader("repo", "1", function() {}, div);
       assert.equal(2, $(div).find("textarea").size());
     }
   );

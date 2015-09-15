@@ -136,45 +136,6 @@ class LearningResource(BaseModel):
     xa_histogram_grade = models.FloatField(default=0)
     url_name = models.TextField(null=True)
 
-    def get_preview_url(self, org=None, course_number=None, run=None):
-        """
-        Create a preview URL. Accepts optional kwargs to prevent
-        database lookups, especially for during search engine indexing.
-        Args:
-            org (unicode): self.course.org
-            run (unicode): self.course.run
-            course_number (unicode): self.course.course_number
-        """
-        if org is None:
-            org = self.course.org
-        if course_number is None:
-            course_number = self.course.course_number
-        if run is None:
-            run = self.course.run
-        key = "{org}/{course}/{run}".format(
-            org=org,
-            course=course_number,
-            run=run,
-        )
-
-        if self.url_name is not None:
-            url_format = 'courses/{key}/jump_to_id/{preview_id}'
-            return LORE_PREVIEW_BASE_URL + urllib_parse.quote(
-                url_format.format(
-                    base_url=LORE_PREVIEW_BASE_URL,
-                    key=key,
-                    preview_id=self.url_name,
-                )
-            )
-        else:
-            url_format = 'courses/{key}/courseware'
-            return LORE_PREVIEW_BASE_URL + urllib_parse.quote(
-                url_format.format(
-                    base_url=LORE_PREVIEW_BASE_URL,
-                    key=key,
-                )
-            )
-
 
 @python_2_unicode_compatible
 class LearningResourceType(BaseModel):
@@ -200,7 +161,9 @@ class Repository(BaseModel):
 
     @transaction.atomic
     def save(self, *args, **kwargs):
-        """Handle slugs and groups"""
+        """
+        Handle slugs and groups.
+        """
         is_update = False
         if self.id is None or self.name != get_object_or_404(
                 Repository, id=self.id).name:
@@ -228,3 +191,43 @@ class Repository(BaseModel):
             RepoPermission.add_edit_metadata,
             RepoPermission.manage_repo_users,
         )
+
+
+def get_preview_url(resource, org=None, course_number=None, run=None):
+    """
+    Create a preview URL. Accepts optional kwargs to prevent
+    database lookups, especially for during search engine indexing.
+    Args:
+        resource (LearningResource): LearningResource
+        org (unicode): resource.course.org
+        run (unicode): resource.course.run
+        course_number (unicode): resource.course.course_number
+    Returns:
+        url (unicode): Preview URL for LearningResource.
+    """
+    if org is None:
+        org = resource.course.org
+    if course_number is None:
+        course_number = resource.course.course_number
+    if run is None:
+        run = resource.course.run
+    key = "{org}/{course}/{run}".format(
+        org=org,
+        course=course_number,
+        run=run,
+    )
+
+    if resource.url_name is None:
+        path = "courseware"
+        preview_id = ""
+    else:
+        path = "jump_to_id"
+        preview_id = "/{0}".format(resource.url_name)
+
+    url_format = '{base_url}courses/{key}/{path}{preview_id}'
+    return url_format.format(
+        base_url=LORE_PREVIEW_BASE_URL,
+        path=urllib_parse.quote(path),
+        key=urllib_parse.quote(key),
+        preview_id=urllib_parse.quote(preview_id),
+    )

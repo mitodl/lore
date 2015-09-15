@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 from learningresources.tests.base import LoreTestCase
-from search.forms import SearchForm
+from search.api import construct_queryset
 from search.sorting import LoreSortingFields
 from taxonomy.models import Term, Vocabulary
 
@@ -30,12 +30,8 @@ class SearchTestCase(LoreTestCase):
         """
         Helper function to perform a search
         """
-        form = SearchForm(
-            data={"q": query},
-            repo_slug=self.repo.slug,
-            sortby=sorting
-        )
-        return form.search()
+        return construct_queryset(
+            repo_slug=self.repo.slug, query=query, sortby=sorting)
 
     def count_results(self, query):
         """Return count of matching indexed records."""
@@ -44,9 +40,7 @@ class SearchTestCase(LoreTestCase):
     def count_faceted_results(self, vocab, term):
         """Return count of matching indexed records by facet."""
         facet_query = "{0}_exact:{1}".format(vocab, term)
-        form = SearchForm(
-            selected_facets=[facet_query],
+        return construct_queryset(
             repo_slug=self.repo.slug,
-            sortby=LoreSortingFields.DEFAULT_SORTING_FIELD
-        )
-        return form.search().count()
+            selected_facets=[facet_query]
+        ).count()

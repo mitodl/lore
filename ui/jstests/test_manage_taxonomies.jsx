@@ -181,6 +181,10 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         dataType: 'json',
         type: "GET"
       });
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/",
+        type: "DELETE"
+      });
     },
     afterEach: function() {
       TestUtils.cleanup();
@@ -190,27 +194,274 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
   QUnit.test('Assert that TermComponent renders properly',
     function(assert) {
       assert.ok(TermComponent, "class object not found");
+      var done = assert.async();
       var term = {
         "id": 9,
         "slug": "test",
         "label": "test",
         "weight": 1
       };
-      var termComponentRendered = React.addons.TestUtils.
+      var parentUpdateCount = 0;
+      var updateTerm = function() {
+        parentUpdateCount += 1;
+      };
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test/",
+        responseText: term,
+        type: "PATCH"
+      });
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
+      var afterMount = function(component) {
+        var labels = React.addons.TestUtils.
+        scryRenderedDOMComponentsWithTag(
+          component,
+          'label'
+        );
+
+        //testing label value render
+        var termLabel = labels[0];
+        var label = termLabel.getDOMNode();
+        assert.equal(label.innerHTML, term.label);
+        assert.equal(component.state.formatActionState, 'show');
+
+        var formatButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'format-button'
+        );
+        var cancelButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'revert-button'
+        );
+
+        //open edit mode
+        React.addons.TestUtils.Simulate.click(formatButton);
+        component.forceUpdate(function() {
+          assert.equal(component.state.formatActionState, 'edit');
+          //edit term
+          var editTermBox = React.addons.TestUtils.
+            findRenderedDOMComponentWithTag(
+            component,
+            'input'
+          );
+          React.addons.TestUtils.Simulate.change(
+            editTermBox, {target: {value: "TestB"}}
+          );
+          component.forceUpdate(function() {
+            assert.equal(component.state.label, "TestB");
+            //save term
+
+            assert.equal(refreshCount, 0);
+            React.addons.TestUtils.Simulate.click(formatButton);
+            component.forceUpdate(function() {
+              //after saved term using api
+              waitForAjax(1, function() {
+                //term state reset
+                assert.equal(component.state.formatActionState, 'show');
+                // term is update in parent
+                assert.equal(parentUpdateCount, 1);
+                // listing was asked to refresh
+                assert.equal(refreshCount, 1);
+
+                // Edit term again
+                React.addons.TestUtils.Simulate.click(formatButton);
+                component.forceUpdate(function() {
+                  assert.equal(component.state.formatActionState, 'edit');
+                  editTermBox = React.addons.TestUtils.
+                    findRenderedDOMComponentWithTag(
+                    component,
+                    'input'
+                  );
+                  React.addons.TestUtils.Simulate.change(
+                    editTermBox, {target: {value: "TestB"}}
+                  );
+                  component.forceUpdate(function () {
+                    // press cancel button and assert term layout is reset.
+                    React.addons.TestUtils.Simulate.click(cancelButton);
+
+                    component.forceUpdate(function () {
+                      assert.equal(component.state.formatActionState, 'show');
+                      //assert editbox is hide (UI reset)
+                      var editTermBoxes = React.addons.TestUtils.
+                        scryRenderedDOMComponentsWithTag(
+                        component,
+                        'input'
+                      );
+
+                      assert.equal(editTermBoxes.length, 0);
+
+                      // Edit again term with same label
+                      React.addons.TestUtils.Simulate.click(formatButton);
+                      component.forceUpdate(function() {
+                        assert.equal(component.state.formatActionState, 'edit');
+                        editTermBox = React.addons.TestUtils.
+                          findRenderedDOMComponentWithTag(
+                          component,
+                          'input'
+                        );
+                        React.addons.TestUtils.Simulate.change(
+                          editTermBox, {target: {value: "test"}}
+                        );
+
+                        component.forceUpdate(function() {
+                          // save term with label equals to previous label
+                          React.addons.TestUtils.Simulate.click(formatButton);
+
+                          component.forceUpdate(function() {
+                            //assert editbox is hide (UI reset)
+                            editTermBoxes = React.addons.TestUtils.
+                              scryRenderedDOMComponentsWithTag(
+                              component,
+                              'input'
+                            );
+                            assert.equal(editTermBoxes.length, 0);
+                            done();
+                          });
+                        });
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      };
+
+      React.addons.TestUtils.
         renderIntoDocument(
           <TermComponent
             term={term}
+            repoSlug="repo"
+            updateTerm={updateTerm}
+            vocabularySlug={vocabulary.slug}
+            refreshFromAPI={refreshFromAPI}
+            ref={afterMount}
           />
         );
+    }
+  );
 
-      var labelComponent = React.addons.TestUtils.
-        findRenderedDOMComponentWithTag(
-          termComponentRendered,
+  QUnit.test('Assert that ajax fail on update term TermComponent',
+    function(assert) {
+      assert.ok(TermComponent, "class object not found");
+      var done = assert.async();
+      var term = {
+        "id": 9,
+        "slug": "test",
+        "label": "test",
+        "weight": 1
+      };
+      var parentUpdateCount = 0;
+      var updateTerm = function() {
+        parentUpdateCount += 1;
+      };
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test/",
+        responseText: term,
+        type: "PATCH",
+        status: 400
+      });
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
+      var afterMount = function(component) {
+        var labels = React.addons.TestUtils.
+        scryRenderedDOMComponentsWithTag(
+          component,
           'label'
-      );
-      //testing label value render
-      var label = labelComponent.getDOMNode();
-      assert.equal(label.innerHTML, term.label);
+        );
+        //testing label value render
+        var termLabel = labels[0];
+        var label = termLabel.getDOMNode();
+        assert.equal(label.innerHTML, term.label);
+        assert.equal(component.state.formatActionState, 'show');
+        var formatButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'format-button'
+        );
+        var cancelButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'revert-button'
+        );
+        React.addons.TestUtils.Simulate.click(formatButton);
+        component.forceUpdate(function() {
+          assert.equal(component.state.formatActionState, 'edit');
+          var editTermBox = React.addons.TestUtils.
+          findRenderedDOMComponentWithTag(
+            component,
+            'input'
+          );
+          React.addons.TestUtils.Simulate.change(
+            editTermBox, {target: {value: "TestB"}}
+          );
+          component.forceUpdate(function() {
+            assert.equal(component.state.label, "TestB");
+
+            assert.equal(refreshCount, 0);
+            React.addons.TestUtils.Simulate.click(formatButton);
+            component.forceUpdate(function() {
+              waitForAjax(1, function() {
+                assert.equal(component.state.label, "TestB");
+                assert.equal(
+                  component.state.errorMessage, 'Unable to update term'
+                );
+                assert.equal(component.state.formatActionState, 'edit');
+                assert.equal(parentUpdateCount, 0);
+                // listing page was not asked to refresh
+                assert.equal(refreshCount, 0);
+
+                editTermBox = React.addons.TestUtils.
+                  findRenderedDOMComponentWithTag(
+                  component,
+                  'input'
+                );
+                React.addons.TestUtils.Simulate.change(
+                  editTermBox, {target: {value: "TestB"}}
+                );
+                //after unable to save you can reset edit mode
+                component.forceUpdate(function () {
+                  React.addons.TestUtils.Simulate.click(cancelButton);
+                  component.forceUpdate(function () {
+                    assert.equal(component.state.label, "test");
+                    assert.equal(component.state.formatActionState, 'show');
+                    //assert editbox is hide (UI reset)
+                    var editTermBoxes = React.addons.TestUtils.
+                      scryRenderedDOMComponentsWithTag(
+                      component,
+                      'input'
+                    );
+                    assert.equal(editTermBoxes.length, 0);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.
+        renderIntoDocument(
+          <TermComponent
+            term={term}
+            repoSlug="repo"
+            updateTerm={updateTerm}
+            vocabularySlug={vocabulary.slug}
+            refreshFromAPI={refreshFromAPI}
+            ref={afterMount}
+          />
+        );
     }
   );
 
@@ -219,11 +470,24 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       assert.ok(VocabularyComponent, "class object not found");
       var done = assert.async();
 
+      var showConfirmationDialog = function (options) {
+        options.confirmationHandler(true);
+      };
+
       var addTermCalled = 0;
+      var deleteVocabularyCalled = 0;
       var addTerm = function() {
         addTermCalled += 1;
       };
+      var deleteVocabulary = function() {
+        deleteVocabularyCalled += 1;
+      };
       var reportMessage = function() {};
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
       var afterMount = function(component) {
         var node = React.findDOMNode(component);
 
@@ -244,30 +508,48 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             'li'
         );
         assert.equal(itemList.length, 3);
-        //test enter text in input text
-        var inputNode = React.addons.TestUtils.
-          findRenderedDOMComponentWithTag(
-            component,
-            'input'
-        );
-        React.addons.TestUtils.Simulate.change(
-          inputNode,
-          {target: {value: 'test12'}}
-        );
-        component.forceUpdate(function() {
-          node = React.findDOMNode(component);
-          var textbox = $(node).find("input")[0];
-          assert.equal(
-            'test12',
-            component.state.newTermLabel
-          );
-          React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
-          assert.equal(addTermCalled, 0);
 
-          React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
-          waitForAjax(1, function() {
-            assert.equal(addTermCalled, 1);
-            done();
+        var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+          component,
+          'delete-vocabulary'
+        );
+
+        assert.equal(refreshCount, 0);
+        var deleteVocabularyButton = actionButtons[0];
+        React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+        component.forceUpdate(function () {
+          waitForAjax(1, function () {
+            // listing page asked to refresh
+            assert.equal(refreshCount, 1);
+
+            assert.equal(deleteVocabularyCalled, 1);
+            //test enter text in input text
+            var inputNode = React.addons.TestUtils.
+              findRenderedDOMComponentWithTag(
+              component,
+              'input'
+            );
+            React.addons.TestUtils.Simulate.change(
+              inputNode,
+              {target: {value: 'test12'}}
+            );
+            component.forceUpdate(function () {
+              node = React.findDOMNode(component);
+              var textbox = $(node).find("input")[0];
+              assert.equal(
+                'test12',
+                component.state.newTermLabel
+              );
+              React.addons.TestUtils.Simulate.keyUp(textbox, {key: "x"});
+              assert.equal(addTermCalled, 0);
+
+              React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
+              waitForAjax(1, function () {
+                assert.equal(addTermCalled, 1);
+                done();
+              });
+            });
           });
         });
       };
@@ -277,8 +559,11 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             vocabulary={vocabulary}
             terms={vocabulary.terms}
             reportMessage={reportMessage}
+            deleteVocabulary={deleteVocabulary}
+            renderConfirmationDialog={showConfirmationDialog}
             addTerm={addTerm}
             repoSlug="repo"
+            refreshFromAPI={refreshFromAPI}
             ref={afterMount}
           />
         );
@@ -306,6 +591,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       var reportMessage = function(msg) {
         message = msg;
       };
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         // wait for calls to populate form
         var node = React.findDOMNode(component);
@@ -313,6 +604,8 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
         waitForAjax(1, function () {
           assert.equal(addTermCalled, 0);
+          // refreshFromAPI was never called
+          assert.equal(refreshCount, 0);
           // Error is caused by a 400 status code
           assert.deepEqual(
             message,
@@ -329,6 +622,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             reportMessage={reportMessage}
             addTerm={addTerm}
             repoSlug="repo"
+            refreshFromAPI={refreshFromAPI}
             ref={afterMount}
           />
         );
@@ -346,6 +640,15 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       ];
       var done = assert.async();
       var addTermCalled = 0;
+      var addTerm = function() {
+        addTermCalled += 1;
+      };
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         assert.equal(
           component.state.message,
@@ -375,12 +678,11 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
           waitForAjax(1, function() {
             //test items
             assert.equal(addTermCalled, 1);
+            // listing page was asked to update
+            assert.equal(refreshCount, 1);
             done();
           });
         });
-      };
-      var addTerm = function() {
-        addTermCalled += 1;
       };
       React.addons.TestUtils.
         renderIntoDocument(
@@ -388,6 +690,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             vocabularies={vocabularies}
             repoSlug="repo"
             addTerm={addTerm}
+            refreshFromAPI={refreshFromAPI}
             ref={afterMount}
           />
         );
@@ -410,6 +713,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       var updateParent = function(data) {
         saveVocabularyResponse = data;
       };
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         assert.equal(
           component.state.name,
@@ -501,6 +810,8 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
               component.state.multiTerms,
               false
             );
+            // listing page was asked to update
+            assert.equal(refreshCount, 1);
             var inputNodes = React.addons.TestUtils.
             scryRenderedDOMComponentsWithTag(
               formNode,
@@ -567,6 +878,9 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                   saveVocabularyResponse.id,
                   vocabulary.id
                 );
+                // clicking button caused listing page to update
+                assert.equal(refreshCount, 2);
+
                 React.addons.TestUtils.Simulate.change(
                   inputVocabularyName, {target: {value: "TestC"}}
                 );
@@ -617,6 +931,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                     assert.equal(component.state.multiTerms, false);
                     React.addons.TestUtils.Simulate.submit(formNode);
                     waitForAjax(1, function() {
+                      assert.equal(refreshCount, 3);
                       //testing state is reset
                       assert.equal(
                         component.state.name,
@@ -655,6 +970,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             repoSlug="repo"
             updateParent={updateParent}
             learningResourceTypes={learningResourceTypes}
+            refreshFromAPI={refreshFromAPI}
             ref={afterMount}
           />
         );
@@ -672,6 +988,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       ];
       var done = assert.async();
       var updateParent = function() {};
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         var formNode = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
@@ -702,12 +1024,15 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         );
         React.addons.TestUtils.Simulate.submit(formNode);
         waitForAjax(1, function() {
-          // Error is caused by a 400 status code
-          assert.deepEqual(
-            component.state.message,
-            {error: "There was a problem adding the Vocabulary."}
-          );
-          done();
+          component.forceUpdate(function() {
+            // Error is caused by a 400 status code
+            assert.deepEqual(
+              component.state.message,
+              {error: "There was a problem adding the Vocabulary."}
+            );
+            assert.equal(refreshCount, 0);
+            done();
+          });
         });
       };
       React.addons.TestUtils.
@@ -716,6 +1041,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             vocabularies={vocabularies}
             repoSlug="repo2"
             updateParent={updateParent}
+            refreshFromAPI={refreshFromAPI}
             ref={afterMount}
           />
         );
@@ -733,6 +1059,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       ];
       var done = assert.async();
       var updateParent = function() {};
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var afterMount = function(component) {
         var formNode = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
@@ -771,6 +1103,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
               ' Please choose a different name.'
             }
           );
+          assert.equal(refreshCount, 0);
           done();
         });
       };
@@ -780,6 +1113,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
             vocabularies={vocabularies}
             repoSlug="repo3"
             updateParent={updateParent}
+            refreshFromAPI={refreshFromAPI}
             ref={afterMount}
           />
         );
@@ -804,6 +1138,12 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         "required": false,
         "weight": 2147483647,
       };
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
       var done = assert.async();
       var afterMount = function(component) {
         assert.equal(
@@ -831,6 +1171,8 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
               component.state.vocabularies.length,
               2
             );
+            // listing page not asked to update
+            assert.equal(refreshCount, 0);
             var inputGroup = React.addons.TestUtils.
             scryRenderedDOMComponentsWithClass(
               component,
@@ -852,6 +1194,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                 component.state.vocabularies[0].terms.length,
                 3
               );
+              assert.equal(refreshCount, 1);
               done();
             });
           });
@@ -862,6 +1205,8 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         <TaxonomyComponent
           vocabularies={vocabularies}
           repoSlug="repo"
+          renderConfirmationDialog={function() {}}
+          refreshFromAPI={refreshFromAPI}
           ref={afterMount}
         />
       );
@@ -884,6 +1229,10 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         "vocabulary_type": "f",
         "required": false,
         "weight": 2147483647,
+      };
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
       };
       var done = assert.async();
       var afterMount = function(component) {
@@ -909,6 +1258,8 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
               component,
               'form-horizontal'
             );
+          // listing page not asked to update
+          assert.equal(refreshCount, 0);
           assert.ok(formNode);
           //test form submission
           var inputNodes = React.addons.TestUtils.
@@ -950,6 +1301,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
               component.state.vocabularies.length,
               2
             );
+            assert.equal(refreshCount, 1);
             component.addVocabulary(vocabularyWithoutTerms);
             component.forceUpdate(function() {
               assert.equal(
@@ -966,6 +1318,217 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         <TaxonomyComponent
           vocabularies={vocabularies}
           repoSlug="repo"
+          renderConfirmationDialog={function() {}}
+          refreshFromAPI={refreshFromAPI}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that delete vocabulary works in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var userSelectedConfirm = 0;
+      var showConfirmationDialog = function (options) {
+        options.confirmationHandler(true);
+        userSelectedConfirm += 1;
+      };
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
+      var afterMount = function(component) {
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'delete-vocabulary'
+          );
+          var deleteVocabularyButton = actionButtons[0];
+          React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+          component.forceUpdate(function() {
+            waitForAjax(1, function() {
+              assert.equal(userSelectedConfirm, 1);
+              assert.equal(
+                component.state.vocabularies.length,
+                0
+              );
+              assert.equal(refreshCount, 1);
+              done();
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
+          repoSlug="repo"
+          renderConfirmationDialog={showConfirmationDialog}
+          refreshFromAPI={refreshFromAPI}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that delete vocabulary ajax call' +
+    ' fail in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var userSelectedConfirm = 0;
+      var showConfirmationDialog = function (options) {
+        options.confirmationHandler(true);
+        userSelectedConfirm += 1;
+      };
+
+      TestUtils.replaceMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/" + vocabulary.slug + "/",
+        type: "DELETE",
+        status: 400
+      });
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
+      var afterMount = function(component) {
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          var actionButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'delete-vocabulary'
+          );
+          var deleteVocabularyButton = actionButtons[0];
+          React.addons.TestUtils.Simulate.click(deleteVocabularyButton);
+          waitForAjax(1, function() {
+            component.forceUpdate(function() {
+              assert.equal(userSelectedConfirm, 1);
+              assert.equal(
+                component.state.vocabularies.length,
+                1
+              );
+              assert.equal(refreshCount, 0);
+              done();
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
+          repoSlug="repo"
+          renderConfirmationDialog={showConfirmationDialog}
+          refreshFromAPI={refreshFromAPI}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that edit term works in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var term = {
+        "id": 1,
+        "slug": "easy",
+        "label": "TestB",
+        "weight": 1
+      };
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
+      var afterMount = function(component) {
+        assert.equal(
+          component.state.vocabularies.length,
+          0
+        );
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          assert.equal(
+            component.state.vocabularies[0].terms.length,
+            2
+          );
+          var updateTermUrl = "/api/v1/repositories/repo/vocabularies/" +
+              component.state.vocabularies[0].vocabulary.slug + "/terms/" +
+              component.state.vocabularies[0].terms[0].slug + "/";
+          TestUtils.initMockjax({
+            url: updateTermUrl,
+            responseText: term,
+            type: "PATCH"
+          });
+          var formatButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'format-button'
+          );
+          var formatButton = formatButtons[0];
+          //open edit mode
+          React.addons.TestUtils.Simulate.click(formatButton);
+          component.forceUpdate(function() {
+            var editTermBoxes = React.addons.TestUtils.
+            scryRenderedDOMComponentsWithClass(
+              component,
+              'edit-term-box'
+            );
+            var editTermBox = editTermBoxes[0];
+            //edit term
+            React.addons.TestUtils.Simulate.change(
+              editTermBox, {target: {value: "TestB"}}
+            );
+            component.forceUpdate(function() {
+              //save term
+              assert.equal($(React.findDOMNode(editTermBox)).val(), "TestB");
+              React.addons.TestUtils.Simulate.click(formatButton);
+              component.forceUpdate(function() {
+                //after saved term using api
+                waitForAjax(1, function () {
+                  assert.equal(refreshCount, 1);
+                  //assert term update
+                  assert.equal(
+                    component.state.vocabularies.length,
+                    1
+                  );
+                  assert.equal(
+                    component.state.vocabularies[0].terms.length,
+                    2
+                  );
+                  assert.equal(
+                    component.state.vocabularies[0].terms[0].label,
+                    "TestB"
+                  );
+                  done();
+                });
+              });
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
+          repoSlug="repo"
+          refreshFromAPI={refreshFromAPI}
           ref={afterMount}
         />
       );
@@ -976,7 +1539,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
     function(assert) {
       var container = document.createElement("div");
       assert.equal(0, $(container).find("input").size());
-      ManageTaxonomies.loader("repo", container);
+      ManageTaxonomies.loader("repo", function() {}, function() {}, container);
       assert.equal(5, $(container).find("input").size());
     }
   );

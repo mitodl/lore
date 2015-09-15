@@ -20,6 +20,7 @@ class SortingTest(TestCase):
                 LoreSortingFields.SORT_BY_NR_VIEWS,
                 LoreSortingFields.SORT_BY_NR_ATTEMPTS,
                 LoreSortingFields.SORT_BY_AVG_GRADE,
+                LoreSortingFields.SORT_BY_TITLE,
             ]
         )
 
@@ -31,6 +32,7 @@ class SortingTest(TestCase):
                 LoreSortingFields.SORT_BY_NR_VIEWS[0],
                 LoreSortingFields.SORT_BY_NR_ATTEMPTS[0],
                 LoreSortingFields.SORT_BY_AVG_GRADE[0],
+                LoreSortingFields.SORT_BY_TITLE[0],
             ]
         )
 
@@ -55,6 +57,12 @@ class SortingTest(TestCase):
             LoreSortingFields.SORT_BY_AVG_GRADE
         )
         self.assertEqual(
+            LoreSortingFields.get_sorting_option(
+                LoreSortingFields.SORT_BY_TITLE[0]
+            ),
+            LoreSortingFields.SORT_BY_TITLE
+        )
+        self.assertEqual(
             LoreSortingFields.get_sorting_option('foo_field'),
             LoreSortingFields.SORT_BY_NR_VIEWS
         )
@@ -68,6 +76,7 @@ class SortingTest(TestCase):
             [
                 LoreSortingFields.SORT_BY_NR_ATTEMPTS,
                 LoreSortingFields.SORT_BY_AVG_GRADE,
+                LoreSortingFields.SORT_BY_TITLE,
             ]
         )
         self.assertEqual(
@@ -77,6 +86,7 @@ class SortingTest(TestCase):
             [
                 LoreSortingFields.SORT_BY_NR_VIEWS,
                 LoreSortingFields.SORT_BY_AVG_GRADE,
+                LoreSortingFields.SORT_BY_TITLE,
             ]
         )
         self.assertEqual(
@@ -86,6 +96,17 @@ class SortingTest(TestCase):
             [
                 LoreSortingFields.SORT_BY_NR_VIEWS,
                 LoreSortingFields.SORT_BY_NR_ATTEMPTS,
+                LoreSortingFields.SORT_BY_TITLE,
+            ]
+        )
+        self.assertEqual(
+            LoreSortingFields.all_sorting_options_but(
+                LoreSortingFields.SORT_BY_TITLE[0]
+            ),
+            [
+                LoreSortingFields.SORT_BY_NR_VIEWS,
+                LoreSortingFields.SORT_BY_NR_ATTEMPTS,
+                LoreSortingFields.SORT_BY_AVG_GRADE,
             ]
         )
         self.assertEqual(
@@ -94,5 +115,6 @@ class SortingTest(TestCase):
                 LoreSortingFields.SORT_BY_NR_VIEWS,
                 LoreSortingFields.SORT_BY_NR_ATTEMPTS,
                 LoreSortingFields.SORT_BY_AVG_GRADE,
+                LoreSortingFields.SORT_BY_TITLE,
             ]
         )

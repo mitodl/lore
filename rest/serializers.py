@@ -20,6 +20,7 @@ from rest_framework.serializers import (
     FileField,
     SerializerMethodField,
     IntegerField,
+    FloatField,
 )
 
 from rest.util import LambdaDefault, RequiredBooleanField
@@ -30,7 +31,8 @@ from learningresources.models import (
     LearningResource,
     StaticAsset,
     LearningResourceType,
-    STATIC_ASSET_BASEPATH
+    STATIC_ASSET_BASEPATH,
+    get_preview_url as resource_preview_url,
 )
 
 
@@ -244,7 +246,7 @@ class LearningResourceSerializer(ModelSerializer):
     @staticmethod
     def get_preview_url(obj):
         """Construct preview URL for LearningResource."""
-        return obj.get_preview_url()
+        return resource_preview_url(obj)
 
 
 class StaticAssetSerializer(ModelSerializer):
@@ -288,3 +290,18 @@ class LearningResourceExportTaskSerializer(Serializer):
     id = CharField()
     status = CharField()
     url = CharField()
+
+
+class RepositorySearchSerializer(Serializer):
+    """Serializer for search metadata."""
+    resource_type = CharField()
+    course = CharField()
+    run = CharField()
+    xa_nr_views = IntegerField(source="nr_views")
+    xa_nr_attempts = IntegerField(source="nr_attempts")
+    xa_avg_grade = FloatField(source="avg_grade")
+    lid = IntegerField()
+    title = CharField()
+    description = CharField()
+    description_path = CharField()
+    preview_url = CharField()
