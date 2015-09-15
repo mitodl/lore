@@ -47,6 +47,7 @@ from rest.serializers import (
     LearningResourceExportTaskSerializer,
     RepositorySearchSerializer,
     StaticAssetSerializer,
+    CourseSerializer,
 )
 from rest.permissions import (
     AddRepoPermission,
@@ -65,6 +66,7 @@ from search.api import construct_queryset, make_facet_counts
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
+    Course,
     LearningResourceType,
     LearningResource,
     StaticAsset,
@@ -111,6 +113,23 @@ class RepositoryDetail(RetrieveAPIView):
     def get_queryset(self):
         """Filter to this repository."""
         return Repository.objects.filter(slug=self.kwargs['repo_slug'])
+
+
+class CourseList(ListAPIView):
+    """REST list view for Courses."""
+    serializer_class = CourseSerializer
+    permission_classes = (
+        ViewRepoPermission,
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """
+        Filter coursed by repository
+        """
+        queryset = Course.objects.filter(
+            repository__slug=self.kwargs['repo_slug'])
+        return queryset.order_by('id')
 
 
 class VocabularyList(ListCreateAPIView):
