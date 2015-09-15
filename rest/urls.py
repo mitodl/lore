@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 from django.conf.urls import url, include
 
 from .views import (
+    CourseDetail,
     CourseList,
     LearningResourceDetail,
     LearningResourceExportDetail,
@@ -56,6 +57,9 @@ urlpatterns = [
     url(r'^repositories/(?P<repo_slug>[-\w]+)/courses/$',
         CourseList.as_view(),
         name='course-list'),
+    url(r'^repositories/(?P<repo_slug>[-\w]+)/courses/(?P<course_id>\d+)/$',
+        CourseDetail.as_view(),
+        name='course-detail'),
     url(REPOSITORY_VOCAB_URL + r'$',
         VocabularyList.as_view(),
         name='vocabulary-list'),
