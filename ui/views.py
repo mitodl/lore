@@ -235,6 +235,29 @@ def repository_view(request, repo_slug):
 
 
 @login_required
+def repository_data_view(request, repo_slug):
+    """
+    View for repository page.
+    """
+    try:
+        repo = get_repo(repo_slug, request.user.id)
+    except NotFound:
+        raise Http404
+    except LorePermissionDenied:
+        raise PermissionDenied
+
+    context = {
+        "repo": repo
+    }
+
+    return render(
+        request,
+        "data.html",
+        context
+    )
+
+
+@login_required
 def serve_static_assets(request, path):
     """
     View to serve media files in case settings.DEFAULT_FILE_STORAGE
