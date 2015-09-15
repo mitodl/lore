@@ -231,6 +231,41 @@ def repository_view(request, repo_slug):
 
 
 @login_required
+def repository_data_view(request, repo_slug):
+    """
+    View for repository page.
+    """
+    try:
+        repo = get_repo(repo_slug, request.user.id)
+    except NotFound:
+        raise Http404
+    except LorePermissionDenied:
+        raise PermissionDenied
+
+    exports = request.session.get(
+        'learning_resource_exports', {}).get(repo.slug, [])
+
+    pagination = LorePagination()
+    try:
+        page_size = int(request.GET.get(pagination.page_size_query_param))
+    except (ValueError, KeyError, TypeError):
+        page_size = pagination.page_size
+
+    context = {
+        "repo": repo,
+        "perms_on_cur_repo": get_perms(request.user, repo),
+        "exports_json": json.dumps(exports),
+        "page_size_json": json.dumps(page_size),
+    }
+
+    return render(
+        request,
+        "data.html",
+        context
+    )
+
+
+@login_required
 def serve_static_assets(request, path):
     """
     View to serve media files in case settings.DEFAULT_FILE_STORAGE

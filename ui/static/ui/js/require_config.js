@@ -5,8 +5,9 @@ var REQUIRE_PATHS = {
   bootstrap: "bootstrap/dist/js/bootstrap",
   icheck: "icheck/icheck",
   retina: "retina.js/dist/retina",
-  react: "react/react-with-addons",
+  react: "react/react-with-addons.min",
   react_infinite: "react-infinite/dist/react-infinite",
+  react_datagrid: "../lib/js/react-datagrid.min",
   lodash: "lodash/lodash",
   select2: "select2/dist/js/select2.full",
   uri: "uri.js/src/URI",
@@ -23,6 +24,7 @@ var REQUIRE_PATHS = {
   static_assets: "../ui/js/static_assets.jsx?noext",
   lr_exports: "../ui/js/lr_exports.jsx?noext",
   pagination: "../ui/js/pagination.jsx?noext",
+  lore_data_table: "../ui/js/lore_data_table.jsx?noext",
   utils: "../ui/js/utils.jsx?noext",
 };
 var SHIMS = {
@@ -32,4 +34,7 @@ var SHIMS = {
   "historyadapter": {"deps": ["jquery"]},
   "history": {"deps": ["historyadapter"], "exports": "History"}
 };
+define("React", ["react"], function(React) {
+  return React;
+});
 /* jshint ignore:end */
