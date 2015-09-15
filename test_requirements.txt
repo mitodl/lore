@@ -2,10 +2,6 @@
 
 pytest
 pytest-pep8
-# logilab-common is only necessary because pylint's dependency chain will
-# result in the latest logilab-common being fetched, but astroid
-# (another pylint dependency) depends on logilab-common<=0.63.0
-logilab-common==0.63.0
 pytest-pylint
 pytest-cov
 pytest-django
@@ -17,3 +13,4 @@ ipdb
 ipython
 urltools
 semantic_version
+responses

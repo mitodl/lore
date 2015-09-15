@@ -6,7 +6,13 @@ from __future__ import unicode_literals
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
-from urltools import compare
+
+import ssl
+
+if hasattr(ssl, '_create_unverified_context'):
+    ssl._create_default_https_context = ssl._create_unverified_context  # noqa pylint: disable=protected-access
+
+from urltools import compare  # noqa
 
 
 class TestURLs(TestCase):

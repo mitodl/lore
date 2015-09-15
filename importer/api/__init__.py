@@ -17,6 +17,7 @@ from django.core.files.storage import default_storage
 from lxml import etree
 from xbundle import XBundle, DESCRIPTOR_TAGS
 
+from importer.tasks import populate_xanalytics_fields
 from learningresources.api import (
     create_course,
     create_resource,
@@ -128,6 +129,7 @@ def import_course(bundle, repo_id, user_id, static_dir):
     )
     import_static_assets(course, static_dir)
     import_children(course, src, None, '')
+    populate_xanalytics_fields.delay(course.id)
     return course
 
 

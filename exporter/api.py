@@ -4,6 +4,7 @@ Functions for exporting learning resources
 
 from __future__ import unicode_literals
 
+import errno
 import os
 import re
 import tarfile
@@ -13,6 +14,25 @@ from tempfile import mkdtemp, mkstemp
 from django.utils.text import slugify
 from django.core.files.storage import default_storage
 from lore.settings import EXPORT_PATH_PREFIX
+from learningresources.models import STATIC_ASSET_BASEPATH
+
+
+def _find_unused_path(path):
+    """Iterate through filenames until we get to one that isn't taken."""
+    base, ext = os.path.splitext(path)
+
+    collision = False
+    i = 1
+    while os.path.exists(path):
+        collision = True
+        path = "{base}_{i}{ext}".format(
+            base=base,
+            ext=ext,
+            i=i
+        )
+        i += 1
+
+    return path, collision
 
 
 # pylint: disable=too-many-locals
@@ -55,27 +75,31 @@ def export_resources_to_directory(learning_resources):
             with open(os.path.join(tempdir, type_name, filename), 'w') as f:
                 f.write(learning_resource.content_xml)
 
+            # Output to static directory.
             for static_asset in learning_resource.static_assets.all():
-                # Output to static directory.
+                prefix = STATIC_ASSET_BASEPATH.format(
+                    org=static_asset.course.org,
+                    course_number=static_asset.course.course_number,
+                    run=static_asset.course.run,
+                )
+                asset_path = static_asset.asset.name
+                if asset_path.startswith(prefix):
+                    asset_path = asset_path[len(prefix):]
 
-                def static_file_path(name):
-                    """Convenience function for making a static path."""
-                    return os.path.join(tempdir, "static", name)
+                static_path = os.path.join(tempdir, "static", asset_path)
+                static_path, found_collision = _find_unused_path(static_path)
+                if found_collision:
+                    collision = found_collision
 
-                static_filename = os.path.basename(static_asset.asset.name)
-                base, ext = os.path.splitext(static_filename)
-
-                i = 1
-                while os.path.exists(static_file_path(static_filename)):
-                    collision = True
-                    static_filename = "{base}_{i}{ext}".format(
-                        base=base,
-                        ext=ext,
-                        i=i
-                    )
-                    i += 1
-
-                with open(static_file_path(static_filename), 'wb') as outfile:
+                path, _ = os.path.split(static_path)
+                try:
+                    os.makedirs(path)
+                except OSError as exc:
+                    if exc.errno == errno.EEXIST and os.path.isdir(path):
+                        pass
+                    else:
+                        raise
+                with open(static_path, 'wb') as outfile:
                     outfile.write(static_asset.asset.read())
 
         # If we never put anything in static, remove it.

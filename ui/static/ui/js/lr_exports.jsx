@@ -1,11 +1,19 @@
 define("lr_exports",
-  ['reactaddons', 'jquery', 'lodash', 'utils', 'icheck'],
+  ['react', 'jquery', 'lodash', 'utils', 'icheck'],
   function (React, $, _, Utils) {
   'use strict';
 
   var StatusBox = Utils.StatusBox;
   var ICheckbox = Utils.ICheckbox;
 
+  var ExportsHeader = React.createClass({
+    render: function() {
+      if (this.props.exportCount > 0) {
+        return <h1>Export ({this.props.exportCount}) </h1>;
+      }
+      return <h1>Export</h1>;
+    }
+  });
   /**
    * A React component which shows the list of exports
    * and provides a way to export these learning resources in bulk.
@@ -237,6 +245,13 @@ define("lr_exports",
                           interval={1000}
           clearExports={clearExports}
           />,
+        container
+      );
+    },
+    loadExportsHeader: function(exportCount, container) {
+      React.unmountComponentAtNode(container);
+      React.render(
+        <ExportsHeader exportCount={exportCount} />,
         container
       );
     }

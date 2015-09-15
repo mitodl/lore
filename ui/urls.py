@@ -19,12 +19,11 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
-from django.contrib.auth.decorators import login_required
 
-from search.forms import SearchForm
+from status.views import status
 from ui.views import (
     welcome, create_repo,
-    upload, RepositoryView, serve_static_assets, serve_resource_exports
+    upload, repository_view, serve_static_assets, serve_resource_exports
 )
 import rest.urls as rest_urls
 import cas.urls as cas_urls
@@ -40,16 +39,12 @@ urlpatterns = [
     url(r'^repositories/new/$', create_repo, name='create_repo'),
     url(
         r'^repositories/(?P<repo_slug>[-\w]+)/$',
-        login_required(
-            RepositoryView(
-                form_class=SearchForm, template="repository.html",
-                load_all=False,
-            )
-        ),
+        repository_view,
         name='repositories'
     ),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),
+    url(r'^status/$', status, name='status'),
 ]
 
 if (settings.DEFAULT_FILE_STORAGE ==

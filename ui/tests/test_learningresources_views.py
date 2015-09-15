@@ -4,6 +4,7 @@ Test the importer views to make sure they work.
 
 from __future__ import unicode_literals
 
+import json
 import logging
 import os
 
@@ -254,61 +255,39 @@ class TestViews(LoreTestCase):
         The actual sorting of results is tested in search.tests.test_indexing
         """
         url = self.repository_url + "?sortby={0}"
-        base_sorting_str = ('<button type="button" '
-                            'class="btn btn-default">{0}</button>')
+
+        def get_sorting_options(resp):
+            """Helper function to decode JSON sorting options."""
+            return json.loads(resp.context['sorting_options_json'])
+
         # test no sort type
-        body = self.assert_status_code(
-            self.repository_url,
-            HTTP_OK,
-            return_body=True
-        )
-        self.assertIn(
-            base_sorting_str.format(
-                LoreSortingFields.get_sorting_option(
-                    LoreSortingFields.DEFAULT_SORTING_FIELD
-                )[1]
-            ),
-            body
+        resp = self.client.get(self.repository_url, follow=True)
+        self.assertEqual(resp.status_code, HTTP_OK)
+        self.assertEqual(
+            get_sorting_options(resp)['current'],
+            list(LoreSortingFields.get_sorting_option(
+                LoreSortingFields.DEFAULT_SORTING_FIELD
+            ))
         )
         # test all the allowed sort types
         for sort_option in LoreSortingFields.all_sorting_options():
             sort_url = url.format(sort_option[0])
-            body = self.assert_status_code(
-                sort_url,
-                HTTP_OK,
-                return_body=True
-            )
-            self.assertIn(
-                base_sorting_str.format(sort_option[1]),
-                body
+            resp = self.client.get(sort_url, follow=True)
+            self.assertEqual(resp.status_code, HTTP_OK)
+            self.assertEqual(
+                get_sorting_options(resp)['current'],
+                list(sort_option)
             )
         # test sorting by not allowed sort type
         url_not_allowed_sort_type = url.format('foo_field')
-        body = self.assert_status_code(
-            url_not_allowed_sort_type,
-            HTTP_OK,
-            return_body=True
+        resp = self.client.get(url_not_allowed_sort_type, follow=True)
+        self.assertEqual(resp.status_code, HTTP_OK)
+        self.assertEqual(
+            get_sorting_options(resp)['current'],
+            list(LoreSortingFields.get_sorting_option(
+                LoreSortingFields.DEFAULT_SORTING_FIELD
+            ))
         )
-        self.assertIn(
-            base_sorting_str.format(
-                LoreSortingFields.get_sorting_option(
-                    LoreSortingFields.DEFAULT_SORTING_FIELD
-                )[1]
-            ),
-            body
-        )
-
-    def test_description_path(self):
-        """Tests that the description path is in the listing page"""
-        dpath_html = '<span class="meta-item">{0}</span>'.format(
-            self.resource.description_path
-        )
-        body = self.assert_status_code(
-            self.repository_url,
-            HTTP_OK,
-            return_body=True
-        )
-        self.assertIn(dpath_html, body)
 
     def test_serve_media(self):
         """Hit serve media"""
@@ -320,7 +299,8 @@ class TestViews(LoreTestCase):
         self.upload_test_file()
         self.assertEqual(len(StaticAsset.objects.all()), 5)
         # take the url of a static asset
-        static_asset_url = StaticAsset.objects.all()[0].asset.url
+        static_asset = StaticAsset.objects.first().asset
+        static_asset_url = static_asset.url
         # hit the view
         resp = self.client.get(static_asset_url)
         self.assertEqual(resp.status_code, HTTP_OK)
@@ -329,6 +309,10 @@ class TestViews(LoreTestCase):
             'attachment; filename={}'.format(
                 os.path.basename(static_asset_url)
             )
+        )
+        self.assertEqual(
+            b"".join(resp.streaming_content),
+            static_asset.file.read()
         )
         # only the user with right to see the repo can access the file
         self.logout()
@@ -352,12 +336,3 @@ class TestViews(LoreTestCase):
             self.assertEqual(resp.status_code, NOT_FOUND)
         # force the reload of the urls again to be sure to have everything back
         reload_module(ui.urls)
-
-    def test_preview_url(self):
-        """Test that preview url shows up correctly"""
-        resp = self.client.get(self.repository_url, follow=True)
-        self.assertIn(
-            '<a href="https://www.sandbox.edx.org/courses/test-org/'
-            'infinity/Febtober/jump_to_id/url_name1" '
-            'target="_blank">Preview</a>',
-            resp.content.decode('utf-8'))

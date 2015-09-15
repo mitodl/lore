@@ -21,8 +21,10 @@ from rest_framework.generics import (
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.viewsets import GenericViewSet
 from celery.states import FAILURE, SUCCESS, REVOKED
 from celery.result import AsyncResult
+from statsd.defaults.django import statsd
 
 from exporter.tasks import export_resources
 from roles.permissions import GroupTypes, BaseGroupTypes
@@ -43,6 +45,7 @@ from rest.serializers import (
     LearningResourceSerializer,
     LearningResourceExportSerializer,
     LearningResourceExportTaskSerializer,
+    RepositorySearchSerializer,
     StaticAssetSerializer,
 )
 from rest.permissions import (
@@ -58,6 +61,7 @@ from rest.permissions import (
     ViewStaticAssetPermission,
 )
 from rest.util import CheckValidMemberParamMixin
+from search.api import construct_queryset, make_facet_counts
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
@@ -92,16 +96,6 @@ class RepositoryList(ListCreateAPIView):
 
         repo_ids = [repo.id for repo in get_repos(self.request.user.id)]
         return Repository.objects.filter(id__in=repo_ids).order_by('id')
-
-    def perform_create(self, serializer):
-        """Create a new repository."""
-        # pylint: disable=protected-access
-        repo = serializer.save()
-        assign_user_to_repo_group(
-            self.request.user,
-            repo,
-            GroupTypes.REPO_ADMINISTRATOR
-        )
 
 
 class RepositoryDetail(RetrieveAPIView):
@@ -452,6 +446,23 @@ class LearningResourceDetail(RetrieveUpdateAPIView):
         return LearningResource.objects.filter(
             id=self.kwargs['lr_id'])
 
+    def update(self, request, *args, **kwargs):
+        """Override update to remove response."""
+        super(LearningResourceDetail, self).update(request, *args, **kwargs)
+
+        # Since content_xml may be large don't return the object
+        # in the response unless user requests it via GET.
+        return Response(status=status.HTTP_200_OK)
+
+    def partial_update(self, request, *args, **kwargs):
+        """Override partial_update to remove response."""
+        super(LearningResourceDetail, self).partial_update(
+            request, *args, **kwargs)
+
+        # Since content_xml may be large don't return the object
+        # in the response unless user requests it via GET.
+        return Response(status=status.HTTP_200_OK)
+
 
 class StaticAssetList(ListAPIView):
     """REST list view for StaticAsset."""
@@ -753,3 +764,87 @@ class LearningResourceExportTaskDetail(RetrieveAPIView):
             raise Http404
 
         return create_task_result_dict(initial_dict)
+
+
+def calculate_selected_facets(selected_facet_params, facet_counts):
+    """
+    Given facet counts and the facet query parameters,
+    return a dictionary of selected facets.
+    """
+    selected_facets = {}
+
+    for counts in facet_counts.values():
+        facet_id = counts['facet']['key']
+        selected_facets[facet_id] = {}
+
+        for value in counts['values']:
+            value_id = value['key']
+            param_value = "{facet}_exact:{value}".format(
+                facet=facet_id,
+                value=value_id
+            )
+            if param_value in selected_facet_params:
+                selected_facets[facet_id][value_id] = True
+
+    return selected_facets
+
+
+def calculate_selected_missing_facets(selected_facet_params, facet_counts):
+    """
+    Given facet counts and the facet query parameters,
+    return a dictionary of selected 'not tagged' facets.
+    """
+    selected_missing_facets = {}
+
+    for counts in facet_counts.values():
+        facet_id = counts['facet']['key']
+        param = "_missing_:{facet}_exact".format(facet=facet_id)
+        if param in selected_facet_params:
+            selected_missing_facets[facet_id] = True
+
+    return selected_missing_facets
+
+
+class RepositorySearchList(GenericViewSet):
+    """
+    View of search results for repository search.
+    """
+    serializer_class = RepositorySearchSerializer
+    permission_classes = (ViewRepoPermission, IsAuthenticated)
+
+    def get_queryset(self):
+        repo_slug = self.kwargs['repo_slug']
+        query = self.request.GET.get('q', '')
+        selected_facets = self.request.GET.getlist('selected_facets')
+        sortby = self.request.GET.get('sortby', '')
+        return construct_queryset(repo_slug, query, selected_facets, sortby)
+
+    @statsd.timer('lore.rest.repository_search_list')
+    def list(self, *args, **kwargs):  # pylint: disable=unused-argument
+        """
+        Returns response object containing search results, including
+        an extra value for facet_counts.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        repo_slug = self.kwargs['repo_slug']
+        facet_counts = make_facet_counts(repo_slug, queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+        else:
+            serializer = self.get_serializer(queryset, many=True)
+            response = Response(serializer.data)
+
+        data = response.data
+        data['facet_counts'] = facet_counts
+        data['selected_facets'] = calculate_selected_facets(
+            self.request.GET.getlist('selected_facets'),
+            facet_counts
+        )
+        data['selected_missing_facets'] = calculate_selected_missing_facets(
+            self.request.GET.getlist('selected_facets'),
+            facet_counts
+        )
+        return Response(data)

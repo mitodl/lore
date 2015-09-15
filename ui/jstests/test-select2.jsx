@@ -1,4 +1,4 @@
-define(['QUnit', 'jquery', 'utils', 'reactaddons',
+define(['QUnit', 'jquery', 'utils', 'react',
   'test_utils'], function(
   QUnit, $, Utils, React, TestUtils) {
     'use strict';

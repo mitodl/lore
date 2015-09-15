@@ -11,6 +11,10 @@ LORE
 .. image:: https://img.shields.io/badge/license-AGPLv3-blue.svg
     :target: https://github.com/mitodl/lore/blob/master/LICENSE
 
+|Deploy|
+
+.. |Deploy| image:: https://www.herokucdn.com/deploy/button.png
+   :target: https://heroku.com/deploy
 
 Getting Started
 ===============
@@ -26,6 +30,15 @@ port 8070.
 To run one-off commands, like shell, you can run
 ``docker-compose run web python manage.py shell`` or to create root
 user, etc.
+
+Currently in the development environment we compile JSX on every
+request, which at the time of this writing is about 5 seconds. If you
+want to disable this (because you are working just on python for
+example), you can add the line ``LORE_COMPRESS_ENABLED: True`` to
+`docker-compose.yml` under the web -> environment section of the file.
+The first request will then take 5 seconds, but subsequent ones will
+be subsecond.
+
 
 Adding an application
 =====================
@@ -129,3 +142,9 @@ To build the sphinx documentation project, run:
 
 This will build it on your local machine and you should be able to
 point your browser at ``</path/to/lore/repo>/docs/_build/index.html``.
+
+RESTful API Documentation
+=========================
+
+LORE has a RESTful API that is documented on Apiary
+`http://docs.lore.apiary.io <http://docs.lore.apiary.io>`_ .

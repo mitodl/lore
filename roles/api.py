@@ -1,5 +1,5 @@
 """
-Functions for handling roles
+Functions for handling roles.
 """
 
 from __future__ import unicode_literals
@@ -16,7 +16,7 @@ from roles.user_models import UserGroup
 
 def roles_init_new_repo(repo):
     """
-    Create new groups for the repository
+    Create new groups for the repository.
 
     It assumes that there are only 3 types of users:
         - administrator
@@ -66,7 +66,7 @@ def roles_init_new_repo(repo):
 
 def roles_clear_repo_permissions(repo):
     """
-    Removes all the permissions a group has on a repo
+    Remove all the permissions a group has on a repository.
     Args:
         repo (learningresources.models.Repository): repository
     Returns:
@@ -91,7 +91,7 @@ def roles_clear_repo_permissions(repo):
 
 def roles_update_repo(repo, old_slug):
     """
-    Updates the groups names for the repo
+    Update the groups names for the repository.
 
     Args:
         repo (learningresources.models.Repository): repository used to update
@@ -128,7 +128,7 @@ def assign_user_to_repo_group(
         repo,
         group_type):
     """
-    Assigns an user to a repo specific group type
+    Assign an user to a repo specific group type.
 
     Args:
         user (django.contrib.auth.models.User): user
@@ -150,7 +150,7 @@ def remove_user_from_repo_group(
         repo,
         group_type):
     """
-    Remove an user to from a repo specific group type
+    Remove an user from a repository specific group type.
 
     Args:
         user (django.contrib.auth.models.User): user
@@ -169,8 +169,8 @@ def remove_user_from_repo_group(
 
 def list_users_in_repo(repo, base_group_type=None):
     """
-    Lists all the users in the repository groups
-    If the group type is specified, the list is limited to that group
+    List all the users in the repository groups.
+    If the group type is specified, the list is limited to that group.
 
     Args:
         repo (learningresources.models.Repository): repository used to extract
@@ -179,7 +179,7 @@ def list_users_in_repo(repo, base_group_type=None):
             roles.permissions.BaseGroupTypes
     Returns:
         list (list of roles.user_models.UserGroup): list of users in one or
-            all the repository groups
+        all the repository groups
     """
     users_groups = []
     if base_group_type is not None:
@@ -203,7 +203,7 @@ def list_users_in_repo(repo, base_group_type=None):
 
 def is_last_admin_in_repo(user, repo):
     """
-    Checks if user is the last administrator in the repository.
+    Check if user is the last administrator in the repository.
     It does not check if the user is an actual administrator and in that case
     it will simply return False
 

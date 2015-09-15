@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.7.0'
+VERSION = '0.10.1'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -95,7 +95,8 @@ INSTALLED_APPS = (
     'rest_framework',
     'haystack',
     'search',
-    'roles'
+    'roles',
+    'xanalytics',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -129,9 +130,15 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django_settings_export.settings_export',
             ],
         },
     },
+]
+
+# Settings to export to templates
+SETTINGS_EXPORT = [
+    'GOOGLE_ANALYTICS_ID',
 ]
 
 WSGI_APPLICATION = 'lore.wsgi.application'
@@ -156,6 +163,16 @@ else:
 
 DATABASES = {
     'default': DEFAULT_DATABASE_CONFIG
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    },
+    "lore_indexing": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "TIMEOUT": get_var("LORE_INDEXING_CACHE_TIMEOUT", "60"),
+    }
 }
 
 # Internationalization
@@ -192,6 +209,8 @@ COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
     ('text/jsx', 'node_modules/.bin/jsx < {infile} > {outfile}')
 )
+COMPRESS_OFFLINE = get_var('LORE_COMPRESS_OFFLINE', False)
+COMPRESS_ENABLED = get_var('LORE_COMPRESS_ENABLED', not DEBUG)
 
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
@@ -351,5 +370,21 @@ HAYSTACK_CONNECTIONS = {
         'INDEX_NAME': get_var('HAYSTACK_INDEX', 'haystack'),
     }
 }
-HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
-ALLOW_CACHING = get_var("ALLOW_CACHING", get_var("ALLOW_CACHING", False))
+HAYSTACK_SIGNAL_PROCESSOR = 'search.signals.LoreRealTimeSignalProcessor'
+
+XANALYTICS_URL = get_var('XANALYTICS_URL', "")
+
+# Token required to access the status page.
+STATUS_TOKEN = get_var(
+    "STATUS_TOKEN",
+    "7E17C32A63B2810F0053DE454FC8395CA3262CCB8392D2307887C5E67F132550"
+)
+
+# Statsd client config
+STATSD_HOST = get_var('LORE_STATSD_HOST', 'localhost')
+STATSD_PORT = get_var('LORE_STATSD_PORT', 8125)
+STATSD_PREFIX = get_var('LORE_STATSD_PREFIX', None)
+STATSD_MAXUDPSIZE = get_var('LORE_STATSD_MAXUDPSIZE', 512)
+
+# Google analytics code
+GOOGLE_ANALYTICS_ID = get_var('LORE_GOOGLE_ANALYTICS_ID', None)

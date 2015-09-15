@@ -7,14 +7,11 @@ from __future__ import unicode_literals
 import logging
 
 from django.core.files.storage import default_storage
-import mock
 
 from learningresources.models import LearningResource, Course
 from learningresources.tests.base import LoreTestCase
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.api import GroupTypes
-from search.sorting import LoreSortingFields
-from ui.views import RepositoryView
 
 HTTP_OK = 200
 UNAUTHORIZED = 403
@@ -163,25 +160,3 @@ class TestViews(LoreTestCase):
             {}, follow=True
         )
         self.assertContains(resp, "This field is required.")
-
-    def test_wiped_index(self):
-        """
-        If the Elasticsearch index is erased, it caused a KeyError
-        when accessing the repository page until Django is restarted.
-        """
-        repo_view = RepositoryView()
-        repo_view.repo = self.repo
-        repo_view.sortby = LoreSortingFields.DEFAULT_SORTING_FIELD
-        repo_view.request = mock.MagicMock()
-        with mock.patch('ui.views.get_perms') as _:
-            with mock.patch(
-                'ui.views.FacetedSearchView.extra_context'
-            ) as mocked_context:
-                no_fields = {'facets': {}}
-                with_fields = {'facets': {'fields': {'item': 'foo'}}}
-                mocked_context.return_value = no_fields
-                context = repo_view.extra_context()
-                self.assertEqual(no_fields, context)
-                mocked_context.return_value = with_fields
-                context = repo_view.extra_context()
-                self.assertEqual(context['repo'], self.repo)

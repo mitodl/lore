@@ -1,14 +1,50 @@
 """Tests for search engine indexing."""
 from __future__ import unicode_literals
 
-from django.conf import settings
+import logging
 
+from search.search_indexes import get_course_metadata, get_vocabs, cache
 from search.sorting import LoreSortingFields
 from search.tests.base import SearchTestCase
+
+log = logging.getLogger(__name__)
+
+
+def copy_instance(instance):
+    """
+    Make a copy of a model instance. The copy will need to be saved by the
+    caller because this function doesn't know what fields must be unique.
+
+    Args:
+        instance (models.Model): models.Model instance
+    Returns:
+        original (models.Model): models.Model instance
+        clone (models.Model): models.Model instance
+    """
+    original_id = instance.pk
+    clone = instance
+    clone.pk = None
+    return instance.__class__.objects.get(id=original_id), clone
+
+
+def set_cache_timeout(seconds):
+    """Override the cache timeout for testing."""
+    cache.default_timeout = seconds
+    cache.clear()
 
 
 class TestIndexing(SearchTestCase):
     """Test Elasticsearch indexing."""
+
+    def setUp(self):
+        """Remember old caching settings."""
+        super(TestIndexing, self).setUp()
+        self.original_timeout = cache.default_timeout
+
+    def tearDown(self):
+        """Restore old caching settings."""
+        super(TestIndexing, self).tearDown()
+        cache.default_timeout = self.original_timeout
 
     def test_index_on_save(self):
         """Index a LearningObject upon creation."""
@@ -23,15 +59,16 @@ class TestIndexing(SearchTestCase):
         Test that LearningResource indexes are updated when a
         a term is added or removed.
         """
+        set_cache_timeout(0)
         term = self.terms[0]
-        self.assertTrue(self.count_faceted_results(
-            self.vocabulary.id, term.id) == 0)
+        self.assertEqual(self.count_faceted_results(
+            self.vocabulary.id, term.id), 0)
         self.resource.terms.add(term)
-        self.assertTrue(self.count_faceted_results(
-            self.vocabulary.id, term.id) == 1)
+        self.assertEqual(self.count_faceted_results(
+            self.vocabulary.id, term.id), 1)
         self.resource.terms.remove(term)
-        self.assertTrue(self.count_faceted_results(
-            self.vocabulary.id, term.id) == 0)
+        self.assertEqual(self.count_faceted_results(
+            self.vocabulary.id, term.id), 0)
 
     def test_strip_xml(self):
         """Indexed content_xml should have XML stripped."""
@@ -73,39 +110,63 @@ class TestIndexing(SearchTestCase):
             xa_nr_attempts=101,
             xa_avg_grade=7.3
         ))
-        self.assertEqual(self.count_results(''), 3)
+        res4 = self.create_resource(**dict(
+            resource_type="example",
+            title="silly example 4",
+            content_xml="<blah>blah 4</blah>",
+            mpath="/blah3",
+            xa_nr_views=1003,
+            xa_nr_attempts=101,
+            xa_avg_grade=9.9
+        ))
+        self.assertEqual(self.count_results(''), 4)
         # sorting by number of views
         results = self.search(
             '',
             sorting=LoreSortingFields.SORT_BY_NR_VIEWS[0]
         )
-        # expected position (res2, res3, res1)
+        # expected position res2, res4
         top_res = results[0]
+        sec_res = results[1]
         self.assertEqual(
-            top_res.nr_views,
-            res2.xa_nr_views
+            top_res.lid,
+            res2.id
+        )
+        self.assertEqual(
+            sec_res.lid,
+            res4.id
         )
         # sorting by number of attempts
         results = self.search(
             '',
             sorting=LoreSortingFields.SORT_BY_NR_ATTEMPTS[0]
         )
-        # expected position (res3, res1, res2)
+        # expected position res3, res4
         top_res = results[0]
+        sec_res = results[1]
         self.assertEqual(
-            top_res.nr_attempts,
-            res3.xa_nr_attempts
+            top_res.lid,
+            res3.id
+        )
+        self.assertEqual(
+            sec_res.lid,
+            res4.id
         )
         # sorting by average grade
         results = self.search(
             '',
             sorting=LoreSortingFields.SORT_BY_AVG_GRADE[0]
         )
-        # expected position (res1, res3, res2)
+        # expected position res1, res4
         top_res = results[0]
+        sec_res = results[1]
         self.assertEqual(
-            top_res.avg_grade,
-            res1.xa_avg_grade
+            top_res.lid,
+            res1.id
+        )
+        self.assertEqual(
+            sec_res.lid,
+            res4.id
         )
 
     def test_indexing_cache(self):
@@ -143,12 +204,61 @@ class TestIndexing(SearchTestCase):
             self.resource.save()
             return count
 
-        orig_cache_setting = settings.ALLOW_CACHING
+        set_cache_timeout(0)
+        with self.assertNumQueries(20):
+            self.assertEqual(get_count(), 0)
 
-        settings.ALLOW_CACHING = False
-        self.assertEqual(get_count(), 0)
+        set_cache_timeout(60)
+        with self.assertNumQueries(9):
+            self.assertEqual(get_count(), 1)
 
-        settings.ALLOW_CACHING = True
-        self.assertEqual(get_count(), 1)
+    def test_course_cache(self):
+        """
+        Test caching -- enabled and disabled -- for course metadata.
+        """
+        def three_times():
+            """Get course metadata three times."""
+            for _ in range(0, 3):
+                get_course_metadata(self.course.id)
 
-        settings.ALLOW_CACHING = orig_cache_setting
+        set_cache_timeout(0)
+        with self.assertNumQueries(3):
+            three_times()
+
+        set_cache_timeout(60)
+        with self.assertNumQueries(1):
+            three_times()
+
+    def thrice(self):
+        """Hit vocabs three times with and without caching."""
+        def three_times():
+            """Get vocab data three times."""
+            for _ in range(0, 3):
+                get_vocabs(self.resource.id)
+
+        set_cache_timeout(0)
+        with self.assertNumQueries(3):
+            three_times()
+
+        set_cache_timeout(60)
+        with self.assertNumQueries(3):
+            three_times()
+
+    def test_term_cache_with_data(self):
+        """
+        Test caching -- enabled and disabled -- for vocabularies.
+        This should work if there are vocabulary terms, because
+        there is something to cache.
+        """
+        self.resource.terms.add(self.terms[0])
+        self.thrice()
+
+    def test_term_cache_without_data(self):
+        """
+        Test caching -- enabled and disabled -- for vocabularies.
+
+        This should work if there are not vocabulary terms.
+        Otherwise, it'll reload the cache for an entire course whenever
+        a LearningResource isn't tagged with any terms.
+        """
+        self.thrice()

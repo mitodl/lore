@@ -15,41 +15,17 @@ the index. They can not be mixed.
 from __future__ import unicode_literals
 
 from collections import defaultdict
-from datetime import datetime, timedelta
 import logging
 
-from django.conf import settings
+from django.core.cache import caches
 from haystack import indexes
 from lxml import etree
 
-from learningresources.models import Course, LearningResource
-
-INDEX_CACHE = {
-    "course": {},
-    "term": {},
-    "born": datetime.now(),
-}
-MAX_INDEX_AGE = timedelta(minutes=1)
+from learningresources.models import Course, LearningResource, get_preview_url
 
 log = logging.getLogger(__name__)
 
-
-def check_cache_age():
-    """
-    Keep the cache from getting stale.
-
-    Must not cache during tests or development, or it will
-    cause confusion. Must manually enable caching in production.
-    """
-    # pylint: disable=global-statement
-    global INDEX_CACHE
-    if (datetime.now() - INDEX_CACHE["born"] > MAX_INDEX_AGE) \
-            or settings.ALLOW_CACHING is False:
-        INDEX_CACHE = {
-            "course": {},
-            "term": {},
-            "born": datetime.now(),
-        }
+cache = caches["lore_indexing"]
 
 
 def get_course_metadata(course_id):
@@ -60,36 +36,34 @@ def get_course_metadata(course_id):
     Returns:
         data (dict): Metadata about course.
     """
-    check_cache_age()
-    data = INDEX_CACHE["course"].get(course_id, {})
+    key = "course_metadata_{0}".format(course_id)
+    data = cache.get(key, {})
     if data == {}:
-        course = Course.objects.get(id=course_id)
+        course = Course.objects.select_related("repository").get(id=course_id)
         data["run"] = course.run
         data["course_number"] = course.course_number
         data["org"] = course.org
         data["repo_slug"] = course.repository.slug
-        INDEX_CACHE["course"][course_id] = data
+        cache.set(key, data)
+    # Return `data` directly, not from the cache. Otherwise, if caching
+    # is disabled (TIMEOUT == 0), this will always return nothing.
     return data
 
 
-def get_vocabs(course_id, lid):
+def get_vocabs(resource_id):
     """
-    Caches and returns taxonomy metadata for a course.
+    Returns taxonomy metadata for a course.
     Args:
-        course_id (int): Primary key of learningresources.models.Course
-        lid (int): Primary key of learningresources.models.LearningResource
+        resource_id (int): Primary key of LearningResource
     Returns:
         data (dict): Vocab/term data for course.
     """
-    check_cache_age()
-    if INDEX_CACHE["term"].get(course_id) is None:
-        INDEX_CACHE["term"][course_id] = defaultdict(lambda: defaultdict(list))
-        rels = LearningResource.terms.related.through.objects.select_related(
-            "term").filter(learningresource__course__id=course_id)
-        for rel in rels.iterator():
-            INDEX_CACHE["term"][course_id][rel.learningresource_id][
-                rel.term.vocabulary_id].append(rel.term_id)
-    return INDEX_CACHE["term"][course_id][lid]
+    data = defaultdict(list)
+    rels = LearningResource.terms.related.through.objects.select_related(
+        "term").filter(learningresource__id=resource_id)
+    for rel in rels.iterator():
+        data[rel.term.vocabulary_id].append(rel.term_id)
+    return dict(data)
 
 
 class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
@@ -97,10 +71,7 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     Index configuration for the LearningResource model.
     """
     text = indexes.CharField(document=True)
-    resource_type = indexes.CharField(
-        model_attr="learning_resource_type",
-        faceted=True,
-    )
+    resource_type = indexes.CharField(faceted=True)
     course = indexes.CharField(faceted=True)
     run = indexes.CharField(faceted=True)
 
@@ -115,6 +86,7 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
 
     lid = indexes.IntegerField(model_attr="id", indexed=False)
     title = indexes.CharField(model_attr="title", indexed=False)
+    titlesort = indexes.CharField(indexed=False)
     description = indexes.CharField(model_attr="description", indexed=False)
     description_path = indexes.CharField(
         model_attr="description_path",
@@ -157,17 +129,33 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
     def prepare_preview_url(self, obj):  # pylint: disable=no-self-use
         """Define what goes into the "run" index."""
         data = get_course_metadata(obj.course_id)
-        return obj.get_preview_url(
+        return get_preview_url(
+            obj,
             org=data["org"],
             course_number=data["course_number"],
             run=data["run"],
         )
+
+    def prepare_titlesort(self, obj):  # pylint: disable=no-self-use
+        """Define what goes into the "titlesort" index."""
+        title = obj.title.strip()
+        # hack to handle empty titles
+        # to show up at the bottom of the sorted list
+        if title:
+            title = '0{0}'.format(title)
+            return title.lower()
+        return '1'
 
     @staticmethod
     def prepare_course(obj):
         """Define what goes into the "course" index."""
         data = get_course_metadata(obj.course_id)
         return data["course_number"]
+
+    @staticmethod
+    def prepare_resource_type(obj):
+        """The name of the LearningResourceType."""
+        return obj.learning_resource_type.name
 
     def prepare(self, obj):
         """
@@ -181,8 +169,7 @@ class LearningResourceIndex(indexes.SearchIndex, indexes.Indexable):
         as well, but don't because explicit is better than implicit.
         """
         prepared = super(LearningResourceIndex, self).prepare(obj)
-
-        for vocab_id, term_ids in get_vocabs(obj.course_id, obj.id).items():
+        for vocab_id, term_ids in get_vocabs(obj.id).items():
             # Use the integer primary keys as index values. This saves space,
             # and also avoids all issues dealing with "special" characters.
             prepared[vocab_id] = term_ids

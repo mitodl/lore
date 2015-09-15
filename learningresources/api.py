@@ -225,8 +225,8 @@ def get_resource(resource_id, user_id):
         user_id (int): Primary key of the user requesting the resource
     Returns:
         resource (learningresources.LearningResource): Resource
-            May be None if the resource does not exist or the user does
-            not have permissions.
+        May be None if the resource does not exist or the user does
+        not have permissions.
     """
     try:
         resource = LearningResource.objects.get(id=resource_id)
@@ -305,6 +305,29 @@ def import_static_assets(course, path):
                 name = join(root, name).replace(path + sep, '', 1)
                 django_file.name = name
                 create_static_asset(course.id, django_file)
+
+
+def update_xanalytics(data):
+    """
+    Update xanalytics fields for a LearningResource.
+    Args:
+        data (dict): dict from JSON file from xanalytics
+    Returns:
+        count (int): number of records updated
+    """
+    vals = data.get("module_medata", [])
+    course_number = data.get("course_id", "")
+    count = 0
+    for rec in vals:
+        resource_key = rec.pop("module_id")
+        count = LearningResource.objects.filter(
+            uuid=resource_key,
+            course__course_number=course_number,
+
+        ).update(**rec)
+        if count is None:
+            count = 0
+    return count
 
 
 def join_description_paths(*args):
