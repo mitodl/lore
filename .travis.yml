@@ -14,7 +14,7 @@ env:
 install:
   - "pip install 'tox>=2.0.2,<3.0.0'"
   - pip install coveralls
-script: 
+script:
   - tox
 after_success:
   - coveralls --merge=coverage/coverage-js.json
@@ -28,6 +28,7 @@ deploy:
     release: lore-release
   run:
     - "sleep 15"
+    - "python manage.py collectstatic --noinput"
     - "python manage.py migrate --noinput"
     - "python manage.py sync_permissions"
 notifications:
