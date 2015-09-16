@@ -303,8 +303,11 @@ define('learning_resources', [
           </div>
           <p>
             <button className="btn btn-lg btn-primary"
-                    onClick={this.saveForm}>
+                    onClick={this.saveLearningResourcePanel} >
               Save
+            </button> <button className="btn btn-lg btn-success"
+                    onClick={this.saveAndCloseLearningResourcePanel} >
+              Save and Close
             </button>
           </p>
         </form>
@@ -314,8 +317,15 @@ define('learning_resources', [
       event.preventDefault();
       $('.textarea-xml').select();
     },
-    saveForm: function (event) {
+    saveLearningResourcePanel: function (event) {
       event.preventDefault();
+      this.saveForm(false);
+    },
+    saveAndCloseLearningResourcePanel: function (event) {
+      event.preventDefault();
+      this.saveForm(true);
+    },
+    saveForm: function (closePanel) {
       var thiz = this;
 
       var terms = _.map(this.state.vocabulariesAndTerms, function (tuple) {
@@ -338,6 +348,9 @@ define('learning_resources', [
         thiz.setState({
           message: "Form saved successfully!"
         });
+        if (closePanel) {
+          thiz.props.closeLearningResourcePanel();
+        }
         thiz.props.refreshFromAPI();
       }).fail(function () {
         thiz.setState({
@@ -432,7 +445,10 @@ define('learning_resources', [
     TermSelect: TermSelect,
     VocabSelect: VocabSelect,
     LearningResourcePanel: LearningResourcePanel,
-    loader: function (repoSlug, learningResourceId, refreshFromAPI, container) {
+    loader: function (
+      repoSlug, learningResourceId, refreshFromAPI,
+      closeLearningResourcePanel, container
+    ) {
       // Unmount and remount the component to ensure that its state
       // is always up to date with the rest of the app.
       React.unmountComponentAtNode(container);
@@ -440,6 +456,7 @@ define('learning_resources', [
         repoSlug={repoSlug}
         learningResourceId={learningResourceId}
         refreshFromAPI={refreshFromAPI}
+        closeLearningResourcePanel={closeLearningResourcePanel}
         />, container);
     }
   };
