@@ -683,7 +683,7 @@ class TestLearningResourceAuthorization(RESTAuthTestCase):
 
         # finally, delete all of the things
         self.assertEqual(
-            2, self.get_learning_resource_exports(repo_slug2)['count'])
+            1, self.get_learning_resource_exports(repo_slug2)['count'])
         self.delete_learning_resource_exports(repo_slug2)
         self.assertEqual(
             0, self.get_learning_resource_exports(repo_slug2)['count'])

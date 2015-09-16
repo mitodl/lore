@@ -148,7 +148,7 @@ def import_children(course, element, parent, parent_dpath):
         None
     """
     # pylint: disable=too-many-locals
-    title = element.attrib.get("display_name", "MISSING")
+    title = element.attrib.get("display_name", "...")
     mpath = etree.ElementTree(element).getpath(element)
     dpath = join_description_paths(parent_dpath, title)
     resource = create_resource(
