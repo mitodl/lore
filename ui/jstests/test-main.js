@@ -25,6 +25,8 @@ var TESTING_PATHS = {
   jquery_mockjax: 'node_modules/jquery-mockjax/src/jquery.mockjax',
   test_utils: 'ui/jstests/test-utils.jsx?noext',
   stacktrace: 'node_modules/stacktrace-js/stacktrace',
+  // Minimized version lacks TestUtils so we need to override this setting.
+  react: "ui/static/bower/react/react-with-addons",
 };
 for (var testingKey in TESTING_PATHS) {
   if (TESTING_PATHS.hasOwnProperty(testingKey)) {
