@@ -19,9 +19,9 @@ web:
   build: .
   command: >
     /bin/bash -c '
-    sleep 3;
-    npm install --production;
-    python manage.py migrate;
+    sleep 3 &&
+    npm install --production --no-bin-links &&
+    python manage.py migrate &&
     python manage.py runserver 0.0.0.0:$PORT'
   volumes:
     - .:/src
