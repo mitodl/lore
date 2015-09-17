@@ -141,8 +141,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
               <span className="utility-features">
                 <a href="#">
                   <i className="fa fa-pencil"></i>
-                </a>
-                <a data-toggle="modal" data-target="#confirm-delete"
+                </a> <a data-toggle="modal" data-target="#confirm-delete"
                   onClick={this.onDeleteHandler} className="delete-vocabulary">
                   <i className="fa fa-remove"></i>
                 </a>
