@@ -84,14 +84,15 @@ define('listing',
             showMembersAlert(message, 'danger');
           });
       }
+      function closeLearningResourcePanel() {
+        $('.cd-panel').removeClass('is-visible');
+      }
 
       $('[data-toggle=popover]').popover();
       //Close panels on escape keypress
       $(document).keyup(function(event) {
         if (event.keyCode === 27) { // escape key maps to keycode `27`
-          if ($('.cd-panel').hasClass('is-visible')) {
-            $('.cd-panel').removeClass('is-visible');
-          }
+          closeLearningResourcePanel();
           if ($('.cd-panel-2').hasClass('is-visible')) {
             $('.cd-panel-2').removeClass('is-visible');
           }
@@ -109,7 +110,7 @@ define('listing',
       $('.cd-panel').on('click', function (event) {
         if ($(event.target).is('.cd-panel') ||
           $(event.target).is('.cd-panel-close')) {
-          $('.cd-panel').removeClass('is-visible');
+          closeLearningResourcePanel();
           event.preventDefault();
         }
       });
@@ -200,7 +201,12 @@ define('listing',
 
       var openResourcePanel = function(resourceId) {
         LearningResources.loader(
-          repoSlug, resourceId, refreshFromAPI, $("#tab-1")[0]);
+          repoSlug,
+          resourceId,
+          refreshFromAPI,
+          closeLearningResourcePanel,
+          $("#tab-1")[0]
+        );
         $('.cd-panel').addClass('is-visible');
         StaticAssets.loader(
           repoSlug, resourceId, $("#tab-3")[0]);
