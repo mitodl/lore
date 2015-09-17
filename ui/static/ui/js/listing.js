@@ -159,7 +159,7 @@ define('listing',
       var numPages = 0;
       var pageNum = 1;
       if (queryMap.page !== undefined) {
-        pageNum = queryMap.page[0];
+        pageNum = parseInt(queryMap.page[0]);
       }
 
       /**
@@ -473,7 +473,7 @@ define('listing',
        */
       var updatePage = function(newPageNum) {
         queryMap.page = [newPageNum.toString()];
-        pageNum = newPageNum;
+        pageNum = parseInt(newPageNum);
 
         return refreshFromAPI();
       };

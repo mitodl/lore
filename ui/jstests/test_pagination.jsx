@@ -44,7 +44,7 @@ define(['QUnit', 'jquery', 'pagination', 'react',
             component.forceUpdate(function() {
               assert.deepEqual(component.state, {
                 isEditing: true,
-                textPageNum: 3
+                textPageNum: 4
               });
 
               // Change text value
@@ -137,6 +137,99 @@ define(['QUnit', 'jquery', 'pagination', 'react',
       );
     });
 
+    QUnit.test('Assert next link works after pagination change (#651)',
+      function(assert) {
+        var done1 = assert.async();
+        var done2 = assert.async();
+        var done3 = assert.async();
+
+        // this test takes place in three callbacks
+        // nextMount will point to the next callback in line
+        var nextMount;
+        var firstMount;
+        var afterEnter;
+        var afterNextClick;
+
+        firstMount = function (component) {
+          nextMount = afterEnter;
+
+          var $node = $(React.findDOMNode(component));
+
+          // Middle click
+          React.addons.TestUtils.Simulate.click($node.find("a")[0]);
+          component.forceUpdate(function() {
+            assert.deepEqual(component.state, {
+              isEditing: true,
+              textPageNum: 1
+            });
+            // Change page
+            React.addons.TestUtils.Simulate.change($node.find("input")[0], {
+              target: {
+                value: 2
+              }
+            });
+            component.forceUpdate(function() {
+              assert.deepEqual(component.state, {
+                isEditing: true,
+                textPageNum: 2
+              });
+
+              // Hit enter
+              React.addons.TestUtils.Simulate.keyUp($node.find("input")[0], {
+                key: "Enter"
+              });
+              done1();
+            });
+
+          });
+
+        };
+
+        afterEnter = function(component) {
+          nextMount = afterNextClick;
+          var $node = $(React.findDOMNode(component));
+          component.forceUpdate(function () {
+            assert.deepEqual(component.state, {
+              isEditing: false,
+              textPageNum: 2
+            });
+
+            // Right click
+            React.addons.TestUtils.Simulate.click($node.find("a")[2]);
+            done2();
+          });
+        };
+
+        afterNextClick = function(component) {
+          nextMount = null;
+          assert.deepEqual(component.state, {
+            isEditing: false,
+            textPageNum: 3
+          });
+          done3();
+        };
+
+        var render;
+        var updatePage = function(newPageNum) {
+          render(newPageNum);
+        };
+
+        nextMount = firstMount;
+
+        render = function(pageNum) {
+          React.addons.TestUtils.renderIntoDocument(
+            <PaginationComponent
+              numPages={3}
+              pageNum={pageNum}
+              updatePage={updatePage}
+              ref={nextMount}
+              />
+          );
+        };
+
+        render(1);
+      }
+    );
     QUnit.test('Assert no next link if at last page', function(assert) {
       var done = assert.async();
       var afterMount = function(component) {
