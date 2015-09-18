@@ -78,8 +78,8 @@ class RESTTestCase(LoreTestCase):
     def assert_options_head(self, url, expected_status):
         """Assert OPTIONS and HEAD."""
         resp = self.client.options(url)
-        self.assertEqual(expected_status, resp.status_code)
         if expected_status == HTTP_200_OK:
+            self.assertEqual(expected_status, resp.status_code)
             # verify output is proper JSON
             as_json(resp)
             self.assertIn("HEAD", resp['ALLOW'])
@@ -192,6 +192,32 @@ class RESTTestCase(LoreTestCase):
         self.assertEqual(expected_status, resp.status_code)
         if expected_status == HTTP_200_OK:
             return as_json(resp)
+
+    def get_course(self, repo_slug, course_id, expected_status=HTTP_200_OK):
+        """Get a course"""
+        url = '{repo_base}{slug}/courses/{course_id}/'.format(
+            slug=repo_slug,
+            repo_base=REPO_BASE,
+            course_id=course_id
+        )
+        self.assert_options_head(url, expected_status=expected_status)
+
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            return as_json(resp)
+
+    def delete_course(self, repo_slug, course_id,
+                      expected_status=HTTP_204_NO_CONTENT):
+        """Delete a course."""
+        resp = self.client.delete(
+            '{repo_base}{slug}/courses/{course_id}/'.format(
+                slug=repo_slug,
+                repo_base=REPO_BASE,
+                course_id=course_id
+            )
+        )
+        self.assertEqual(expected_status, resp.status_code)
 
     def get_vocabularies(self, repo_slug, expected_status=HTTP_200_OK):
         """Get list of vocabularies."""

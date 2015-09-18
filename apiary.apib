@@ -178,6 +178,29 @@ Create a repository by providing its JSON representation.
             ]
         }
 
+## Course [/repositories/{repo_slug}/courses/{course_id}/]
+
++ Parameters
+    + repo_slug: `physics-1` (string, required) - slug for the repository
+    + course_id: `1` (number, required) - ID of the course
+
+### Retrieve a Course [GET]
+
++ Response 200 (application/json)
+
+        {
+            "id": 1,
+            "org": "MITx",
+            "course_number": "1.Mech",
+            "run": "1T2010"
+        }
+
+### Delete Course [DELETE]
+
+Deletes a course, all learning resources and static assets in it.
+
++ Response 204 (application/json)
+
 ## Group SearchResults
 
 ## SearchResult Collection [/repositories/{repo_slug}/search/{?q,sortby,selected_facets}]
