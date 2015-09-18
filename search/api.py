@@ -7,7 +7,8 @@ from __future__ import unicode_literals
 from haystack.query import SearchQuerySet
 
 from search.sorting import LoreSortingFields
-from taxonomy.models import Vocabulary
+from search.utils import search_index
+from taxonomy.models import Vocabulary, Term
 from ui.views import get_vocabularies
 
 
@@ -25,6 +26,7 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
     Returns:
         haystack.query.SearchQuerySet: The queryset.
     """
+
     if selected_facets is None:
         selected_facets = []
 
@@ -51,7 +53,39 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
     queryset = queryset.order_by(
         sortby, LoreSortingFields.BASE_SORTING_FIELD)
 
-    return queryset
+    # Do a parallel query using elasticsearch-dsl.
+    if query not in ("", None):
+        tokens = query
+    else:
+        tokens = None
+    terms = {}
+    for facet in selected_facets:
+        key, value = facet.split(":")
+
+        # Haystack queries for blanks by putting the key last, as the value,
+        # and setting the key to "_missing_." Fix  this for elasticsearch-dsl.
+        if key == '_missing_':
+            key, value = value, "empty"
+
+        if key.endswith("_exact"):
+            key = key[:-6]
+
+        # Look for facets
+        if key.isdigit():
+            key = get_vocab_name(key)
+            if value is not 'empty':
+                value = get_term_label(value)
+        terms[key] = value
+
+    # Future: Return this instead of queryset. ^_^
+    results = search_index(
+        tokens=tokens,
+        repo_slug=repo_slug,
+        sort_by=sortby,
+        terms=terms,
+    )
+
+    return results
 
 
 def make_facet_counts(repo_slug, queryset):
@@ -129,3 +163,14 @@ def make_facet_counts(repo_slug, queryset):
         ret_dict[key] = reformat((key, label), values)
 
     return ret_dict
+
+
+def get_vocab_name(vocab_id):
+    """Get vocabulary name by ID."""
+    vocab = Vocabulary.objects.get(id=vocab_id)
+    return vocab.name
+
+
+def get_term_label(term_id):
+    """Get term label by ID."""
+    return Term.objects.get(id=term_id).label

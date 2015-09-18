@@ -58,7 +58,7 @@ class TestSearch(RESTTestCase):
                 'course': resource.course.course_number,
                 'description': resource.description,
                 'description_path': resource.description_path,
-                'lid': resource.id,
+                'id': resource.id,
                 'preview_url': get_preview_url(resource),
                 'resource_type': resource.learning_resource_type.name,
                 'run': resource.course.run,
@@ -117,19 +117,23 @@ class TestSearch(RESTTestCase):
         self.assertEqual(
             facet_counts['run'],
             {
-                'facet': {'key': 'run', 'label': 'Run'},
+                'facet': {'key': 'run', 'label': 'Run', 'missing_count': 0},
                 'values': []
             })
         self.assertEqual(
             facet_counts['course'],
             {
-                'facet': {'key': 'course', 'label': 'Course'},
+                'facet': {
+                    'key': 'course', 'label': 'Course', 'missing_count': 0},
                 'values': []
             })
         self.assertEqual(
             facet_counts['resource_type'],
             {
-                'facet': {'key': 'resource_type', 'label': 'Item Type'},
+                'facet': {
+                    'key': 'resource_type', 'label': 'Item Type',
+                    'missing_count': 0
+                },
                 'values': []
             })
 
@@ -155,7 +159,7 @@ class TestSearch(RESTTestCase):
         Verify that the results are formatted correctly.
         """
         result = self.get_results()['results'][0]
-        resource_id = result['lid']
+        resource_id = result['id']
         resource = LearningResource.objects.get(id=resource_id)
         self.assert_result_equal(result, resource)
 
@@ -203,9 +207,9 @@ class TestSearch(RESTTestCase):
 
         # Default sorting should be by nr_views, descending, then id ascending.
         default_results = self.get_results()['results']
-        self.assertEqual(default_results[0]['lid'], resource1.id)
-        self.assertEqual(default_results[1]['lid'], resource3.id)
-        self.assertEqual(default_results[2]['lid'], resource2.id)
+        self.assertEqual(default_results[0]['id'], resource1.id)
+        self.assertEqual(default_results[1]['id'], resource3.id)
+        self.assertEqual(default_results[2]['id'], resource2.id)
 
         nr_views_results = self.get_results(
             sortby=LoreSortingFields.SORT_BY_NR_VIEWS[0])['results']
@@ -213,21 +217,21 @@ class TestSearch(RESTTestCase):
 
         avg_grade_results = self.get_results(
             sortby=LoreSortingFields.SORT_BY_AVG_GRADE[0])['results']
-        self.assertEqual(avg_grade_results[0]['lid'], resource2.id)
-        self.assertEqual(avg_grade_results[1]['lid'], resource1.id)
-        self.assertEqual(avg_grade_results[2]['lid'], resource3.id)
+        self.assertEqual(avg_grade_results[0]['id'], resource2.id)
+        self.assertEqual(avg_grade_results[1]['id'], resource1.id)
+        self.assertEqual(avg_grade_results[2]['id'], resource3.id)
 
         avg_grade_results = self.get_results(
             sortby=LoreSortingFields.SORT_BY_NR_ATTEMPTS[0])['results']
-        self.assertEqual(avg_grade_results[0]['lid'], resource1.id)
-        self.assertEqual(avg_grade_results[1]['lid'], resource3.id)
-        self.assertEqual(avg_grade_results[2]['lid'], resource2.id)
+        self.assertEqual(avg_grade_results[0]['id'], resource1.id)
+        self.assertEqual(avg_grade_results[1]['id'], resource3.id)
+        self.assertEqual(avg_grade_results[2]['id'], resource2.id)
 
         title_results = self.get_results(
             sortby=LoreSortingFields.SORT_BY_TITLE[0])['results']
-        self.assertEqual(title_results[0]['lid'], resource3.id)
-        self.assertEqual(title_results[1]['lid'], resource2.id)
-        self.assertEqual(title_results[2]['lid'], resource1.id)
+        self.assertEqual(title_results[0]['id'], resource3.id)
+        self.assertEqual(title_results[1]['id'], resource2.id)
+        self.assertEqual(title_results[2]['id'], resource1.id)
 
         # special case for sorting by title
         resource1.title = ' uuuu'  # space at the beginning
@@ -238,21 +242,21 @@ class TestSearch(RESTTestCase):
         resource3.save()
         title_results = self.get_results(
             sortby=LoreSortingFields.SORT_BY_TITLE[0])['results']
-        self.assertEqual(title_results[0]['lid'], resource3.id)
-        self.assertEqual(title_results[1]['lid'], resource1.id)
-        self.assertEqual(title_results[2]['lid'], resource2.id)
+        self.assertEqual(title_results[0]['id'], resource3.id)
+        self.assertEqual(title_results[1]['id'], resource1.id)
+        self.assertEqual(title_results[2]['id'], resource2.id)
 
     def test_facets(self):
         """
         Test run, course, resource_type and term facets.
         """
-
         self.import_course_tarball(self.repo)
 
         vocab = Vocabulary.objects.create(
             repository=self.repo,
             required=False,
-            weight=1
+            weight=1,
+            name='almond',
         )
         term1 = Term.objects.create(vocabulary=vocab, label='term1', weight=1)
         term2 = Term.objects.create(vocabulary=vocab, label='term2', weight=1)
@@ -263,9 +267,8 @@ class TestSearch(RESTTestCase):
             learning_resource_type__name='html'
         ).all()
 
-        resource1 = resources[0]
+        resource1, resource2 = resources[:2]
         resource1.terms.add(term1)
-        resource2 = resources[1]
         resource2.terms.add(term2)
 
         # Run
@@ -308,16 +311,16 @@ class TestSearch(RESTTestCase):
         # Term
         term1_results = self.get_results(
             selected_facets=["{v}_exact:{t}".format(
-                v=vocab.id,
-                t=term1.id
+                v=vocab.name,
+                t=term1.label
             )]
         )
         self.assertEqual(1, term1_results['count'])
         self.assert_result_equal(term1_results['results'][0], resource1)
         term2_results = self.get_results(
             selected_facets=["{v}_exact:{t}".format(
-                v=vocab.id,
-                t=term2.id
+                v=vocab.name,
+                t=term2.label
             )]
         )
         self.assertEqual(1, term2_results['count'])
@@ -325,7 +328,7 @@ class TestSearch(RESTTestCase):
         self.assertEqual(
             0, self.get_results(
                 selected_facets=["{v}_exact:{t}".format(
-                    v=vocab.id,
+                    v=vocab.name,
                     t="-1"
                 )]
             )['count']
@@ -337,23 +340,23 @@ class TestSearch(RESTTestCase):
         # No missing count for facets that are not vocabularies
         self.assertEqual(
             facet_counts['run']['facet'],
-            {'key': 'run', 'label': 'Run'}
+            {'key': 'run', 'label': 'Run', 'missing_count': 0}
         )
         self.assertEqual(
             facet_counts['course']['facet'],
-            {'key': 'course', 'label': 'Course'}
+            {'key': 'course', 'label': 'Course', 'missing_count': 0}
         )
         self.assertEqual(
             facet_counts['resource_type']['facet'],
-            {'key': 'resource_type', 'label': 'Item Type'}
+            {'key': 'resource_type', 'label': 'Item Type', 'missing_count': 0}
         )
         # And missing count for vocabulary
         # Note there are two learning resources tagged with
         # terms at the beginning of this test
         self.assertEqual(
-            facet_counts[str(vocab.id)]['facet'],
+            facet_counts[vocab.name]['facet'],
             {
-                'key': str(vocab.id),
+                'key': vocab.name,
                 'label': vocab.name,
                 'missing_count': results['count'] - 2
             }
@@ -365,9 +368,9 @@ class TestSearch(RESTTestCase):
         facet_counts = results['facet_counts']
         self.assertEqual(results['count'], 2)
         self.assertEqual(
-            facet_counts[str(vocab.id)]['facet'],
+            facet_counts[vocab.name]['facet'],
             {
-                'key': str(vocab.id),
+                'key': vocab.name,
                 'label': vocab.name,
                 'missing_count': 0
             }
@@ -378,23 +381,23 @@ class TestSearch(RESTTestCase):
         facet_counts = results['facet_counts']
         self.assertEqual(results['count'], 2)
         self.assertEqual(
-            facet_counts[str(vocab.id)]['facet'],
+            facet_counts[vocab.name]['facet'],
             {
-                'key': str(vocab.id),
+                'key': vocab.name,
                 'label': vocab.name,
                 'missing_count': 2
             }
         )
         # filtering by missing vocabulary
         results = self.get_results(
-            selected_facets=['_missing_:{0}_exact'.format(vocab.id)])
+            selected_facets=['_missing_:{0}_exact'.format(vocab.name)])
         facet_counts = results['facet_counts']
         self.assertEqual(results['count'], 17)
         self.assertEqual(
-            facet_counts[str(vocab.id)],
+            facet_counts[vocab.name],
             {
                 'facet': {
-                    'key': str(vocab.id),
+                    'key': vocab.name,
                     'label': vocab.name,
                     'missing_count': 17
                 },
@@ -405,13 +408,13 @@ class TestSearch(RESTTestCase):
         # Facet count
         facet_counts = self.get_results(
             selected_facets=["{v}_exact:{t}".format(
-                v=vocab.id, t=term1.id
+                v=vocab.name, t=term1.label
             )]
         )['facet_counts']
         self.assertEqual(
             facet_counts['run'],
             {
-                'facet': {'key': 'run', 'label': 'Run'},
+                'facet': {'key': 'run', 'label': 'Run', 'missing_count': 0},
                 'values': [
                     {
                         'count': 1,
@@ -423,7 +426,10 @@ class TestSearch(RESTTestCase):
         self.assertEqual(
             facet_counts['course'],
             {
-                'facet': {'key': 'course', 'label': 'Course'},
+                'facet': {
+                    'key': 'course', 'label': 'Course',
+                    'missing_count': 0
+                },
                 'values': [{
                     'count': 1,
                     'key': resource1.course.course_number,
@@ -435,7 +441,8 @@ class TestSearch(RESTTestCase):
             {
                 'facet': {
                     'key': 'resource_type',
-                    'label': 'Item Type'
+                    'label': 'Item Type',
+                    'missing_count': 0,
                 },
                 'values': [
                     {
@@ -446,16 +453,16 @@ class TestSearch(RESTTestCase):
                 ]
             })
         self.assertEqual(
-            facet_counts[str(vocab.id)],
+            facet_counts[vocab.name],
             {
                 'facet': {
-                    'key': str(vocab.id),
+                    'key': vocab.name,
                     'label': vocab.name,
                     'missing_count': 0
                 },
                 'values': [{
                     'count': 1,
-                    'key': str(term1.id),
+                    'key': term1.label,
                     'label': term1.label
                 }]
             }
@@ -468,7 +475,8 @@ class TestSearch(RESTTestCase):
         vocab = Vocabulary.objects.create(
             repository=self.repo,
             required=False,
-            weight=1
+            weight=1,
+            name='turtle',
         )
         term1 = Term.objects.create(vocabulary=vocab, label='term1', weight=1)
 
@@ -482,13 +490,14 @@ class TestSearch(RESTTestCase):
 
         selected_facets = self.get_results(
             selected_facets=["{v}_exact:{t}".format(
-                v=vocab.id, t=term1.id
+                v=vocab.name, t=term1.label
             )]
         )['selected_facets']
         self.assertEqual(
             selected_facets,
             {
-                '{v}'.format(v=vocab.id): {'{t}'.format(t=term1.id): True},
+                '{v}'.format(v=vocab.name): {'{t}'.format(
+                    t=term1.label): True},
                 'course': {},
                 'resource_type': {},
                 'run': {}
@@ -499,13 +508,13 @@ class TestSearch(RESTTestCase):
         # we should have no checkboxes that show up.
         selected_facets = self.get_results(
             selected_facets=["{v}_exact:{t}".format(
-                v=vocab.id, t=term1.id
+                v=vocab.name, t=term1.label
             ), "run_exact:doesnt_exist"]
         )['selected_facets']
         self.assertEqual(
             selected_facets,
             {
-                '{v}'.format(v=vocab.id): {},
+                '{v}'.format(v=vocab.name): {},
                 'course': {},
                 'resource_type': {},
                 'run': {}
@@ -513,12 +522,12 @@ class TestSearch(RESTTestCase):
         )
 
         selected_missing_facets = self.get_results(
-            selected_facets=["_missing_:{v}_exact".format(v=vocab.id)]
+            selected_facets=["_missing_:{v}_exact".format(v=vocab.name)]
         )['selected_missing_facets']
         self.assertEqual(
             selected_missing_facets,
             {
-                "{v}".format(v=vocab.id): True
+                "{v}".format(v=vocab.name): True
             }
         )
 

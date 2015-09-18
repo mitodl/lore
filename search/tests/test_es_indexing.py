@@ -210,7 +210,7 @@ class TestIndexing(SearchTestCase):
         # sorting by number of views
         results = self.search(
             query=None,
-            sorting=LoreSortingFields.SORT_BY_NR_VIEWS[0]
+            sorting="-{0}".format(LoreSortingFields.SORT_BY_NR_VIEWS[0])
         )
         # expected position res2, res4
         top_res = results[0]
@@ -226,7 +226,7 @@ class TestIndexing(SearchTestCase):
         # sorting by number of attempts
         results = self.search(
             query=None,
-            sorting=LoreSortingFields.SORT_BY_NR_ATTEMPTS[0]
+            sorting="-{0}".format(LoreSortingFields.SORT_BY_NR_ATTEMPTS[0])
         )
         # expected position res3, res4
         top_res = results[0]
@@ -242,7 +242,7 @@ class TestIndexing(SearchTestCase):
         # sorting by average grade
         results = self.search(
             query=None,
-            sorting=LoreSortingFields.SORT_BY_AVG_GRADE[0]
+            sorting="-{0}".format(LoreSortingFields.SORT_BY_AVG_GRADE[0])
         )
         # expected position res1, res4
         top_res = results[0]

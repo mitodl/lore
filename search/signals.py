@@ -73,3 +73,20 @@ def handle_resource_deletion(sender, **kwargs):
         return
     from search.utils import delete_index
     delete_index(instance)
+
+
+@statsd.timer('lore.elasticsearch.taxonomy_create')
+@receiver(post_save)
+def handle_vocabulary_creation(sender, **kwargs):
+    """Update index when a Vocabulary is created."""
+    if not kwargs["created"]:
+        # Only index upon create.
+        return
+    instance = kwargs.pop("instance", None)
+    if instance.__class__.__name__ != "Vocabulary":
+        return
+    from learningresources.models import LearningResource
+    from search.utils import index_resources
+    index_resources(
+        LearningResource.objects.filter(
+            course__repository__id=instance.repository_id))
