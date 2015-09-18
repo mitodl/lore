@@ -489,49 +489,12 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
   );
 
   QUnit.test(
-    'Textarea should be selected',
-    function(assert) {
-      var done = assert.async();
-      var closeLearningResourcePanel = function() {};
-      var afterMount = function(component) {
-        var $node = $(React.findDOMNode(component));
-
-        // wait for calls to populate form
-        waitForAjax(3, function () {
-          var $selectLink = $node.find("#copy-textarea-xml");
-          var textarea = $node.find(".textarea-xml")[0];
-
-          textarea.selectionEnd = 0;
-
-          assert.equal(textarea.selectionStart, 0);
-          assert.equal(textarea.selectionEnd, 0);
-
-          React.addons.TestUtils.Simulate.click($selectLink[0]);
-
-          assert.equal(textarea.selectionStart, 0);
-          assert.equal(textarea.selectionEnd, 10);
-
-          $("#testingDiv").remove();
-          done();
-        });
-      };
-
-      // for selection testing to work this needs to be in the DOM
-      $("body").append($("<div id='testingDiv'>TEST</div>"));
-
-      React.render(<LearningResourcePanel repoSlug="repo"
-        learningResourceId="1"
-        closeLearningResourcePanel={closeLearningResourcePanel}
-        ref={afterMount} />, $("#testingDiv")[0]);
-    }
-  );
-  QUnit.test(
     "LearningResourcePanel.loader should populate its stuff",
     function(assert) {
       var div = document.createElement("div");
       assert.equal(0, $(div).find("textarea").size());
       LearningResources.loader("repo", "1", function() {}, function() {}, div);
-      assert.equal(2, $(div).find("textarea").size());
+      assert.equal(1, $(div).find("textarea").size());
     }
   );
 });
