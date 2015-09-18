@@ -22,6 +22,21 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources', 'xml_panel',
     "terms": ["required"]
   };
 
+  QUnit.module('Test xml panel', {
+    beforeEach: function() {
+      TestUtils.setup();
+
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/repo/learning_resources/1/',
+        type: 'GET',
+        responseText: learningResourceResponse
+      });
+    },
+    afterEach: function() {
+      TestUtils.cleanup();
+    }
+  });
+
   QUnit.test(
     'Textarea should be selected',
     function(assert) {
