@@ -2244,7 +2244,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       assert.equal(0, $(container).find("input").size());
       ManageTaxonomies.loader(
         "repo", container, function() {}, function() {}, function() {},
-        function() {}, function() {}
+        function() {}
       );
       assert.equal(5, $(container).find("input").size());
     }

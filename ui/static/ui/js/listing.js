@@ -92,22 +92,21 @@ define('listing',
         $('.cd-panel-2').removeClass('is-visible');
       };
 
-      var setVocabularyActionTabName = function(isEditMode) {
-        var actionTabName = 'Add Vocabulary';
-        if (isEditMode) {
-          actionTabName = 'Edit Vocabulary';
-        }
-        $('.add-edit-vocabulary-tab').html(actionTabName);
+      var showTab = function(tabId) {
+        $("a[href='#" + tabId + "'").tab('show');
       };
 
-      var loadManageTaxonomies = function (isHideTaxonomyPanel) {
+      var setTabName = function(tabId, newTabName) {
+        $("a[href='#" + tabId + "']").find("span").text(newTabName);
+      };
+
+      var loadManageTaxonomies = function () {
         ManageTaxonomies.loader(
           repoSlug,
           $('#taxonomy-component')[0],
-          isHideTaxonomyPanel,
-          hideTaxonomyPanel,
           showConfirmationDialog,
-          setVocabularyActionTabName,
+          showTab,
+          setTabName,
           refreshFromAPI
         );
       };
@@ -118,7 +117,7 @@ define('listing',
         if (event.keyCode === 27) { // escape key maps to keycode `27`
           closeLearningResourcePanel();
           if ($('.cd-panel-2').hasClass('is-visible')) {
-            loadManageTaxonomies(true);
+            hideTaxonomyPanel();
           }
           if ($('.cd-panel-exports').hasClass('is-visible')) {
             $('.cd-panel-exports').removeClass('is-visible');
@@ -142,7 +141,7 @@ define('listing',
       //open the lateral panel
       $('.btn-taxonomies').on('click', function (event) {
         event.preventDefault();
-        loadManageTaxonomies(false);
+        loadManageTaxonomies();
         $('.cd-panel-2').addClass('is-visible');
       });
 
@@ -150,7 +149,7 @@ define('listing',
       $('.cd-panel-2').on('click', function (event) {
         if ($(event.target).is('.cd-panel-2') ||
           $(event.target).is('.cd-panel-close')) {
-          loadManageTaxonomies(true);
+          hideTaxonomyPanel();
           event.preventDefault();
         }
       });
