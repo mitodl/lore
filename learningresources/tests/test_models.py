@@ -145,7 +145,7 @@ class TestModels(LoreTestCase):
                 FILE_PATH_MAX_LENGTH -
                 # minus the length of the base path of the Django storage and
                 # the base path of the file location temporary dir
-                len(os.path.join(base_path, temp_dir_path)) -
+                len('/'.join([base_path, temp_dir_path])) -
                 # minus 1 for the extra "/" to joint the paths
                 1
             )

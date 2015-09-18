@@ -240,7 +240,9 @@ if(
 if LORE_USE_S3:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
 else:
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    # by default use django.core.files.storage.FileSystemStorage with
+    # overwrite feature
+    DEFAULT_FILE_STORAGE = 'storages.backends.overwrite.OverwriteStorage'
 
 
 # Lore preview settings
