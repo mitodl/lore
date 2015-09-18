@@ -591,3 +591,14 @@ input.repo-page-status {
     -ms-user-select: none;
     user-select: none;
 }
+
+a.disabled {
+    padding: 0px;
+    pointer-events: none;
+    cursor: none;
+    filter: alpha(opacity=65);
+    -webkit-box-shadow: none;
+    box-shadow: none;
+    opacity: .65;
+}
+
