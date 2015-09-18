@@ -239,6 +239,7 @@ class SearchResults(object):
     def __init__(self, search):
         """Get raw search result from Elasticsearch."""
         self._search = search
+        get_conn()  # We don't need the return value; just for it to exist.
 
     def count(self):
         """Total records matching the query."""
@@ -340,6 +341,8 @@ def ensure_vocabulary_mappings(term_info):
     """
     if len(term_info) == 0:
         return
+
+    get_conn()  # We don't need the return value; just for it to exist.
 
     # Retrieve current mapping from Elasticsearch.
     mapping = Mapping.from_es(index=INDEX_NAME, doc_type=DOC_TYPE)
