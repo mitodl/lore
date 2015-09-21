@@ -1,6 +1,6 @@
 define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
-  'test_utils'],
-  function(QUnit, $, ManageTaxonomies, React, TestUtils) {
+  'test_utils', 'utils'],
+  function(QUnit, $, ManageTaxonomies, React, TestUtils, Utils) {
   'use strict';
 
   var VocabularyComponent = ManageTaxonomies.VocabularyComponent;
@@ -9,6 +9,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
   var AddTermsComponent = ManageTaxonomies.AddTermsComponent;
   var AddVocabulary = ManageTaxonomies.AddVocabulary;
   var TaxonomyComponent = ManageTaxonomies.TaxonomyComponent;
+  var showConfirmationDialog = Utils.showConfirmationDialog;
   var vocabulary = {
     "id": 1,
     "slug": "difficulty",
@@ -346,7 +347,34 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                               'input'
                             );
                             assert.equal(editTermBoxes.length, 0);
-                            done();
+                            React.addons.TestUtils.Simulate.click(editButton);
+                            component.forceUpdate(function() {
+                              saveButton = React.addons.TestUtils.
+                                findRenderedDOMComponentWithClass(
+                                  component,
+                                  'save-button'
+                              );
+                              editTermBox = React.addons.TestUtils.
+                                findRenderedDOMComponentWithTag(
+                                component,
+                                'input'
+                              );
+                              React.addons.TestUtils.Simulate.change(
+                                editTermBox, {target: {value: ""}}
+                              );
+                              component.forceUpdate(function() {
+                                assert.equal(component.state.showError, false);
+                                React.addons.TestUtils.Simulate.click(
+                                  saveButton
+                                );
+                                component.forceUpdate(function() {
+                                  assert.equal(
+                                    component.state.showError, true
+                                  );
+                                  done();
+                                });
+                              });
+                            });
                           });
                         });
                       });
@@ -1493,10 +1521,48 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         "weight": 1
       };
 
+      var listOfVocabularies = {
+        "count": 2,
+        "next": null,
+        "previous": null,
+        "results": [
+          {
+            "id": 1,
+            "slug": "difficulty",
+            "name": "difficulty",
+            "description": "easy",
+            "vocabulary_type": "f",
+            "required": false,
+            "weight": 2147483647,
+            "terms": vocabulary.terms,
+            "multi_terms": true
+          },
+          {
+            "id": 2,
+            "slug": "difficulty2",
+            "name": "difficulty2",
+            "description": "easy",
+            "vocabulary_type": "f",
+            "required": false,
+            "weight": 2147483647,
+            "terms": vocabulary.terms,
+            "multi_terms": true
+          }
+        ]
+      };
+
       var refreshCount = 0;
       var refreshFromAPI = function() {
         refreshCount++;
       };
+
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/demo/vocabularies/",
+        contentType: "application/json; charset=utf-8",
+        responseText: listOfVocabularies,
+        dataType: 'json',
+        type: "GET"
+      });
 
       var afterMount = function(component) {
         assert.equal(
@@ -1506,13 +1572,13 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
         waitForAjax(2, function() {
           assert.equal(
             component.state.vocabularies.length,
-            1
+            2
           );
           assert.equal(
             component.state.vocabularies[0].terms.length,
             2
           );
-          var updateTermUrl = "/api/v1/repositories/repo/vocabularies/" +
+          var updateTermUrl = "/api/v1/repositories/demo/vocabularies/" +
               component.state.vocabularies[0].vocabulary.slug + "/terms/" +
               component.state.vocabularies[0].terms[0].slug + "/";
           TestUtils.initMockjax({
@@ -1557,7 +1623,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
                   //assert term update
                   assert.equal(
                     component.state.vocabularies.length,
-                    1
+                    2
                   );
                   assert.equal(
                     component.state.vocabularies[0].terms.length,
@@ -1577,7 +1643,7 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       React.addons.TestUtils.renderIntoDocument
       (
         <TaxonomyComponent
-          repoSlug="repo"
+          repoSlug="demo"
           refreshFromAPI={refreshFromAPI}
           ref={afterMount}
         />
@@ -1591,6 +1657,25 @@ define(['QUnit', 'jquery', 'manage_taxonomies', 'react',
       assert.equal(0, $(container).find("input").size());
       ManageTaxonomies.loader("repo", function() {}, function() {}, container);
       assert.equal(5, $(container).find("input").size());
+    }
+  );
+
+  QUnit.test("Assert that ConfirmationDialog  renders " +
+    "proper props",
+    function(assert) {
+      var container = document.createElement("div");
+      assert.equal(0, $(container).find(".modal").size());
+      var options = {
+        actionButtonName: "Delete",
+        actionButtonClass: "btn btn-danger btn-ok",
+        title: "Delete ?",
+        message: "Are you sure you want to delete vocabulary ?",
+        description: "Deleting this vocabulary will remove it from all " +
+          "learning resources.",
+        confirmationHandler: function() {}
+      };
+      showConfirmationDialog(options, container);
+      assert.equal(1, $(container).find(".modal").size());
     }
   );
 });
