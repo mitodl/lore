@@ -19,6 +19,7 @@ var REQUIRE_PATHS = {
   csrf: "../ui/js/csrf",
   listing: "../ui/js/listing",
   manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
+  xml_panel: "../ui/js/xml_panel.jsx?noext",
   learning_resources: "../ui/js/learning_resources.jsx?noext",
   listing_resources: "../ui/js/listing_resources.jsx?noext",
   static_assets: "../ui/js/static_assets.jsx?noext",

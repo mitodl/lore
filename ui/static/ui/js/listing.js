@@ -1,11 +1,11 @@
 define('listing',
   ['csrf', 'jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
     'learning_resources', 'static_assets', 'utils',
-    'lr_exports', 'listing_resources', 'pagination',
+    'lr_exports', 'listing_resources', 'pagination', 'xml_panel',
     'bootstrap', 'icheck'],
   function (CSRF, $, _, URI, History,
             ManageTaxonomies, LearningResources, StaticAssets,
-            Utils, Exports, ListingResources, Pagination) {
+            Utils, Exports, ListingResources, Pagination, XmlPanel) {
     'use strict';
 
     var loader = function (listingOptions, container) {
@@ -208,8 +208,8 @@ define('listing',
           $("#tab-1")[0]
         );
         $('.cd-panel').addClass('is-visible');
-        StaticAssets.loader(
-          repoSlug, resourceId, $("#tab-3")[0]);
+        StaticAssets.loader(repoSlug, resourceId, $("#tab-3")[0]);
+        XmlPanel.loader(repoSlug, resourceId, $("#tab-2")[0]);
       };
 
       refreshFromAPI = function() {
