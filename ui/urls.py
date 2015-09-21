@@ -22,8 +22,13 @@ from django.contrib import admin
 
 from status.views import status
 from ui.views import (
-    welcome, create_repo,
-    upload, repository_view, serve_static_assets, serve_resource_exports
+    welcome,
+    create_repo,
+    upload,
+    repository_view,
+    serve_static_assets,
+    serve_resource_exports,
+    repository_data_view,
 )
 import rest.urls as rest_urls
 import cas.urls as cas_urls
@@ -41,6 +46,11 @@ urlpatterns = [
         r'^repositories/(?P<repo_slug>[-\w]+)/$',
         repository_view,
         name='repositories'
+    ),
+    url(
+        r'^repositories/(?P<repo_slug>[-\w]+)/data/$',
+        repository_data_view,
+        name='repositories-data'
     ),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),

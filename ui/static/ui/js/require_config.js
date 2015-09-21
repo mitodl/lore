@@ -5,8 +5,9 @@ var REQUIRE_PATHS = {
   bootstrap: "bootstrap/dist/js/bootstrap.min",
   icheck: "icheck/icheck.min",
   retina: "retina.js/dist/retina.min",
-  react: "react/react-with-addons.min",
+  React: "react/react-with-addons.min",
   react_infinite: "react-infinite/dist/react-infinite.min",
+  react_datagrid: "../lib/js/react-datagrid.min",
   lodash: "lodash/lodash.min",
   select2: "select2/dist/js/select2.full.min",
   uri: "uri.js/src/URI",
@@ -32,4 +33,8 @@ var SHIMS = {
   "historyadapter": {"deps": ["jquery"]},
   "history": {"deps": ["historyadapter"], "exports": "History"}
 };
+define("react", ["React"], function(React) {
+  // Workaround for react_datagrid referring to "React"
+  return React;
+});
 /* jshint ignore:end */
