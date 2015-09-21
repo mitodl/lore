@@ -27,7 +27,7 @@ from learningresources.api import (
     join_description_paths,
     get_resources,
 )
-from learningresources.models import StaticAsset, course_asset_basepath
+from learningresources.models import StaticAsset, course_asset_basepath, LearningResource
 from search.utils import index_resources
 
 log = logging.getLogger(__name__)
@@ -84,7 +84,7 @@ def import_course_from_file(filename, repo_id, user_id):
         if course_imported is False:
             raise ValueError("Invalid OLX archive, no courses found.")
     finally:
-        default_storage.delete(filename)
+        #default_storage.delete(filename)
         rmtree(tempdir)
 
 
@@ -183,6 +183,7 @@ def import_children(course, element, parent, parent_dpath):
         # more code to check for link, img, iframe, script, and others,
         # and within those, check for href or src existing.
         soup = BeautifulSoup(etree.tostring(element), 'lxml')
+        to_save = []
         for child in soup.findAll():
             for _, val in child.attrs.items():
                 try:
@@ -193,11 +194,19 @@ def import_children(course, element, parent, parent_dpath):
                                 course__id=resource.course_id,
                                 asset=course_asset_basepath(course, path),
                             )
-                            resource.static_assets.add(asset)
+                            to_save.append((resource, asset))
                         except StaticAsset.DoesNotExist:
                             continue
                 except AttributeError:
                     continue  # not a string
+        ThroughModel = LearningResource.static_assets.through
+        ThroughModel.objects.bulk_create(
+            [
+                ThroughModel(learningresource_id=resource.id, staticasset_id=asset.id)
+                for resource, asset in set(to_save)
+            ]
+        )
+
 
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:

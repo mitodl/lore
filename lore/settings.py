@@ -242,7 +242,7 @@ if LORE_USE_S3:
 else:
     # by default use django.core.files.storage.FileSystemStorage with
     # overwrite feature
-    DEFAULT_FILE_STORAGE = 'storages.backends.overwrite.OverwriteStorage'
+    DEFAULT_FILE_STORAGE = 'lore.storages.LoreStorage'
 
 
 # Lore preview settings

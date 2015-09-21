@@ -12,6 +12,7 @@ import logging
 
 from learningresources.tests.base import LoreTestCase
 from learningresources.models import LearningResource
+from learningresources.api import create_repo
 from importer.api import import_course_from_file
 from search.search_indexes import cache
 from search.sorting import LoreSortingFields
@@ -45,6 +46,8 @@ class TestImport(LoreTestCase):
         results = search_index()
         original_count = results.count()
         import_course_from_file(self.course_zip, self.repo.id, self.user.id)
+        repo2 = create_repo("two", "two", self.user.id)
+        #import_course_from_file(self.course_zip, repo2.id, self.user.id)
         refresh_index()
         results = search_index()
         self.assertEqual(results.count(), original_count + 18)
