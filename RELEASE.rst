@@ -1,12 +1,35 @@
 Release Notes
 -------------
 
+Version 0.11.0
+==============
+
+- Reorganized Learning Resource panel to use three tabs.
+- Added datatable proof-of-concept.
+- Added REST api view to get and delete a course.
+- Added calls to ``get_conn()`` where ``conn`` is used implicitly.
+- Added more detail to confirmation message for delete vocabulary.
+- Moved ``Save`` button to right of the term for edit term inside
+  taxonomy panel.
+- Switched Django local storage to overwrite.
+- Implemented ``page_size`` parameter to allow users to set page size.
+- Fixed spacing between ``edit`` and ``delete`` buttons.
+- Removed /node directory, and removed symlinks from node_modules.
+- Added elasticsearch-dsl and added it alongside Haystack for now.
+- Added ``Save and Close`` button to learning resource panel.
+- Added tests for listing page.
+- Removed lib/ from ``.gitignore``.
+- Switched to minimized javascript for libraries.
+- Added REST API view to list courses in repository.
+- Removed react-addons bower package, addons actually live in react package.
+- Fixed pagination links.
+- Increased requirejs timeout.
+
 Version 0.10.1
 ==============
 
 - Fixed exact repository search bug
 - Fixed clear export bug
-
 
 Version 0.10.0
 ==============

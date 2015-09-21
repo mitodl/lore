@@ -31,8 +31,8 @@ master_doc = 'index'
 project = u'LORE'
 copyright = u'2015, MIT Office of Digital Learning'
 
-version = '0.1'
-release = '0.1.0'
+version = '0.11.0'
+release = '0.11.0'
 
 exclude_patterns = ['_build']
 pygments_style = 'sphinx'
