@@ -1,6 +1,6 @@
 # Core project/common application testing requirements
 
-pytest
+pytest<2.8
 pytest-pep8
 pytest-pylint
 pytest-cov
