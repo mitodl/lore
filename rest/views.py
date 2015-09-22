@@ -8,6 +8,7 @@ from django.http.response import Http404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
@@ -211,6 +212,43 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
         return repo.vocabulary_set.filter(
             slug=self.kwargs['vocab_slug']
         )
+
+    # pylint: disable=no-self-use
+    def remove_term_resource_links(self, vocab, new_types):
+        """
+        Remove Terms from LearningResources if the Term's Vocabulary's type
+        was removed.
+        """
+        old_types = set(t.name for t in vocab.learning_resource_types.all())
+        removed_types = old_types - new_types
+        for term in vocab.term_set.all():
+            for resource in term.learning_resources.all():
+                if resource.learning_resource_type.name in removed_types:
+                    term.learning_resources.remove(resource)
+
+    def update(self, request, *args, **kwargs):
+        """
+        Override to remove resource term links if resource type is
+        removed.
+        """
+        vocab = get_object_or_404(Vocabulary, slug=kwargs['vocab_slug'])
+        if 'learning_resource_types' in self.request.data:
+            new_types = set(self.request.data['learning_resource_types'])
+            self.remove_term_resource_links(vocab, new_types)
+            return super(VocabularyDetail, self).partial_update(
+                request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        Override to remove resource term links if resource type is
+        removed.
+        """
+        vocab = get_object_or_404(Vocabulary, slug=kwargs['vocab_slug'])
+        if 'learning_resource_types' in self.request.data:
+            new_types = set(self.request.data['learning_resource_types'])
+            self.remove_term_resource_links(vocab, new_types)
+            return super(VocabularyDetail, self).partial_update(
+                request, *args, **kwargs)
 
 
 class TermList(ListCreateAPIView):
