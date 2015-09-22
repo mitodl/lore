@@ -27,7 +27,11 @@ from learningresources.api import (
     join_description_paths,
     get_resources,
 )
-from learningresources.models import StaticAsset, course_asset_basepath
+from learningresources.models import (
+    LearningResource,
+    StaticAsset,
+    course_asset_basepath
+)
 from search.utils import index_resources
 
 log = logging.getLogger(__name__)
@@ -164,6 +168,8 @@ def import_children(course, element, parent, parent_dpath):
         url_name=element.attrib.get("url_name", None),
         dpath=dpath,
     )
+    # temp variable to store static assets for bulk insert
+    static_assets_to_save = set()
     target = "/static/"
     if element.tag == "video":
         subname = get_video_sub(element)
@@ -173,7 +179,7 @@ def import_children(course, element, parent, parent_dpath):
                 asset=course_asset_basepath(course, subname),
             )
             for asset in assets:
-                resource.static_assets.add(asset)
+                static_assets_to_save.add((resource, asset))
     else:
         # Recursively find all sub-elements, looking for anything which
         # refers to /static/. Then make the association between the
@@ -193,11 +199,26 @@ def import_children(course, element, parent, parent_dpath):
                                 course__id=resource.course_id,
                                 asset=course_asset_basepath(course, path),
                             )
-                            resource.static_assets.add(asset)
+                            static_assets_to_save.add((resource, asset))
                         except StaticAsset.DoesNotExist:
                             continue
                 except AttributeError:
                     continue  # not a string
+    # Bulk insert of static assets
+    # Using this approach to avoid signals during the learning resource .save()
+    # Each signal triggers a reindex of the learning resource that is useless
+    # during import because all the learning resources are indexed in bulk at
+    # the end of the import anyway
+    ThroughModel = LearningResource.static_assets.through
+    ThroughModel.objects.bulk_create(
+        [
+            ThroughModel(
+                learningresource_id=resource.id,
+                staticasset_id=asset.id
+            )
+            for resource, asset in static_assets_to_save
+        ]
+    )
 
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
