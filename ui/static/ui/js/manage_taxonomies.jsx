@@ -143,9 +143,10 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           <div className="panel-heading">
             <h4 className="panel-title">
               <span className="utility-features">
-                <a href="#">
+                <a href="#" onClick={this.onEdit}>
                   <i className="fa fa-pencil"></i>
-                </a> <a data-toggle="modal" data-target="#confirm-delete"
+                </a>
+                <a data-toggle="modal" data-target="#confirm-delete"
                   onClick={this.onDeleteHandler} className="delete-vocabulary">
                   <i className="fa fa-remove"></i>
                 </a>
@@ -214,8 +215,13 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         });
       }
     },
+    onEdit: function(e) {
+      e.preventDefault();
+      this.props.editVocabulary(this.props.vocabulary);
+    },
     onKeyUp: function(e) {
       if (e.key === "Enter") {
+        e.preventDefault();
         this.handleAddTermClick();
       }
     },
@@ -237,7 +243,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
             error: "Error occurred while adding new term."
           });
         })
-      .done(function(newTerm) {
+      .then(function(newTerm) {
           thiz.props.addTerm(thiz.props.vocabulary.slug, newTerm);
           thiz.setState({
             newTermLabel: null
@@ -264,6 +270,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           updateTerm={thiz.props.updateTerm}
           vocabulary={obj.vocabulary}
           deleteVocabulary={thiz.props.deleteVocabulary}
+          editVocabulary={thiz.props.editVocabulary}
           terms={obj.terms}
           key={obj.vocabulary.slug}
           repoSlug={repoSlug}
@@ -300,11 +307,11 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         vocabularyType: 'm',
         learningResourceTypes: [],
         multiTerms: false,
+        slug: ''
       };
     },
     updateLearningResourceType: function(e) {
       var checkedType = e.target.value;
-
       var newTypes;
       if (e.target.checked) {
         if (!_.includes(this.state.learningResourceTypes, checkedType)) {
@@ -323,15 +330,39 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     },
     updateVocabularyType: function(e) {
       this.setState({vocabularyType: e.target.value});
-      e.target.isChecked = true;
     },
     updateMultiTerms: function(e) {
       this.setState({multiTerms: e.target.checked});
     },
+    showErrorMessage: function(errorText) {
+      this.setState({
+        message: {
+          error: errorText
+        }
+      });
+    },
     submitForm: function(e) {
-      var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
-        '/vocabularies/';
       e.preventDefault();
+      if (_.isEmpty(this.state.name)) {
+        this.showErrorMessage('Please enter vocabulary name.');
+        return;
+      }
+
+      if (_.isEmpty(this.state.description)) {
+        this.showErrorMessage('Please enter vocabulary description.');
+        return;
+      }
+
+      var API_ROOT_VOCAB_URL;
+      var method = "POST";
+      if (this.isEditModeOpen()) {
+        API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/' + this.state.slug + "/";
+        method = "PATCH";
+      } else {
+        API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/';
+      }
       var thiz = this;
       var vocabularyData = {
         name: this.state.name,
@@ -344,7 +375,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       };
 
       $.ajax({
-        type: "POST",
+        type: method,
         url: API_ROOT_VOCAB_URL,
         data: JSON.stringify(vocabularyData),
         contentType: "application/json"
@@ -355,41 +386,74 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           for (i = 0; i < jsonData.non_field_errors.length ; i++) {
             if (jsonData.non_field_errors[i] ===
               'The fields repository, name must make a unique set.') {
-              thiz.setState({
-                message: {
-                  error: 'A Vocabulary named "' + vocabularyData.name +
-                  '" already exists. Please choose a different name.'
-                }
-              });
+              thiz.showErrorMessage('A Vocabulary named "' +
+                vocabularyData.name + '" already exists.' +
+                ' Please choose a different name.');
               break;
             }
           }
         } else {
-          thiz.setState({
-            message: {
-              error: 'There was a problem adding the Vocabulary.'
-            }
-          });
+          var message = 'There was a problem adding the Vocabulary.';
+          if (thiz.isEditModeOpen()) {
+            message = 'There was a problem with updating the Vocabulary.';
+          }
+          thiz.showErrorMessage(message);
         }
-      }).done(function(data) {
+      }).then(function(data) {
         // Reset state (and eventually update the vocab tab
         thiz.props.updateParent(data);
-        thiz.replaceState(thiz.getInitialState());
-        // Switch to taxonomy panel and scroll to new vocab (bottom)
-        $('[href=#tab-taxonomies]').tab('show');
-        var scrollableDiv = $(
-          ".cd-panel-2 .cd-panel-container .cd-panel-content"
-        );
-        scrollableDiv.animate(
-          {scrollTop: scrollableDiv.prop('scrollHeight')},
-          500
-        );
+        thiz.resetForm();
+        if (!thiz.isEditModeOpen()) {
+          var scrollableDiv = $(
+           ".cd-panel-2 .cd-panel-container .cd-panel-content"
+          );
+          scrollableDiv.animate(
+            {scrollTop: scrollableDiv.prop('scrollHeight')},
+            500
+          );
+        }
         thiz.props.refreshFromAPI();
       });
     },
+    isEditModeOpen: function() {
+      return !!this.state.slug;
+    },
+    onReset: function(e) {
+      e.preventDefault();
+      this.resetForm();
+    },
+    resetForm: function() {
+      this.replaceState(this.getInitialState());
+      this.props.editVocabulary(undefined); //reset vocabulary in edit mode
+    },
+    componentWillReceiveProps: function(nextProps) {
+      // Note that this is only triggered on prop updates which will send
+      // new values that we need to store in the state.
+      if (!nextProps.vocabulary) {
+        this.replaceState(this.getInitialState());
+      }
+      else if (!_.isEqual(nextProps.vocabulary, this.props.vocabulary)) {
+        var newVocab = nextProps.vocabulary;
+        this.replaceState({
+          name: newVocab.name,
+          description: newVocab.description,
+          vocabularyType: newVocab.vocabulary_type,
+          learningResourceTypes: newVocab.learning_resource_types,
+          multiTerms: newVocab.multi_terms,
+          slug: newVocab.slug
+        })
+      }
+    },
     render: function() {
       var thiz = this;
+      var cancelButton = null;
+      var submitButtonText = "Save";
 
+      if (this.props.vocabulary) {
+        cancelButton = <button className="btn btn-lg btn-primary"
+                               onClick={this.onReset}>Cancel</button>;
+        submitButtonText = "Update";
+      }
       var checkboxes = _.map(this.props.learningResourceTypes, function(type) {
         var checked = _.includes(thiz.state.learningResourceTypes, type);
         return (
@@ -407,7 +471,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       });
 
       return (
-        <form className="form-horizontal" onSubmit={this.submitForm}>
+        <form className="form-horizontal">
           <StatusBox message={this.state.message} />
           <p>
             <input type="text" valueLink={this.linkState('name')}
@@ -455,7 +519,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
             </div>
           </p>
           <p>
-            <button className="btn btn-lg btn-primary">Save</button>
+            <button className="btn btn-lg btn-primary"
+                    onClick={this.submitForm}>{submitButtonText}
+            </button>  {cancelButton}
           </p>
         </form>
       );
@@ -466,17 +532,42 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     getInitialState: function() {
       return {
         vocabularies: [],
-        learningResourceTypes: []
+        learningResourceTypes: [],
+        vocabularyInEdit: undefined
       };
     },
-    addVocabulary: function(vocab) {
-      // Wrap vocab in expected structure
-      var newVocab = {
-        terms: [],
-        vocabulary: vocab
-      };
-      var vocabularies = this.state.vocabularies;
-      this.setState({vocabularies: vocabularies.concat([newVocab])});
+    editVocabulary: function(vocab) {
+      this.setState({vocabularyInEdit: vocab});
+      if (vocab) {
+        this.props.setTabName('tab-vocab', 'Edit Vocabulary');
+        this.props.showTab('tab-vocab');
+      } else {
+        this.props.setTabName('tab-vocab', 'Add Vocabulary');
+        this.props.showTab('tab-taxonomies');
+      }
+    },
+    addOrUpdateVocabulary: function(newOrUpdatedVocab) {
+      var found = false;
+      var vocabularies = _.map(this.state.vocabularies, function(tuple) {
+        if (tuple.vocabulary.slug === newOrUpdatedVocab.slug) {
+          found = true;
+
+          var copy = $.extend({}, tuple);
+          copy.vocabulary = newOrUpdatedVocab;
+          return copy;
+        } else {
+          return tuple;
+        }
+      });
+
+      if (!found) {
+        var newVocab = {
+          terms: [],
+          vocabulary: newOrUpdatedVocab
+        };
+        vocabularies = vocabularies.concat([newVocab]);
+      }
+      this.setState({vocabularies: vocabularies});
     },
     addTerm: function(vocabSlug, newTerm) {
       var vocabularies = _.map(this.state.vocabularies, function(tuple) {
@@ -494,7 +585,10 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       var vocabularies = _.filter(this.state.vocabularies, function (tuple) {
         return tuple.vocabulary.slug !== vocabSlug;
       });
-      this.setState({vocabularies: vocabularies});
+      this.setState({
+        vocabularies: vocabularies
+      });
+      this.editVocabulary(undefined);
     },
     updateTerm: function(vocabSlug, term) {
       var vocabularies = _.map(this.state.vocabularies, function(tuple) {
@@ -520,17 +614,20 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           <div className="tab-pane active" id="tab-taxonomies">
             <AddTermsComponent
               updateTerm={this.updateTerm}
+              editVocabulary={this.editVocabulary}
               vocabularies={this.state.vocabularies}
               repoSlug={this.props.repoSlug}
-              renderConfirmationDialog={this.props.renderConfirmationDialog}
               deleteVocabulary={this.deleteVocabulary}
               refreshFromAPI={this.props.refreshFromAPI}
+              renderConfirmationDialog={this.props.renderConfirmationDialog}
               addTerm={this.addTerm}
               />
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
             <AddVocabulary
-              updateParent={this.addVocabulary}
+              editVocabulary={this.editVocabulary}
+              updateParent={this.addOrUpdateVocabulary}
+              vocabulary={this.state.vocabularyInEdit}
               learningResourceTypes={this.state.learningResourceTypes}
               repoSlug={this.props.repoSlug}
               refreshFromAPI={this.props.refreshFromAPI}
@@ -571,13 +668,20 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     'AddTermsComponent': AddTermsComponent,
     'AddVocabulary': AddVocabulary,
     'TaxonomyComponent': TaxonomyComponent,
-    'loader': function (repoSlug, refreshFromAPI, showConfirmationDialog,
-                        container) {
+    'loader': function (repoSlug, container, showConfirmationDialog,
+                        showTab, setTabName, refreshFromAPI
+    ) {
+      // Unmount and remount the component to ensure that its state
+      // is always up to date with the rest of the app.
+      React.unmountComponentAtNode(container);
       React.render(
         <TaxonomyComponent
           repoSlug={repoSlug}
           refreshFromAPI={refreshFromAPI}
-          renderConfirmationDialog={showConfirmationDialog}/>,
+          renderConfirmationDialog={showConfirmationDialog}
+          showTab={showTab}
+          setTabName={setTabName}
+          />,
         container
       );
     }

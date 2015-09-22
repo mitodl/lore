@@ -88,13 +88,36 @@ define('listing',
         $('.cd-panel').removeClass('is-visible');
       }
 
+      var hideTaxonomyPanel = function() {
+        $('.cd-panel-2').removeClass('is-visible');
+      };
+
+      var showTab = function(tabId) {
+        $("a[href='#" + tabId + "'").tab('show');
+      };
+
+      var setTabName = function(tabId, newTabName) {
+        $("a[href='#" + tabId + "']").find("span").text(newTabName);
+      };
+
+      var loadManageTaxonomies = function () {
+        ManageTaxonomies.loader(
+          repoSlug,
+          $('#taxonomy-component')[0],
+          showConfirmationDialog,
+          showTab,
+          setTabName,
+          refreshFromAPI
+        );
+      };
+
       $('[data-toggle=popover]').popover();
       //Close panels on escape keypress
       $(document).keyup(function(event) {
         if (event.keyCode === 27) { // escape key maps to keycode `27`
           closeLearningResourcePanel();
           if ($('.cd-panel-2').hasClass('is-visible')) {
-            $('.cd-panel-2').removeClass('is-visible');
+            hideTaxonomyPanel();
           }
           if ($('.cd-panel-exports').hasClass('is-visible')) {
             $('.cd-panel-exports').removeClass('is-visible');
@@ -118,6 +141,7 @@ define('listing',
       //open the lateral panel
       $('.btn-taxonomies').on('click', function (event) {
         event.preventDefault();
+        loadManageTaxonomies();
         $('.cd-panel-2').addClass('is-visible');
       });
 
@@ -125,7 +149,7 @@ define('listing',
       $('.cd-panel-2').on('click', function (event) {
         if ($(event.target).is('.cd-panel-2') ||
           $(event.target).is('.cd-panel-close')) {
-          $('.cd-panel-2').removeClass('is-visible');
+          hideTaxonomyPanel();
           event.preventDefault();
         }
       });
@@ -502,11 +526,6 @@ define('listing',
 
       // Initial refresh to populate page.
       refreshFromAPI();
-      ManageTaxonomies.loader(
-        repoSlug,
-        refreshFromAPI,
-        showConfirmationDialog,
-        $('#taxonomy-component')[0]);
     };
 
     return {
