@@ -17,7 +17,6 @@ from django.http import Http404, StreamingHttpResponse
 from django.shortcuts import (
     render,
     redirect,
-    get_object_or_404,
 )
 from guardian.decorators import permission_required_or_403
 from guardian.shortcuts import get_perms
@@ -266,7 +265,10 @@ def serve_static_assets(request, path):
     # first check if the user has access to the file
     media_path = os.path.join(STATIC_ASSET_PREFIX, path)
     file_path = os.path.join(settings.MEDIA_ROOT, media_path)
-    static_asset = get_object_or_404(StaticAsset, asset=media_path)
+    static_assets = StaticAsset.objects.filter(asset=media_path)
+    if not static_assets:
+        raise Http404()
+    static_asset = static_assets.first()
     if (RepoPermission.view_repo[0] not in
             get_perms(request.user, static_asset.course.repository)):
         raise PermissionDenied()
