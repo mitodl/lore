@@ -8,6 +8,7 @@ from django.http.response import Http404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
+from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
@@ -211,6 +212,32 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
         return repo.vocabulary_set.filter(
             slug=self.kwargs['vocab_slug']
         )
+
+    def update(self, request, *args, **kwargs):
+        """
+        Override to remove resource term links if resource type is
+        removed. Note that partial_update will call this function too.
+        """
+        vocab = self.get_object()
+        new_types = self.request.data.get('learning_resource_types', None)
+        if new_types is not None:
+            # Since LearningResourceTypes indicate which relationships
+            # are valid between Terms and LearningResources, we need to
+            # remove the newly invalid relationships caused by this update.
+            old_types = set(
+                t.name for t in vocab.learning_resource_types.all()
+            )
+            removed_types = old_types - set(new_types)
+
+            with transaction.atomic():
+                for term in vocab.term_set.all():
+                    for resource in term.learning_resources.all():
+                        if (resource.learning_resource_type.name in
+                                removed_types):
+                            term.learning_resources.remove(resource)
+
+        return super(VocabularyDetail, self).update(
+            request, *args, **kwargs)
 
 
 class TermList(ListCreateAPIView):

@@ -355,6 +355,78 @@ class TestLearningResource(RESTTestCase):
         self.delete_learning_resource_export(
             self.repo.slug, lr_id, expected_status=HTTP_404_NOT_FOUND)
 
+    def test_update_resource_term_links(self):
+        """
+        Test that we remove Terms from LearningResources if
+        the related LearningResourceType is removed from the Vocabulary.
+        """
+
+        self.import_course_tarball(self.repo)
+
+        vocab_slug = self.create_vocabulary(self.repo.slug)['slug']
+        vocab = Vocabulary.objects.get(slug=vocab_slug)
+        term_slug = self.create_term(self.repo.slug, vocab_slug)['slug']
+        self.assertEqual(self.resource.terms.count(), 0)
+        self.assertEqual(vocab.learning_resource_types.count(), 0)
+        type1_name = LearningResourceType.objects.all()[0].name
+        type2_name = LearningResourceType.objects.all()[1].name
+
+        # Get another resource which isn't the first resource.
+        resource2 = LearningResource.objects.exclude(
+            id=self.resource.id).first()
+
+        # Attempt to assign a term to a LearningResource when the Vocabulary
+        # doesn't allow that LearningResourceType.
+        self.patch_learning_resource(self.repo.slug, self.resource.id, {
+            "terms": [
+                term_slug
+            ]
+        }, expected_status=HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.resource.terms.count(), 0)
+
+        # Attempt to patch Vocabulary with an invalid learning resource.
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": [
+                "unused"
+            ]
+        }, expected_status=HTTP_400_BAD_REQUEST)
+        self.assertEqual(vocab.learning_resource_types.count(), 0)
+
+        # Add a LearningResourceType to the Vocabulary and now we can add
+        # a Term to the LearningResource.
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": [
+                type1_name,
+                type2_name
+            ]
+        })
+        self.patch_learning_resource(self.repo.slug, self.resource.id, {
+            "terms": [
+                term_slug
+            ],
+            "learning_resource_type": type1_name
+        })
+        self.patch_learning_resource(self.repo.slug, resource2.id, {
+            "terms": [
+                term_slug
+            ],
+            "learning_resource_type": type2_name
+        })
+        self.assertEqual(self.resource.terms.count(), 1)
+        self.assertEqual(resource2.terms.count(), 1)
+
+        # Now delete the LearningResourceType from the Vocabulary.
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": [
+                type2_name
+            ]
+        })
+        # This action should have also cleared Terms of that Vocabulary
+        # from all LearningResources which don't support that
+        # LearningResourceType.
+        self.assertEqual(self.resource.terms.count(), 0)
+        self.assertEqual(resource2.terms.count(), 1)
+
 
 class TestLearningResourceAuthorization(RESTAuthTestCase):
     """
