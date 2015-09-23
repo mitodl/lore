@@ -212,13 +212,6 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
             slug=self.kwargs['vocab_slug']
         )
 
-    @staticmethod
-    def remove_term_resource_links(vocab, new_types):
-        """
-        Remove Terms from LearningResources if the Term's Vocabulary's type
-        was removed.
-        """
-
     def update(self, request, *args, **kwargs):
         """
         Override to remove resource term links if resource type is
