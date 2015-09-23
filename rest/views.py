@@ -8,6 +8,7 @@ from django.http.response import Http404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
+from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
@@ -228,10 +229,12 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
             )
             removed_types = old_types - new_types
 
-            for term in vocab.term_set.all():
-                for resource in term.learning_resources.all():
-                    if resource.learning_resource_type.name in removed_types:
-                        term.learning_resources.remove(resource)
+            with transaction.atomic():
+                for term in vocab.term_set.all():
+                    for resource in term.learning_resources.all():
+                        if (resource.learning_resource_type.name in
+                                removed_types):
+                            term.learning_resources.remove(resource)
 
         return super(VocabularyDetail, self).update(
             request, *args, **kwargs)
