@@ -384,6 +384,14 @@ class TestLearningResource(RESTTestCase):
         }, expected_status=HTTP_400_BAD_REQUEST)
         self.assertEqual(self.resource.terms.count(), 0)
 
+        # Attempt to patch Vocabulary with an invalid learning resource.
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": [
+                "unused"
+            ]
+        }, expected_status=HTTP_400_BAD_REQUEST)
+        self.assertEqual(vocab.learning_resource_types.count(), 0)
+
         # Add a LearningResourceType to the Vocabulary and now we can add
         # a Term to the LearningResource.
         self.patch_vocabulary(self.repo.slug, vocab_slug, {
