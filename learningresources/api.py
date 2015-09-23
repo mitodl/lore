@@ -212,7 +212,7 @@ def get_resources(repo_id):
         list (list of learningresources.LearningResource): List of resources
     """
     return LearningResource.objects.select_related(
-        "learning_resource_type").filter(
+        "learning_resource_type", "course__repository").filter(
             course__repository__id=repo_id).order_by("title")
 
 

@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.10.1'
+VERSION = '0.11.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -207,7 +207,10 @@ STATICFILES_DIRS = (
 )
 COMPRESS_PRECOMPILERS = (
     ('text/requirejs', 'requirejs.RequireJSCompiler'),
-    ('text/jsx', 'node_modules/.bin/jsx < {infile} > {outfile}')
+    (
+        'text/jsx',
+        'node node_modules/react-tools/bin/jsx < {infile} > {outfile}'
+    ),
 )
 COMPRESS_OFFLINE = get_var('LORE_COMPRESS_OFFLINE', False)
 COMPRESS_ENABLED = get_var('LORE_COMPRESS_ENABLED', not DEBUG)
@@ -237,7 +240,9 @@ if(
 if LORE_USE_S3:
     DEFAULT_FILE_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
 else:
-    DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
+    # by default use django.core.files.storage.FileSystemStorage with
+    # overwrite feature
+    DEFAULT_FILE_STORAGE = 'storages.backends.overwrite.OverwriteStorage'
 
 
 # Lore preview settings
@@ -342,7 +347,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    'PAGE_SIZE': 20,
+    'DEFAULT_PAGINATION_CLASS': 'rest.pagination.LorePagination',
     'UPLOADED_FILES_USE_URL': False,
 }
 

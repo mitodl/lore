@@ -209,6 +209,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     'Assert that LearningResourcePanel changes state properly',
     function(assert) {
       var done = assert.async();
+      var closeLearningResourcePanel = function() {};
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(3, function () {
@@ -320,6 +321,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
 
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
+        closeLearningResourcePanel={closeLearningResourcePanel}
         learningResourceId="1"
         ref={afterMount} />);
     }
@@ -328,12 +330,14 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     'Assert that LearningResourcePanel saves properly',
     function(assert) {
       var done = assert.async();
-
+      var closeLearningResourcePanelCount = 0;
       var refreshCount = 0;
       var refreshFromAPI = function() {
         refreshCount++;
       };
-
+      var closeLearningResourcePanel = function() {
+        closeLearningResourcePanelCount += 1;
+      };
       var afterMount = function(component) {
         // wait for calls to populate form
         waitForAjax(3, function () {
@@ -341,12 +345,25 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
 
           assert.equal(refreshCount, 0);
           var saveButton = $node.find("button")[0];
+          var saveAndCloseButton = $node.find("button")[1];
           React.addons.TestUtils.Simulate.click(saveButton);
           waitForAjax(1, function() {
             assert.equal(component.state.message,
               "Form saved successfully!");
             assert.equal(refreshCount, 1);
-            done();
+            //assert that panel does not close on save button click
+            assert.equal(closeLearningResourcePanelCount, 0);
+            React.addons.TestUtils.Simulate.click(saveAndCloseButton);
+            component.forceUpdate(function() {
+              waitForAjax(1, function() {
+                assert.equal(component.state.message,
+                  "Form saved successfully!");
+                assert.equal(refreshCount, 2);
+                //assert that panel close after save
+                assert.equal(closeLearningResourcePanelCount, 1);
+                done();
+              });
+            });
           });
         });
       };
@@ -354,15 +371,20 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
         learningResourceId="1"
+        closeLearningResourcePanel={closeLearningResourcePanel}
         refreshFromAPI={refreshFromAPI}
         ref={afterMount} />);
     }
   );
+
   QUnit.test(
     'An error should show up on AJAX failure while saving form',
     function(assert) {
       var done = assert.async();
-
+      var closeLearningResourcePanelCount = 0;
+      var closeLearningResourcePanel = function() {
+        closeLearningResourcePanelCount += 1;
+      };
       var refreshCount = 0;
       var refreshFromAPI = function() {
         refreshCount++;
@@ -389,6 +411,8 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
             );
 
             assert.equal(0, refreshCount);
+            //assert that panel does not close on ajax fail
+            assert.equal(closeLearningResourcePanelCount, 0);
             done();
           });
         });
@@ -396,6 +420,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
 
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
+        closeLearningResourcePanel={closeLearningResourcePanel}
         learningResourceId="1"
         refreshFromAPI={refreshFromAPI}
         ref={afterMount} />);
@@ -407,7 +432,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     'getting learning resource info',
     function(assert) {
       var done = assert.async();
-
+      var closeLearningResourcePanel = function() {};
       TestUtils.replaceMockjax({
         url: '/api/v1/repositories/repo/learning_resources/1/',
         type: 'GET',
@@ -426,6 +451,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       };
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
+        closeLearningResourcePanel={closeLearningResourcePanel}
         learningResourceId="1"
         ref={afterMount} />);
     }
@@ -435,6 +461,7 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     'An error should show up on AJAX failure while ' +
     'getting vocabularies',
     function(assert) {
+      var closeLearningResourcePanel = function() {};
       var done = assert.async();
 
       TestUtils.replaceMockjax({
@@ -455,53 +482,19 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       };
       React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
         repoSlug="repo"
+        closeLearningResourcePanel={closeLearningResourcePanel}
         learningResourceId="1"
         ref={afterMount} />);
     }
   );
 
   QUnit.test(
-    'Textarea should be selected',
-    function(assert) {
-      var done = assert.async();
-      var afterMount = function(component) {
-        var $node = $(React.findDOMNode(component));
-
-        // wait for calls to populate form
-        waitForAjax(3, function () {
-          var $selectLink = $node.find("#copy-textarea-xml");
-          var textarea = $node.find(".textarea-xml")[0];
-
-          textarea.selectionEnd = 0;
-
-          assert.equal(textarea.selectionStart, 0);
-          assert.equal(textarea.selectionEnd, 0);
-
-          React.addons.TestUtils.Simulate.click($selectLink[0]);
-
-          assert.equal(textarea.selectionStart, 0);
-          assert.equal(textarea.selectionEnd, 10);
-
-          $("#testingDiv").remove();
-          done();
-        });
-      };
-
-      // for selection testing to work this needs to be in the DOM
-      $("body").append($("<div id='testingDiv'>TEST</div>"));
-
-      React.render(<LearningResourcePanel repoSlug="repo"
-        learningResourceId="1"
-        ref={afterMount} />, $("#testingDiv")[0]);
-    }
-  );
-  QUnit.test(
     "LearningResourcePanel.loader should populate its stuff",
     function(assert) {
       var div = document.createElement("div");
       assert.equal(0, $(div).find("textarea").size());
-      LearningResources.loader("repo", "1", function() {}, div);
-      assert.equal(2, $(div).find("textarea").size());
+      LearningResources.loader("repo", "1", function() {}, function() {}, div);
+      assert.equal(1, $(div).find("textarea").size());
     }
   );
 });

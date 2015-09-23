@@ -58,8 +58,6 @@ module.exports = function(config) {
 
     // list of files to exclude from coverage and testing
     exclude: [
-      "ui/static/ui/js/listing.js",
-      "ui/static/ui/js/csrf.js"
     ],
 
     // preprocess matching files before serving them to the browser

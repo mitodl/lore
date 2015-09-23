@@ -34,7 +34,7 @@ from learningresources.models import (
     StaticAsset,
     STATIC_ASSET_PREFIX,
 )
-from lore.settings import REST_FRAMEWORK
+from rest.pagination import LorePagination
 from roles.permissions import RepoPermission
 from search.sorting import LoreSortingFields
 from taxonomy.models import Vocabulary, Term
@@ -209,17 +209,50 @@ def repository_view(request, repo_slug):
             sortby_field)
     }
 
+    try:
+        page_size = int(request.GET.get(LorePagination.page_size_query_param))
+    except (ValueError, KeyError, TypeError):
+        page_size = LorePagination.page_size
+
+    if page_size <= 0:
+        page_size = LorePagination.page_size
+    elif page_size > LorePagination.max_page_size:
+        page_size = LorePagination.max_page_size
+
     context = {
         "repo": repo,
         "perms_on_cur_repo": get_perms(request.user, repo),
         "sorting_options_json": json.dumps(sorting_options),
         "exports_json": json.dumps(exports),
-        "page_size_json": json.dumps(REST_FRAMEWORK['PAGE_SIZE'])
+        "page_size_json": json.dumps(page_size)
     }
 
     return render(
         request,
         "repository.html",
+        context
+    )
+
+
+@login_required
+def repository_data_view(request, repo_slug):
+    """
+    View for repository page.
+    """
+    try:
+        repo = get_repo(repo_slug, request.user.id)
+    except NotFound:
+        raise Http404
+    except LorePermissionDenied:
+        raise PermissionDenied
+
+    context = {
+        "repo": repo
+    }
+
+    return render(
+        request,
+        "data.html",
         context
     )
 

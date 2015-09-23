@@ -1,6 +1,6 @@
-define('learning_resources', [
-  'react', 'jquery', 'lodash', 'utils'], function (
-  React, $, _, Utils) {
+define('learning_resources',
+  ['react', 'jquery', 'lodash', 'utils'],
+  function (React, $, _, Utils) {
   'use strict';
 
   var StatusBox = Utils.StatusBox;
@@ -40,7 +40,7 @@ define('learning_resources', [
       return (
         <div id="term-list-container" className="panel panel-default">
           <div className="panel-heading">
-              Taxonomy Terms applied to this Learning Resource
+              Terms applied to this Learning Resource
           </div>
           <ul id="term-list" className="list-group">
             {appliedVocabularies}
@@ -62,9 +62,14 @@ define('learning_resources', [
 
       var slug = this.props.selectedVocabulary.slug;
 
-      return <div className="col-sm-6">
+      return <div className="form-group">
+        <label htmlFor="vocab-{slug}"
+        className="col-sm-4 control-label">
+        Vocabularies</label>
+        <div className="col-sm-6">
           <Select2
             key="vocabChooser"
+            id="vocab-{slug}"
             className="form-control"
             placeholder={"Select a vocabulary"}
             options={options}
@@ -74,7 +79,8 @@ define('learning_resources', [
             multiple={false}
             allowTags={false}
             />
-        </div>;
+        </div>
+      </div>;
     },
     handleChange: function(e) {
       var selectedValue = _.pluck(
@@ -112,9 +118,13 @@ define('learning_resources', [
       if (this.props.selectedVocabulary.vocabulary_type === 'f') {
         allowTags = true;
       }
-      return <div className="col-sm-6">
+      return <div className="form-group">
+        <label htmlFor="term-{slug}"
+        className="col-sm-4 control-label">Terms</label>
+        <div className="col-sm-6">
           <Select2
             key={name}
+            id="term-{slug}"
             className="form-control"
             placeholder={"Select a value for " + name}
             options={options}
@@ -123,7 +133,8 @@ define('learning_resources', [
             multiple={this.props.selectedVocabulary.multi_terms}
             allowTags={allowTags}
             />
-        </div>;
+        </div>
+      </div>;
     },
 
     handleChange: function(e) {
@@ -242,7 +253,6 @@ define('learning_resources', [
     },
 
     render: function () {
-
       var vocabulariesAndTerms = this.state.vocabulariesAndTerms;
       var vocabSelector = "There are no terms for this resource";
       var termSelector = "";
@@ -273,26 +283,15 @@ define('learning_resources', [
       }
 
       return <div>
-        <form className="form-horizontal">
-          <StatusBox message={this.state.message} />
-          <textarea className="form-control textarea-xml"
-                    readOnly="true"
-                    valueLink={this.linkState('contentXml')}
-            />
+        <StatusBox message={this.state.message} />
 
-          <p className="text-right">
-            <a id="copy-textarea-xml" href="#"
-               className="btn btn-white"
-               onClick={this.selectXml}>Select XML</a>
-            <a className="btn btn-primary pull-left"
-               href={this.state.previewUrl} target="_blank">Preview</a>
-          </p>
+        <form className="form-horizontal">
 
           <div id="vocabularies" className="form-group">
               {vocabSelector} {termSelector}
           </div>
 
-          {termList}
+        {termList}
 
           <div className="form-group form-desc">
             <label className="col-sm-12 control-label">Description</label>
@@ -301,21 +300,31 @@ define('learning_resources', [
                 valueLink={this.linkState('description')}>
               </textarea>
           </div>
+          <p className="text-right">
+            <a className="btn btn-lg btn-primary pull-right"
+               href={this.state.previewUrl} target="_blank">Preview</a>
+          </p>
           <p>
             <button className="btn btn-lg btn-primary"
-                    onClick={this.saveForm}>
+                    onClick={this.saveLearningResourcePanel} >
               Save
+            </button> <button className="btn btn-lg btn-success"
+                    onClick={this.saveAndCloseLearningResourcePanel} >
+              Save and Close
             </button>
           </p>
         </form>
       </div>;
     },
-    selectXml: function (event) {
+    saveLearningResourcePanel: function (event) {
       event.preventDefault();
-      $('.textarea-xml').select();
+      this.saveForm(false);
     },
-    saveForm: function (event) {
+    saveAndCloseLearningResourcePanel: function (event) {
       event.preventDefault();
+      this.saveForm(true);
+    },
+    saveForm: function (closePanel) {
       var thiz = this;
 
       var terms = _.map(this.state.vocabulariesAndTerms, function (tuple) {
@@ -338,6 +347,9 @@ define('learning_resources', [
         thiz.setState({
           message: "Form saved successfully!"
         });
+        if (closePanel) {
+          thiz.props.closeLearningResourcePanel();
+        }
         thiz.props.refreshFromAPI();
       }).fail(function () {
         thiz.setState({
@@ -356,14 +368,12 @@ define('learning_resources', [
           return;
         }
 
-        var contentXml = data.content_xml;
         var learningResourceType = data.learning_resource_type;
         var description = data.description;
         var selectedTerms = data.terms;
         var previewUrl = data.preview_url;
 
         thiz.setState({
-          contentXml: contentXml,
           message: undefined,
           description: description,
           previewUrl: previewUrl,
@@ -419,7 +429,6 @@ define('learning_resources', [
     },
     getInitialState: function () {
       return {
-        contentXml: "",
         description: "",
         vocabulariesAndTerms: [],
         selectedVocabulary: {}
@@ -432,7 +441,10 @@ define('learning_resources', [
     TermSelect: TermSelect,
     VocabSelect: VocabSelect,
     LearningResourcePanel: LearningResourcePanel,
-    loader: function (repoSlug, learningResourceId, refreshFromAPI, container) {
+    loader: function (
+      repoSlug, learningResourceId, refreshFromAPI,
+      closeLearningResourcePanel, container
+    ) {
       // Unmount and remount the component to ensure that its state
       // is always up to date with the rest of the app.
       React.unmountComponentAtNode(container);
@@ -440,6 +452,7 @@ define('learning_resources', [
         repoSlug={repoSlug}
         learningResourceId={learningResourceId}
         refreshFromAPI={refreshFromAPI}
+        closeLearningResourcePanel={closeLearningResourcePanel}
         />, container);
     }
   };

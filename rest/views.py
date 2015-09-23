@@ -13,10 +13,10 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
-    RetrieveUpdateDestroyAPIView,
-    RetrieveUpdateAPIView,
     RetrieveAPIView,
     RetrieveDestroyAPIView,
+    RetrieveUpdateAPIView,
+    RetrieveUpdateDestroyAPIView,
 )
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -30,41 +30,44 @@ from exporter.tasks import export_resources
 from roles.permissions import GroupTypes, BaseGroupTypes
 from roles.api import (
     assign_user_to_repo_group,
-    remove_user_from_repo_group,
-    list_users_in_repo,
     is_last_admin_in_repo,
+    list_users_in_repo,
+    remove_user_from_repo_group,
 )
 from rest.serializers import (
-    VocabularySerializer,
+    CourseSerializer,
+    GroupSerializer,
+    LearningResourceExportSerializer,
+    LearningResourceExportTaskSerializer,
+    LearningResourceSerializer,
+    LearningResourceTypeSerializer,
+    RepositorySearchSerializer,
     RepositorySerializer,
+    StaticAssetSerializer,
     TermSerializer,
     UserGroupSerializer,
     UserSerializer,
-    GroupSerializer,
-    LearningResourceTypeSerializer,
-    LearningResourceSerializer,
-    LearningResourceExportSerializer,
-    LearningResourceExportTaskSerializer,
-    RepositorySearchSerializer,
-    StaticAssetSerializer,
+    VocabularySerializer,
 )
 from rest.permissions import (
-    AddRepoPermission,
     AddEditMetadataPermission,
-    ViewRepoPermission,
-    ViewVocabularyPermission,
-    ViewTermPermission,
-    ManageTaxonomyPermission,
+    AddRepoPermission,
+    ImportCoursePermission,
     ManageRepoMembersPermission,
-    ViewLearningResourcePermission,
+    ManageTaxonomyPermission,
     ViewLearningResourceExportPermission,
+    ViewLearningResourcePermission,
+    ViewRepoPermission,
     ViewStaticAssetPermission,
+    ViewTermPermission,
+    ViewVocabularyPermission,
 )
 from rest.util import CheckValidMemberParamMixin
 from search.api import construct_queryset, make_facet_counts
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
+    Course,
     LearningResourceType,
     LearningResource,
     StaticAsset,
@@ -111,6 +114,53 @@ class RepositoryDetail(RetrieveAPIView):
     def get_queryset(self):
         """Filter to this repository."""
         return Repository.objects.filter(slug=self.kwargs['repo_slug'])
+
+
+class CourseList(ListAPIView):
+    """REST list view for Courses."""
+    serializer_class = CourseSerializer
+    permission_classes = (
+        ViewRepoPermission,
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """
+        Filter coursed by repository
+        """
+        queryset = Course.objects.filter(
+            repository__slug=self.kwargs['repo_slug'])
+        return queryset.order_by('id')
+
+
+class CourseDetail(RetrieveDestroyAPIView):
+    """REST detail for Course"""
+    serializer_class = CourseSerializer
+    permission_classes = (
+        ViewRepoPermission,
+        ImportCoursePermission,
+        IsAuthenticated,
+    )
+
+    def get_object(self):
+        """
+        Return details about a course in a repo
+        """
+        try:
+            course = Course.objects.get(id=int(self.kwargs['course_id']))
+        except (Course.DoesNotExist, ValueError):
+            raise Http404()
+        if course.repository.slug != self.kwargs['repo_slug']:
+            raise Http404()
+        return course
+
+    @statsd.timer('lore.rest.course_detail_delete')
+    def delete(self, request, *args, **kwargs):
+        """
+        Deletes a course in a repo with all the related learning resources and
+        static assets
+        """
+        return super(CourseDetail, self).delete(request, *args, **kwargs)
 
 
 class VocabularyList(ListCreateAPIView):

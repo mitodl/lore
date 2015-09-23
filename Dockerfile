@@ -28,13 +28,6 @@ RUN pip install -r requirements.txt &&\
 RUN pip3 install -r requirements.txt &&\
     pip3 install -r test_requirements.txt
 
-# Install node development and production packages
-RUN mkdir /node
-COPY package.json /node/package.json
-RUN cd /node &&\
-    npm install &&\
-    npm install --production
-
 # Add project
 COPY . /src
 WORKDIR /src
@@ -45,8 +38,6 @@ RUN ./manage.py collectstatic --noinput
 RUN apt-get clean && apt-get purge
 USER mitodl
 
-# Setup node environment
-ENV PATH /src/node_modules/.bin:/node/node_modules/.bin:$PATH
 # Set pip cache folder, as it is breaking pip when it is on a shared volume
 ENV XDG_CACHE_HOME /tmp/.cache
 
