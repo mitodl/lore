@@ -26,7 +26,7 @@ class TestExport(RESTTestCase):
     """Test for export."""
 
     @override_settings(
-        DEFAULT_FILE_STORAGE='django.core.files.storage.FileSystemStorage'
+        DEFAULT_FILE_STORAGE='storages.backends.overwrite.OverwriteStorage'
     )
     def test_create_new_task(self):
         """Test a basic export."""
