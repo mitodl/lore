@@ -477,6 +477,16 @@ class LearningResourceList(ListAPIView):
             except ValueError:
                 raise ValidationError("id is not a number")
             queryset = queryset.filter(id__in=id_list)
+
+        vocab_slug = self.request.query_params.get('vocab_slug', None)
+        if vocab_slug is not None:
+            queryset = queryset.filter(terms__vocabulary__slug=vocab_slug)
+
+        type_names = self.request.query_params.getlist('type_name')
+        if type_names:
+            queryset = queryset.filter(
+                learning_resource_type__name__in=type_names
+            )
         return queryset
 
 
