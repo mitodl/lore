@@ -88,6 +88,14 @@ define('listing',
         $('.cd-panel').removeClass('is-visible');
       }
 
+      var loadManageTaxonomies = function () {
+        ManageTaxonomies.loader(
+          repoSlug,
+          refreshFromAPI,
+          showConfirmationDialog,
+          $('#taxonomy-component')[0]);
+      };
+
       $('[data-toggle=popover]').popover();
       //Close panels on escape keypress
       $(document).keyup(function(event) {
@@ -118,6 +126,7 @@ define('listing',
       //open the lateral panel
       $('.btn-taxonomies').on('click', function (event) {
         event.preventDefault();
+        loadManageTaxonomies();
         $('.cd-panel-2').addClass('is-visible');
       });
 
@@ -508,11 +517,6 @@ define('listing',
 
       // Initial refresh to populate page.
       refreshFromAPI();
-      ManageTaxonomies.loader(
-        repoSlug,
-        refreshFromAPI,
-        showConfirmationDialog,
-        $('#taxonomy-component')[0]);
     };
 
     return {

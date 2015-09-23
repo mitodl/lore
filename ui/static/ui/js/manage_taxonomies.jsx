@@ -281,6 +281,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       </div>;
 
     },
+    componentWillReceiveProps: function() {
+      this.reportMessage(undefined);
+    },
     reportMessage: function(message) {
       this.setState({message: message});
     },
@@ -539,9 +542,23 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         </div>
       );
     },
+    refreshTaxonomies: function(props) {
+      var thiz = this;
+      Utils.getVocabulariesAndTerms(props.repoSlug).then(
+        function(vocabularies) {
+          if (!thiz.isMounted()) {
+            return;
+          }
+
+          thiz.setState({vocabularies: vocabularies});
+        }
+      );
+    },
+    componentWillReceiveProps: function(nextProps) {
+      this.refreshTaxonomies(nextProps);
+    },
     componentDidMount: function() {
       var thiz = this;
-
       Utils.getCollection("/api/v1/learning_resource_types/").then(
         function(learningResourceTypes) {
         if (!thiz.isMounted()) {
@@ -552,15 +569,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           return type.name;
         });
         thiz.setState({learningResourceTypes: types});
-        Utils.getVocabulariesAndTerms(thiz.props.repoSlug).then(
-          function(vocabularies) {
-            if (!thiz.isMounted()) {
-              return;
-            }
-
-            thiz.setState({vocabularies: vocabularies});
-          }
-        );
+        thiz.refreshTaxonomies(thiz.props);
       });
     }
   });
