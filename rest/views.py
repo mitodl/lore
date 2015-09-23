@@ -8,7 +8,6 @@ from django.http.response import Http404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
-from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
