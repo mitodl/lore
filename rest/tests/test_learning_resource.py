@@ -28,7 +28,7 @@ from learningresources.models import (
     get_preview_url,
 )
 from importer.tasks import import_file
-from taxonomy.models import Vocabulary, Term
+from taxonomy.models import Vocabulary
 from roles.permissions import GroupTypes
 from roles.api import assign_user_to_repo_group
 
