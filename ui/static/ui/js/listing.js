@@ -214,7 +214,13 @@ define('listing',
 
       refreshFromAPI = function() {
         var newQuery = "?" + URI().search(queryMap).query();
-        History.replaceState(null, document.title, newQuery);
+        if (newQuery === "?") {
+          // Don't put ? in URL if empty
+          History.replaceState(null, document.title, ".");
+          newQuery = "";
+        } else {
+          History.replaceState(null, document.title, newQuery);
+        }
 
         var url = "/api/v1/repositories/" +
           listingOptions.repoSlug + "/search/" + newQuery;
