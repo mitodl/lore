@@ -205,11 +205,11 @@ class TestIndexing(SearchTestCase):
             return count
 
         set_cache_timeout(0)
-        with self.assertNumQueries(20):
+        with self.assertNumQueries(26):
             self.assertEqual(get_count(), 0)
 
         set_cache_timeout(60)
-        with self.assertNumQueries(9):
+        with self.assertNumQueries(12):
             self.assertEqual(get_count(), 1)
 
     def test_course_cache(self):

@@ -293,7 +293,7 @@ class TestViews(LoreTestCase):
         """Hit serve media"""
         self.assertEqual(
             settings.DEFAULT_FILE_STORAGE,
-            'django.core.files.storage.FileSystemStorage'
+            'storages.backends.overwrite.OverwriteStorage'
         )
         # upload a course
         self.upload_test_file()

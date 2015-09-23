@@ -1,15 +1,18 @@
 define('listing',
-  ['jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
+  ['csrf', 'jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
     'learning_resources', 'static_assets', 'utils',
-    'lr_exports', 'listing_resources', 'pagination',
-    'bootstrap', 'icheck', 'csrf'],
-  function ($, _, URI, History, ManageTaxonomies, LearningResources,
-            StaticAssets, Utils, Exports, ListingResources, Pagination) {
+    'lr_exports', 'listing_resources', 'pagination', 'xml_panel',
+    'bootstrap', 'icheck'],
+  function (CSRF, $, _, URI, History,
+            ManageTaxonomies, LearningResources, StaticAssets,
+            Utils, Exports, ListingResources, Pagination, XmlPanel) {
     'use strict';
 
     var loader = function (listingOptions, container) {
       var repoSlug = listingOptions.repoSlug;
       var loggedInUsername = listingOptions.loggedInUsername;
+
+      CSRF.setupCSRF();
 
       var EMAIL_EXTENSION = '@mit.edu';
 
@@ -81,14 +84,15 @@ define('listing',
             showMembersAlert(message, 'danger');
           });
       }
+      function closeLearningResourcePanel() {
+        $('.cd-panel').removeClass('is-visible');
+      }
 
       $('[data-toggle=popover]').popover();
       //Close panels on escape keypress
       $(document).keyup(function(event) {
         if (event.keyCode === 27) { // escape key maps to keycode `27`
-          if ($('.cd-panel').hasClass('is-visible')) {
-            $('.cd-panel').removeClass('is-visible');
-          }
+          closeLearningResourcePanel();
           if ($('.cd-panel-2').hasClass('is-visible')) {
             $('.cd-panel-2').removeClass('is-visible');
           }
@@ -106,7 +110,7 @@ define('listing',
       $('.cd-panel').on('click', function (event) {
         if ($(event.target).is('.cd-panel') ||
           $(event.target).is('.cd-panel-close')) {
-          $('.cd-panel').removeClass('is-visible');
+          closeLearningResourcePanel();
           event.preventDefault();
         }
       });
@@ -159,7 +163,7 @@ define('listing',
       var numPages = 0;
       var pageNum = 1;
       if (queryMap.page !== undefined) {
-        pageNum = queryMap.page[0];
+        pageNum = parseInt(queryMap.page[0]);
       }
 
       /**
@@ -197,10 +201,15 @@ define('listing',
 
       var openResourcePanel = function(resourceId) {
         LearningResources.loader(
-          repoSlug, resourceId, refreshFromAPI, $("#tab-1")[0]);
+          repoSlug,
+          resourceId,
+          refreshFromAPI,
+          closeLearningResourcePanel,
+          $("#tab-1")[0]
+        );
         $('.cd-panel').addClass('is-visible');
-        StaticAssets.loader(
-          repoSlug, resourceId, $("#tab-3")[0]);
+        StaticAssets.loader(repoSlug, resourceId, $("#tab-3")[0]);
+        XmlPanel.loader(repoSlug, resourceId, $("#tab-2")[0]);
       };
 
       refreshFromAPI = function() {
@@ -473,7 +482,7 @@ define('listing',
        */
       var updatePage = function(newPageNum) {
         queryMap.page = [newPageNum.toString()];
-        pageNum = newPageNum;
+        pageNum = parseInt(newPageNum);
 
         return refreshFromAPI();
       };

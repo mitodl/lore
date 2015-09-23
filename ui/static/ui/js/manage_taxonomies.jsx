@@ -12,20 +12,29 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         formatActionState: 'show',
         label: this.props.term.label,
         errorMessage: '',
+        showError: false
       };
     },
     render: function () {
-
       var label = null;
       var formatActionClassName = null;
+      var editButtonClass = 'format-button';
+      var deleteButtonClass = 'revert-button';
       if (this.state.formatActionState === 'edit') {
         label = <label className="help-inline control-label"> <input
-          ref="editText"
-          type="text"
-          valueLink={this.linkState('label')}
-          className='form-control edit-term-box' /> {this.state.errorMessage}
+          ref="editText" type="text" valueLink={this.linkState('label')}
+          className='form-control edit-term-box' /> <button
+          onClick={this.saveTerm}  type="button"
+          className="save-button btn btn-primary btn-sm editable-submit"><i
+          className="glyphicon glyphicon-ok"></i></button> <button type="button"
+          className="btn btn-default btn-sm editable-cancel"
+          onClick={this.cancelAction}><i
+          className="glyphicon glyphicon-remove"></i>
+          </button> {this.state.errorMessage}
         </label>;
-        formatActionClassName = "fa fa-save no-select";
+        formatActionClassName = "fa fa-pencil no-select";
+        editButtonClass = 'format-button disabled';
+        deleteButtonClass = 'revert-button disabled';
       } else if (this.state.formatActionState === 'show') {
         label = <label className="term-title"
           htmlFor="minimal-checkbox-1-11">{this.state.label}</label>;
@@ -33,15 +42,15 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       }
 
       var listClassName = "form-group";
-      if (this.state.errorMessage !== '') {
+      if (this.state.showError) {
         listClassName = "form-group has-error";
       }
 
       return <li className={listClassName}>
         <span className="utility-features">
-          <a onClick={this.formatHandler} className="format-button">
+          <a onClick={this.editTerm} className={editButtonClass}>
             <i className={formatActionClassName}></i>
-          </a> <a onClick={this.revertHandler} className="revert-button">
+          </a> <a className={deleteButtonClass}>
             <i className="fa fa-remove"></i>
           </a>
         </span>{label}</li>;
@@ -50,28 +59,25 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
      * If user selects edit button then open edit mode
      * Else call api to update term.
      */
-    formatHandler: function() {
-      var formatActionState = this.state.formatActionState;
-
-      if (formatActionState === 'show') {
-        this.setState({
-          formatActionState: 'edit',
+    editTerm: function() {
+      this.setState({
+          formatActionState: 'edit'
         }, function() {
-          var $editText = $(React.findDOMNode(this.refs.editText));
-          $editText.focus();
-        });
-      } else if (formatActionState === 'edit') {
-        if (this.state.label !== this.props.term.label) {
-          this.updateTermSubmit();
-        } else {
-          this.resetUtilityFeatures();
-        }
+        var $editText = $(React.findDOMNode(this.refs.editText));
+        $editText.focus();
+      });
+    },
+    saveTerm: function() {
+      if (this.state.label !== this.props.term.label) {
+        this.updateTermSubmit();
+      } else {
+        this.resetUtilityFeatures();
       }
     },
     /**
      * On Close button select reset term UI
     */
-    revertHandler : function() {
+    cancelAction : function() {
       var formatActionState = this.state.formatActionState;
       if (formatActionState === 'edit') {
         // user is in edit mode. Cancel edit if user presses cross icon.
@@ -89,10 +95,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
      */
     updateTermSubmit: function() {
       if (_.isEmpty(this.state.label)) {
-        this.setState({
-          errorMessage: "Can't save empty term. If you want to revert then" +
-            " please click the cancel button (x)"
-        });
+        this.setState({showError: true});
         return;
       }
       var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
@@ -110,6 +113,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         contentType: "application/json"
       }).fail(function() {
         thiz.setState({
+          showError: true,
           errorMessage: 'Unable to update term'
         });
       }).done(function(term) {
@@ -141,8 +145,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
               <span className="utility-features">
                 <a href="#">
                   <i className="fa fa-pencil"></i>
-                </a>
-                <a data-toggle="modal" data-target="#confirm-delete"
+                </a> <a data-toggle="modal" data-target="#confirm-delete"
                   onClick={this.onDeleteHandler} className="delete-vocabulary">
                   <i className="fa fa-remove"></i>
                 </a>
@@ -185,7 +188,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         actionButtonClass: "btn btn-danger btn-ok",
         title: "Confirm Delete",
         message: "Are you sure you want to delete vocabulary '" +
-          this.props.vocabulary.name + "'?",
+          this.props.vocabulary.name + "'? ",
+        description: "Deleting this vocabulary will remove it from all " +
+          "learning resources.",
         confirmationHandler: this.confirmedDeleteResponse
       };
       this.props.renderConfirmationDialog(options);
@@ -504,9 +509,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
             terms: terms,
             vocabulary: tuple.vocabulary
           };
-        } else {
-          return tuple;
         }
+        return tuple;
       });
       this.setState({vocabularies: vocabularies});
     },

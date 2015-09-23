@@ -61,7 +61,8 @@ define('static_assets', [
       // is always up to date with the rest of the app.
       React.unmountComponentAtNode(container);
       React.render(<StaticAssetsPanel
-        repoSlug={repoSlug} learningResourceId={learningResourceId}
+        repoSlug={repoSlug}
+        learningResourceId={learningResourceId}
         key={[repoSlug, learningResourceId]}
         />, container);
     }

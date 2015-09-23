@@ -213,3 +213,20 @@ class ViewLearningResourceExportPermission(BasePermission):
         username = view.kwargs['username']
 
         return request.user.username == username
+
+
+class ImportCoursePermission(BasePermission):
+    """
+    Checks that the user has permission to import a course.
+    The same permission is used to check if the user can delete a course.
+    """
+    def has_permission(self, request, view):
+        try:
+            repo = get_repo(view.kwargs['repo_slug'], request.user.id)
+        except NotFound:
+            raise Http404()
+        except PermissionDenied:
+            return False
+        if request.method in SAFE_METHODS:
+            return True
+        return RepoPermission.import_course[0] in get_perms(request.user, repo)

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load staticfiles compress %}
+{% block title %}Listing{% endblock %}
+{% block content %}
+
+<style>
+.container {
+  width: 100%;
+}
+</style>
+<div id="data">
+
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="lore-pagination" id="lore-pagination">
+    </div>
+  </div>
+</div>
+{% include "includes/resource_panel.html" %}
+<!-- Modal -->
+<div class="modal fade" id="progress-modal" tabindex="-1" role="dialog" aria-labelledby="progressModal">
+  <div class="modal-dialog" role="document">
+  </div>
+</div>
+<div id="confirmation-container"></div>
+{% endblock %}
+{% block postcontent %}
+{{ block.super }}
+{% compress js %}
+<script type="text/jsx"
+        src="{% static "ui/js/learning_resources.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/static_assets.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/utils.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/lore_data_table.jsx" %}">
+</script>
+{% endcompress %}
+<script type="text/javascript">
+require(["jquery", "utils", "lore_data_table"],
+        function($, Utils, LoreDataTable) {
+  var repoSlug = "{{ repo.slug|escapejs }}";
+
+  $(function() {
+    Utils.getCollection("/api/v1/repositories/" + repoSlug + "/search/?page_size=1000").then(function(results) {
+      LoreDataTable.loader(repoSlug, results, $("#data")[0]);
+    });
+  });
+});
+</script>
+{% compress css %}
+    <link
+       rel="stylesheet"
+       href="{% static "lib/css/index.min.css" %}" />
+{% endcompress %}
+{% endblock %}
