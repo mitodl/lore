@@ -219,15 +219,15 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
         removed. Note that partial_update will call this function too.
         """
         vocab = self.get_object()
-        if 'learning_resource_types' in self.request.data:
+        new_types = self.request.data.get('learning_resource_types', None)
+        if new_types is not None:
             # Since LearningResourceTypes indicate which relationships
             # are valid between Terms and LearningResources, we need to
             # remove the newly invalid relationships caused by this update.
-            new_types = set(self.request.data['learning_resource_types'])
             old_types = set(
                 t.name for t in vocab.learning_resource_types.all()
             )
-            removed_types = old_types - new_types
+            removed_types = old_types - set(new_types)
 
             with transaction.atomic():
                 for term in vocab.term_set.all():
