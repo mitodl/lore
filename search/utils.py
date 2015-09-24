@@ -37,12 +37,22 @@ def get_vocab_names():
 def get_conn():
     """
     Lazily create the connection.
+
+    Upon creating the connection, create the index if necessary.
     """
     # pylint: disable=global-statement
     # This is ugly. Any suggestions on a way that doesn't require "global"?
     global _CONN
     if _CONN is None:
         _CONN = connections.create_connection(hosts=[URL])
+
+    # Make sure everything exists.
+    if not _CONN.indices.exists(INDEX_NAME):
+        _CONN.indices.create(INDEX_NAME)
+
+    mappings = _CONN.indices.get_mapping()[INDEX_NAME]["mappings"]
+    if DOC_TYPE not in mappings.keys():
+        _create_mapping()
     return _CONN
 
 
@@ -256,7 +266,6 @@ def clear_index():
         conn.indices.delete(INDEX_NAME)
         conn.indices.create(INDEX_NAME)
         conn.indices.refresh()
-    create_mapping()
 
     # re-index all existing LearningResource instances:
     index_resources(LearningResource.objects.all())
@@ -322,12 +331,18 @@ def create_mapping():
     """
 
     # Create the index if it doesn't exist.
-    conn = get_conn()
-    if not conn.indices.exists(INDEX_NAME):
-        conn.indices.create(INDEX_NAME)
+    get_conn()
+
+
+def _create_mapping():
+    """
+    Actually create the mapping, including deleting it if it's there
+    so we can create it.
+    """
+
     # Delete the mapping if an older version exists.
-    if conn.indices.exists_type(index=INDEX_NAME, doc_type=DOC_TYPE):
-        conn.indices.delete_mapping(index=INDEX_NAME, doc_type=DOC_TYPE)
+    if _CONN.indices.exists_type(index=INDEX_NAME, doc_type=DOC_TYPE):
+        _CONN.indices.delete_mapping(index=INDEX_NAME, doc_type=DOC_TYPE)
 
     mapping = Mapping(DOC_TYPE)
 
@@ -354,7 +369,7 @@ def create_mapping():
     # LearningResource instances. This function will probably only
     # ever be called by migrations.
     index_resources(LearningResource.objects.all())
-    conn.indices.refresh()
+    _CONN.indices.refresh()
 
 
 def refresh_index():
