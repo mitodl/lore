@@ -20,7 +20,10 @@ from rest.tests.base import (
     as_json,
     API_BASE,
 )
-from learningresources.api import get_resources
+from learningresources.api import (
+    get_resources,
+    get_resource,
+)
 from learningresources.models import (
     LearningResource,
     LearningResourceType,
@@ -28,7 +31,7 @@ from learningresources.models import (
     get_preview_url,
 )
 from importer.tasks import import_file
-from taxonomy.models import Vocabulary
+from taxonomy.models import Vocabulary, Term
 from roles.permissions import GroupTypes
 from roles.api import assign_user_to_repo_group
 
@@ -110,31 +113,119 @@ class TestLearningResource(RESTTestCase):
     def test_learning_resource_filter(self):
         """Test for filtering LearningResources by ids."""
 
-        def get_filtered(ids, expected_status=HTTP_200_OK):
+        def get_filtered(ids=None, vocab_slug=None, types=None,
+                         expected_status=HTTP_200_OK):
             """Return list of LearningResources in shopping cart."""
             url_base = "{repo_base}{repo_slug}/learning_resources/".format(
                 repo_base=REPO_BASE,
                 repo_slug=self.repo.slug,
             )
-            resp = self.client.get("{url_base}?id={ids}".format(
+
+            params = []
+            if ids is not None:
+                params.append("id={ids}".format(
+                    ids=",".join([str(s) for s in ids])
+                ))
+
+            if vocab_slug is not None:
+                params.append("vocab_slug={slug}".format(
+                    slug=vocab_slug
+                ))
+
+            if types is not None:
+                for type_name in types:
+                    params.append("type_name={name}".format(name=type_name))
+
+            params_line = ""
+            if params:
+                params_line = "?" + "&".join(params)
+            resp = self.client.get("{url_base}{params_line}".format(
                 url_base=url_base,
-                ids=",".join([str(s) for s in ids])
+                params_line=params_line
             ))
             self.assertEqual(expected_status, resp.status_code)
             if expected_status == HTTP_200_OK:
                 return sorted([x['id'] for x in as_json(resp)['results']])
 
+        # Filter by id
         self.import_course_tarball(self.repo)
-        self.assertEqual([], get_filtered([]))
-        get_filtered(["not-a-number"],
+        self.assertEqual([], get_filtered(ids=[]))
+        get_filtered(ids=["not-a-number"],
                      expected_status=HTTP_400_BAD_REQUEST)
-        self.assertEqual([], get_filtered([-1]))
+        self.assertEqual([], get_filtered(ids=[-1]))
 
         all_ids = list(get_resources(
             self.repo.id).values_list('id', flat=True))
-        self.assertEqual(sorted(all_ids), get_filtered(all_ids))
+        self.assertEqual(sorted(all_ids), get_filtered(ids=all_ids))
         self.assertEqual(
-            sorted(all_ids[:5]), get_filtered(all_ids[:5]))
+            sorted(all_ids[:5]), get_filtered(ids=all_ids[:5]))
+
+        # Assign term to resource
+        vocab1_slug = self.create_vocabulary(self.repo.slug)['slug']
+        term1_slug = self.create_term(self.repo.slug, vocab1_slug)['slug']
+
+        vocab2_dict = dict(self.DEFAULT_VOCAB_DICT)
+        vocab2_dict['name'] = 'two'
+        vocab2_slug = self.create_vocabulary(
+            self.repo.slug, vocab2_dict)['slug']
+        term2_slug = self.create_term(
+            self.repo.slug, vocab2_slug)['slug']
+
+        resource1 = get_resource(all_ids[0], self.user.id)
+        resource2 = get_resource(all_ids[1], self.user.id)
+
+        # Verify no vocabularies come up in filter
+        self.assertEqual([], get_filtered(vocab_slug=vocab1_slug))
+        self.assertEqual([], get_filtered(vocab_slug=vocab2_slug))
+
+        # Assign terms
+        resource1.terms.add(Term.objects.get(slug=term1_slug))
+        resource2.terms.add(Term.objects.get(slug=term2_slug))
+
+        # Filter by vocabulary
+        self.assertEqual(
+            [resource1.id], get_filtered(vocab_slug=vocab1_slug)
+        )
+        self.assertEqual(
+            [resource1.id], get_filtered(
+                ids=[resource1.id], vocab_slug=vocab1_slug
+            )
+        )
+        self.assertEqual(
+            [], get_filtered(
+                ids=[resource2.id], vocab_slug=vocab1_slug
+            )
+        )
+        self.assertEqual(
+            [], get_filtered(
+                ids=[resource1.id], vocab_slug=vocab2_slug
+            )
+        )
+
+        # Filter by type
+        self.assertNotEqual(
+            resource1.learning_resource_type.name,
+            resource2.learning_resource_type.name
+        )
+        self.assertEqual(
+            sorted([lr.id for lr in LearningResource.objects.filter(
+                learning_resource_type=resource1.learning_resource_type
+            )]), get_filtered(
+                types=[resource1.learning_resource_type.name]
+            )
+        )
+        self.assertEqual(
+            sorted([lr.id for lr in LearningResource.objects.filter(
+                learning_resource_type=resource2.learning_resource_type
+            )]), get_filtered(
+                types=[resource2.learning_resource_type.name]
+            )
+        )
+        self.assertEqual(
+            [], get_filtered(
+                types=["missing"]
+            )
+        )
 
     def test_filefield_serialization(self):
         """Make sure that URL output is turned on in settings."""
