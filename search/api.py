@@ -24,7 +24,7 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
             If present, a list of facets to narrow the search with.
         sortby (unicode): If present, order by this sorting option.
     Returns:
-        haystack.query.SearchQuerySet: The queryset.
+        search.utils/SearchResults: The search results.
     """
 
     if selected_facets is None:
@@ -77,7 +77,8 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
                 value = get_term_label(value)
         terms[key] = value
 
-    # Future: Return this instead of queryset. ^_^
+    # This is sneakily being returned instead of the
+    # Haystack queryset created above.
     results = search_index(
         tokens=tokens,
         repo_slug=repo_slug,
