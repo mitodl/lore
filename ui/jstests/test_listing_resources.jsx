@@ -266,12 +266,12 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
           assert.deepEqual(openResourcePanelCount, {});
           var resourceLink = $(node).find("h2 a")[0];
           React.addons.TestUtils.Simulate.click(resourceLink);
-          assert.equal(openResourcePanelCount[resource.lid], true);
+          assert.equal(openResourcePanelCount[resource.id], true);
 
           assert.deepEqual(updateExportLinkClickCount, {});
           var exportLink = $(node).find(".link-export")[0];
           React.addons.TestUtils.Simulate.click(exportLink);
-          assert.equal(updateExportLinkClickCount[resource.lid], false);
+          assert.equal(updateExportLinkClickCount[resource.id], false);
 
           var $firstRow = $(node).find("h2");
           var $secondRow = $(node).find(".tile-meta").first();
@@ -280,7 +280,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
 
           // Title link
           assert.equal(resource.title, $firstRow.find("a").text());
-          assert.equal(resource.lid,
+          assert.equal(resource.id,
             $firstRow.find("a").data("learningresource-id"));
 
           // Description path
@@ -313,7 +313,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
         React.addons.TestUtils.renderIntoDocument(
           <ListingResource
             resource={resource}
-            exportSelected={_.includes(listingOptions.allExports, resource.lid)}
+            exportSelected={_.includes(listingOptions.allExports, resource.id)}
             imageDir={listingOptions.imageDir}
             repoSlug={listingOptions.repoSlug}
             openResourcePanel={openResourcePanel}
