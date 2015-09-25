@@ -6,8 +6,7 @@ from __future__ import unicode_literals
 
 from django.core.management.base import BaseCommand
 
-from learningresources.models import LearningResource
-from search.utils import index_resources
+from search.utils import clear_index, create_mapping
 
 
 class Command(BaseCommand):
@@ -18,4 +17,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """Command handler"""
-        index_resources(LearningResource.objects.all())
+        clear_index()
+        create_mapping()
