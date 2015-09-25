@@ -39,7 +39,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       "description": "Description A",
       "course": "0.001",
       "xa_avg_grade": 68.0,
-      "lid": 23,
+      "id": 23,
       "title": "Circuit Schematic Builder",
       "description_path": "Ops / Content/problem tests / Sample problems" +
       " / Circuit schematic builder / Circuit Schematic Builder",
@@ -53,7 +53,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       "description": "Description B",
       "course": "0.001",
       "xa_avg_grade": 75.0,
-      "lid": 45,
+      "id": 45,
       "title": "LTI",
       "description_path": "Ops / LTI",
       "xa_nr_views": 8185,
@@ -178,8 +178,8 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       };
 
       var openResourcePanelCalled = {};
-      var openResourcePanel = function(lid) {
-        openResourcePanelCalled[lid] = true;
+      var openResourcePanel = function(id) {
+        openResourcePanelCalled[id] = true;
       };
 
       var afterMount = function(component) {
@@ -248,13 +248,13 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
 
         var resource = sampleResources[1];
         var openResourcePanelCount = {};
-        var openResourcePanel = function(lid) {
-          openResourcePanelCount[lid] = true;
+        var openResourcePanel = function(id) {
+          openResourcePanelCount[id] = true;
         };
 
         var updateExportLinkClickCount = {};
-        var updateExportLinkClick = function(lid, selected) {
-          updateExportLinkClickCount[lid] = selected;
+        var updateExportLinkClick = function(id, selected) {
+          updateExportLinkClickCount[id] = selected;
         };
 
         var afterMount = function(component) {
