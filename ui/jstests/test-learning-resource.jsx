@@ -488,6 +488,67 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     }
   );
 
+  QUnit.test('If terms or description are changed, clear error messages',
+    function (assert) {
+      var done = assert.async();
+
+      var afterMount = function (component) {
+        waitForAjax(3, function () {
+          // Set component message then type into description to clear it.
+          component.setState({message: "Hello, world!"}, function () {
+            var textarea = React.addons.TestUtils.
+              findRenderedDOMComponentWithTag(
+              component,
+              'textarea'
+            );
+
+            React.addons.TestUtils.Simulate.change(textarea, {value: "x"});
+            component.forceUpdate(function () {
+              assert.equal(component.state.message, undefined);
+
+              // Reset component message then adjust vocabs list to clear it.
+              component.setState({message: "Hello, world!"}, function () {
+                var selects = _.map(React.addons.TestUtils.
+                  scryRenderedDOMComponentsWithTag(
+                  component,
+                  'select'
+                ), function(piece) {
+                  return React.findDOMNode(piece);
+                });
+
+                // First is vocab, second is terms
+                assert.equal(selects.length, 2);
+                $(selects[0]).val('difficulty').trigger('change');
+                component.forceUpdate(function () {
+                  assert.equal(component.state.message, undefined);
+
+                  // Reset component message then adjust term list to clear it.
+                  component.setState({message: {error: "Error!"}}, function () {
+                    $(selects[1]).val('required').trigger('change');
+
+                    component.forceUpdate(function () {
+                      assert.equal(component.state.message, undefined);
+
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        <LearningResourcePanel
+          repoSlug="repo"
+          closeLearningResourcePanel={function() {}}
+          learningResourceId="1"
+          ref={afterMount}/>
+      );
+    }
+  );
+
   QUnit.test(
     "LearningResourcePanel.loader should populate its stuff",
     function(assert) {
