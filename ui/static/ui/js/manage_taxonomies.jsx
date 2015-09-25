@@ -152,12 +152,12 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
               </span> <a className="accordion-toggle vocab-title"
                          data-toggle="collapse"
                          data-parent="#accordion"
-                         href={'#collapse-' + this.props.vocabulary.id}>
+                         href={'#collapse-vocab-' + this.props.vocabulary.id}>
                 {this.props.vocabulary.name}
               </a>
             </h4>
           </div>
-          <div id={'collapse-' + this.props.vocabulary.id}
+          <div id={'collapse-vocab-' + this.props.vocabulary.id}
                className="panel-collapse collapse in">
             <div className="panel-body">
               <ul className="icheck-list with-utility-features">
