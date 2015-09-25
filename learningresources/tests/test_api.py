@@ -299,6 +299,28 @@ class TestDescriptionPath(LoreTestCase):
             self.resource.title,
             self.resource.description_path
         )
+        # update the title of the child to the "missing title" string
+        self.resource.title = api.MissingTitle.for_title_field
+        self.resource.save()
+        api.update_description_path(self.resource)
+        self.assertEqual(
+            self.resource.title,
+            api.MissingTitle.for_title_field
+        )
+        self.assertEqual(
+            self.resource.description_path,
+            api.MissingTitle.for_desc_path_field
+        )
+        # update also the child
+        child_res.parent.refresh_from_db()
+        api.update_description_path(child_res)
+        self.assertEqual(
+            child_res.description_path,
+            api.join_description_paths(
+                api.MissingTitle.for_desc_path_field,
+                child_res.title
+            )
+        )
 
     def test_update_description_path_command(self):
         """
