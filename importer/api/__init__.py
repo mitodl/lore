@@ -21,11 +21,12 @@ from importer.tasks import populate_xanalytics_fields
 from learningresources.api import (
     create_course,
     create_resource,
-    import_static_assets,
     create_static_asset,
-    get_video_sub,
-    join_description_paths,
     get_resources,
+    get_video_sub,
+    import_static_assets,
+    join_description_paths,
+    MissingTitle,
 )
 from learningresources.models import (
     LearningResource,
@@ -157,9 +158,13 @@ def import_children(course, element, parent, parent_dpath):
         None
     """
     # pylint: disable=too-many-locals
-    title = element.attrib.get("display_name", "MISSING")
+    title = element.attrib.get(
+        "display_name", MissingTitle.for_title_field)
+    desc_path = title
+    if desc_path == MissingTitle.for_title_field:
+        desc_path = MissingTitle.for_desc_path_field
     mpath = etree.ElementTree(element).getpath(element)
-    dpath = join_description_paths(parent_dpath, title)
+    dpath = join_description_paths(parent_dpath, desc_path)
     resource = create_resource(
         course=course, parent=parent, resource_type=element.tag,
         title=title,
