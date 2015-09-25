@@ -82,7 +82,7 @@ def create_course(org, repo_id, course_number, run, user_id):
         "repository_id": repo_id,
     }
     with transaction.atomic():
-        course, _ = Course.objects.get_or_create(**kwargs)
+        course = Course.objects.create(**kwargs)
     return course
 
 
