@@ -62,14 +62,15 @@ define('learning_resources',
 
       var slug = this.props.selectedVocabulary.slug;
 
+      var vocabId = "vocab-" + slug;
       return <div className="form-group">
-        <label htmlFor="vocab-{slug}"
+        <label htmlFor={vocabId}
         className="col-sm-4 control-label">
         Vocabularies</label>
         <div className="col-sm-6">
           <Select2
             key="vocabChooser"
-            id="vocab-{slug}"
+            id={vocabId}
             className="form-control"
             placeholder={"Select a vocabulary"}
             options={options}
@@ -90,6 +91,9 @@ define('learning_resources',
       this.props.setValues(
         _.pluck(this.props.vocabs, 'vocabulary'), selectedValue[0]
       );
+
+      // clear message
+      this.props.reportMessage(undefined);
     }
   });
 
@@ -118,13 +122,14 @@ define('learning_resources',
       if (this.props.selectedVocabulary.vocabulary_type === 'f') {
         allowTags = true;
       }
+      var termId = "term-" + name;
       return <div className="form-group">
-        <label htmlFor="term-{slug}"
+        <label htmlFor={termId}
         className="col-sm-4 control-label">Terms</label>
         <div className="col-sm-6">
           <Select2
             key={name}
-            id="term-{slug}"
+            id={termId}
             className="form-control"
             placeholder={"Select a value for " + name}
             options={options}
@@ -142,6 +147,10 @@ define('learning_resources',
         _.filter(e.target.options, function(option) {
           return option.selected && option.value !== null;
         }), 'value');
+
+      // clear messages
+      this.props.reportMessage(undefined);
+
       // check if the current vocabulary allows free tagging and in case add
       // the new tags before proceeding
       if (this.props.selectedVocabulary.vocabulary_type === 'f') {
@@ -242,7 +251,8 @@ define('learning_resources',
       var selectedVocabulary = this.state.selectedVocabulary;
       selectedVocabulary.terms.push(termObj);
       this.setState({
-        selectedVocabulary: selectedVocabulary
+        selectedVocabulary: selectedVocabulary,
+        message: undefined
       });
     },
 
@@ -264,6 +274,7 @@ define('learning_resources',
             vocabs={vocabulariesAndTerms}
             selectedVocabulary={this.state.selectedVocabulary}
             setValues={this.setSelectedVocabulary}
+            reportMessage={this.reportMessage}
           />;
 
         termSelector =
@@ -297,7 +308,8 @@ define('learning_resources',
             <label className="col-sm-12 control-label">Description</label>
               <textarea
                 className="form-control col-sm-12 textarea-desc"
-                valueLink={this.linkState('description')}>
+                value={this.state.description}
+                onChange={this.handleDescription}>
               </textarea>
           </div>
           <p className="text-right">
@@ -315,6 +327,13 @@ define('learning_resources',
           </p>
         </form>
       </div>;
+    },
+    handleDescription: function(event) {
+      event.preventDefault();
+      this.setState({
+        description: event.target.value,
+        message: undefined
+      });
     },
     saveLearningResourcePanel: function (event) {
       event.preventDefault();
