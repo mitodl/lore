@@ -573,6 +573,16 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
         assert.equal($vocabLinks.length, 1);
         assert.equal($vocabLinks[0].innerHTML, vocabulary.name);
 
+        // assert collapse id and href
+        assert.equal(
+          $(node).find(".panel-collapse.collapse.in").attr("id"),
+          "collapse-vocab-" + vocabulary.id
+        );
+        assert.equal(
+          $(node).find("a.accordion-toggle").attr("href"),
+          "#collapse-vocab-" + vocabulary.id
+        );
+
         //test items
         var devItems = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
