@@ -62,14 +62,15 @@ define('learning_resources',
 
       var slug = this.props.selectedVocabulary.slug;
 
+      var vocabId = "vocab-" + slug;
       return <div className="form-group">
-        <label htmlFor="vocab-{slug}"
+        <label htmlFor={vocabId}
         className="col-sm-4 control-label">
         Vocabularies</label>
         <div className="col-sm-6">
           <Select2
             key="vocabChooser"
-            id="vocab-{slug}"
+            id={vocabId}
             className="form-control"
             placeholder={"Select a vocabulary"}
             options={options}
@@ -118,13 +119,14 @@ define('learning_resources',
       if (this.props.selectedVocabulary.vocabulary_type === 'f') {
         allowTags = true;
       }
+      var termId = "term-" + name;
       return <div className="form-group">
-        <label htmlFor="term-{slug}"
+        <label htmlFor={termId}
         className="col-sm-4 control-label">Terms</label>
         <div className="col-sm-6">
           <Select2
             key={name}
-            id="term-{slug}"
+            id={termId}
             className="form-control"
             placeholder={"Select a value for " + name}
             options={options}
