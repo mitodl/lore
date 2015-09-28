@@ -22,6 +22,6 @@ class Command(BaseCommand):
         # updating the learning resources in the order they were
         # added to the database: this is  to process parents before children
         with transaction.atomic():
-            for learning_resource in LearningResource.objects.all(
-            ).order_by('id'):
+            all_learning_resources = LearningResource.objects.order_by('id')
+            for learning_resource in all_learning_resources.iterator():
                 update_description_path(learning_resource)
