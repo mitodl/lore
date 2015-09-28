@@ -18,7 +18,8 @@ def replace_missing_title(apps, schema_editor):
     new_title = 'Missing Title'
     LearningResource = apps.get_model("learningresources", "LearningResource")
     # update description path
-    for learning_resource in LearningResource.objects.all().order_by('id'):
+    all_learning_resources = LearningResource.objects.order_by('id')
+    for learning_resource in all_learning_resources.iterator():
         if learning_resource.title == 'MISSING':
             learning_resource.title = new_title
             learning_resource.save()

@@ -385,22 +385,23 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
     });
 
     QUnit.test("Assert Facets component", function(assert) {
+      var facetId = "1";
       var valuesWithMissing = {
-        "facet": {"key": "1", "label": "a", "missing_count": 3},
+        "facet": {"key": facetId, "label": "a", "missing_count": 3},
         "values": [
           {"count": 2, "key": "1", "label": "t1"},
           {"count": 2, "key": "2", "label": "t2"}
         ]
       };
       var valuesWithNoMissing = {
-        "facet": {"key": "1", "label": "a", "missing_count": 0},
+        "facet": {"key": facetId, "label": "a", "missing_count": 0},
         "values": [
           {"count": 2, "key": "1", "label": "t1"},
           {"count": 2, "key": "2", "label": "t2"}
         ]
       };
       var valuesWithoutMissing = {
-        "facet": {"key": "1", "label": "a"},
+        "facet": {"key": facetId, "label": "a"},
         "values": [
           {"count": 2, "key": "1", "label": "t1"},
           {"count": 2, "key": "2", "label": "t2"}
@@ -422,6 +423,14 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
           assert.deepEqual(
             _.map($node.find("label"), function(x) { return $(x).text(); }),
             expectedLabels
+          );
+          assert.equal(
+            $node.find(".panel-collapse.collapse.in").first().attr("id"),
+            "collapse-facetgroup-" + facetId
+          );
+          assert.equal(
+            $node.find("a.accordion-toggle").first().attr("href"),
+            "#collapse-facetgroup-" + facetId
           );
 
           done();

@@ -47,9 +47,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
 
       return <li className={listClassName}>
         <span className="utility-features">
-          <a onClick={this.editTerm} className={editButtonClass}>
+          <a href="#" onClick={this.editTerm} className={editButtonClass}>
             <i className={formatActionClassName}></i>
-          </a> <a className={deleteButtonClass}>
+          </a> <a href="#" className={deleteButtonClass}>
             <i className="fa fa-remove"></i>
           </a>
         </span>{label}</li>;
@@ -144,20 +144,20 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
               <span className="utility-features">
                 <a href="#" onClick={this.onEdit}>
                   <i className="fa fa-pencil"></i>
-                </a>
-                <a data-toggle="modal" data-target="#confirm-delete"
+                </a> <a href="#"
+                        data-toggle="modal" data-target="#confirm-delete"
                   onClick={this.onDeleteHandler} className="delete-vocabulary">
                   <i className="fa fa-remove"></i>
                 </a>
               </span> <a className="accordion-toggle vocab-title"
                          data-toggle="collapse"
                          data-parent="#accordion"
-                         href={'#collapse-' + this.props.vocabulary.id}>
+                         href={'#collapse-vocab-' + this.props.vocabulary.id}>
                 {this.props.vocabulary.name}
               </a>
             </h4>
           </div>
-          <div id={'collapse-' + this.props.vocabulary.id}
+          <div id={'collapse-vocab-' + this.props.vocabulary.id}
                className="panel-collapse collapse in">
             <div className="panel-body">
               <ul className="icheck-list with-utility-features">
@@ -170,7 +170,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
                       placeholder="Add new term..."
                       />
                       <span className="input-group-btn">
-                        <a className="btn btn-white"
+                        <a href="#" className="btn btn-white"
                           type="button" onClick={this.handleAddTermClick}><i
                           className="fa fa-plus-circle"
                         ></i></a>
@@ -221,10 +221,14 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
     onKeyUp: function(e) {
       if (e.key === "Enter") {
         e.preventDefault();
-        this.handleAddTermClick();
+        this.handleAddTerm();
       }
     },
-    handleAddTermClick: function() {
+    handleAddTermClick: function(e) {
+      e.preventDefault();
+      this.handleAddTerm();
+    },
+    handleAddTerm: function() {
       var thiz = this;
       var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
         '/vocabularies/';

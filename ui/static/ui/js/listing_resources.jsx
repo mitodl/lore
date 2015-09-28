@@ -104,7 +104,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
             />;
         }
 
-        var collapseId = "collapse-" + this.props.id;
+        var collapseId = "collapse-facetgroup-" + this.props.facet.key;
 
         return <div className="panel panel-default">
           <div className="panel-heading">
