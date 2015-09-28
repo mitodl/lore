@@ -17,6 +17,7 @@ from elasticsearch_dsl import Search, Mapping, query
 from statsd.defaults.django import statsd
 
 from learningresources.models import get_preview_url, LearningResource
+from lore.celery import async
 from search.search_indexes import get_course_metadata
 from taxonomy.models import Vocabulary
 
@@ -376,6 +377,19 @@ def refresh_index():
     """
     Force a refresh instead of waiting for it to happen automatically.
     This should only be necessary during tests.
+
+    When this was switched to use Celery,
+    _refresh_index() was created instead of just updating all existing calls
+    to refresh_index() to call .delay() because that makes it easy to add any
+    code that needs to call refresh_index in the future being aware of Celery.
+    """
+    _refresh_index.delay()
+
+
+@async.task
+def _refresh_index():
+    """
+    Refresh the Elasticsearch index via Celery.
     """
     conn = get_conn()
     conn.indices.refresh(index=INDEX_NAME)
