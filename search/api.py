@@ -9,7 +9,6 @@ from haystack.query import SearchQuerySet
 from search.sorting import LoreSortingFields
 from search.utils import search_index
 from taxonomy.models import Vocabulary, Term
-from ui.views import get_vocabularies
 
 
 def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
@@ -87,83 +86,6 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
     )
 
     return results
-
-
-def make_facet_counts(repo_slug, queryset):
-    """
-    Facets on every facet available and provides a data structure
-    of facet count information ready for API use.
-
-    Args:
-        repo_slug (unicode): The slug for the repository.
-        queryset (haystack.query.SearchQuerySet):
-            The queryset to use for counting facets.
-    Returns:
-        dict:
-            A data structure with facet count information. It's structured
-            like this:
-            {"resource_type": {
-                "facet": {"key": "resource_type", "label": "Item Type"},
-                "values": [
-                    {"count": 39, "key": "vertical", "label": "vertical"}
-                    ...
-
-    """
-
-    def reformat(key, values, missing_count=None):
-        """Convert tuples to dictionaries so we can use keys."""
-        reformatted = {
-            "facet": {
-                "key": str(key[0]),
-                "label": key[1]
-            },
-            "values": [
-                {
-                    "label": value_label,
-                    "key": str(value_key),
-                    "count": count
-                } for value_key, value_label, count in values
-            ]
-        }
-        if missing_count is not None:
-            reformatted["facet"]["missing_count"] = missing_count
-        return reformatted
-
-    for facet in ('course', 'run', 'resource_type'):
-        queryset = queryset.facet(facet)
-
-    vocabularies = Vocabulary.objects.filter(repository__slug=repo_slug)
-
-    for vocabulary in vocabularies:
-        queryset = queryset.facet(vocabulary.id)
-
-    facet_counts = queryset.facet_counts()
-    vocabs = get_vocabularies(facet_counts)
-
-    # return dictionary
-    ret_dict = {}
-
-    # process vocabularies
-    for key, values in vocabs.items():
-        missing_count = queryset.filter(
-            _missing_='{0}_exact'.format(key[0])).count()
-        ret_dict[key[0]] = reformat(
-            key, values, missing_count=missing_count)
-
-    # Reformat facet_counts to match term counts.
-    for key, label in (
-            ("course", "Course"),
-            ("run", "Run"),
-            ("resource_type", "Item Type")
-    ):
-        if 'fields' in facet_counts:
-            values = [(name, name, count) for name, count
-                      in facet_counts['fields'][key]]
-        else:
-            values = []
-        ret_dict[key] = reformat((key, label), values)
-
-    return ret_dict
 
 
 def get_vocab_name(vocab_id):
