@@ -372,6 +372,7 @@ def _create_mapping():
     index_resources(LearningResource.objects.all())
     _CONN.indices.refresh()
 
+
 def refresh_index():
     """
     Force a refresh instead of waiting for it to happen automatically.
