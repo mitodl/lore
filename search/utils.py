@@ -19,6 +19,7 @@ from statsd.defaults.django import statsd
 from learningresources.models import get_preview_url, LearningResource
 from lore.celery import async
 from search.search_indexes import get_course_metadata
+from search.tasks import refresh_index as _refresh_index
 from taxonomy.models import Vocabulary
 
 log = logging.getLogger(__name__)
@@ -45,14 +46,17 @@ def get_conn():
     # This is ugly. Any suggestions on a way that doesn't require "global"?
     global _CONN
     if _CONN is None:
+        log.critical("skm creating connection")
         _CONN = connections.create_connection(hosts=[URL])
 
     # Make sure everything exists.
     if not _CONN.indices.exists(INDEX_NAME):
+        log.critical("skm creating index")
         _CONN.indices.create(INDEX_NAME)
 
     mappings = _CONN.indices.get_mapping()[INDEX_NAME]["mappings"]
     if DOC_TYPE not in mappings.keys():
+        log.critical("skm creating mapping")
         _create_mapping()
     return _CONN
 
@@ -340,7 +344,7 @@ def _create_mapping():
     Actually create the mapping, including deleting it if it's there
     so we can create it.
     """
-
+    log.critical("skm in _create_mapping")
     # Delete the mapping if an older version exists.
     if _CONN.indices.exists_type(index=INDEX_NAME, doc_type=DOC_TYPE):
         _CONN.indices.delete_mapping(index=INDEX_NAME, doc_type=DOC_TYPE)
@@ -371,7 +375,7 @@ def _create_mapping():
     # ever be called by migrations.
     index_resources(LearningResource.objects.all())
     _CONN.indices.refresh()
-
+    log.critical("skm finished _create_mapping")
 
 def refresh_index():
     """
@@ -383,16 +387,8 @@ def refresh_index():
     to refresh_index() to call .delay() because that makes it easy to add any
     code that needs to call refresh_index in the future being aware of Celery.
     """
+    get_conn()
     _refresh_index.delay()
-
-
-@async.task
-def _refresh_index():
-    """
-    Refresh the Elasticsearch index via Celery.
-    """
-    conn = get_conn()
-    conn.indices.refresh(index=INDEX_NAME)
 
 
 def ensure_vocabulary_mappings(term_info):
