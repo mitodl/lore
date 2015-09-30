@@ -4,8 +4,6 @@ Celery tasks for the search module.
 
 from __future__ import unicode_literals
 
-from datetime import datetime
-
 from lore.celery import async
 from statsd.defaults.django import statsd
 
