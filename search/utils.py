@@ -11,8 +11,8 @@ import logging
 from django.conf import settings
 from elasticsearch.helpers import bulk
 from elasticsearch.exceptions import NotFoundError
-from elasticsearch_dsl.connections import connections
 from elasticsearch_dsl import Search, Mapping, query
+from elasticsearch_dsl.connections import connections
 
 from statsd.defaults.django import statsd
 
@@ -388,7 +388,7 @@ def refresh_index():
     code that needs to call refresh_index in the future being aware of Celery.
     """
     get_conn()
-    _refresh_index.delay()
+    _refresh_index.delay(INDEX_NAME)
 
 
 def ensure_vocabulary_mappings(term_info):
