@@ -17,7 +17,6 @@ from elasticsearch_dsl.connections import connections
 from statsd.defaults.django import statsd
 
 from learningresources.models import get_preview_url, LearningResource
-from lore.celery import async
 from search.search_indexes import get_course_metadata
 from search.tasks import refresh_index as _refresh_index
 from taxonomy.models import Vocabulary
