@@ -19,6 +19,7 @@ web:
   build: .
   command: >
     /bin/bash -c '
+    export HOST_IP=$(netstat -nr | grep ^0\.0\.0\.0 | awk "{print \$2}") &&
     sleep 3 &&
     npm install --production --no-bin-links &&
     python manage.py migrate &&
