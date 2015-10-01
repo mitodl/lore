@@ -64,7 +64,7 @@ from rest.permissions import (
     ViewVocabularyPermission,
 )
 from rest.util import CheckValidMemberParamMixin
-from search.api import construct_queryset, make_facet_counts
+from search.api import construct_queryset
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
@@ -913,8 +913,7 @@ class RepositorySearchList(GenericViewSet):
         an extra value for facet_counts.
         """
         queryset = self.filter_queryset(self.get_queryset())
-        repo_slug = self.kwargs['repo_slug']
-        facet_counts = make_facet_counts(repo_slug, queryset)
+        facet_counts = queryset.aggregations()
 
         page = self.paginate_queryset(queryset)
         if page is not None:

@@ -11,13 +11,15 @@ import logging
 from django.conf import settings
 from elasticsearch.helpers import bulk
 from elasticsearch.exceptions import NotFoundError
-from elasticsearch_dsl.connections import connections
 from elasticsearch_dsl import Search, Mapping, query
+from elasticsearch_dsl.connections import connections
 
 from statsd.defaults.django import statsd
 
 from learningresources.models import get_preview_url, LearningResource
 from search.search_indexes import get_course_metadata
+from search.tasks import refresh_index as _refresh_index
+from taxonomy.models import Vocabulary
 
 log = logging.getLogger(__name__)
 
@@ -28,15 +30,30 @@ _CONN = None
 PAGE_LENGTH = 10
 
 
+def get_vocab_names():
+    """Get all vocabulary names in the database."""
+    return Vocabulary.objects.all().values_list('name', flat=True)
+
+
 def get_conn():
     """
     Lazily create the connection.
+
+    Upon creating the connection, create the index if necessary.
     """
     # pylint: disable=global-statement
     # This is ugly. Any suggestions on a way that doesn't require "global"?
     global _CONN
     if _CONN is None:
         _CONN = connections.create_connection(hosts=[URL])
+
+    # Make sure everything exists.
+    if not _CONN.indices.exists(INDEX_NAME):
+        _CONN.indices.create(INDEX_NAME)
+
+    mappings = _CONN.indices.get_mapping()[INDEX_NAME]["mappings"]
+    if DOC_TYPE not in mappings.keys():
+        _create_mapping()
     return _CONN
 
 
@@ -48,6 +65,7 @@ def get_resource_terms(resource_ids):
     Returns:
         data (dict): Vocab/term data for course.
     """
+    vocab_names = get_vocab_names()
     resource_data = defaultdict(lambda: defaultdict(list))
     rels = LearningResource.terms.related.through.objects.select_related(
         "term__vocabulary").filter(learningresource__id__in=resource_ids)
@@ -55,7 +73,14 @@ def get_resource_terms(resource_ids):
         obj = resource_data[rel.learningresource_id]
         obj[rel.term.vocabulary.name].append(rel.term.label)
     # Replace the defaultdicts with dicts.
-    return {k: dict(v) for k, v in resource_data.items()}
+    info = {k: dict(v) for k, v in resource_data.items()}
+    for resource_id in resource_ids:
+        if resource_id not in info.keys():
+            info[resource_id] = {}
+        for vocab_name in vocab_names:
+            if vocab_name not in info[resource_id].keys():
+                info[resource_id][vocab_name] = [None]
+    return info
 
 
 def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
@@ -74,26 +99,44 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
         terms = {}
     if tokens is None:
         # Retrieve everything.
-        search = Search(index=INDEX_NAME, doc_type=DOC_TYPE).query()
+        search = Search(index=INDEX_NAME, doc_type=DOC_TYPE)
     else:
         # Search on title, description, and content_xml (minus markup).
         search = Search(index=INDEX_NAME, doc_type=DOC_TYPE)
         multi = query.MultiMatch(
             query=tokens, fields=["title", "description", "content_stripped"])
         search = search.query(multi)
-    if terms != {}:
-        # Filter further on taxonomy terms.
-        search = search.query("match", **terms)
+
+    # Filter further on taxonomy terms.
+    for key, value in terms.items():
+        search = search.query("match", **{key: value})
+
     if repo_slug is not None:
         # Filter further on repository.
         search = search.query("match", repository=repo_slug)
-    if sort_by is not None:
+    if sort_by is None:
+        # Always sort by ID to preserve ordering.
+        search = search.sort("id")
+    else:
         # Temporary workaround; the values in sorting.py should be updated,
         # but for now Haystack is still using them. Also, the hyphen is
         # required because we sort the numeric values high to low.
-        if not sort_by.startswith("title"):
-            sort_by = "-xa_{0}".format(sort_by)
+        if "title" not in sort_by:
+            reverse = sort_by.startswith("-")
+            if reverse:
+                sort_by = sort_by[1:]
+            if "xa" not in sort_by:
+                sort_by = "xa_{0}".format(sort_by)
+            if reverse:
+                sort_by = "-{0}".format(sort_by)
+        # Always sort by ID to preserve ordering.
         search = search.sort(sort_by, "id")
+
+    terms = set(get_vocab_names())
+    terms.update(set(('run', 'course', 'resource_type')))
+    for term in terms:
+        search.aggs.bucket(term, "terms", field=term)
+
     return SearchResults(search)
 
 
@@ -119,13 +162,14 @@ def index_resources(resources):
     conn = get_conn()
     insert_count, errors = bulk(
         conn,
-        (resource_to_dict(x, term_info.get(x.id, {})) for x in resources),
+        (resource_to_dict(x, term_info[x.id]) for x in resources),
         index=INDEX_NAME,
-        doc_type=DOC_TYPE
+        doc_type=DOC_TYPE,
     )
 
     if errors != []:
         log.error("Error during bulk insert: %s", errors)
+    refresh_index()
 
     return insert_count
 
@@ -144,7 +188,7 @@ def delete_index(resource):
         pass
 
 
-def resource_to_dict(resource, term_info=None):
+def resource_to_dict(resource, term_info):
     """
     Retrieve important values from a LearningResource to index.
 
@@ -161,8 +205,6 @@ def resource_to_dict(resource, term_info=None):
         rec (dict): Dictionary representation of the LearningResource.
     """
 
-    if term_info is None:
-        term_info = {}
     rec = {
         "title": resource.title,
         # The zero is for sorting blank items to the bottom. See below.
@@ -171,6 +213,7 @@ def resource_to_dict(resource, term_info=None):
         "_id": resource.id,  # The ID used by Elasticsearch.
         "resource_type": resource.learning_resource_type.name,
         "description": resource.description,
+        "description_path": resource.description_path,
         "content_xml": resource.content_xml,
         "content_stripped": strip_xml(resource.content_xml),
         "xa_nr_views": resource.xa_nr_views,
@@ -202,7 +245,7 @@ def resource_to_dict(resource, term_info=None):
     # Keys that may have unicode issues.
     text_keys = (
         'title', 'titlesort', 'resource_type', 'description', 'content_xml',
-        'content_stripped',
+        'content_stripped', 'description_path',
     )
     for key in text_keys:
         try:
@@ -213,6 +256,7 @@ def resource_to_dict(resource, term_info=None):
                 rec[key] = rec[key].decode('utf-8')
         except AttributeError:
             pass  # Python 3
+
     return rec
 
 
@@ -223,7 +267,6 @@ def clear_index():
         conn.indices.delete(INDEX_NAME)
         conn.indices.create(INDEX_NAME)
         conn.indices.refresh()
-    create_mapping()
 
     # re-index all existing LearningResource instances:
     index_resources(LearningResource.objects.all())
@@ -265,9 +308,16 @@ class SearchResults(object):
             for hit in self.get_page(i+1):
                 yield hit
 
+    def aggregations(self):
+        """Return aggregations."""
+        return convert_aggregate(vars(self._search.execute().aggregations))
+
     def __getitem__(self, i):
         """Return result by index."""
-        return self._search[i].execute().hits[0]
+        if isinstance(i, slice):
+            return self._search[i].execute().hits
+        else:
+            return self._search[i].execute().hits[0]
 
 
 def create_mapping():
@@ -282,12 +332,17 @@ def create_mapping():
     """
 
     # Create the index if it doesn't exist.
-    conn = get_conn()
-    if not conn.indices.exists(INDEX_NAME):
-        conn.indices.create(INDEX_NAME)
+    get_conn()
+
+
+def _create_mapping():
+    """
+    Actually create the mapping, including deleting it if it's there
+    so we can create it.
+    """
     # Delete the mapping if an older version exists.
-    if conn.indices.exists_type(index=INDEX_NAME, doc_type=DOC_TYPE):
-        conn.indices.delete_mapping(index=INDEX_NAME, doc_type=DOC_TYPE)
+    if _CONN.indices.exists_type(index=INDEX_NAME, doc_type=DOC_TYPE):
+        _CONN.indices.delete_mapping(index=INDEX_NAME, doc_type=DOC_TYPE)
 
     mapping = Mapping(DOC_TYPE)
 
@@ -300,7 +355,7 @@ def create_mapping():
     mapping.field("content_xml", "string", index="no")
     mapping.field("content_stripped", "string", index="analyzed")
     mapping.field("run", "string", index="not_analyzed")
-    mapping.field("titlesort", "string", index="no")
+    mapping.field("titlesort", "string", index="not_analyzed")
     mapping.field("title", "string", index="analyzed")
 
     mapping.field("xa_avg_grade", "float")
@@ -314,16 +369,21 @@ def create_mapping():
     # LearningResource instances. This function will probably only
     # ever be called by migrations.
     index_resources(LearningResource.objects.all())
-    conn.indices.refresh()
+    _CONN.indices.refresh()
 
 
 def refresh_index():
     """
     Force a refresh instead of waiting for it to happen automatically.
     This should only be necessary during tests.
+
+    When this was switched to use Celery,
+    _refresh_index() was created instead of just updating all existing calls
+    to refresh_index() to call .delay() because that makes it easy to add any
+    code that needs to call refresh_index in the future being aware of Celery.
     """
-    conn = get_conn()
-    conn.indices.refresh(index=INDEX_NAME)
+    get_conn()
+    _refresh_index.delay(INDEX_NAME)
 
 
 def ensure_vocabulary_mappings(term_info):
@@ -364,6 +424,7 @@ def ensure_vocabulary_mappings(term_info):
         updated = True
     if updated:
         mapping.save(INDEX_NAME)
+        refresh_index()
 
 
 def strip_xml(content):
@@ -388,3 +449,52 @@ def strip_xml(content):
         pass
 
     return content
+
+
+def convert_aggregate(agg):
+    """
+    Convert elasticsearch-dsl output to the facet output
+    currently being created from the Haystack data.
+    Args:
+        agg: Agg
+    Returns:
+        updated (dict): facet data
+    """
+
+    def format_key(key):
+        """Custom conversions for build-in facets."""
+        table = {
+            'run': 'Run',
+            'course': 'Course',
+            'resource_type': 'Item Type',
+        }
+        return table.get(key, key)
+
+    missing_counts = {}
+    updated = agg['_d_']
+    for key in updated.keys():
+        updated[key]["facet"] = updated[key]["buckets"]
+        del updated[key]["buckets"]
+        del updated[key]["doc_count_error_upper_bound"]
+        del updated[key]["sum_other_doc_count"]
+        temp_values = updated[key]["facet"]
+        updated[key]["values"] = []
+        for rec in temp_values:
+            # We have the empty values as part of the aggregation, unlike
+            # in Haystack. We have to pull them out specially to present
+            # the data the same way Haystack did.
+            if rec["key"] == "empty":
+                missing_counts[key] = rec["doc_count"]
+                continue
+            rec["count"] = rec["doc_count"]
+            rec["label"] = rec["key"]
+            del rec["doc_count"]
+            updated[key]["values"].append(rec)
+
+    for facet in updated.keys():
+        updated[facet]["facet"] = {
+            "key": facet,
+            "label": format_key(facet),
+            "missing_count": missing_counts.get(facet, 0),
+        }
+    return updated
