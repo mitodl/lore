@@ -76,7 +76,7 @@ class TestIndexing(SearchTestCase):
         self.resource.content_xml = xml
         self.resource.save()
         self.assertTrue(self.count_results("you're it") == 1)
-        self.assertTrue(self.count_results("tag") == 0)
+        self.assertTrue(self.count_results(xml) == 0)
 
     def test_sorting(self):
         """Test sorting for search"""
@@ -129,11 +129,11 @@ class TestIndexing(SearchTestCase):
         top_res = results[0]
         sec_res = results[1]
         self.assertEqual(
-            top_res.id,
+            top_res.lid,
             res2.id
         )
         self.assertEqual(
-            sec_res.id,
+            sec_res.lid,
             res4.id
         )
         # sorting by number of attempts
@@ -145,11 +145,11 @@ class TestIndexing(SearchTestCase):
         top_res = results[0]
         sec_res = results[1]
         self.assertEqual(
-            top_res.id,
+            top_res.lid,
             res3.id
         )
         self.assertEqual(
-            sec_res.id,
+            sec_res.lid,
             res4.id
         )
         # sorting by average grade
@@ -161,11 +161,11 @@ class TestIndexing(SearchTestCase):
         top_res = results[0]
         sec_res = results[1]
         self.assertEqual(
-            top_res.id,
+            top_res.lid,
             res1.id
         )
         self.assertEqual(
-            sec_res.id,
+            sec_res.lid,
             res4.id
         )
 
@@ -205,11 +205,11 @@ class TestIndexing(SearchTestCase):
             return count
 
         set_cache_timeout(0)
-        with self.assertNumQueries(31):
+        with self.assertNumQueries(26):
             self.assertEqual(get_count(), 0)
 
         set_cache_timeout(60)
-        with self.assertNumQueries(17):
+        with self.assertNumQueries(12):
             self.assertEqual(get_count(), 1)
 
     def test_course_cache(self):

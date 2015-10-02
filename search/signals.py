@@ -39,7 +39,7 @@ class LoreRealTimeSignalProcessor(RealtimeSignalProcessor):
 def handle_m2m_save(sender, **kwargs):
     """Update index when taxonomies are updated."""
     from search.search_indexes import LearningResourceIndex, get_vocabs
-    instance = kwargs.pop("instance")
+    instance = kwargs.pop("instance", None)
     if instance.__class__.__name__ != "LearningResource":
         return
     # Update cache for the LearningResource if it's already set.
@@ -57,7 +57,7 @@ def handle_resource_update(sender, **kwargs):
     if kwargs["created"]:
         # Don't index upon create; update only.
         return
-    instance = kwargs.pop("instance")
+    instance = kwargs.pop("instance", None)
     if instance.__class__.__name__ != "LearningResource":
         return
     from search.utils import index_resources
@@ -68,25 +68,8 @@ def handle_resource_update(sender, **kwargs):
 @receiver(post_delete)
 def handle_resource_deletion(sender, **kwargs):
     """Delete index when instance is deleted."""
-    instance = kwargs.pop("instance")
+    instance = kwargs.pop("instance", None)
     if instance.__class__.__name__ != "LearningResource":
         return
     from search.utils import delete_index
     delete_index(instance)
-
-
-@statsd.timer('lore.elasticsearch.taxonomy_create')
-@receiver(post_save)
-def handle_vocabulary_creation(sender, **kwargs):
-    """Update index when a Vocabulary is created."""
-    if not kwargs["created"]:
-        # Only index upon create.
-        return
-    instance = kwargs.pop("instance")
-    if instance.__class__.__name__ != "Vocabulary":
-        return
-    from learningresources.models import LearningResource
-    from search.utils import index_resources
-    index_resources(
-        LearningResource.objects.filter(
-            course__repository__id=instance.repository_id))
