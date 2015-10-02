@@ -266,7 +266,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
               <div className="tile-content">
                 <h2>
                   <a href="#" className="cd-btn"
-                     data-learningresource-id={resource.id}
+                     data-learningresource-id={resource.lid}
                     onClick={this.handleResourceClick}>{title}</a>
                 </h2>
 
@@ -307,12 +307,12 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       handleExportLinkClick: function(e) {
         e.preventDefault();
         this.props.updateExportLinkClick(
-          this.props.resource.id, !this.props.exportSelected
+          this.props.resource.lid, !this.props.exportSelected
         );
       },
       handleResourceClick: function(e) {
         e.preventDefault();
-        this.props.openResourcePanel(this.props.resource.id);
+        this.props.openResourcePanel(this.props.resource.lid);
       }
     });
 
@@ -320,7 +320,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       getInitialState: function() {
         var exportSelection = {};
         _.each(this.props.resources, function(resource) {
-          exportSelection[resource.id] = false;
+          exportSelection[resource.lid] = false;
         });
 
         _.each(this.props.allExports, function(resourceId) {
@@ -339,10 +339,10 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       render: function() {
         var thiz = this;
         var resources = _.map(this.props.resources, function(resource) {
-          var exportSelected = thiz.state.exportSelection[resource.id];
+          var exportSelected = thiz.state.exportSelection[resource.lid];
           return <ListingResource
             resource={resource}
-            key={resource.id}
+            key={resource.lid}
             exportSelected={exportSelected}
             imageDir={thiz.props.imageDir}
             repoSlug={thiz.props.repoSlug}
