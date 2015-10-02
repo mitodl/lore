@@ -8,15 +8,14 @@ should be updated.
 
 from __future__ import unicode_literals
 
-from django.db import models, migrations
-
-from search.utils import create_mapping, index_resources
+from django.db import migrations
 
 # pylint: skip-file
 
 
 def update_mapping(apps, schema_editor):
-    create_mapping()
+    pass  # Changed to no-op
+
 
 class Migration(migrations.Migration):
 

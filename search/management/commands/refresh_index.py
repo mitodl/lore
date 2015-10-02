@@ -7,15 +7,16 @@ from __future__ import unicode_literals
 from django.core.management.base import BaseCommand
 
 from learningresources.models import LearningResource
-from search.utils import index_resources
+from search.utils import index_resources, create_mapping
 
 
 class Command(BaseCommand):
     """
-    Command for sync_permissions
+    Command for refresh_index
     """
-    help = "Refreshes the Elasticsearch index."
+    help = "Updates the Elasticsearch index and mapping."
 
     def handle(self, *args, **options):
-        """Command handler"""
+        """Refreshes the Elasticsearch index."""
+        create_mapping()
         index_resources(LearningResource.objects.all())

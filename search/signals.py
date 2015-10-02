@@ -71,8 +71,8 @@ def handle_resource_deletion(sender, **kwargs):
     instance = kwargs.pop("instance")
     if instance.__class__.__name__ != "LearningResource":
         return
-    from search.utils import delete_index
-    delete_index(instance)
+    from search.utils import delete_resource_from_index
+    delete_resource_from_index(instance)
 
 
 @statsd.timer('lore.elasticsearch.taxonomy_create')

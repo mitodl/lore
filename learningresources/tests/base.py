@@ -28,7 +28,7 @@ from learningresources.api import (
     update_description_path
 )
 from learningresources.models import Repository, StaticAsset
-from search.utils import clear_index, refresh_index
+from search.utils import recreate_index, refresh_index
 
 log = logging.getLogger(__name__)
 # Using the md5 hasher speeds up tests.
@@ -87,7 +87,7 @@ class LoreTestCase(TestCase):
     def setUp(self):
         """set up"""
         super(LoreTestCase, self).setUp()
-        clear_index()
+        recreate_index()
         self.user = User.objects.create_user(
             username=self.USERNAME, password=self.PASSWORD
         )
@@ -134,7 +134,7 @@ class LoreTestCase(TestCase):
         for key, _ in haystack.connections.connections_info.items():
             haystack.connections.reload(key)
         call_command('clear_index', interactive=False, verbosity=0)
-        clear_index()
+        recreate_index()
         refresh_index()
 
     def _make_archive(self, path, make_zip=False, ext=None):
