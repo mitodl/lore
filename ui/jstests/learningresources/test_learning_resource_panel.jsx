@@ -248,11 +248,136 @@ define(["QUnit", "react", "test_utils", "jquery", "lodash",
 
         React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
           repoSlug="repo"
+          markDirty={function() {}}
           closeLearningResourcePanel={closeLearningResourcePanel}
           learningResourceId="1"
           ref={afterMount}/>);
       }
     );
+
+    QUnit.test(
+      'Assert that mark dirty sets properly when description change.',
+      function (assert) {
+        var done = assert.async();
+
+        var markDirtyState = false;
+        var markDirty = function (state) {
+          markDirtyState = state;
+        };
+
+        var afterMount = function (component) {
+          // wait for calls to populate form
+          waitForAjax(3, function () {
+            var textarea = React.addons.TestUtils.
+              findRenderedDOMComponentWithTag(
+                component,
+                'textarea'
+            );
+            React.addons.TestUtils.Simulate.change(
+              textarea, {target: {value: "x"}}
+            );
+            component.forceUpdate(function () {
+              assert.equal(component.state.description, "x");
+              assert.ok(markDirtyState, "Marked dirty");
+              done();
+            });
+          });
+        };
+        React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
+          repoSlug="repo"
+          markDirty={markDirty}
+          closeLearningResourcePanel={function() {}}
+          learningResourceId="1"
+          ref={afterMount}/>);
+      }
+    );
+
+    QUnit.test(
+      'Assert that mark dirty sets properly when terms change.',
+      function (assert) {
+        var done = assert.async();
+        var markDirtyState = false;
+        var markDirty = function (state) {
+          markDirtyState = state;
+        };
+        var closeLearningResourcePanel = function () {
+        };
+
+        var afterMount = function (component) {
+          // wait for calls to populate form
+          waitForAjax(3, function () {
+            // two menus: vocabulary and terms.
+            var $node = $(React.findDOMNode(component));
+
+            var $allSelects = $node.find("#vocabularies select");
+            assert.equal($allSelects.size(), 2);
+
+            var $vocabSelect = $node.find($allSelects).first();
+            assert.equal($vocabSelect.size(), 1);
+
+            // first vocab, two options
+            var $vocabOptions = $vocabSelect.find("option");
+            assert.equal($vocabOptions.size(), 2);
+
+            assert.equal($vocabOptions[0].selected, true);
+            assert.equal($vocabOptions[1].selected, false);
+
+            // TestUtils.Simulate.change only simulates a change event,
+            // we need to update the value first ourselves
+            $vocabSelect.val("prerequisite").trigger('change');
+            component.forceUpdate(function () {
+              assert.equal($vocabOptions[0].selected, false);
+              assert.equal($vocabOptions[1].selected, true);
+              // re-fetch the selects to get the prerequisite one
+              $allSelects = $node.find("#vocabularies select");
+              var termsSelect = $allSelects[1];
+              var $termsOptions = $(termsSelect).find("option");
+              assert.equal($termsOptions.size(), 2);
+              assert.equal($termsOptions[0].selected, true);
+              assert.equal($termsOptions[1].selected, false);
+
+              // remove selection for this vocabulary to not interfere to the rest of the test
+              $(termsSelect).val("").trigger('change');
+              component.forceUpdate(function () {
+                // Switch to difficulty
+                $vocabSelect.val("difficulty").trigger('change');
+                component.forceUpdate(function () {
+                  // re-fetch the selects to get the difficulty one
+                  $allSelects = $node.find("#vocabularies select");
+                  // update the term select
+                  termsSelect = $allSelects[1];
+                  $termsOptions = $(termsSelect).find("option");
+
+                  assert.equal($termsOptions.size(), 2);
+                  assert.equal($termsOptions[0].selected, false);
+                  assert.equal($termsOptions[1].selected, false);
+                  // the second vocabulary can be a multi select
+                  $(termsSelect)
+                    .val(["hard", "easy"])
+                    .trigger('change');
+                  markDirtyState = false;
+                  component.forceUpdate(function () {
+                    // when terms are change then markDirtyState flag is set.
+                    assert.equal(markDirtyState, true);
+                    assert.equal($termsOptions[0].selected, true);
+                    assert.equal($termsOptions[1].selected, true);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        };
+
+        React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
+          repoSlug="repo"
+          markDirty={markDirty}
+          closeLearningResourcePanel={closeLearningResourcePanel}
+          learningResourceId="1"
+          ref={afterMount}/>);
+      }
+    );
+
     QUnit.test(
       'Assert that LearningResourcePanel saves properly',
       function (assert) {
@@ -300,6 +425,7 @@ define(["QUnit", "react", "test_utils", "jquery", "lodash",
         React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
           repoSlug="repo"
           learningResourceId="1"
+          markDirty={function() {}}
           closeLearningResourcePanel={closeLearningResourcePanel}
           refreshFromAPI={refreshFromAPI}
           ref={afterMount}/>);
@@ -353,6 +479,7 @@ define(["QUnit", "react", "test_utils", "jquery", "lodash",
 
         React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
           repoSlug="repo"
+          markDirty={function() {}}
           closeLearningResourcePanel={closeLearningResourcePanel}
           learningResourceId="1"
           refreshFromAPI={refreshFromAPI}
@@ -386,6 +513,7 @@ define(["QUnit", "react", "test_utils", "jquery", "lodash",
         };
         React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
           repoSlug="repo"
+          markDirty={function() {}}
           closeLearningResourcePanel={closeLearningResourcePanel}
           learningResourceId="1"
           ref={afterMount}/>);
@@ -418,6 +546,7 @@ define(["QUnit", "react", "test_utils", "jquery", "lodash",
         };
         React.addons.TestUtils.renderIntoDocument(<LearningResourcePanel
           repoSlug="repo"
+          markDirty={function() {}}
           closeLearningResourcePanel={closeLearningResourcePanel}
           learningResourceId="1"
           ref={afterMount}/>);
@@ -482,6 +611,7 @@ define(["QUnit", "react", "test_utils", "jquery", "lodash",
           <LearningResourcePanel
             repoSlug="repo"
             closeLearningResourcePanel={function() {}}
+            markDirty={function() {}}
             learningResourceId="1"
             ref={afterMount}/>
         );

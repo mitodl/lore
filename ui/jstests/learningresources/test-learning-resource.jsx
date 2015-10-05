@@ -44,9 +44,14 @@ define(
       function (assert) {
         var div = document.createElement("div");
         assert.ok($(div).html().length === 0);
-        LearningResources.loader("repo", "1", function () {
-        }, function () {
-        }, div);
+        var options = {
+          "repoSlug": "repo",
+          "learningResourceId": "1",
+          "refreshFromAPI": this.refreshFromAPI,
+          "markDirty": function() {},
+          "closeLearningResourcePanel": function() {}
+        };
+        LearningResources.loader(options, div);
         assert.ok($(div).html().length > 0);
       }
     );

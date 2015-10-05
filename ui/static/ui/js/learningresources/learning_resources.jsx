@@ -4,17 +4,18 @@ define('learning_resources',
     'use strict';
 
     return {
-      loader: function (repoSlug, learningResourceId, refreshFromAPI,
-                        closeLearningResourcePanel, container) {
+      /** Current list of options are:
+        repoSlug
+        learningResourceId
+        refreshFromAPI
+        markDirty
+        closeLearningResourcePanel
+      */
+      loader: function (options, container) {
         // Unmount and remount the component to ensure that its state
         // is always up to date with the rest of the app.
         React.unmountComponentAtNode(container);
-        React.render(<LearningResourcePanel
-          repoSlug={repoSlug}
-          learningResourceId={learningResourceId}
-          refreshFromAPI={refreshFromAPI}
-          closeLearningResourcePanel={closeLearningResourcePanel}
-          />, container);
+        React.render(<LearningResourcePanel {...options} />, container);
       }
     };
   });

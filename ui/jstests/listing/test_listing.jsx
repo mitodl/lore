@@ -971,5 +971,63 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
       );
 
     });
+
+    QUnit.test('Open and close learning resource panel', function(assert) {
+      var done = assert.async();
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/learning_resources/' +
+        '1/?remove_content_xml=true',
+        type: 'GET',
+        responseText: learningResourceResponse
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/vocabularies/?type_name=course',
+        type: 'GET',
+        responseText: vocabularyResponse
+      });
+
+      var afterMount = function(component) {
+        waitForAjax(1, function() {
+          assert.notOk($('.cd-panel').hasClass("is-visible"));
+          component.openResourcePanel(1);
+          waitForAjax(2, function() {
+            assert.equal(component.state.currentResourceId , 1);
+            assert.ok($('.cd-panel').hasClass("is-visible"));
+            component.setState({
+              isLearningResourcePanelDirty: true
+            }, function () {
+              component.closeLearningResourcePanel();
+              assert.ok($('.cd-panel').hasClass("is-visible"),
+                "LR Panel should not close because it is marked dirty");
+              component.setState({
+                isLearningResourcePanelDirty: false
+              }, function() {
+                component.closeLearningResourcePanel();
+                assert.notOk($('.cd-panel').hasClass("is-visible"),
+                  "LR Panel should close");
+                done();
+              });
+            });
+          });
+        });
+      };
+
+      var options = {
+        allExports: listingOptions.allExports,
+        sortingOptions: listingOptions.sortingOptions,
+        imageDir: listingOptions.imageDir,
+        pageSize: 25,
+        repoSlug: listingOptions.repoSlug,
+        loggedInUsername: listingOptions.loggedInUsername,
+        updateQueryString: updateQueryString,
+        getQueryString: getQueryString,
+        showConfirmationDialog: function() {},
+        ref: afterMount
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        React.createElement(Listing.ListingContainer, options)
+      );
+    });
   }
 );
