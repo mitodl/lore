@@ -34,29 +34,11 @@ class TestStatus(TestCase):
         self.url = reverse("status")
         super(TestStatus, self).setUp()
 
-        # Remember settings in case they're mutilated during a test.
-        self.original_settings = (
-            settings.BROKER_URL,
-            deepcopy(settings.DATABASES),
-            deepcopy(settings.HAYSTACK_CONNECTIONS),
-        )
-
-    def tearDown(self):
-        """Restore settings after each test."""
-        (
-            settings.BROKER_URL,
-            settings.DATABASES,
-            settings.HAYSTACK_CONNECTIONS,
-        ) = self.original_settings
-        super(TestStatus, self).tearDown()
-
     def get(self, expected_status=HTTP_OK):
         """Get the page."""
         resp = self.client.get(self.url, data={"token": settings.STATUS_TOKEN})
         self.assertEqual(resp.status_code, expected_status)
-        jsn = json.loads(resp.content.decode('utf-8'))
-        log.info(jsn)
-        return jsn
+        return json.loads(resp.content.decode('utf-8'))
 
     def test_view(self):
         """Get normally."""
@@ -66,33 +48,59 @@ class TestStatus(TestCase):
 
     def test_no_settings(self):
         """Missing settings."""
-        del settings.BROKER_URL
-        del settings.DATABASES
-        del settings.HAYSTACK_CONNECTIONS
-        resp = self.get()
-        for key in ("postgresql", "redis", "elasticsearch"):
-            self.assertTrue(resp[key]["status"] == "no config found")
+        (broker_url, databases, haystack_connections) = (
+            settings.BROKER_URL,
+            settings.DATABASES,
+            settings.HAYSTACK_CONNECTIONS
+        )
+        try:
+            del settings.BROKER_URL
+            del settings.DATABASES
+            del settings.HAYSTACK_CONNECTIONS
+            resp = self.get()
+            for key in ("postgresql", "redis", "elasticsearch"):
+                self.assertTrue(resp[key]["status"] == "no config found")
+        finally:
+            (
+                settings.BROKER_URL,
+                settings.DATABASES,
+                settings.HAYSTACK_CONNECTIONS,
+            ) = (broker_url, databases, haystack_connections)
 
     def test_broken_settings(self):
         """Settings that couldn't possibly work."""
         junk = " not a chance "
-        settings.BROKER_URL = junk
-        settings.DATABASES["default"] = junk
-        settings.HAYSTACK_CONNECTIONS["default"]["URL"] = junk
-        resp = self.get(SERVICE_UNAVAILABLE)
-        for key in ("postgresql", "redis", "elasticsearch"):
-            self.assertTrue(resp[key]["status"] == "down")
+        broker_url = junk
+        databases = deepcopy(settings.DATABASES)
+        databases['default'] = junk
+        haystack_connections = deepcopy(settings.HAYSTACK_CONNECTIONS)
+        haystack_connections["default"]["URL"] = junk
+        with self.settings(
+            BROKER_URL=broker_url,
+            DATABASES=databases,
+            HAYSTACK_CONNECTIONS=haystack_connections
+        ):
+            resp = self.get(SERVICE_UNAVAILABLE)
+            for key in ("postgresql", "redis", "elasticsearch"):
+                self.assertTrue(resp[key]["status"] == "down")
 
     def test_invalid_settings(self):
         """
         Settings that look right, but aren't (if service is actually down).
         """
-        settings.BROKER_URL = "redis://bogus:6379/4"
-        settings.DATABASES["default"]["HOST"] = "monkey"
-        settings.HAYSTACK_CONNECTIONS["default"]["URL"] = "pizza:2300"
-        resp = self.get(SERVICE_UNAVAILABLE)
-        for key in ("postgresql", "redis", "elasticsearch"):
-            self.assertTrue(resp[key]["status"] == "down")
+        broker_url = "redis://bogus:6379/4"
+        databases = deepcopy(settings.DATABASES)
+        databases["default"]["HOST"] = "monkey"
+        haystack_connections = deepcopy(settings.HAYSTACK_CONNECTIONS)
+        haystack_connections["default"]["URL"] = "pizza:2300"
+        with self.settings(
+            BROKER_URL=broker_url,
+            DATABASES=databases,
+            HAYSTACK_CONNECTIONS=haystack_connections
+        ):
+            resp = self.get(SERVICE_UNAVAILABLE)
+            for key in ("postgresql", "redis", "elasticsearch"):
+                self.assertTrue(resp[key]["status"] == "down")
 
     def test_token(self):
         """
