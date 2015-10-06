@@ -16,7 +16,7 @@ var REQUIRE_PATHS = {
   SecondLevelDomains: "uri.js/src/SecondLevelDomains",
   history: "history.js/scripts/compressed/history",
   historyadapter: "history.js/scripts/compressed/history.adapter.jquery",
-
+  spin: "spin.js/spin.min",
   csrf: "../ui/js/csrf",
   listing: "../ui/js/listing",
   manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",

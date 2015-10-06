@@ -12,6 +12,11 @@ define('listing',
       var repoSlug = listingOptions.repoSlug;
       var loggedInUsername = listingOptions.loggedInUsername;
 
+      // empty results and facetCounts to start with
+      listingOptions = $.extend({}, listingOptions);
+      listingOptions.resources = [];
+      listingOptions.facetCounts = {};
+
       CSRF.setupCSRF();
 
       var EMAIL_EXTENSION = '@mit.edu';
@@ -165,6 +170,10 @@ define('listing',
       // The URL in the browser will be updated with these changes in
       // refreshFromAPI.
       var queryMap = {};
+
+      // Controls the loader on the listing page.
+      var pageLoaded = false;
+
       // Populate queryMap with query string key value pairs.
       _.each(URI(window.location).query(true), function(v, k) {
         if (!Array.isArray(v)) {
@@ -231,6 +240,8 @@ define('listing',
       };
 
       refreshFromAPI = function() {
+        pageLoaded = false;
+
         var newQuery = "?" + URI().search(queryMap).query();
         if (newQuery === "?") {
           // Don't put ? in URL if empty
@@ -243,12 +254,9 @@ define('listing',
         var url = "/api/v1/repositories/" +
           listingOptions.repoSlug + "/search/" + newQuery;
 
-        var setOpacity = function(opacity) {
-          $("#listing").css({opacity: opacity});
-        };
-
-        setOpacity(0.6);
+        renderListingResources();
         return $.get(url).then(function(collection) {
+          pageLoaded = true;
           listingOptions = $.extend({}, listingOptions);
           listingOptions.resources = collection.results;
           listingOptions.facetCounts = collection.facet_counts;
@@ -264,10 +272,8 @@ define('listing',
           }
 
           renderListingResources();
-
-          setOpacity(1);
         }).fail(function(error) {
-          setOpacity(1);
+          pageLoaded = true;
 
           // Propagate error
           return $.Deferred().reject(error);
@@ -354,7 +360,7 @@ define('listing',
           container, openExportsPanel, openResourcePanel,
           updateFacets, updateMissingFacets,
           selectedFacets, selectedMissingFacets, updateSort, pageNum, numPages,
-          updatePage
+          updatePage, pageLoaded
         );
       };
 
