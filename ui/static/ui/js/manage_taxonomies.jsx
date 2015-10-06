@@ -49,7 +49,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         <span className="utility-features">
           <a href="#" onClick={this.editTerm} className={editButtonClass}>
             <i className={formatActionClassName}></i>
-          </a> <a className={deleteButtonClass} onClick={this.deleteTerm}>
+          </a> <a className={deleteButtonClass} href="#"
+                  onClick={this.deleteTerm}>
             <i className="fa fa-remove"></i>
           </a>
         </span>{label}</li>;

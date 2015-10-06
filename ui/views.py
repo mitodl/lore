@@ -171,9 +171,7 @@ def get_vocabularies(facets):
         vocab = (vocabulary_id, vocabs[int(vocabulary_id)])
         vocabularies[vocab] = []
         for t_id, count in term_data:
-            t_id_int = int(t_id)
-            if t_id_int in terms:
-                vocabularies[vocab].append((t_id, terms[t_id_int], count))
+            vocabularies[vocab].append((t_id, terms[int(t_id)], count))
         # By default, sort alphabetically.
         vocabularies[vocab].sort(key=lambda x: x[1])
     return vocabularies

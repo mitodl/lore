@@ -64,7 +64,8 @@ from rest.permissions import (
     ViewVocabularyPermission,
 )
 from rest.util import CheckValidMemberParamMixin
-from search.api import construct_queryset, make_facet_counts
+from search.api import construct_queryset
+from search.utils import index_resources
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
@@ -294,6 +295,18 @@ class TermDetail(RetrieveUpdateDestroyAPIView):
         return vocabs.first().term_set.filter(
             slug=self.kwargs['term_slug']
         )
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Override delete to also update index for deleted term.
+        """
+        term = self.get_object()
+        resources = list(LearningResource.objects.filter(
+            terms__id=term.id
+        ))
+        ret = super(TermDetail, self).delete(request, *args, **kwargs)
+        index_resources(resources)
+        return ret
 
 
 class RepoMemberList(ListAPIView):
