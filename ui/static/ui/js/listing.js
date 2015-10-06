@@ -160,12 +160,6 @@ define('listing',
        * @returns {ReactElement} The rendered resource items
        */
       var renderListingResources;
-      /**
-       * Render pagination in the UI
-       *
-       * @returns {ReactElement} The rendered pagination
-       */
-      var renderPagination;
 
       // queryMap is the canonical place to manage query parameters for the UI.
       // The URL in the browser will be updated with these changes in
@@ -270,7 +264,6 @@ define('listing',
           }
 
           renderListingResources();
-          renderPagination();
 
           setOpacity(1);
         }).fail(function(error) {
@@ -358,9 +351,11 @@ define('listing',
        */
       renderListingResources = function() {
         return ListingResources.loader(listingOptions,
-        container, openExportsPanel, openResourcePanel,
-        updateFacets, updateMissingFacets,
-          selectedFacets, selectedMissingFacets, updateSort);
+          container, openExportsPanel, openResourcePanel,
+          updateFacets, updateMissingFacets,
+          selectedFacets, selectedMissingFacets, updateSort, pageNum, numPages,
+          updatePage
+        );
       };
 
       /**
@@ -515,11 +510,6 @@ define('listing',
         pageNum = parseInt(newPageNum);
 
         return refreshFromAPI();
-      };
-
-      renderPagination = function() {
-        return Pagination.loader(
-          pageNum, numPages, updatePage, $("#lore-pagination")[0]);
       };
 
       var showConfirmationDialog = function(options) {

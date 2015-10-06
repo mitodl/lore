@@ -1,8 +1,10 @@
-define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
-  function (React, $, _, Utils) {
+define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
+    'pagination'],
+  function (React, $, _, Utils, PaginationModule) {
     'use strict';
 
     var ICheckbox = Utils.ICheckbox;
+    var Pagination = PaginationModule.Pagination;
 
     var getImageFile = function(resourceType) {
       if (resourceType === 'chapter') {
@@ -430,6 +432,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
     var ListingPage = React.createClass({
       render: function() {
         return <div>
+          <div>
           <div className="col-md-3">
             <div className="panel-group lore-panel-group">
               <Facets facetCounts={this.props.facetCounts}
@@ -443,6 +446,18 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
           <div className="col-md-9 col-results">
             <Listing {...this.props} ref="listing" />
           </div>
+            </div>
+          <div className="row">
+            <div className="col-md-12">
+              <div className="lore-pagination">
+              <Pagination
+                pageNum={this.props.pageNum}
+                numPages={this.props.numPages}
+                updatePage={this.props.updatePage}
+                />
+              </div>
+            </div>
+          </div>
         </div>;
       },
       clearSelectedExports: function() {
@@ -453,7 +468,8 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
     return {
       loader: function(listingOptions, container, openExportsPanel,
                        openResourcePanel, updateFacets, updateMissingFacets,
-                       selectedFacets, selectedMissingFacets, updateSort) {
+                       selectedFacets, selectedMissingFacets, updateSort,
+                       pageNum, numPages, updatePage) {
         return React.render(
           <ListingPage {...listingOptions}
                    openExportsPanel={openExportsPanel}
@@ -463,6 +479,9 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
                    selectedFacets={selectedFacets}
                    selectedMissingFacets={selectedMissingFacets}
                    updateSort={updateSort}
+                   pageNum={pageNum}
+                   numPages={numPages}
+                   updatePage={updatePage}
             />,
           container
         );
