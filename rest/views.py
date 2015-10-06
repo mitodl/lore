@@ -65,6 +65,7 @@ from rest.permissions import (
 )
 from rest.util import CheckValidMemberParamMixin
 from search.api import construct_queryset
+from search.utils import index_resources
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
@@ -229,12 +230,16 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
             )
             removed_types = old_types - set(new_types)
 
+            resources_to_reindex = []
             with transaction.atomic():
                 for term in vocab.term_set.all():
                     for resource in term.learning_resources.all():
                         if (resource.learning_resource_type.name in
                                 removed_types):
+                            resources_to_reindex.append(resource)
                             term.learning_resources.remove(resource)
+            if len(resources_to_reindex) > 0:
+                index_resources(resources_to_reindex)
 
         return super(VocabularyDetail, self).update(
             request, *args, **kwargs)
