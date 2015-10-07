@@ -95,7 +95,6 @@ INSTALLED_APPS = (
     'taxonomy',
     'rest',
     'rest_framework',
-    'haystack',
     'search',
     'roles',
     'xanalytics',
@@ -385,15 +384,10 @@ GUARDIAN_RAISE_403 = True
 # Haystack
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': (
-            'haystack.backends.elasticsearch_backend'
-            '.ElasticsearchSearchEngine'
-        ),
         'URL': get_var('HAYSTACK_URL', 'http://127.0.0.1:9200'),
         'INDEX_NAME': get_var('HAYSTACK_INDEX', 'haystack'),
     }
 }
-HAYSTACK_SIGNAL_PROCESSOR = 'search.signals.LoreRealTimeSignalProcessor'
 
 XANALYTICS_URL = get_var('XANALYTICS_URL', "")
 
@@ -414,3 +408,7 @@ INTERNAL_IPS = (get_var('HOST_IP', '127.0.0.1'), )
 
 # Google analytics code
 GOOGLE_ANALYTICS_ID = get_var('LORE_GOOGLE_ANALYTICS_ID', None)
+
+# This is needed to connect the signals properly.
+# pylint: disable=unused-import
+import search.signals  # noqa
