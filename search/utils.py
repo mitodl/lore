@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 from collections import defaultdict
 from lxml import etree
 import logging
+from itertools import islice
 
 from django.conf import settings
 from elasticsearch.helpers import bulk
@@ -17,6 +18,7 @@ from elasticsearch_dsl.connections import connections
 from statsd.defaults.django import statsd
 
 from learningresources.models import get_preview_url, LearningResource
+from search.exceptions import ReindexException
 from search.search_indexes import get_course_metadata
 from search.tasks import refresh_index as _refresh_index
 from taxonomy.models import Vocabulary
@@ -35,11 +37,9 @@ def get_vocab_names():
     return Vocabulary.objects.all().values_list('name', flat=True)
 
 
-def get_conn():
+def get_conn(verify=True):
     """
     Lazily create the connection.
-
-    Upon creating the connection, create the index if necessary.
     """
     # pylint: disable=global-statement
     # This is ugly. Any suggestions on a way that doesn't require "global"?
@@ -47,13 +47,28 @@ def get_conn():
     if _CONN is None:
         _CONN = connections.create_connection(hosts=[URL])
 
+    if not verify:
+        return _CONN
+
     # Make sure everything exists.
     if not _CONN.indices.exists(INDEX_NAME):
-        _CONN.indices.create(INDEX_NAME)
+        raise ReindexException("Unable to find index {index_name}".format(
+            index_name=INDEX_NAME
+        ))
+
+    mapping = _CONN.indices.get_mapping()
+    if INDEX_NAME not in mapping:
+        raise ReindexException(
+            "No mappings found in index {index_name}".format(
+                index_name=INDEX_NAME
+            )
+        )
 
     mappings = _CONN.indices.get_mapping()[INDEX_NAME]["mappings"]
     if DOC_TYPE not in mappings.keys():
-        _create_mapping()
+        raise ReindexException("Mapping {doc_type} not found".format(
+            doc_type=DOC_TYPE
+        ))
     return _CONN
 
 
@@ -116,7 +131,7 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
         search = search.query("match", repository=repo_slug)
     if sort_by is None:
         # Always sort by ID to preserve ordering.
-        search = search.sort("id")
+        search = search.sort({"id": {"ignore_unmapped": True}})
     else:
         # Temporary workaround; the values in sorting.py should be updated,
         # but for now Haystack is still using them. Also, the hyphen is
@@ -130,7 +145,7 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
             if reverse:
                 sort_by = "-{0}".format(sort_by)
         # Always sort by ID to preserve ordering.
-        search = search.sort(sort_by, "id")
+        search = search.sort(sort_by, {"id": {"ignore_unmapped": True}})
 
     terms = set(get_vocab_names())
     terms.update(set(('run', 'course', 'resource_type')))
@@ -140,21 +155,13 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
     return SearchResults(search)
 
 
-@statsd.timer('lore.elasticsearch.bulk_index')
-def index_resources(resources):
+@statsd.timer('lore.elasticsearch.bulk_index_chunk')
+def _index_resource_chunk(resources):
     """Add/update records in Elasticsearch."""
 
-    if hasattr(resources, "values_list"):
-        # If it's a queryset, get the IDs the smart way.
-        resource_ids = resources.values_list("id", flat=True)
-    else:
-        resource_ids = [x.id for x in resources]
+    resource_ids = [x.id for x in resources]
     # Terms assigned to the resources.
     term_info = get_resource_terms(resource_ids)
-
-    if hasattr(resources, "iterator"):
-        # If it's a queryset, be efficient.
-        resources = resources.iterator()
 
     ensure_vocabulary_mappings(term_info)
 
@@ -168,14 +175,36 @@ def index_resources(resources):
     )
 
     if errors != []:
-        log.error("Error during bulk insert: %s", errors)
+        raise ReindexException("Error during bulk insert: {errors}".format(
+            errors=errors
+        ))
     refresh_index()
 
     return insert_count
 
 
+@statsd.timer('lore.elasticsearch.bulk_index')
+def index_resources(resources, chunk_size=100):
+    """Add/update records in Elasticsearch."""
+
+    if hasattr(resources, "iterator"):
+        # If it's a queryset, be efficient.
+        resources = resources.iterator()
+    else:
+        # Must be an iterator so islice doesn't pull the same n items each
+        # time.
+        resources = iter(resources)
+
+    # Limit chunk size to 100 to avoid storing it all
+    # in memory at once.
+    chunk = list(islice(resources, chunk_size))
+    while len(chunk) > 0:
+        _index_resource_chunk(chunk)
+        chunk = list(islice(resources, chunk_size))
+
+
 @statsd.timer('lore.elasticsearch.delete_index')
-def delete_index(resource):
+def delete_resource_from_index(resource):
     """Delete a record from Elasticsearch."""
     conn = get_conn()
     try:
@@ -260,13 +289,23 @@ def resource_to_dict(resource, term_info):
     return rec
 
 
-def clear_index():
-    """Wipe the index."""
-    conn = get_conn()
+def remove_index():
+    """
+    Delete the index.
+    """
+    conn = get_conn(verify=False)
     if conn.indices.exists(INDEX_NAME):
         conn.indices.delete(INDEX_NAME)
-        conn.indices.create(INDEX_NAME)
-        conn.indices.refresh()
+
+
+def recreate_index():
+    """Wipe and recreate index and mapping, and index all resources."""
+    conn = get_conn(verify=False)
+    remove_index()
+    conn.indices.create(INDEX_NAME)
+    conn.indices.refresh()
+
+    create_mapping()
 
     # re-index all existing LearningResource instances:
     index_resources(LearningResource.objects.all())
@@ -322,7 +361,7 @@ class SearchResults(object):
 
 def create_mapping():
     """
-    Create the Elasticsearch mapping.
+    Delete and recreate the Elasticsearch mapping.
 
     Notes on the "index" values:
         analyzed: normal, will be split on whitespace for indexing
@@ -330,19 +369,20 @@ def create_mapping():
         not_analyzed: no split; matches must be exact
         no: not indexed at all, but will be returned in search results
     """
+    conn = get_conn(verify=False)
+    _create_mapping(conn)
 
-    # Create the index if it doesn't exist.
-    get_conn()
 
-
-def _create_mapping():
+def _create_mapping(conn):
     """
     Actually create the mapping, including deleting it if it's there
     so we can create it.
     """
+
     # Delete the mapping if an older version exists.
-    if _CONN.indices.exists_type(index=INDEX_NAME, doc_type=DOC_TYPE):
-        _CONN.indices.delete_mapping(index=INDEX_NAME, doc_type=DOC_TYPE)
+
+    if conn.indices.exists_type(index=INDEX_NAME, doc_type=DOC_TYPE):
+        conn.indices.delete_mapping(index=INDEX_NAME, doc_type=DOC_TYPE)
 
     mapping = Mapping(DOC_TYPE)
 
@@ -364,12 +404,6 @@ def _create_mapping():
     mapping.field("xa_nr_views", "integer")
 
     mapping.save(INDEX_NAME)
-
-    # If we've done this, we always want to re-index all existing
-    # LearningResource instances. This function will probably only
-    # ever be called by migrations.
-    index_resources(LearningResource.objects.all())
-    _CONN.indices.refresh()
 
 
 def refresh_index():

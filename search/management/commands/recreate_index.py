@@ -6,15 +6,15 @@ from __future__ import unicode_literals
 
 from django.core.management.base import BaseCommand
 
-from search.utils import clear_index
+from search.utils import recreate_index
 
 
 class Command(BaseCommand):
     """
-    Command for sync_permissions
+    Command for recreate_index.
     """
-    help = "Refreshes the Elasticsearch index."
+    help = "Clears the Elasticsearch index and recreates it."
 
     def handle(self, *args, **options):
-        """Command handler"""
-        clear_index()
+        """Command for recreate_index"""
+        recreate_index()
