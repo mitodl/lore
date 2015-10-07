@@ -706,6 +706,82 @@ class TestVocabulary(RESTTestCase):
             sorted([])
         )
 
+    def test_index_updates_on_delete(self):
+        """
+        Test that deleting vocabulary and terms will automatically update the
+        index.
+        """
+        self.import_course_tarball(self.repo)
+        search_url = "{repo_base}{repo_slug}/search/".format(
+            repo_base=REPO_BASE,
+            repo_slug=self.repo.slug
+        )
+
+        def get_facet_counts():
+            """Helper function to get facet_counts field."""
+            return as_json(self.client.get(search_url))["facet_counts"]
+
+        # No vocabs.
+        self.assertEqual(
+            sorted(["course", "run", "resource_type"]),
+            sorted(get_facet_counts().keys())
+        )
+
+        vocab = Vocabulary.objects.create(
+            repository=self.repo,
+            weight=1,
+            required=False,
+            vocabulary_type="m",
+            name="vocab1",
+            description="vocab1"
+        )
+
+        self.assertEqual(
+            sorted(["course", "run", "resource_type", vocab.slug]),
+            sorted(get_facet_counts().keys())
+        )
+
+        term1 = Term.objects.create(vocabulary=vocab, label="term1", weight=1)
+        term2 = Term.objects.create(vocabulary=vocab, label="term2", weight=2)
+
+        # Assign all types to vocab.
+        for resource in LearningResource.objects.all():
+            vocab.learning_resource_types.add(resource.learning_resource_type)
+
+        # No terms yet.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    get_facet_counts()[vocab.slug]['values']]),
+            []
+        )
+
+        resource1 = LearningResource.objects.all()[0]
+        resource1.terms.add(term1)
+        resource2 = LearningResource.objects.all()[1]
+        resource2.terms.add(term2)
+
+        # Vocab shows up because there are slugs here.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    get_facet_counts()[vocab.slug]['values']]),
+            sorted([term1.slug, term2.slug])
+        )
+
+        # Term is removed from facet list.
+        self.delete_term(self.repo.slug, vocab.slug, term1.slug)
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    get_facet_counts()[vocab.slug]['values']]),
+            sorted([term2.slug])
+        )
+
+        self.delete_vocabulary(self.repo.slug, vocab.slug)
+        # No vocabs left.
+        self.assertEqual(
+            sorted(["course", "run", "resource_type"]),
+            sorted(get_facet_counts().keys())
+        )
+
 
 class TestVocabularyAuthorization(RESTAuthTestCase):
     """

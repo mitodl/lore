@@ -181,7 +181,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
     }
   });
 
-  QUnit.test('Assert that TermComponent renders properly',
+  QUnit.test('Assert that edit TermComponent renders properly',
     function(assert) {
       assert.ok(TermComponent, "class object not found");
       var done = assert.async();
@@ -475,7 +475,9 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
               );
               component.forceUpdate(function() {
                 assert.equal(component.state.label, "TestB");
-
+                assert.equal(component.state.formatActionState, 'edit');
+                assert.equal(parentUpdateCount, 0);
+                // listing page was not asked to refresh
                 assert.equal(refreshCount, 0);
                 React.addons.TestUtils.Simulate.click(saveButton);
                 component.forceUpdate(function() {
@@ -526,6 +528,137 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             term={term}
             repoSlug="repo"
             updateTerm={updateTerm}
+            vocabulary={vocabulary}
+            refreshFromAPI={refreshFromAPI}
+            ref={afterMount}
+          />
+        );
+    }
+  );
+
+  QUnit.test('Assert that delete TermComponent renders properly',
+    function(assert) {
+      assert.ok(TermComponent, "class object not found");
+      var done = assert.async();
+      var term = {
+        "id": 9,
+        "slug": "test",
+        "label": "test",
+        "weight": 1
+      };
+      var parentUpdateCount = 0;
+      var deleteTerm = function() {
+        parentUpdateCount += 1;
+      };
+      var renderConfirmationDialog = function(options) {
+        options.confirmationHandler(true);
+      };
+
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test/",
+        type: "DELETE"
+      });
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
+      var afterMount = function(component) {
+        var deleteButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'revert-button'
+        );
+        //select delete
+        React.addons.TestUtils.Simulate.click(deleteButton);
+        component.forceUpdate(function() {
+          assert.equal(component.state.formatActionState, 'show');
+          waitForAjax(1, function() {
+            // term is delete in parent
+            assert.equal(parentUpdateCount, 1);
+            // listing was asked to refresh
+            assert.equal(refreshCount, 1);
+            done();
+          });
+        });
+      };
+
+      React.addons.TestUtils.
+        renderIntoDocument(
+          <TermComponent
+            term={term}
+            repoSlug="repo"
+            renderConfirmationDialog={renderConfirmationDialog}
+            deleteTerm={deleteTerm}
+            vocabulary={vocabulary}
+            refreshFromAPI={refreshFromAPI}
+            ref={afterMount}
+          />
+        );
+    }
+  );
+
+  QUnit.test('Assert that delete ajax call fail TermComponent' +
+    ' renders properly',
+    function(assert) {
+      assert.ok(TermComponent, "class object not found");
+      var done = assert.async();
+      var term = {
+        "id": 9,
+        "slug": "test",
+        "label": "test",
+        "weight": 1
+      };
+      var parentUpdateCount = 0;
+      var deleteTerm = function() {
+        parentUpdateCount += 1;
+      };
+      var renderConfirmationDialog = function(options) {
+        options.confirmationHandler(true);
+      };
+
+      TestUtils.initMockjax({
+        url: "/api/v1/repositories/repo/vocabularies/difficulty/terms/test/",
+        type: "DELETE",
+        status: 400
+      });
+
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
+      var afterMount = function(component) {
+        var deleteButton = React.addons.TestUtils.
+          findRenderedDOMComponentWithClass(
+            component,
+            'revert-button'
+        );
+        //select delete
+        React.addons.TestUtils.Simulate.click(deleteButton);
+        component.forceUpdate(function() {
+          assert.equal(
+            component.state.errorMessage, ''
+          );
+          assert.equal(component.state.formatActionState, 'show');
+          waitForAjax(1, function() {
+            // check state of error message
+            assert.equal(
+              component.state.errorMessage, 'Unable to delete term.'
+            );
+            done();
+          });
+        });
+      };
+
+      React.addons.TestUtils.
+        renderIntoDocument(
+          <TermComponent
+            term={term}
+            repoSlug="repo"
+            renderConfirmationDialog={renderConfirmationDialog}
+            deleteTerm={deleteTerm}
             vocabulary={vocabulary}
             refreshFromAPI={refreshFromAPI}
             ref={afterMount}
@@ -2352,6 +2485,77 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
           refreshFromAPI={refreshFromAPI}
           showTab={function() {}}
           setTabName={function() {}}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test('Assert that delete term works in TaxonomyComponent',
+    function(assert) {
+      assert.ok(TaxonomyComponent, "class object not found");
+      var done = assert.async();
+      var refreshCount = 0;
+      var refreshFromAPI = function() {
+        refreshCount++;
+      };
+
+      var renderConfirmationDialog = function(options) {
+        options.confirmationHandler(true);
+      };
+
+      var afterMount = function(component) {
+        assert.equal(
+          component.state.vocabularies.length,
+          0
+        );
+        waitForAjax(2, function() {
+          assert.equal(
+            component.state.vocabularies.length,
+            1
+          );
+          assert.equal(
+            component.state.vocabularies[0].terms.length,
+            2
+          );
+          var updateTermUrl = "/api/v1/repositories/repo/vocabularies/" +
+              component.state.vocabularies[0].vocabulary.slug + "/terms/" +
+              component.state.vocabularies[0].terms[0].slug + "/";
+          TestUtils.initMockjax({
+            url: updateTermUrl,
+            type: "DELETE"
+          });
+          var deleteButtons = React.addons.TestUtils.
+          scryRenderedDOMComponentsWithClass(
+            component,
+            'revert-button'
+          );
+          var deleteButton = deleteButtons[0];
+          //open edit mode
+          React.addons.TestUtils.Simulate.click(deleteButton);
+          component.forceUpdate(function() {
+            waitForAjax(1, function () {
+              assert.equal(refreshCount, 1);
+              //assert term update
+              assert.equal(
+                component.state.vocabularies.length,
+                1
+              );
+              assert.equal(
+                component.state.vocabularies[0].terms.length,
+                1
+              );
+              done();
+            });
+          });
+        });
+      };
+      React.addons.TestUtils.renderIntoDocument
+      (
+        <TaxonomyComponent
+          repoSlug="repo"
+          refreshFromAPI={refreshFromAPI}
+          renderConfirmationDialog={renderConfirmationDialog}
           ref={afterMount}
         />
       );

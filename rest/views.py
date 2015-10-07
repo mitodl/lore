@@ -300,6 +300,18 @@ class TermDetail(RetrieveUpdateDestroyAPIView):
             slug=self.kwargs['term_slug']
         )
 
+    def delete(self, request, *args, **kwargs):
+        """
+        Override delete to also update index for deleted term.
+        """
+        term = self.get_object()
+        resources = list(LearningResource.objects.filter(
+            terms__id=term.id
+        ))
+        ret = super(TermDetail, self).delete(request, *args, **kwargs)
+        index_resources(resources)
+        return ret
+
 
 class RepoMemberList(ListAPIView):
     """
