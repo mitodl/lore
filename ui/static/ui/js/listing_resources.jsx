@@ -241,7 +241,66 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
       }
     });
 
+    var DescriptionListingResource = React.createClass({
+      render: function() {
+        if (this.props.showDetail) {
+          return <div className="tile-blurb">{this.expandDescription()}</div>;
+        }
+
+        return <div className="tile-blurb">{this.wrapDescription()}</div>;
+      },
+      wrapDescription: function() {
+        var resource = this.props.resource;
+        var description = "No description provided.";
+        if (resource.description !== "") {
+          if (resource.description.length > 120) {
+            var wrapDesc ;
+            var positionOfSpace = resource.description.indexOf(" ",  110);
+
+            if (positionOfSpace > 0) {
+              wrapDesc = resource.description.substring(0, positionOfSpace);
+            } else {
+              wrapDesc = resource.description.substring(0, 120);
+            }
+
+            description = <span>
+              {wrapDesc} <a onClick={this.expandLinkClick} href="#"
+              className="link-description-more-less">
+               Read more <i className="fa fa-chevron-down"></i>
+              </a>
+            </span>;
+          } else {
+            description = resource.description;
+          }
+        }
+        return description;
+      },
+      expandDescription: function() {
+        var resource = this.props.resource;
+        var expandDesc = <span>
+          {resource.description} <a onClick={this.collapseLinkClick} href="#"
+           className="link-description-more-less">
+           Read less <i className="fa fa-chevron-up"></i>
+          </a>
+        </span>;
+        return expandDesc;
+      },
+      collapseLinkClick: function(event) {
+        event.preventDefault();
+        this.props.showDescInDetailHandler(false);
+      },
+      expandLinkClick: function(event) {
+        event.preventDefault();
+        this.props.showDescInDetailHandler(true);
+      }
+    });
+
     var ListingResource = React.createClass({
+      getInitialState: function() {
+        return {
+          showDescInDetail: false
+        };
+      },
       render: function() {
         // Select image based on type.
         var resource = this.props.resource;
@@ -252,11 +311,6 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
         var title = "No Title";
         if (resource.title !== "") {
           title = resource.title;
-        }
-
-        var description = "No description provided.";
-        if (resource.description !== "") {
-          description = resource.description;
         }
 
         return <div className="row">
@@ -276,7 +330,10 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
                   <span className="meta-item">{resource.description_path}</span>
                 </div>
 
-                <div className="tile-blurb">{description}</div>
+                <DescriptionListingResource resource={this.props.resource}
+                   showDetail={this.state.showDescInDetail}
+                   showDescInDetailHandler={this.showDescInDetailHandler}
+                />
                 <div className="tile-meta">
                   <span className="meta-item">{resource.course}</span>
                   <span className="meta-item">{resource.run}</span>
@@ -315,6 +372,9 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
       handleResourceClick: function(e) {
         e.preventDefault();
         this.props.openResourcePanel(this.props.resource.id);
+      },
+      showDescInDetailHandler: function(showDescInDetail) {
+        this.setState({showDescInDetail: showDescInDetail});
       }
     });
 
@@ -487,6 +547,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
         );
       },
       getImageFile: getImageFile,
+      DescriptionListingResource: DescriptionListingResource,
       ExportButton: ExportButton,
       ExportLink: ExportLink,
       SortingDropdown: SortingDropdown,
