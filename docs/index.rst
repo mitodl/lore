@@ -15,6 +15,7 @@ Contents:
 
    api
    release
+   release_process
 
 Indices and tables
 ==================
