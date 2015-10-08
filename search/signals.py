@@ -10,27 +10,9 @@ import logging
 
 from django.db.models.signals import m2m_changed, post_save, post_delete
 from django.dispatch import receiver
-from haystack.signals import RealtimeSignalProcessor
 from statsd.defaults.django import statsd
 
 log = logging.getLogger(__name__)
-
-
-class LoreRealTimeSignalProcessor(RealtimeSignalProcessor):
-    """
-    Add timers for Haystack signal processing.
-    """
-    @statsd.timer('lore.haystack.save_signal')
-    def handle_save(self, sender, instance, **kwargs):
-        super(LoreRealTimeSignalProcessor, self).handle_save(
-            sender, instance, **kwargs
-        )
-
-    @statsd.timer('lore.haystack.delete_signal')
-    def handle_delete(self, sender, instance, **kwargs):
-        super(LoreRealTimeSignalProcessor, self).handle_delete(
-            sender, instance, **kwargs
-        )
 
 
 # pylint: disable=unused-argument
@@ -38,13 +20,12 @@ class LoreRealTimeSignalProcessor(RealtimeSignalProcessor):
 @receiver(m2m_changed)
 def handle_m2m_save(sender, **kwargs):
     """Update index when taxonomies are updated."""
-    from search.search_indexes import LearningResourceIndex, get_vocabs
+    from search.search_indexes import get_vocabs
     instance = kwargs.pop("instance")
     if instance.__class__.__name__ != "LearningResource":
         return
     # Update cache for the LearningResource if it's already set.
     get_vocabs(instance.id)
-    LearningResourceIndex().update_object(instance)
     # Update Elasticsearch index:
     from search.utils import index_resources
     index_resources([instance])

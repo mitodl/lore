@@ -18,6 +18,7 @@ from elasticsearch_dsl.connections import connections
 from statsd.defaults.django import statsd
 
 from learningresources.models import get_preview_url, LearningResource
+from rest.serializers import RepositorySearchSerializer
 from search.exceptions import ReindexException
 from search.search_indexes import get_course_metadata
 from search.tasks import refresh_index as _refresh_index
@@ -29,6 +30,7 @@ DOC_TYPE = "learningresource"
 INDEX_NAME = settings.HAYSTACK_CONNECTIONS["default"]["INDEX_NAME"]
 URL = settings.HAYSTACK_CONNECTIONS["default"]["URL"]
 _CONN = None
+_CONN_VERIFIED = False
 PAGE_LENGTH = 10
 
 
@@ -44,10 +46,23 @@ def get_conn(verify=True):
     # pylint: disable=global-statement
     # This is ugly. Any suggestions on a way that doesn't require "global"?
     global _CONN
+    global _CONN_VERIFIED
+
+    do_verify = False
     if _CONN is None:
         _CONN = connections.create_connection(hosts=[URL])
+        # Verify connection on first connect if verify=True.
+        do_verify = verify
 
-    if not verify:
+    if verify and not _CONN_VERIFIED:
+        # If we have a connection but haven't verified before, do it now.
+        do_verify = True
+
+    if not do_verify:
+        if not verify:
+            # We only skip verification if we're reindexing or
+            # deleting the index. Make sure we verify next time we connect.
+            _CONN_VERIFIED = False
         return _CONN
 
     # Make sure everything exists.
@@ -69,6 +84,8 @@ def get_conn(verify=True):
         raise ReindexException("Mapping {doc_type} not found".format(
             doc_type=DOC_TYPE
         ))
+
+    _CONN_VERIFIED = True
     return _CONN
 
 
@@ -98,6 +115,12 @@ def get_resource_terms(resource_ids):
     return info
 
 
+def _get_field_names():
+    """Return list of search field names."""
+    return list(
+        RepositorySearchSerializer.get_fields(RepositorySearchSerializer()))
+
+
 def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
     """
     Perform a search in Elasticsearch.
@@ -112,12 +135,14 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
     """
     if terms is None:
         terms = {}
-    if tokens is None:
-        # Retrieve everything.
-        search = Search(index=INDEX_NAME, doc_type=DOC_TYPE)
-    else:
+
+    search = Search(index=INDEX_NAME, doc_type=DOC_TYPE)
+
+    # Limit returned fields since content_xml can be huge and is unnecessary.
+    search = search.fields(_get_field_names())
+
+    if tokens is not None:
         # Search on title, description, and content_xml (minus markup).
-        search = Search(index=INDEX_NAME, doc_type=DOC_TYPE)
         multi = query.MultiMatch(
             query=tokens, fields=["title", "description", "content_stripped"])
         search = search.query(multi)
@@ -131,7 +156,7 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
         search = search.query("match", repository=repo_slug)
     if sort_by is None:
         # Always sort by ID to preserve ordering.
-        search = search.sort({"id": {"ignore_unmapped": True}})
+        search = search.sort("id")
     else:
         # Temporary workaround; the values in sorting.py should be updated,
         # but for now Haystack is still using them. Also, the hyphen is
@@ -145,7 +170,7 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
             if reverse:
                 sort_by = "-{0}".format(sort_by)
         # Always sort by ID to preserve ordering.
-        search = search.sort(sort_by, {"id": {"ignore_unmapped": True}})
+        search = search.sort(sort_by, "id")
 
     terms = set(get_vocab_names())
     terms.update(set(('run', 'course', 'resource_type')))
@@ -201,6 +226,8 @@ def index_resources(resources, chunk_size=100):
     while len(chunk) > 0:
         _index_resource_chunk(chunk)
         chunk = list(islice(resources, chunk_size))
+
+    refresh_index()
 
 
 @statsd.timer('lore.elasticsearch.delete_index')
@@ -321,15 +348,19 @@ class SearchResults(object):
     def __init__(self, search):
         """Get raw search result from Elasticsearch."""
         self._search = search
+        self._cached_agg = None
+        self._cached_count = None
         get_conn()  # We don't need the return value; just for it to exist.
 
     def count(self):
         """Total records matching the query."""
-        return self._search.count()
+        if self._cached_count is None:
+            self._cached_count = self._search.count()
+        return self._cached_count
 
     def page_count(self):
         """Total number of result pages."""
-        total = self._search.count()
+        total = self.count()
         count = total / PAGE_LENGTH
         if total % PAGE_LENGTH > 0:
             count += 1
@@ -349,14 +380,26 @@ class SearchResults(object):
 
     def aggregations(self):
         """Return aggregations."""
-        return convert_aggregate(vars(self._search.execute().aggregations))
+        if self._cached_agg is None:
+            self._cached_agg = self._search.params(
+                search_type="count").execute()
+        return convert_aggregate(vars(self._cached_agg.aggregations))
 
     def __getitem__(self, i):
         """Return result by index."""
         if isinstance(i, slice):
-            return self._search[i].execute().hits
+            hits = self._search[i].execute().hits
         else:
-            return self._search[i].execute().hits[0]
+            hits = self._search[slice(i, i+1)].execute().hits
+
+        for hit in hits:
+            for field_name in _get_field_names():
+                setattr(hit, field_name, getattr(hit, field_name)[0])
+
+        if isinstance(i, slice):
+            return hits
+        else:
+            return hits[0]
 
 
 def create_mapping():
@@ -385,7 +428,7 @@ def _create_mapping(conn):
         conn.indices.delete_mapping(index=INDEX_NAME, doc_type=DOC_TYPE)
 
     mapping = Mapping(DOC_TYPE)
-
+    mapping.field("id", "integer")
     mapping.field("course", "string", index="not_analyzed")
     mapping.field("description_path", "string", index="no")
     mapping.field("description", "string", index="analyzed")
@@ -509,8 +552,9 @@ def convert_aggregate(agg):
     for key in updated.keys():
         updated[key]["facet"] = updated[key]["buckets"]
         del updated[key]["buckets"]
-        del updated[key]["doc_count_error_upper_bound"]
-        del updated[key]["sum_other_doc_count"]
+        for name in ("doc_count_error_upper_bound", "sum_other_doc_count"):
+            if name in updated[key]:
+                del updated[key][name]
         temp_values = updated[key]["facet"]
         updated[key]["values"] = []
         for rec in temp_values:

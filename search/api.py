@@ -4,8 +4,6 @@ Functions for search functionality.
 
 from __future__ import unicode_literals
 
-from haystack.query import SearchQuerySet
-
 from search.sorting import LoreSortingFields
 from search.utils import search_index
 from taxonomy.models import Vocabulary, Term
@@ -29,19 +27,9 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
     if selected_facets is None:
         selected_facets = []
 
-    queryset = SearchQuerySet()
-
     kwargs = {}
-    for facet in selected_facets:
-        queryset = queryset.narrow(facet)
-
     if query != "":
         kwargs["content"] = query
-
-    queryset = queryset.filter(**kwargs)
-
-    queryset = queryset.narrow("repository_exact:{slug}".format(
-        slug=repo_slug))
 
     if sortby == "":
         sortby = LoreSortingFields.DEFAULT_SORTING_FIELD
@@ -49,8 +37,6 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
     sortby, _, order_direction = LoreSortingFields.get_sorting_option(
         sortby)
     sortby = "{0}{1}".format(order_direction, sortby)
-    queryset = queryset.order_by(
-        sortby, LoreSortingFields.BASE_SORTING_FIELD)
 
     # Do a parallel query using elasticsearch-dsl.
     if query not in ("", None):
