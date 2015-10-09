@@ -518,6 +518,33 @@ class TestLearningResource(RESTTestCase):
         self.assertEqual(self.resource.terms.count(), 0)
         self.assertEqual(resource2.terms.count(), 1)
 
+    def test_remove_content_xml(self):
+        """
+        Test behavior of remove_content_xml flag.
+        """
+        resource_dict = as_json(self.client.get(
+            "{repo_base}{repo_slug}/learning_resources/{lr_id}/".format(
+                repo_base=REPO_BASE,
+                repo_slug=self.repo.slug,
+                lr_id=self.resource.id
+            )
+        ))
+        self.assertTrue("content_xml" in resource_dict)
+
+        without_content_xml_dict = as_json(
+            self.client.get(
+                "{repo_base}{repo_slug}/learning_resources/"
+                "{lr_id}/?remove_content_xml=true".format(
+                    repo_base=REPO_BASE,
+                    repo_slug=self.repo.slug,
+                    lr_id=self.resource.id
+                )
+            )
+        )
+        self.assertFalse("content_xml" in without_content_xml_dict)
+        del resource_dict["content_xml"]
+        self.assertEqual(without_content_xml_dict, resource_dict)
+
 
 class TestLearningResourceAuthorization(RESTAuthTestCase):
     """

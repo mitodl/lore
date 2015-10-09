@@ -387,7 +387,8 @@ define('learning_resources',
       this.setState({loaded: false});
       $.get("/api/v1/repositories/" + this.props.repoSlug +
         "/learning_resources/" +
-        this.props.learningResourceId + "/").then(function (data) {
+        this.props.learningResourceId + "/?remove_content_xml=true")
+        .then(function (data) {
         if (!thiz.isMounted()) {
           // In time AJAX call happens component may become unmounted
           return;

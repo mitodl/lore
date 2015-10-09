@@ -25,6 +25,9 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     "xa_histogram_grade": 0.0,
     "terms": ["required"]
   };
+  var learningResourceResponseMinusContentXml = $.extend(
+    {}, learningResourceResponse);
+  delete learningResourceResponseMinusContentXml.content_xml;
   var termResponseEasy = {
     "id": 1,
     "slug": "easy",
@@ -111,6 +114,12 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
         url: '/api/v1/repositories/repo/learning_resources/1/',
         type: 'GET',
         responseText: learningResourceResponse
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/repo/learning_resources/' +
+          '1/?remove_content_xml=true',
+        type: 'GET',
+        responseText: learningResourceResponseMinusContentXml
       });
       TestUtils.initMockjax({
         url: '/api/v1/repositories/repo/learning_resources/1/',
@@ -434,7 +443,8 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       var done = assert.async();
       var closeLearningResourcePanel = function() {};
       TestUtils.replaceMockjax({
-        url: '/api/v1/repositories/repo/learning_resources/1/',
+        url: '/api/v1/repositories/repo/learning_resources/1/' +
+        '?remove_content_xml=true',
         type: 'GET',
         status: 400
       });
