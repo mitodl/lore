@@ -1,5 +1,5 @@
 define('static_assets', [
-  'react', 'jquery', 'lodash', 'utils'
+  'react', 'jquery', 'lodash', 'jsx!utils'
   ], function (React, $, _, Utils) {
   'use strict';
 

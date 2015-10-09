@@ -41,29 +41,7 @@
 {% block postcontent %}
 {{ block.super }}
 {% compress js %}
-<script type="text/jsx"
-        src="{% static "ui/js/manage_taxonomies.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/learning_resources.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/static_assets.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/lr_exports.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/listing_resources.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/xml_panel.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/pagination.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/utils.jsx" %}">
+<script type="text/requirejs" src="{% static "ui/js/build.js" %}">
 </script>
 {% endcompress %}
 <script type="text/javascript">

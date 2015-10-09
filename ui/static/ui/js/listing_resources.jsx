@@ -1,5 +1,5 @@
-define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
-    'pagination'],
+define('listing_resources', ['react', 'jquery', 'lodash', 'jsx!utils',
+    'jsx!pagination'],
   function (React, $, _, Utils, PaginationModule) {
     'use strict';
 

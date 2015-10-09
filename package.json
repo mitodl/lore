@@ -2,7 +2,8 @@
   "name": "lore",
   "version": "0.0.0",
   "dependencies": {
-    "react-tools": "~0.13.3"
+    "react-tools": "~0.13.3",
+    "requirejs-react-jsx": "^0.14.2"
   },
   "devDependencies": {
     "bower": "1.4.1",

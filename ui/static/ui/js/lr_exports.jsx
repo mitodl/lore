@@ -1,5 +1,5 @@
 define("lr_exports",
-  ['react', 'jquery', 'lodash', 'utils', 'icheck'],
+  ['react', 'jquery', 'lodash', 'jsx!utils', 'icheck'],
   function (React, $, _, Utils) {
   'use strict';
 

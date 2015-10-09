@@ -1,5 +1,5 @@
 define("lore_data_table", ["lodash", "jquery", "react", "react_datagrid",
-    "learning_resources", "static_assets"],
+    "jsx!learning_resources", "jsx!static_assets"],
   function (_, $, React, DataGrid, LearningResources,
     StaticAssets) {
     'use strict';

@@ -1,5 +1,5 @@
 define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
-    'utils', 'bootstrap'],
+    'jsx!utils', 'bootstrap'],
   function (React, _, $, URI, Utils) {
   'use strict';
 

@@ -206,11 +206,13 @@ STATICFILES_FINDERS = (
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'ui', 'static'),
 )
+
+COMPRESSOR_REQUIREJS_TMP = '/tmp'
 COMPRESS_PRECOMPILERS = (
-    ('text/requirejs', 'requirejs.RequireJSCompiler'),
     (
-        'text/jsx',
-        'node node_modules/react-tools/bin/jsx < {infile} > {outfile}'
+        'text/requirejs',
+        # Note that -o does not mean output here
+        'node node_modules/requirejs/bin/r.js -o {infile} out={outfile}'
     ),
 )
 COMPRESS_OFFLINE = get_var('LORE_COMPRESS_OFFLINE', False)

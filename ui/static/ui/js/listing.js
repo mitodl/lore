@@ -1,8 +1,8 @@
 define('listing',
-  ['csrf', 'jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
-    'learning_resources', 'static_assets', 'utils',
-    'lr_exports', 'listing_resources', 'pagination', 'xml_panel',
-    'bootstrap', 'icheck'],
+  ['csrf', 'jquery', 'lodash', 'uri', 'history', 'jsx!manage_taxonomies',
+    'jsx!learning_resources', 'jsx!static_assets', 'jsx!utils',
+    'jsx!lr_exports', 'jsx!listing_resources', 'jsx!pagination',
+    'jsx!xml_panel', 'bootstrap', 'icheck'],
   function (CSRF, $, _, URI, History,
             ManageTaxonomies, LearningResources, StaticAssets,
             Utils, Exports, ListingResources, Pagination, XmlPanel) {
