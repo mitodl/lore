@@ -5,6 +5,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
 
   var StatusBox = Utils.StatusBox;
   var ICheckbox = Utils.ICheckbox;
+  var ReactOverlayLoader = Utils.ReactOverlayLoader;
 
   var TermComponent = React.createClass({
     mixins: [React.addons.LinkedStateMixin],
@@ -754,6 +755,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         </ul>
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
+            <ReactOverlayLoader loaded={this.state.loaded}
+                                hideChildrenOnLoad={true}>
             <AddTermsComponent
               deleteTerm={this.deleteTerm}
               updateTerm={this.updateTerm}
@@ -767,8 +770,11 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
               message={this.state.termsMessage}
               reportMessage={this.termsReport}
               />
+            </ReactOverlayLoader>
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
+            <ReactOverlayLoader loaded={this.state.loaded}
+              hideChildrenOnLoad={true}>
             <AddVocabulary
               editVocabulary={this.editVocabulary}
               updateParent={this.addOrUpdateVocabulary}
@@ -780,6 +786,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
               message={this.state.vocabMessage}
               reportMessage={this.vocabReport}
               />
+              </ReactOverlayLoader>
           </div>
         </div>
       </div>
@@ -794,6 +801,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
     componentDidMount: function() {
       var thiz = this;
 
+      this.setState({loaded: false});
       Utils.getCollection("/api/v1/learning_resource_types/").then(
         function(learningResourceTypes) {
         if (!thiz.isMounted()) {
@@ -804,15 +812,20 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
           return type.name;
         });
         thiz.setState({learningResourceTypes: types});
-        Utils.getVocabulariesAndTerms(thiz.props.repoSlug).then(
+        return Utils.getVocabulariesAndTerms(thiz.props.repoSlug).then(
           function(vocabularies) {
             if (!thiz.isMounted()) {
               return;
             }
 
-            thiz.setState({vocabularies: vocabularies});
+            thiz.setState({
+              vocabularies: vocabularies,
+              loaded: true
+            });
           }
         );
+      }).fail(function() {
+        thiz.setState({loaded: true});
       });
     }
   });

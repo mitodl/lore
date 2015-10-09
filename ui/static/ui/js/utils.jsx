@@ -1,5 +1,6 @@
-define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
-  function ($, _, React, Infinite) {
+define("utils", ["jquery", "lodash", "react", "react_infinite", "spin",
+    "select2"],
+  function ($, _, React, Infinite, Spinner) {
   'use strict';
 
   /**
@@ -216,7 +217,6 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
     attachHandler: function() {
       var node = React.findDOMNode(this);
       var thiz = this;
-      $(node).off('ifToggled');
       $(node).on('ifToggled', function(e) {
         thiz.handleChange(e);
       });
@@ -224,7 +224,10 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
         checkboxClass: 'icheckbox_square-blue',
         radioClass: 'iradio_square-blue'
       });
-      $(node).iCheck(this.props.checked ? "check" : "uncheck");
+    },
+    componentWillUpdate: function() {
+      var node = React.findDOMNode(this);
+      $(node).off('ifToggled');
     },
     componentDidMount: function() {
       this.attachHandler();
@@ -318,6 +321,45 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
     }
   });
 
+  /**
+   * Adapted from react-loader
+   * https://github.com/quickleft/react-loader
+   */
+  var ReactOverlayLoader = React.createClass({
+    componentDidUpdate: function() {
+      this.spin();
+    },
+    componentDidMount: function() {
+      this.spin();
+    },
+    spin: function() {
+      if (this.isMounted() && !this.props.loaded) {
+        var target = React.findDOMNode(this.refs.loader);
+
+        var spinner = new Spinner();
+        spinner.spin(target);
+      }
+    },
+    render: function() {
+      var loader;
+      var opacity = 1;
+
+      if (!this.props.loaded) {
+        loader = <div ref="loader" />;
+        opacity = 0.6;
+      }
+      var children;
+      if (!this.props.hideChildrenOnLoad || this.props.loaded) {
+        children = <div style={{opacity: opacity}}>
+          {this.props.children}
+        </div>;
+      }
+      return <div>{loader}
+        {children}
+        </div>;
+    }
+  });
+
   return {
     getCollection: _getCollection,
     /**
@@ -352,6 +394,7 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "select2"],
         <ConfirmationDialog {...options} />,
         container
       );
-    }
+    },
+    ReactOverlayLoader: ReactOverlayLoader
   };
 });

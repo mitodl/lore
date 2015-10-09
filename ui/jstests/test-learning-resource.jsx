@@ -553,9 +553,9 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     "LearningResourcePanel.loader should populate its stuff",
     function(assert) {
       var div = document.createElement("div");
-      assert.equal(0, $(div).find("textarea").size());
+      assert.ok($(div).html().length === 0);
       LearningResources.loader("repo", "1", function() {}, function() {}, div);
-      assert.equal(1, $(div).find("textarea").size());
+      assert.ok($(div).html().length > 0);
     }
   );
 });

@@ -5,6 +5,7 @@ define('learning_resources',
 
   var StatusBox = Utils.StatusBox;
   var Select2 = Utils.Select2;
+  var ReactOverlayLoader = Utils.ReactOverlayLoader;
 
   var TermListItem = React.createClass({
     render: function () {
@@ -295,37 +296,41 @@ define('learning_resources',
 
       return <div>
         <StatusBox message={this.state.message} />
+        <ReactOverlayLoader loaded={this.state.loaded}
+                            hideChildrenOnLoad={true}>
+          <form className="form-horizontal">
 
-        <form className="form-horizontal">
-
-          <div id="vocabularies" className="form-group">
+            <div id="vocabularies" className="form-group">
               {vocabSelector} {termSelector}
-          </div>
+            </div>
 
-        {termList}
+            {termList}
 
-          <div className="form-group form-desc">
-            <label className="col-sm-12 control-label">Description</label>
+            <div className="form-group form-desc">
+              <label className="col-sm-12 control-label">Description</label>
               <textarea
                 className="form-control col-sm-12 textarea-desc"
                 value={this.state.description}
                 onChange={this.handleDescription}>
               </textarea>
-          </div>
-          <p className="text-right">
-            <a className="btn btn-lg btn-primary pull-right"
-               href={this.state.previewUrl} target="_blank">Preview</a>
-          </p>
-          <p>
-            <button className="btn btn-lg btn-primary"
-                    onClick={this.saveLearningResourcePanel} >
-              Save
-            </button> <button className="btn btn-lg btn-success"
-                    onClick={this.saveAndCloseLearningResourcePanel} >
-              Save and Close
-            </button>
-          </p>
-        </form>
+            </div>
+            <p className="text-right">
+              <a className="btn btn-lg btn-primary pull-right"
+                 href={this.state.previewUrl} target="_blank">Preview</a>
+            </p>
+
+            <p>
+              <button className="btn btn-lg btn-primary"
+                      onClick={this.saveLearningResourcePanel}>
+                Save
+              </button>
+              <button className="btn btn-lg btn-success"
+                      onClick={this.saveAndCloseLearningResourcePanel}>
+                Save and Close
+              </button>
+            </p>
+          </form>
+          </ReactOverlayLoader>
       </div>;
     },
     handleDescription: function(event) {
@@ -379,9 +384,10 @@ define('learning_resources',
     componentDidMount: function () {
       var thiz = this;
 
+      this.setState({loaded: false});
       $.get("/api/v1/repositories/" + this.props.repoSlug +
         "/learning_resources/" +
-        this.props.learningResourceId + "/").done(function (data) {
+        this.props.learningResourceId + "/").then(function (data) {
         if (!thiz.isMounted()) {
           // In time AJAX call happens component may become unmounted
           return;
@@ -397,49 +403,44 @@ define('learning_resources',
           description: description,
           previewUrl: previewUrl,
         });
-        Utils.getVocabulariesAndTerms(
+        return Utils.getVocabulariesAndTerms(
           thiz.props.repoSlug, learningResourceType)
           .then(function (results) {
-          if (!thiz.isMounted()) {
-            // In time AJAX call happens component may become unmounted
-            return;
-          }
-
-          var vocabulariesAndTerms = _.map(results,
-            function(tuple) {
-              var vocabulary = tuple.vocabulary;
-              var terms = tuple.terms;
-              var selectedTermsInVocab = _.pluck(
-                _.filter(terms, function(term) {
-                  return _.includes(selectedTerms, term.slug);
-                }), 'slug');
-              return {
-                vocabulary: vocabulary,
-                terms: terms,
-                selectedTerms: selectedTermsInVocab
-              };
-            });
-
-          thiz.setState({
-            vocabulariesAndTerms: vocabulariesAndTerms,
-          });
-
-          if (vocabulariesAndTerms.length) {
-            thiz.setState({
-              selectedVocabulary: vocabulariesAndTerms[0].vocabulary
-            });
-          }
-
-        }).fail(function () {
-          thiz.setState({
-            message: {
-              error: "Unable to read information about learning resource."
+            if (!thiz.isMounted()) {
+              // In time AJAX call happens component may become unmounted
+              return;
             }
-          });
-        });
 
+            thiz.setState({loaded: true});
+            var vocabulariesAndTerms = _.map(results,
+              function (tuple) {
+                var vocabulary = tuple.vocabulary;
+                var terms = tuple.terms;
+                var selectedTermsInVocab = _.pluck(
+                  _.filter(terms, function (term) {
+                    return _.includes(selectedTerms, term.slug);
+                  }), 'slug');
+                return {
+                  vocabulary: vocabulary,
+                  terms: terms,
+                  selectedTerms: selectedTermsInVocab
+                };
+              });
+
+            thiz.setState({
+              vocabulariesAndTerms: vocabulariesAndTerms,
+            });
+
+            if (vocabulariesAndTerms.length) {
+              thiz.setState({
+                selectedVocabulary: vocabulariesAndTerms[0].vocabulary
+              });
+            }
+
+          });
       }).fail(function () {
           thiz.setState({
+            loaded: true,
             message: {
               error: "Unable to read information about learning resource."
             }

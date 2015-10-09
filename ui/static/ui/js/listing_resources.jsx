@@ -4,6 +4,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
     'use strict';
 
     var ICheckbox = Utils.ICheckbox;
+    var ReactOverlayLoader = Utils.ReactOverlayLoader;
     var Pagination = PaginationModule.Pagination;
 
     var getImageFile = function(resourceType) {
@@ -138,8 +139,8 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
         var facets = [];
 
         var makeFacetGroup = function(values) {
-          if (!values.values.length &&
-              !values.facet.missing_count) {
+          if (!values || (!values.values.length &&
+              !values.facet.missing_count)) {
             return null;
           }
           var selectedFacets = {};
@@ -160,7 +161,9 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
         };
 
         _.each(["course", "run", "resource_type"], function(key) {
-          facets.push(makeFacetGroup(thiz.props.facetCounts[key]));
+          if (_.has(thiz.props.facetCounts, key)) {
+            facets.push(makeFacetGroup(thiz.props.facetCounts[key]));
+          }
         });
 
         _.each(this.props.facetCounts, function(values) {
@@ -492,7 +495,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
     var ListingPage = React.createClass({
       render: function() {
         return <div>
-          <div>
+          <ReactOverlayLoader loaded={this.props.loaded}>
           <div className="col-md-3">
             <div className="panel-group lore-panel-group">
               <Facets facetCounts={this.props.facetCounts}
@@ -506,7 +509,6 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
           <div className="col-md-9 col-results">
             <Listing {...this.props} ref="listing" />
           </div>
-            </div>
           <div className="row">
             <div className="col-md-12">
               <div className="lore-pagination">
@@ -518,6 +520,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
               </div>
             </div>
           </div>
+            </ReactOverlayLoader>
         </div>;
       },
       clearSelectedExports: function() {
@@ -529,7 +532,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
       loader: function(listingOptions, container, openExportsPanel,
                        openResourcePanel, updateFacets, updateMissingFacets,
                        selectedFacets, selectedMissingFacets, updateSort,
-                       pageNum, numPages, updatePage) {
+                       pageNum, numPages, updatePage, loaded) {
         return React.render(
           <ListingPage {...listingOptions}
                    openExportsPanel={openExportsPanel}
@@ -542,6 +545,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
                    pageNum={pageNum}
                    numPages={numPages}
                    updatePage={updatePage}
+                   loaded={loaded}
             />,
           container
         );
