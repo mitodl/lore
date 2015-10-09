@@ -34,9 +34,13 @@ _CONN_VERIFIED = False
 PAGE_LENGTH = 10
 
 
-def get_vocab_names():
+def get_vocab_names(repo_slug=None):
     """Get all vocabulary names in the database."""
-    return Vocabulary.objects.all().values_list('name', flat=True)
+    if repo_slug is not None:
+        return Vocabulary.objects.filter(
+            repository__slug=repo_slug).values_list('name', flat=True)
+    else:
+        return Vocabulary.objects.all().values_list('name', flat=True)
 
 
 def get_conn(verify=True):
@@ -172,7 +176,7 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
         # Always sort by ID to preserve ordering.
         search = search.sort(sort_by, "id")
 
-    terms = set(get_vocab_names())
+    terms = set(get_vocab_names(repo_slug=repo_slug))
     terms.update(set(('run', 'course', 'resource_type')))
     for term in terms:
         search.aggs.bucket(term, "terms", field=term)
