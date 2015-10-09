@@ -27,8 +27,12 @@ class TestSearch(RESTTestCase):
     Tests for search endpoint.
     """
 
-    def get_results(self, query="", selected_facets=None, sortby=""):
+    def get_results(self, query="", selected_facets=None, sortby="",
+                    repo_slug=None):
         """Helper method to get search results."""
+        if repo_slug is None:
+            repo_slug = self.repo.slug
+
         if selected_facets is None:
             selected_facets = []
 
@@ -41,7 +45,7 @@ class TestSearch(RESTTestCase):
             "{repo_base}{repo_slug}/search/?q={query}{facets}"
             "&sortby={sortby}".format(
                 repo_base=REPO_BASE,
-                repo_slug=self.repo.slug,
+                repo_slug=repo_slug,
                 query=urllib_parse.quote_plus(query),
                 facets=selected_facets_arg,
                 sortby=sortby
@@ -467,6 +471,28 @@ class TestSearch(RESTTestCase):
                 }]
             }
         )
+
+    def test_vocab_cross_contamination(self):
+        """
+        Test that vocabularies only show up in the repositories they belong to.
+        """
+        repo2 = create_repo("two", "two", self.user.id)
+        vocab1 = Vocabulary.objects.create(
+            repository=self.repo, required=False, name="vocab1", weight=1
+        )
+        vocab2 = Vocabulary.objects.create(
+            repository=repo2, required=False, name="vocab2", weight=1
+        )
+
+        repo1_counts = self.get_results(
+            repo_slug=self.repo.slug)['facet_counts']
+        repo2_counts = self.get_results(
+            repo_slug=repo2.slug)['facet_counts']
+
+        self.assertTrue(vocab1.slug in repo1_counts)
+        self.assertFalse(vocab2.slug in repo1_counts)
+        self.assertFalse(vocab1.slug in repo2_counts)
+        self.assertTrue(vocab2.slug in repo2_counts)
 
     def test_selected_facets(self):
         """Test selected_facets in REST results."""
