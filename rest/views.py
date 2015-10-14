@@ -65,7 +65,7 @@ from rest.permissions import (
 )
 from rest.util import CheckValidMemberParamMixin
 from search.api import construct_queryset
-from search.utils import index_resources
+from search.tasks import index_resources
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
@@ -230,19 +230,31 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
             )
             removed_types = old_types - set(new_types)
 
-            resources_to_reindex = []
+            resource_ids_to_reindex = []
             with transaction.atomic():
                 for term in vocab.term_set.all():
                     for resource in term.learning_resources.all():
                         if (resource.learning_resource_type.name in
                                 removed_types):
-                            resources_to_reindex.append(resource)
+                            resource_ids_to_reindex.append(resource.id)
                             term.learning_resources.remove(resource)
-            if len(resources_to_reindex) > 0:
-                index_resources(resources_to_reindex)
+            if len(resource_ids_to_reindex) > 0:
+                index_resources.delay(resource_ids_to_reindex)
 
         return super(VocabularyDetail, self).update(
             request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Override delete to also update index for deleted vocabulary.
+        """
+        vocab = self.get_object()
+        resource_ids = list(LearningResource.objects.filter(
+            terms__vocabulary__id=vocab.id
+        ).values_list("id", flat=True))
+        ret = super(VocabularyDetail, self).delete(request, *args, **kwargs)
+        index_resources.delay(resource_ids)
+        return ret
 
 
 class TermList(ListCreateAPIView):
@@ -305,11 +317,11 @@ class TermDetail(RetrieveUpdateDestroyAPIView):
         Override delete to also update index for deleted term.
         """
         term = self.get_object()
-        resources = list(LearningResource.objects.filter(
+        resource_ids = list(LearningResource.objects.filter(
             terms__id=term.id
-        ))
+        ).values_list("id", flat=True))
         ret = super(TermDetail, self).delete(request, *args, **kwargs)
-        index_resources(resources)
+        index_resources.delay(resource_ids)
         return ret
 
 

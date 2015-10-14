@@ -220,7 +220,7 @@ class TestIndexing(SearchTestCase):
             xa_nr_attempts=101,
             xa_avg_grade=9.9
         ))
-        index_resources([res1, res2, res3, res4])
+        index_resources([res1.id, res2.id, res3.id, res4.id])
         refresh_index()
         self.assertEqual(self.count_results(), 4)
         # sorting by number of views
@@ -300,14 +300,14 @@ class TestIndexing(SearchTestCase):
         self.assertEqual(json.loads(resp.content.decode('utf-8'))['count'], 0)
 
         # Reindex all resources
-        resources = LearningResource.objects.all()
-        index_resources(resources)
+        resource_ids = LearningResource.objects.values_list("id", flat=True)
+        index_resources(resource_ids)
 
         resp = self.client.get(search_url)
         self.assertEqual(resp.status_code, HTTP_200_OK)
         self.assertEqual(
             json.loads(resp.content.decode('utf-8'))['count'],
-            resources.count()
+            len(resource_ids)
         )
 
 

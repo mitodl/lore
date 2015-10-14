@@ -5,6 +5,7 @@ LORE test case
 from __future__ import unicode_literals
 import json
 import logging
+from six.moves import urllib_parse
 
 from rest_framework.status import (
     HTTP_200_OK,
@@ -825,6 +826,47 @@ class RESTTestCase(LoreTestCase):
         self.assertEqual(expected_status, resp.status_code)
         if expected_status == HTTP_201_CREATED:
             return as_json(resp)
+
+    def get_results(self, query="", selected_facets=None, sortby="",
+                    repo_slug=None):
+        """Helper method to get search results."""
+        if repo_slug is None:
+            repo_slug = self.repo.slug
+
+        if selected_facets is None:
+            selected_facets = []
+
+        selected_facets_arg = ""
+        for facet in selected_facets:
+            selected_facets_arg += "&selected_facets={facet}".format(
+                facet=urllib_parse.quote_plus(facet)
+            )
+        resp = self.client.get(
+            "{repo_base}{repo_slug}/search/?q={query}{facets}"
+            "&sortby={sortby}".format(
+                repo_base=REPO_BASE,
+                repo_slug=repo_slug,
+                query=urllib_parse.quote_plus(query),
+                facets=selected_facets_arg,
+                sortby=sortby
+            )
+        )
+        self.assertEqual(HTTP_200_OK, resp.status_code)
+        return as_json(resp)
+
+    def assert_results(self, expected_resources, key, term):
+        """Assert resources from search are expected."""
+        results = self.get_results(
+            selected_facets=["{v}_exact:{t}".format(
+                v=key,
+                t=term
+            )]
+        )
+        self.assertEqual(results['count'], len(expected_resources))
+        self.assertEqual(
+            sorted([row['id'] for row in results['results']]),
+            sorted([resource.id for resource in expected_resources])
+        )
 
 
 class RESTAuthTestCase(RESTTestCase):

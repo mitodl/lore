@@ -17,3 +17,13 @@ def refresh_index(index_name):
     from search.utils import get_conn
     conn = get_conn()
     conn.indices.refresh(index=index_name)
+
+
+@async.task
+@statsd.timer('lore.search.tasks.index_resources')
+def index_resources(resource_ids):
+    """
+    Reindex the given resources.
+    """
+    from search.utils import index_resources as _index_resources
+    _index_resources(resource_ids)

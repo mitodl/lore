@@ -139,7 +139,8 @@ def import_course(bundle, repo_id, user_id, static_dir):
     # This triggers a bulk indexing of all LearningResource instances
     # for the course at once.
     index_resources(
-        get_resources(repo_id).filter(course__id=course.id))
+        get_resources(repo_id).filter(
+            course__id=course.id).values_list("id", flat=True))
     return course
 
 

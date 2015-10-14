@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 from search.sorting import LoreSortingFields
 from search.utils import search_index
-from taxonomy.models import Vocabulary, Term
 
 
 def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
@@ -50,16 +49,11 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
         # Haystack queries for blanks by putting the key last, as the value,
         # and setting the key to "_missing_." Fix  this for elasticsearch-dsl.
         if key == '_missing_':
-            key, value = value, "empty"
+            key, value = value, None
 
         if key.endswith("_exact"):
-            key = key[:-6]
+            key = key[:-len("_exact")]
 
-        # Look for facets
-        if key.isdigit():
-            key = get_vocab_name(key)
-            if value is not 'empty':
-                value = get_term_label(value)
         terms[key] = value
 
     # This is sneakily being returned instead of the
@@ -72,14 +66,3 @@ def construct_queryset(repo_slug, query='', selected_facets=None, sortby=''):
     )
 
     return results
-
-
-def get_vocab_name(vocab_id):
-    """Get vocabulary name by ID."""
-    vocab = Vocabulary.objects.get(id=vocab_id)
-    return vocab.name
-
-
-def get_term_label(term_id):
-    """Get term label by ID."""
-    return Term.objects.get(id=term_id).label

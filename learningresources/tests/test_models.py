@@ -3,6 +3,7 @@ Tests for learningresources models
 """
 from __future__ import unicode_literals
 
+import json
 import os
 import random
 import string
@@ -12,8 +13,9 @@ from tempfile import mkdtemp
 from django.conf import settings
 from django.core.files import File
 from mock import MagicMock
+from rest_framework.status import HTTP_200_OK
 
-from .base import LoreTestCase
+from learningresources.tests.base import LoreTestCase
 from learningresources.models import (
     FILE_PATH_MAX_LENGTH,
     LearningResource,
@@ -24,6 +26,7 @@ from learningresources.models import (
     FilePathLengthException,
     get_preview_url,
 )
+from rest.tests.base import REPO_BASE
 
 
 def get_random_string(length):
@@ -190,3 +193,39 @@ class TestModels(LoreTestCase):
             resource.url_name = url_name
             url = get_preview_url(**kwargs)
             self.assertEqual(url, wanted)
+
+    def test_index_update_on_save(self):
+        """
+        Test that creating or saving a learning resource updates the index.
+        """
+        resource1 = LearningResource.objects.create(
+            course=self.resource.course,
+            learning_resource_type=self.resource.learning_resource_type
+        )
+
+        # New resource should show up in search results.
+        search_url = "{repo_base}{repo_slug}/search/".format(
+            repo_base=REPO_BASE,
+            repo_slug=self.repo.slug
+        )
+
+        def resource_in_results(resource):
+            """Check that resources match up to search API."""
+            resp = self.client.get(search_url)
+            self.assertEqual(resp.status_code, HTTP_200_OK)
+            results = json.loads(resp.content.decode('utf-8'))['results']
+
+            for result in results:
+                if result['id'] == resource.id and \
+                        result['description'] == resource.description:
+                    return True
+            return False
+
+        # We only index created resources on import so we
+        # shouldn't have an index update here.
+        self.assertFalse(resource_in_results(resource1))
+
+        # Resource change should show up in search results.
+        resource1.description = "new description here"
+        resource1.save()
+        self.assertTrue(resource_in_results(resource1))
