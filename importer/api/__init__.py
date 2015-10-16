@@ -8,12 +8,12 @@ from bs4 import BeautifulSoup
 from shutil import rmtree
 import logging
 from tempfile import mkdtemp
-from os.path import join, exists, isdir
+from os.path import join, exists
 from os import listdir
 
 from archive import Archive, ArchiveException
-from django.core.files import File
 from django.core.files.storage import default_storage
+from django.db import transaction
 from lxml import etree
 from xbundle import XBundle, DESCRIPTOR_TAGS
 
@@ -21,7 +21,6 @@ from importer.tasks import populate_xanalytics_fields
 from learningresources.api import (
     create_course,
     create_resource,
-    create_static_asset,
     get_resources,
     get_video_sub,
     import_static_assets,
@@ -109,7 +108,8 @@ def import_course_from_path(path, repo_id, user_id):
     )
     bundle.import_from_directory(path)
     static_dir = join(path, 'static')
-    course = import_course(bundle, repo_id, user_id, static_dir)
+    with transaction.atomic():
+        course = import_course(bundle, repo_id, user_id, static_dir)
     return course
 
 
