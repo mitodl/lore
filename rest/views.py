@@ -550,6 +550,19 @@ class LearningResourceDetail(RetrieveUpdateAPIView):
         return LearningResource.objects.filter(
             id=self.kwargs['lr_id'])
 
+    def get(self, request, *args, **kwargs):
+        """Override get to filter on content_xml."""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        remove_content_xml = request.GET.get("remove_content_xml")
+        if remove_content_xml == "true":
+            data = dict(serializer.data)
+            del data['content_xml']
+        else:
+            data = serializer.data
+        return Response(data)
+
     def update(self, request, *args, **kwargs):
         """Override update to remove response."""
         super(LearningResourceDetail, self).update(request, *args, **kwargs)
