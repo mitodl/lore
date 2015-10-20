@@ -118,6 +118,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         label: this.state.label,
         weight: this.props.term.weight
       };
+      thiz.props.setLoadedState(false);
       $.ajax({
         type: 'PATCH',
         url: API_ROOT_VOCAB_URL,
@@ -127,10 +128,12 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         thiz.setState({
           errorMessage: 'Unable to update term'
         });
-      }).done(function(term) {
+      }).then(function(term) {
         thiz.resetUtilityFeatures();
         thiz.props.updateTerm(thiz.props.vocabulary.id, term);
         thiz.props.refreshFromAPI();
+      }).always(function() {
+        thiz.props.setLoadedState(true);
       });
     },
     confirmedDeleteResponse: function(success) {
@@ -139,6 +142,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
         '/vocabularies/' + this.props.vocabulary.slug + '/terms/' +
         this.props.term.slug + "/";
+        thiz.props.setLoadedState(false);
         $.ajax({
           type: 'DELETE',
           url: API_ROOT_VOCAB_URL,
@@ -147,9 +151,11 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
           thiz.setState({
             errorMessage: 'Unable to delete term.'
           });
-        }).done(function() {
+        }).then(function() {
           thiz.props.deleteTerm(thiz.props.vocabulary.id, thiz.props.term);
           thiz.props.refreshFromAPI();
+        }).always(function() {
+          thiz.props.setLoadedState(true);
         });
       }
     }
@@ -169,6 +175,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
           key={term.id}
           renderConfirmationDialog={thiz.props.renderConfirmationDialog}
           refreshFromAPI={thiz.props.refreshFromAPI}
+          setLoadedState={thiz.props.setLoadedState}
           />;
       });
 
@@ -232,6 +239,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
     confirmedDeleteResponse: function(success) {
       var thiz = this;
       if (success) {
+        this.props.setLoadedState(false);
         var vocab = this.props.vocabulary;
         var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
           '/vocabularies/' + vocab.slug + '/';
@@ -245,6 +253,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
           thiz.props.deleteVocabulary(vocab.id);
 
           thiz.props.refreshFromAPI();
+        }).always(function() {
+          thiz.props.setLoadedState(true);
         });
       }
     },
@@ -266,6 +276,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
       var thiz = this;
       var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
         '/vocabularies/';
+      this.props.setLoadedState(false);
       $.ajax({
           type: "POST",
           url: API_ROOT_VOCAB_URL + this.props.vocabulary.slug + "/terms/",
@@ -276,20 +287,22 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
           contentType: "application/json; charset=utf-8"
         }
       ).fail(function() {
-          thiz.props.reportMessage({
-            error: "Error occurred while adding new term."
-          });
-        })
-      .then(function(newTerm) {
-          thiz.props.addTerm(thiz.props.vocabulary.id, newTerm);
-          thiz.setState({
-            newTermLabel: null
-          });
-
-          // clear errors
-          thiz.props.reportMessage(null);
-          thiz.props.refreshFromAPI();
+        thiz.props.reportMessage({
+          error: "Error occurred while adding new term."
         });
+      })
+      .then(function(newTerm) {
+        thiz.props.addTerm(thiz.props.vocabulary.id, newTerm);
+        thiz.setState({
+          newTermLabel: null
+        });
+
+        // clear errors
+        thiz.props.reportMessage(null);
+        thiz.props.refreshFromAPI();
+      }).always(function() {
+        thiz.props.setLoadedState(true);
+      });
     },
     getInitialState: function() {
       return {
@@ -316,6 +329,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
           addTerm={thiz.props.addTerm}
           renderConfirmationDialog={thiz.props.renderConfirmationDialog}
           refreshFromAPI={thiz.props.refreshFromAPI}
+          setLoadedState={thiz.props.setLoadedState}
           />;
       });
       return <div className="panel-group lore-panel-group">
@@ -399,6 +413,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         learning_resource_types: this.state.learningResourceTypes,
         multi_terms: this.state.multiTerms
       };
+
+      thiz.props.setLoadedState(false);
 
       // User wants to submit the form. First we need to see if any
       // resource term links would be deleted by this action. If so we need
@@ -506,6 +522,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
           }
           thiz.props.reportMessage({error: error});
         }
+      }).always(function() {
+        thiz.props.setLoadedState(true);
       });
     },
     isEditModeOpen: function() {
@@ -755,8 +773,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
         </ul>
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
-            <ReactOverlayLoader loaded={this.state.loaded}
-                                hideChildrenOnLoad={true}>
+            <ReactOverlayLoader
+              loaded={this.state.loaded}
+              hideChildrenOnLoad={!this.state.showChildrenOnLoad}>
             <AddTermsComponent
               deleteTerm={this.deleteTerm}
               updateTerm={this.updateTerm}
@@ -769,12 +788,13 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
               addTerm={this.addTerm}
               message={this.state.termsMessage}
               reportMessage={this.termsReport}
+              setLoadedState={this.setLoadedState}
               />
             </ReactOverlayLoader>
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
             <ReactOverlayLoader loaded={this.state.loaded}
-              hideChildrenOnLoad={true}>
+              hideChildrenOnLoad={!this.state.showChildrenOnLoad}>
             <AddVocabulary
               editVocabulary={this.editVocabulary}
               updateParent={this.addOrUpdateVocabulary}
@@ -785,6 +805,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
               refreshFromAPI={this.props.refreshFromAPI}
               message={this.state.vocabMessage}
               reportMessage={this.vocabReport}
+              setLoadedState={this.setLoadedState}
               />
               </ReactOverlayLoader>
           </div>
@@ -798,10 +819,16 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
     termsReport: function(message) {
       this.setState({termsMessage: message});
     },
+    setLoadedState: function(loaded) {
+      this.setState({loaded: loaded});
+    },
     componentDidMount: function() {
       var thiz = this;
 
-      this.setState({loaded: false});
+      this.setState({
+        loaded: false,
+        showChildrenOnLoad: false
+      });
       Utils.getCollection("/api/v1/learning_resource_types/").then(
         function(learningResourceTypes) {
         if (!thiz.isMounted()) {
@@ -819,13 +846,15 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
             }
 
             thiz.setState({
-              vocabularies: vocabularies,
-              loaded: true
+              vocabularies: vocabularies
             });
           }
         );
-      }).fail(function() {
-        thiz.setState({loaded: true});
+      }).always(function() {
+        thiz.setState({
+          loaded: true,
+          showChildrenOnLoad: true
+        });
       });
     }
   });
