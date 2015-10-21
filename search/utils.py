@@ -22,7 +22,7 @@ from rest.serializers import RepositorySearchSerializer
 from search.exceptions import ReindexException
 from search.search_indexes import get_course_metadata
 from search.tasks import refresh_index as _refresh_index
-from taxonomy.models import Vocabulary
+from taxonomy.models import Vocabulary, Term, make_vocab_key
 
 log = logging.getLogger(__name__)
 
@@ -34,13 +34,13 @@ _CONN_VERIFIED = False
 PAGE_LENGTH = 10
 
 
-def get_vocab_names(repo_slug=None):
+def get_vocab_slugs(repo_slug=None):
     """Get all vocabulary names in the database."""
     if repo_slug is not None:
         return Vocabulary.objects.filter(
-            repository__slug=repo_slug).values_list('name', flat=True)
+            repository__slug=repo_slug).values_list('slug', flat=True)
     else:
-        return Vocabulary.objects.all().values_list('name', flat=True)
+        return Vocabulary.objects.all().values_list('slug', flat=True)
 
 
 def get_conn(verify=True):
@@ -101,21 +101,21 @@ def get_resource_terms(resource_ids):
     Returns:
         data (dict): Vocab/term data for course.
     """
-    vocab_names = get_vocab_names()
+    vocab_slugs = get_vocab_slugs()
     resource_data = defaultdict(lambda: defaultdict(list))
     rels = LearningResource.terms.related.through.objects.select_related(
         "term__vocabulary").filter(learningresource__id__in=resource_ids)
     for rel in rels.iterator():
         obj = resource_data[rel.learningresource_id]
-        obj[rel.term.vocabulary.name].append(rel.term.label)
+        obj[rel.term.vocabulary.slug].append(rel.term.slug)
     # Replace the defaultdicts with dicts.
     info = {k: dict(v) for k, v in resource_data.items()}
     for resource_id in resource_ids:
         if resource_id not in info.keys():
             info[resource_id] = {}
-        for vocab_name in vocab_names:
-            if vocab_name not in info[resource_id].keys():
-                info[resource_id][vocab_name] = [None]
+        for vocab_slug in vocab_slugs:
+            if vocab_slug not in info[resource_id].keys():
+                info[resource_id][vocab_slug] = []
     return info
 
 
@@ -125,6 +125,7 @@ def _get_field_names():
         RepositorySearchSerializer.get_fields(RepositorySearchSerializer()))
 
 
+# pylint: disable=too-many-branches
 def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
     """
     Perform a search in Elasticsearch.
@@ -153,7 +154,13 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
 
     # Filter further on taxonomy terms.
     for key, value in terms.items():
-        search = search.query("match", **{key: value})
+        if value is None:
+            search = search.query(
+                "query_string",
+                query="_missing_:({key})".format(key=key)
+            )
+        else:
+            search = search.query("match", **{key: value})
 
     if repo_slug is not None:
         # Filter further on repository.
@@ -176,19 +183,29 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
         # Always sort by ID to preserve ordering.
         search = search.sort(sort_by, "id")
 
-    terms = set(get_vocab_names(repo_slug=repo_slug))
-    terms.update(set(('run', 'course', 'resource_type')))
-    for term in terms:
-        search.aggs.bucket(term, "terms", field=term)
+    vocabs = set(get_vocab_slugs(repo_slug=repo_slug))
+    for vocab in vocabs:
+        vocab_key = make_vocab_key(vocab)
+        search.aggs.bucket(
+            "{key}_missing".format(key=vocab_key),
+            "missing", field=vocab_key
+        )
+        search.aggs.bucket(
+            "{key}_buckets".format(key=vocab_key),
+            "terms", field=vocab_key
+        )
+    for key in ('run', 'course', 'resource_type'):
+        search.aggs.bucket(
+            '{key}_builtins'.format(key=key), "terms", field=key
+        )
 
     return SearchResults(search)
 
 
 @statsd.timer('lore.elasticsearch.bulk_index_chunk')
-def _index_resource_chunk(resources):
+def _index_resource_chunk(resource_ids):
     """Add/update records in Elasticsearch."""
 
-    resource_ids = [x.id for x in resources]
     # Terms assigned to the resources.
     term_info = get_resource_terms(resource_ids)
 
@@ -196,6 +213,7 @@ def _index_resource_chunk(resources):
 
     # Perform bulk insert using Elasticsearch directly.
     conn = get_conn()
+    resources = LearningResource.objects.filter(id__in=resource_ids).iterator()
     insert_count, errors = bulk(
         conn,
         (resource_to_dict(x, term_info[x.id]) for x in resources),
@@ -213,23 +231,19 @@ def _index_resource_chunk(resources):
 
 
 @statsd.timer('lore.elasticsearch.bulk_index')
-def index_resources(resources, chunk_size=100):
+def index_resources(resource_ids, chunk_size=100):
     """Add/update records in Elasticsearch."""
 
-    if hasattr(resources, "iterator"):
-        # If it's a queryset, be efficient.
-        resources = resources.iterator()
-    else:
-        # Must be an iterator so islice doesn't pull the same n items each
-        # time.
-        resources = iter(resources)
+    # Must be an iterator so islice doesn't pull the same n items each
+    # time.
+    resource_ids = iter(resource_ids)
 
     # Limit chunk size to 100 to avoid storing it all
     # in memory at once.
-    chunk = list(islice(resources, chunk_size))
+    chunk = list(islice(resource_ids, chunk_size))
     while len(chunk) > 0:
         _index_resource_chunk(chunk)
-        chunk = list(islice(resources, chunk_size))
+        chunk = list(islice(resource_ids, chunk_size))
 
     refresh_index()
 
@@ -295,8 +309,8 @@ def resource_to_dict(resource, term_info):
 
     # Index term info. Since these fields all use the "not_analyzed"
     # index, they must all be exact matches.
-    for key, vals in term_info.items():
-        rec[key] = vals
+    for vocab_slug, term_slugs in term_info.items():
+        rec[make_vocab_key(vocab_slug)] = term_slugs
 
     # If the title is empty, sort it to the bottom. See above.
     if rec["titlesort"] == "0":
@@ -339,7 +353,7 @@ def recreate_index():
     create_mapping()
 
     # re-index all existing LearningResource instances:
-    index_resources(LearningResource.objects.all())
+    index_resources(LearningResource.objects.values_list("id", flat=True))
 
 
 class SearchResults(object):
@@ -492,16 +506,17 @@ def ensure_vocabulary_mappings(term_info):
     existing_vocabs = set(mapping.to_dict()["learningresource"]["properties"])
 
     # Get all the taxonomy names from the data.
-    vocab_names = set()
+    vocab_slugs = set()
     for result in term_info.values():
         for key in result.keys():
-            vocab_names.add(key)
+            vocab_slugs.add(key)
     updated = False
     # Add vocabulary to mapping if necessary.
-    for name in vocab_names:
-        if name in existing_vocabs:
+    for slug in vocab_slugs:
+        vocab_key = make_vocab_key(slug)
+        if vocab_key in existing_vocabs:
             continue
-        mapping.field(name, "string", index="not_analyzed", null_value="empty")
+        mapping.field(vocab_key, "string", index="not_analyzed")
         updated = True
     if updated:
         mapping.save(INDEX_NAME)
@@ -532,6 +547,7 @@ def strip_xml(content):
     return content
 
 
+# pylint: disable=too-many-locals
 def convert_aggregate(agg):
     """
     Convert elasticsearch-dsl output to the facet output
@@ -539,44 +555,95 @@ def convert_aggregate(agg):
     Args:
         agg: Agg
     Returns:
-        updated (dict): facet data
+        reformatted (dict): facet data
     """
 
-    def format_key(key):
-        """Custom conversions for build-in facets."""
-        table = {
-            'run': 'Run',
-            'course': 'Course',
-            'resource_type': 'Item Type',
-        }
-        return table.get(key, key)
+    special_labels = {
+        'run': 'Run',
+        'course': 'Course',
+        'resource_type': 'Item Type',
+    }
 
-    missing_counts = {}
-    updated = agg['_d_']
-    for key in updated.keys():
-        updated[key]["facet"] = updated[key]["buckets"]
-        del updated[key]["buckets"]
-        for name in ("doc_count_error_upper_bound", "sum_other_doc_count"):
-            if name in updated[key]:
-                del updated[key][name]
-        temp_values = updated[key]["facet"]
-        updated[key]["values"] = []
-        for rec in temp_values:
-            # We have the empty values as part of the aggregation, unlike
-            # in Haystack. We have to pull them out specially to present
-            # the data the same way Haystack did.
-            if rec["key"] == "empty":
-                missing_counts[key] = rec["doc_count"]
-                continue
-            rec["count"] = rec["doc_count"]
-            rec["label"] = rec["key"]
-            del rec["doc_count"]
-            updated[key]["values"].append(rec)
+    vocab_lookup = {}
+    term_lookup = {}
+    for term in Term.objects.select_related("vocabulary").all():
+        vocab = term.vocabulary
 
-    for facet in updated.keys():
-        updated[facet]["facet"] = {
-            "key": facet,
-            "label": format_key(facet),
-            "missing_count": missing_counts.get(facet, 0),
+        for term in vocab.term_set.all():
+            term_lookup[term.slug] = term.label
+        vocab_lookup[vocab.slug] = vocab.name
+
+    def get_vocab_label(vocab_key):
+        """Get label for vocab."""
+        if vocab_key.startswith("vocab_"):
+            vocab_key = vocab_key[len("vocab_"):]
+        return vocab_lookup.get(vocab_key, vocab_key)
+
+    def get_term_label(term_slug):
+        """Get label for term."""
+        return term_lookup.get(term_slug, term_slug)
+
+    def get_builtin_label(key):
+        """Get label for special types."""
+        return special_labels.get(key, key)
+
+    # Group into fields.
+    vocab_buckets = defaultdict(dict)
+    builtin_buckets = defaultdict(dict)
+    for key, value in agg['_d_'].items():
+        if key.endswith("_missing"):
+            key = key[:-len("_missing")]
+            vocab_buckets[key]['missing'] = value
+        elif key.endswith("_buckets"):
+            key = key[:-len("_buckets")]
+            vocab_buckets[key]['buckets'] = value['buckets']
+        elif key.endswith("_builtins"):
+            key = key[:-len("_builtins")]
+            builtin_buckets[key]['buckets'] = value['buckets']
+            # No missing counts for run, course, resource_types.
+
+    reformatted = {}
+    for key, buckets_and_missing in vocab_buckets.items():
+        buckets = buckets_and_missing['buckets']
+        missing = buckets_and_missing['missing']
+
+        values = [
+            {
+                "key": facet['key'],
+                "label": get_term_label(facet['key']),
+                "count": facet["doc_count"]
+            } for facet in buckets
+        ]
+        facet = {
+            "key": key,
+            "label": get_vocab_label(key),
+            'missing_count': missing['doc_count']
         }
-    return updated
+
+        reformatted[key] = {
+            "facet": facet,
+            "values": values,
+        }
+
+    for key, buckets_and_missing in builtin_buckets.items():
+        buckets = buckets_and_missing['buckets']
+
+        values = [
+            {
+                "key": facet['key'],
+                "label": facet['key'],
+                "count": facet['doc_count']
+            } for facet in buckets
+        ]
+        facet = {
+            "key": key,
+            "label": get_builtin_label(key),
+            "missing_count": 0
+        }
+
+        reformatted[key] = {
+            "facet": facet,
+            "values": values,
+        }
+
+    return reformatted

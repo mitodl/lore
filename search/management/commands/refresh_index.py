@@ -19,4 +19,4 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """Refreshes the Elasticsearch index."""
         create_mapping()
-        index_resources(LearningResource.objects.all())
+        index_resources(LearningResource.objects.values_list("id", flat=True))

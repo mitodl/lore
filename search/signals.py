@@ -28,7 +28,7 @@ def handle_m2m_save(sender, **kwargs):
     get_vocabs(instance.id)
     # Update Elasticsearch index:
     from search.utils import index_resources
-    index_resources([instance])
+    index_resources([instance.id])
 
 
 @statsd.timer('lore.elasticsearch.taxonomy_update')
@@ -36,38 +36,24 @@ def handle_m2m_save(sender, **kwargs):
 def handle_resource_update(sender, **kwargs):
     """Update index when a LearningResource is updated."""
     if kwargs["created"]:
-        # Don't index upon create; update only.
+        # Don't index upon create because we handle this in bulk
+        # in the importer, the only place we allow creation to happen.
         return
     instance = kwargs.pop("instance")
     if instance.__class__.__name__ != "LearningResource":
         return
     from search.utils import index_resources
-    index_resources([instance])
+    index_resources([instance.id])
 
 
 @statsd.timer('lore.elasticsearch.taxonomy_delete')
 @receiver(post_delete)
 def handle_resource_deletion(sender, **kwargs):
     """Delete index when instance is deleted."""
+    # We currently only use this in tests, the user cannot delete resources
+    # at the moment.
     instance = kwargs.pop("instance")
     if instance.__class__.__name__ != "LearningResource":
         return
     from search.utils import delete_resource_from_index
     delete_resource_from_index(instance)
-
-
-@statsd.timer('lore.elasticsearch.taxonomy_create')
-@receiver(post_save)
-def handle_vocabulary_creation(sender, **kwargs):
-    """Update index when a Vocabulary is created."""
-    if not kwargs["created"]:
-        # Only index upon create.
-        return
-    instance = kwargs.pop("instance")
-    if instance.__class__.__name__ != "Vocabulary":
-        return
-    from learningresources.models import LearningResource
-    from search.utils import index_resources
-    index_resources(
-        LearningResource.objects.filter(
-            course__repository__id=instance.repository_id))

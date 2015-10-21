@@ -13,7 +13,7 @@ import logging
 from learningresources.tests.base import LoreTestCase
 from search.utils import search_index
 from search.sorting import LoreSortingFields
-from taxonomy.models import Term, Vocabulary
+from taxonomy.models import Term, Vocabulary, make_vocab_key
 
 log = logging.getLogger(__name__)
 
@@ -50,5 +50,5 @@ class SearchTestCase(LoreTestCase):
         """Return count of matching indexed records by facet."""
         return search_index(
             repo_slug=self.repo.slug,
-            terms={vocab: term}
+            terms={make_vocab_key(vocab): term}
         ).count()

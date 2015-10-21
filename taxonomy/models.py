@@ -14,6 +14,13 @@ from learningresources.models import (
 )
 
 
+def make_vocab_key(vocab_slug):
+    """
+    Create vocab key used for elasticsearch index mapping.
+    """
+    return "vocab_{slug}".format(slug=vocab_slug)
+
+
 class Vocabulary(BaseModel):
     """Model for vocabulary table"""
     MANAGED = "m"
@@ -60,6 +67,11 @@ class Vocabulary(BaseModel):
             self.slug = slug
 
         return super(Vocabulary, self).save(*args, **kwargs)
+
+    @property
+    def index_key(self):
+        """Key used in elasticsearch index."""
+        return make_vocab_key(self.slug)
 
 
 class Term(BaseModel):
