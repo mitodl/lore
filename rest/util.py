@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 from django.contrib.auth.models import User
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
+from django.utils.text import slugify
 from rest_framework.fields import BooleanField, empty
 
 from roles.permissions import BaseGroupTypes
@@ -60,3 +61,28 @@ class CheckValidMemberParamMixin(object):
             CheckValidMemberParamMixin,
             self
         ).dispatch(request, *args, **kwargs)
+
+
+def default_slugify(label, default_name, exists_func):
+    """
+    Function that extends the Django `slugify` to add a default string in case
+    the slugified string is empty.
+    It also takes care of collisions.
+    NOTE: the `exists_func` must be a valid function to verify the existence
+    of the slug. The implementation is left to the coder's discretion.
+
+    Args:
+        label (unicode): label to be slugified
+        default_name (unicode): default base slug to be used if the slugified
+            label is an empty string
+        exists_func (function): function to be used to verify if
+            a slug is already in use
+    Returns:
+        slug (unicode): slug for the label
+    """
+    slug = slugified_str = slugify(label) or '{}-slug'.format(default_name)
+    count = 1
+    while exists_func(slug):
+        slug = "{0}{1}".format(slugified_str, count)
+        count += 1
+    return slug
