@@ -62,11 +62,11 @@ class TestIndexing(SearchTestCase):
         vocab_key = self.vocabulary.index_key
         set_cache_timeout(0)
         term = self.terms[0]
-        self.assertEqual(self.count_faceted_results(vocab_key, term.slug), 0)
+        self.assertEqual(self.count_faceted_results(vocab_key, term.id), 0)
         self.resource.terms.add(term)
-        self.assertEqual(self.count_faceted_results(vocab_key, term.slug), 1)
+        self.assertEqual(self.count_faceted_results(vocab_key, term.id), 1)
         self.resource.terms.remove(term)
-        self.assertEqual(self.count_faceted_results(vocab_key, term.slug), 0)
+        self.assertEqual(self.count_faceted_results(vocab_key, term.id), 0)
 
     def test_strip_xml(self):
         """Indexed content_xml should have XML stripped."""

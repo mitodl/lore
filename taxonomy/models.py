@@ -14,11 +14,11 @@ from learningresources.models import (
 )
 
 
-def make_vocab_key(vocab_slug):
+def make_vocab_key(vocab_id):
     """
     Create vocab key used for elasticsearch index mapping.
     """
-    return "vocab_{slug}".format(slug=vocab_slug)
+    return "vocab_{id}".format(id=vocab_id)
 
 
 class Vocabulary(BaseModel):
@@ -71,7 +71,7 @@ class Vocabulary(BaseModel):
     @property
     def index_key(self):
         """Key used in elasticsearch index."""
-        return make_vocab_key(self.slug)
+        return make_vocab_key(self.id)
 
 
 class Term(BaseModel):
