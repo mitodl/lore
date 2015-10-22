@@ -226,7 +226,7 @@ define('listing',
       var selectedFacets;
       var selectedMissingFacets;
 
-      var openResourcePanel = function(resourceId) {
+      var loadResourceTab = function(resourceId) {
         LearningResources.loader(
           repoSlug,
           resourceId,
@@ -234,10 +234,48 @@ define('listing',
           closeLearningResourcePanel,
           $("#tab-1")[0]
         );
-        $('.cd-panel').addClass('is-visible');
-        StaticAssets.loader(repoSlug, resourceId, $("#tab-3")[0]);
+      };
+
+      var loadXmlTab = function(resourceId) {
         XmlPanel.loader(repoSlug, resourceId, $("#tab-2")[0]);
       };
+
+      var loadStaticAssetsTab = function(resourceId) {
+        StaticAssets.loader(repoSlug, resourceId, $("#tab-3")[0]);
+      };
+
+      // Keep track of resource id so we can lazy load panels.
+      var currentResourceId;
+
+      var panelLoaders = {
+        "tab-1": loadResourceTab,
+        "tab-2": loadXmlTab,
+        "tab-3": loadStaticAssetsTab
+      };
+
+      var loadedPanels;
+      var openResourcePanel = function(resourceId) {
+        // Reset loaded panels
+        loadedPanels = {};
+        currentResourceId = resourceId;
+
+        // Load the resource tab
+        showTab("tab-1");
+        loadResourceTab(currentResourceId);
+        loadedPanels["tab-1"] = true;
+
+        $('.cd-panel').addClass('is-visible');
+      };
+
+      _.each(panelLoaders, function(loader, tag) {
+        $("a[href='#" + tag + "']").click(function() {
+          // If tab not already loaded, load it now
+          if (!loadedPanels[tag]) {
+            loader(currentResourceId);
+            loadedPanels[tag] = true;
+          }
+        });
+      });
 
       refreshFromAPI = function() {
         pageLoaded = false;
