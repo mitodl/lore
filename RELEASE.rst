@@ -1,6 +1,39 @@
 Release Notes
 -------------
 
+Version 0.12.0
+==============
+
+- Added task to index resources via Celery.
+- Wrapped course imports in transaction.
+- Limited vocabularies to repository being searched.
+- Updated Django to 1.8.5 due to a bugfix release.
+- Removed Haystack.
+- Moved Pagination inside Listing React component.
+- Fixed reindexing for edited vocabularies.
+- Updated status tests to use settings context.
+- Added limit to memory for Docker.
+- Chunked bulk indexing to lower memory footprint.
+- Fixed resource ids.
+- Added debug_toolbar.
+- Fixed mouse pointer on edit and delete links.
+- Fixed memory usage in migration.
+- Fixed collapse behavior.
+- Fixed NewRelic not reporting.
+- Changed get_or_create to create.
+- Replaced Haystack queryset and facet counts with elasticsearch-dsl.
+- Fixed ``id`` attribute for vocab and term select.
+- Added filtering on vocabulary and learning resource type for learning
+  resources.
+- Configured NewRelic Python agent.
+- Implemented verification of resource types on models.
+- Static assets are served again using local storage.
+- Fixed missing test module.
+- Replaced default missing title and updated description path.
+- Pinned PyTest to a version < 2.8.
+- Wrapped description text to 2 lines and added expand collapse description
+  functionality.
+
 Version 0.11.0
 ==============
 
