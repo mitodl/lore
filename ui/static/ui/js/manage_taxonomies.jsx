@@ -60,7 +60,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
      * If user selects edit button then open edit mode
      * Else call api to update term.
      */
-    editTerm: function() {
+    editTerm: function(e) {
+      e.preventDefault();
       this.setState({
         formatActionState: 'edit',
         label: this.props.term.label
@@ -83,7 +84,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
       // user is in edit mode. Cancel edit if user presses cross icon.
       this.resetUtilityFeatures();
     },
-    deleteTerm: function() {
+    deleteTerm: function(e) {
+      e.preventDefault();
       var options = {
         actionButtonName: "Delete",
         actionButtonClass: "btn btn-danger btn-ok",
