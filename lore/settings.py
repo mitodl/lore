@@ -277,6 +277,7 @@ LOGIN_URL = "/admin/"
 # Logging configuration
 LOG_LEVEL = get_var('LORE_LOG_LEVEL', 'DEBUG')
 DJANGO_LOG_LEVEL = get_var('DJANGO_LOG_LEVEL', 'DEBUG')
+ES_LOG_LEVEL = get_var('ES_LOG_LEVEL', 'INFO')
 
 # For logging to a remote syslog host
 LOG_HOST = get_var('LORE_LOG_HOST', 'localhost')
@@ -339,7 +340,7 @@ LOGGING = {
             'level': 'INFO',
         },
         'elasticsearch': {
-            'level': 'INFO',
+            'level': ES_LOG_LEVEL,
         },
     },
 }
