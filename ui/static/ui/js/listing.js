@@ -256,7 +256,6 @@ define('listing',
 
         renderListingResources();
         return $.get(url).then(function(collection) {
-          pageLoaded = true;
           listingOptions = $.extend({}, listingOptions);
           listingOptions.resources = collection.results;
           listingOptions.facetCounts = collection.facet_counts;
@@ -270,13 +269,12 @@ define('listing',
               pageNum = 1;
             }
           }
-
-          renderListingResources();
         }).fail(function(error) {
-          pageLoaded = true;
-
           // Propagate error
           return $.Deferred().reject(error);
+        }).always(function() {
+          pageLoaded = true;
+          renderListingResources();
         });
       };
 

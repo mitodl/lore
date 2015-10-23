@@ -336,7 +336,7 @@ define("utils", ["jquery", "lodash", "react", "react_infinite", "spin",
       if (this.isMounted() && !this.props.loaded) {
         var target = React.findDOMNode(this.refs.loader);
 
-        var spinner = new Spinner();
+        var spinner = new Spinner({zIndex: 0});
         spinner.spin(target);
       }
     },

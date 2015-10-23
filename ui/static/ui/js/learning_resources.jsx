@@ -100,8 +100,7 @@ define('learning_resources',
 
   var TermSelect = React.createClass({
     render: function () {
-      var options = [];
-      options = _.map(this.props.selectedVocabulary.terms, function (term) {
+      var options = _.map(this.props.selectedVocabulary.terms, function (term) {
         return {
           id: term.slug,
           text: term.label
@@ -172,6 +171,7 @@ define('learning_resources',
           var API_ROOT_TERMS_URL = '/api/v1/repositories/' +
             thiz.props.repoSlug + '/vocabularies/' +
             thiz.props.selectedVocabulary.slug + "/terms/";
+          thiz.props.setLoadedState(false);
           _.forEach(termsToCreate, function (termLabel) {
             $.ajax({
                 type: "POST",
@@ -189,7 +189,7 @@ define('learning_resources',
                     termLabel + "\"."
                 });
               })
-            .done(function(newTerm) {
+            .then(function(newTerm) {
               //append the new term to the list of newly created terms
               // replace che current label in the selected values with the newly created slug
               selectedValues.splice(
@@ -203,6 +203,8 @@ define('learning_resources',
               thiz.props.setValues(
                 thiz.props.selectedVocabulary.slug, selectedValues
               );
+            }).always(function() {
+              thiz.props.setLoadedState(true);
             });
           });
 
@@ -249,8 +251,8 @@ define('learning_resources',
     },
 
     appendTermSelectedVocabulary: function (termObj) {
-      var selectedVocabulary = this.state.selectedVocabulary;
-      selectedVocabulary.terms.push(termObj);
+      var selectedVocabulary = $.extend({}, this.state.selectedVocabulary);
+      selectedVocabulary.terms = selectedVocabulary.terms.concat(termObj);
       this.setState({
         selectedVocabulary: selectedVocabulary,
         message: undefined
@@ -285,6 +287,7 @@ define('learning_resources',
             setValues={this.setSelectedTerms}
             appendTermSelectedVocabulary={this.appendTermSelectedVocabulary}
             repoSlug={this.props.repoSlug}
+            setLoadedState={this.setLoadedState}
             reportMessage={this.reportMessage}
           />;
 
@@ -296,8 +299,9 @@ define('learning_resources',
 
       return <div>
         <StatusBox message={this.state.message} />
-        <ReactOverlayLoader loaded={this.state.loaded}
-                            hideChildrenOnLoad={true}>
+        <ReactOverlayLoader
+          loaded={this.state.loaded}
+          hideChildrenOnLoad={!this.state.showChildrenOnLoad}>
           <form className="form-horizontal">
 
             <div id="vocabularies" className="form-group">
@@ -323,8 +327,7 @@ define('learning_resources',
               <button className="btn btn-lg btn-primary"
                       onClick={this.saveLearningResourcePanel}>
                 Save
-              </button>
-              <button className="btn btn-lg btn-success"
+              </button> <button className="btn btn-lg btn-success"
                       onClick={this.saveAndCloseLearningResourcePanel}>
                 Save and Close
               </button>
@@ -332,6 +335,9 @@ define('learning_resources',
           </form>
           </ReactOverlayLoader>
       </div>;
+    },
+    setLoadedState: function(loaded) {
+      this.setState({loaded: loaded});
     },
     handleDescription: function(event) {
       event.preventDefault();
@@ -360,6 +366,7 @@ define('learning_resources',
         description: this.state.description
       };
 
+      this.setState({loaded: false});
       $.ajax({
         url: "/api/v1/repositories/" + this.props.repoSlug +
         "/learning_resources/" +
@@ -367,7 +374,7 @@ define('learning_resources',
         type: "PATCH",
         contentType: 'application/json',
         data: JSON.stringify(data)
-      }).done(function () {
+      }).then(function () {
         thiz.setState({
           message: "Form saved successfully!"
         });
@@ -379,12 +386,17 @@ define('learning_resources',
         thiz.setState({
           message: {error: "Unable to save form"}
         });
+      }).always(function() {
+        thiz.setState({loaded: true});
       });
     },
     componentDidMount: function () {
       var thiz = this;
 
-      this.setState({loaded: false});
+      this.setState({
+        loaded: false,
+        showChildrenOnLoad: false
+      });
       $.get("/api/v1/repositories/" + this.props.repoSlug +
         "/learning_resources/" +
         this.props.learningResourceId + "/?remove_content_xml=true")
@@ -412,7 +424,6 @@ define('learning_resources',
               return;
             }
 
-            thiz.setState({loaded: true});
             var vocabulariesAndTerms = _.map(results,
               function (tuple) {
                 var vocabulary = tuple.vocabulary;
@@ -437,14 +448,17 @@ define('learning_resources',
                 selectedVocabulary: vocabulariesAndTerms[0].vocabulary
               });
             }
-
           });
       }).fail(function () {
           thiz.setState({
-            loaded: true,
             message: {
               error: "Unable to read information about learning resource."
             }
+          });
+        }).always(function() {
+          thiz.setState({
+            loaded: true,
+            showChildrenOnLoad: true
           });
         });
     },

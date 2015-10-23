@@ -211,6 +211,11 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
         errorMessage = message;
       };
 
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
+      };
+
       var afterMount = function(component) {
         var labels = React.addons.TestUtils.
         scryRenderedDOMComponentsWithTag(
@@ -260,8 +265,10 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             assert.equal(refreshCount, 0);
             React.addons.TestUtils.Simulate.click(saveButton);
             component.forceUpdate(function() {
+              assert.equal(loadedState, false);
               //after saved term using api
               waitForAjax(1, function() {
+                assert.equal(loadedState, true);
                 //term state reset
                 assert.equal(component.state.formatActionState, 'show');
                 // term is update in parent
@@ -392,6 +399,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             vocabulary={vocabulary}
             refreshFromAPI={refreshFromAPI}
             reportMessage={reportMessage}
+            setLoadedState={setLoadedState}
             ref={afterMount}
           />
         );
@@ -422,6 +430,11 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
       var refreshCount = 0;
       var refreshFromAPI = function() {
         refreshCount++;
+      };
+
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
       };
 
       var afterMount = function(component) {
@@ -481,7 +494,10 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
                 assert.equal(refreshCount, 0);
                 React.addons.TestUtils.Simulate.click(saveButton);
                 component.forceUpdate(function() {
+                  // Loader is spinning...
+                  assert.equal(loadedState, false);
                   waitForAjax(1, function() {
+                    assert.equal(loadedState, true);
                     assert.equal(component.state.label, "TestB");
                     assert.equal(
                       component.state.errorMessage, 'Unable to update term'
@@ -530,6 +546,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             updateTerm={updateTerm}
             vocabulary={vocabulary}
             refreshFromAPI={refreshFromAPI}
+            setLoadedState={setLoadedState}
             ref={afterMount}
           />
         );
@@ -564,6 +581,11 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
         refreshCount++;
       };
 
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
+      };
+
       var afterMount = function(component) {
         var deleteButton = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
@@ -573,8 +595,10 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
         //select delete
         React.addons.TestUtils.Simulate.click(deleteButton);
         component.forceUpdate(function() {
+          assert.equal(loadedState, false);
           assert.equal(component.state.formatActionState, 'show');
           waitForAjax(1, function() {
+            assert.equal(loadedState, true);
             // term is delete in parent
             assert.equal(parentUpdateCount, 1);
             // listing was asked to refresh
@@ -593,6 +617,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             deleteTerm={deleteTerm}
             vocabulary={vocabulary}
             refreshFromAPI={refreshFromAPI}
+            setLoadedState={setLoadedState}
             ref={afterMount}
           />
         );
@@ -629,6 +654,11 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
         refreshCount++;
       };
 
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
+      };
+
       var afterMount = function(component) {
         var deleteButton = React.addons.TestUtils.
           findRenderedDOMComponentWithClass(
@@ -642,7 +672,9 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             component.state.errorMessage, ''
           );
           assert.equal(component.state.formatActionState, 'show');
+          assert.equal(loadedState, false);
           waitForAjax(1, function() {
+            assert.equal(loadedState, true);
             // check state of error message
             assert.equal(
               component.state.errorMessage, 'Unable to delete term.'
@@ -661,6 +693,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             deleteTerm={deleteTerm}
             vocabulary={vocabulary}
             refreshFromAPI={refreshFromAPI}
+            setLoadedState={setLoadedState}
             ref={afterMount}
           />
         );
@@ -693,6 +726,11 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
       };
 
       var reportMessage = function() {};
+
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
+      };
 
       var refreshCount = 0;
       var refreshFromAPI = function() {
@@ -783,7 +821,9 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
                   React.addons.TestUtils.Simulate.keyUp(
                     textbox, {key: "Enter"}
                   );
+                  assert.equal(loadedState, false);
                   waitForAjax(1, function () {
+                    assert.equal(loadedState, true);
                     assert.equal(addTermCalled, 1);
                     done();
                   });
@@ -805,6 +845,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             addTerm={addTerm}
             repoSlug="repo"
             refreshFromAPI={refreshFromAPI}
+            setLoadedState={setLoadedState}
             ref={afterMount}
           />
         );
@@ -838,12 +879,19 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
         refreshCount++;
       };
 
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
+      };
+
       var afterMount = function(component) {
         // wait for calls to populate form
         var node = React.findDOMNode(component);
         var textbox = $(node).find("input")[0];
         React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
+        assert.equal(loadedState, false);
         waitForAjax(1, function () {
+          assert.equal(loadedState, true);
           assert.equal(addTermCalled, 0);
           // refreshFromAPI was never called
           assert.equal(refreshCount, 0);
@@ -864,6 +912,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             addTerm={addTerm}
             repoSlug="repo"
             refreshFromAPI={refreshFromAPI}
+            setLoadedState={setLoadedState}
             ref={afterMount}
           />
         );
@@ -895,6 +944,11 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
         errorMessage = message;
       };
 
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
+      };
+
       var editVocabulary = function() {};
       var afterMount = function(component) {
         assert.equal(
@@ -922,12 +976,16 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
               'input'
             );
           React.addons.TestUtils.Simulate.keyUp(textbox, {key: "Enter"});
-          waitForAjax(1, function() {
-            //test items
-            assert.equal(addTermCalled, 1);
-            // listing page was asked to update
-            assert.equal(refreshCount, 1);
-            done();
+          component.forceUpdate(function() {
+            assert.equal(loadedState, false);
+            waitForAjax(1, function () {
+              assert.equal(loadedState, true);
+              //test items
+              assert.equal(addTermCalled, 1);
+              // listing page was asked to update
+              assert.equal(refreshCount, 1);
+              done();
+            });
           });
         });
       };
@@ -940,6 +998,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             addTerm={addTerm}
             refreshFromAPI={refreshFromAPI}
             reportMessage={reportMessage}
+            setLoadedState={setLoadedState}
             ref={afterMount}
           />
         );
@@ -1168,6 +1227,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             updateParent={updateParent}
             learningResourceTypes={propLearningResourceTypes}
             refreshFromAPI={refreshFromAPI}
+            setLoadedState={function() {}}
             ref={afterMount}
           />
         );
@@ -1260,6 +1320,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             updateParent={updateParent}
             refreshFromAPI={refreshFromAPI}
             reportMessage={reportMessage}
+            setLoadedState={function() {}}
             ref={afterMount}
           />
         );
@@ -1361,6 +1422,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             refreshFromAPI={refreshFromAPI}
             updateParent={updateParent}
             reportMessage={reportMessage}
+            setLoadedState={function() {}}
             ref={afterMount}
           />
         );
@@ -1506,6 +1568,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             updateParent={updateParent}
             reportMessage={reportMessage}
             renderConfirmationDialog={renderConfirmationDialog}
+            setLoadedState={function() {}}
             ref={afterMount}
           />
         );
@@ -1513,7 +1576,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
   );
 
   QUnit.test('Assert that if user cancels update vocabulary dialog, no change' +
-    'is made',
+    ' is made',
     function(assert) {
       assert.ok(AddVocabulary, "class object not found");
       var done = assert.async();
@@ -1591,6 +1654,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             );
             component.forceUpdate(function () {
               React.addons.TestUtils.Simulate.click(updateButton);
+              // Check that loader turns on and off.
               component.forceUpdate(function () {
                 waitForAjax(1, function () {
                   var expected = {
@@ -1626,6 +1690,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             updateParent={updateParent}
             reportMessage={reportMessage}
             renderConfirmationDialog={renderConfirmationDialog}
+            setLoadedState={function() {}}
             ref={afterMount}
           />
         );
@@ -1743,6 +1808,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             updateParent={updateParent}
             reportMessage={reportMessage}
             renderConfirmationDialog={renderConfirmationDialog}
+            setLoadedState={function() {}}
             ref={afterMount}
           />
         );
@@ -1833,6 +1899,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             refreshFromAPI={refreshFromAPI}
             updateParent={updateParent}
             reportMessage={reportMessage}
+            setLoadedState={function() {}}
             ref={afterMount}
           />
         );
@@ -1925,6 +1992,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             updateParent={updateParent}
             refreshFromAPI={refreshFromAPI}
             reportMessage={reportMessage}
+            setLoadedState={function() {}}
             ref={afterMount}
           />
         );
