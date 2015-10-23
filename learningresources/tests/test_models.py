@@ -111,6 +111,20 @@ class TestModels(LoreTestCase):
         self.assertEqual(repo.name, "repo name")
         self.assertEqual(repo.slug, "repo-name")
 
+        # using a weird name
+        repo.name = "&^%$"
+        repo.save()
+        self.assertEqual(repo.name, "&^%$")
+        self.assertEqual(repo.slug, "repository-slug")
+        # create a new repo with weird name
+        repo = Repository.objects.create(
+            name="****&&",
+            description="description",
+            created_by_id=self.user.id,
+        )
+        self.assertEqual(repo.name, "****&&")
+        self.assertEqual(repo.slug, "repository-slug1")
+
     def test_static_asset_basepath(self):
         """Verify we are setting the path we expect"""
         filename = 'asdf/asdf.txt'

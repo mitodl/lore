@@ -5,6 +5,7 @@ REST tests relating to vocabularies and terms
 from __future__ import unicode_literals
 
 import logging
+from copy import deepcopy
 
 from rest_framework.status import (
     HTTP_200_OK,
@@ -229,6 +230,29 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(resp.status_code, HTTP_200_OK)
         self.assertEqual(0, as_json(resp)['count'])
 
+    def test_vocabulary_slug(self):
+        """
+        Special test for the creation of vocabularies with name that can result
+        in empty slugs
+        """
+        vocab_dict = deepcopy(self.DEFAULT_VOCAB_DICT)
+        # normal name to verify the default behavior
+        vocab_dict.update({'name': 'foo-test-one'})
+        res_dict = self.create_vocabulary(self.repo.slug, vocab_dict)
+        self.assertEqual(res_dict['slug'], 'foo-test-one')
+        # weird name #1
+        vocab_dict.update({'name': '%$#@'})
+        res_dict = self.create_vocabulary(self.repo.slug, vocab_dict)
+        self.assertEqual(res_dict['slug'], 'vocabulary-slug')
+        # weird name #2
+        vocab_dict.update({'name': '((**))'})
+        res_dict = self.create_vocabulary(self.repo.slug, vocab_dict)
+        self.assertEqual(res_dict['slug'], 'vocabulary-slug1')
+        # weird name #3
+        vocab_dict.update({'name': '!@#$%^&'})
+        res_dict = self.create_vocabulary(self.repo.slug, vocab_dict)
+        self.assertEqual(res_dict['slug'], 'vocabulary-slug2')
+
     def test_term(self):
         """Test REST access for term"""
         vocab1_slug = self.create_vocabulary(self.repo.slug)['slug']
@@ -355,6 +379,35 @@ class TestVocabulary(RESTTestCase):
                       expected_status=HTTP_403_FORBIDDEN)
         self.get_term(self.repo.slug, vocab2_slug, term2['slug'],
                       expected_status=HTTP_403_FORBIDDEN)
+
+    def test_term_slug(self):
+        """
+        Special test for the creation of terms with name that can result
+        in empty slugs
+        """
+        # create a vocabulary
+        vocab_res = self.create_vocabulary(self.repo.slug)
+        term_dict = deepcopy(self.DEFAULT_TERM_DICT)
+        # normal name to verify the default behavior
+        term_dict.update({'label': 'foo-term-one'})
+        res_dict = self.create_term(
+            self.repo.slug, vocab_res['slug'], term_dict)
+        self.assertEqual(res_dict['slug'], 'foo-term-one')
+        # weird name #1
+        term_dict.update({'label': '%$#@'})
+        res_dict = self.create_term(
+            self.repo.slug, vocab_res['slug'], term_dict)
+        self.assertEqual(res_dict['slug'], 'term-slug')
+        # weird name #2
+        term_dict.update({'label': '((**))'})
+        res_dict = self.create_term(
+            self.repo.slug, vocab_res['slug'], term_dict)
+        self.assertEqual(res_dict['slug'], 'term-slug1')
+        # weird name #3
+        term_dict.update({'label': '!@#$%^&'})
+        res_dict = self.create_term(
+            self.repo.slug, vocab_res['slug'], term_dict)
+        self.assertEqual(res_dict['slug'], 'term-slug2')
 
     def test_delete_propagation(self):
         """Test delete propagation"""

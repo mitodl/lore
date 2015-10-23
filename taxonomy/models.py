@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 from django.db import models, transaction
 from django.utils.translation import ugettext_lazy as _
-from django.utils.text import slugify
 from django.shortcuts import get_object_or_404
 
 from audit.models import BaseModel
@@ -12,6 +11,7 @@ from learningresources.models import (
     LearningResourceType,
     LearningResource,
 )
+from rest.util import default_slugify
 
 
 def make_vocab_key(vocab_id):
@@ -59,12 +59,11 @@ class Vocabulary(BaseModel):
         """Handle slugs."""
         if self.id is None or self.name != get_object_or_404(
                 Vocabulary, id=self.id).name:
-            slug = slugify(self.name)
-            count = 1
-            while Vocabulary.objects.filter(slug=slug).exists():
-                slug = "{0}{1}".format(slugify(self.name), count)
-                count += 1
-            self.slug = slug
+            self.slug = default_slugify(
+                self.name,
+                Vocabulary._meta.model_name,
+                lambda slug: Vocabulary.objects.filter(slug=slug).exists()
+            )
 
         return super(Vocabulary, self).save(*args, **kwargs)
 
@@ -95,10 +94,9 @@ class Term(BaseModel):
         """Handle slugs."""
         if self.id is None or self.label != get_object_or_404(
                 Term, id=self.id).label:
-            slug = slugify(self.label)
-            count = 1
-            while Term.objects.filter(slug=slug).exists():
-                slug = "{0}{1}".format(slugify(self.label), count)
-                count += 1
-            self.slug = slug
+            self.slug = default_slugify(
+                self.label,
+                Term._meta.model_name,
+                lambda slug: Term.objects.filter(slug=slug).exists()
+            )
         return super(Term, self).save(*args, **kwargs)

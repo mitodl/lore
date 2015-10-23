@@ -15,6 +15,7 @@ from rest.tests.base import (
     as_json,
 )
 from rest.pagination import LorePagination
+from rest.util import default_slugify
 
 
 class TestMisc(RESTTestCase):
@@ -104,4 +105,46 @@ class TestMisc(RESTTestCase):
         self.assert_page_size(
             LorePagination.max_page_size - 1,
             LorePagination.max_page_size - 1
+        )
+
+    def test_default_slugify(self):
+        """
+        Test for the default slugify function.
+        Since this function is generic, here we test the generic call
+        """
+        # a normal string
+        self.assertEqual(
+            default_slugify(
+                'foo',
+                'bar',
+                lambda x: False
+            ),
+            'foo'
+        )
+        # the normal string already exists
+        self.assertEqual(
+            default_slugify(
+                'foo',
+                'bar',
+                lambda x: x == 'foo'
+            ),
+            'foo1'
+        )
+        # a string that gives an empty slug
+        self.assertEqual(
+            default_slugify(
+                '%^%$',
+                'bar',
+                lambda x: False
+            ),
+            'bar-slug'
+        )
+        # the default slug already exists
+        self.assertEqual(
+            default_slugify(
+                '%^%$',
+                'bar',
+                lambda x: x == 'bar-slug'
+            ),
+            'bar-slug1'
         )
