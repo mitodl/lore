@@ -113,6 +113,13 @@ class StaticAsset(BaseModel):
         super(StaticAsset, self).save(*args, **kwargs)
 
 
+class LearningResourceContentXml(BaseModel):
+    """
+    The content XML for a LearningResource.
+    """
+    content_xml = models.TextField()
+
+
 class LearningResource(BaseModel):
     """
     The units that compose an edX course:
@@ -124,7 +131,7 @@ class LearningResource(BaseModel):
     uuid = models.TextField()
     title = models.TextField()
     description = models.TextField(blank=True)
-    content_xml = models.TextField()
+    _content_xml = models.TextField(db_column="content_xml", null=True)
     materialized_path = models.TextField()
     description_path = models.TextField(blank=True)
     url_path = models.TextField()
@@ -135,6 +142,14 @@ class LearningResource(BaseModel):
     xa_avg_grade = models.FloatField(default=0)
     xa_histogram_grade = models.FloatField(default=0)
     url_name = models.TextField(null=True)
+    content_xml_model = models.ForeignKey(LearningResourceContentXml)
+
+    @property
+    def content_xml(self):
+        """
+        The content XML for a LearningResource.
+        """
+        return self.content_xml_model.content_xml
 
 
 @python_2_unicode_compatible
