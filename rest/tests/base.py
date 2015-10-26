@@ -772,11 +772,58 @@ class RESTTestCase(LoreTestCase):
             ), resp['Location'])
             return result_dict
 
+    def get_tasks(self, expected_status=HTTP_200_OK):
+        """
+        Helper method to retrieve tasks for the user.
+        """
+        url = '/api/v1/tasks/'
+        self.assert_options_head(url, expected_status)
+        resp = self.client.get(url)
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            return as_json(resp)
+
+    def get_task(self, task_id, expected_status=HTTP_200_OK):
+        """
+        Helper method to retrieve task for the user.
+        """
+        resp = self.client.get(
+            '/api/v1/tasks/{task_id}/'.format(
+                task_id=task_id,
+            )
+        )
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_200_OK:
+            return as_json(resp)
+
+    def create_task(self, input_dict, expected_status=HTTP_201_CREATED):
+        """
+        Helper method to create a task for the user to export a tarball of
+        LearningResources.
+        """
+        resp = self.client.post(
+            '/api/v1/tasks/',
+            json.dumps(input_dict),
+            content_type='application/json',
+        )
+        self.assertEqual(expected_status, resp.status_code)
+        if expected_status == HTTP_201_CREATED:
+            return as_json(resp)
+
+    def delete_task(self, task_id, expected_status=HTTP_204_NO_CONTENT):
+        """
+        Delete a task and remove it from task list.
+        """
+        resp = self.client.delete('/api/v1/tasks/{task_id}/'.format(
+            task_id=task_id
+        ))
+        self.assertEqual(expected_status, resp.status_code)
+
     def get_learning_resource_export_tasks(self, repo_slug,
                                            expected_status=HTTP_200_OK):
         """
-        Helper method to retrieve export tasks for the user. Should be only
-        one.
+        Helper method to retrieve export tasks for the user using deprecated
+        API. Should be only one.
         """
         url = (
             '/api/v1/repositories/{repo_slug}/'
@@ -796,7 +843,8 @@ class RESTTestCase(LoreTestCase):
     def get_learning_resource_export_task(self, repo_slug, task_id,
                                           expected_status=HTTP_200_OK):
         """
-        Helper method to retrieve export task for the user.
+        Helper method to retrieve export task for the user using deprecated
+        API.
         """
         resp = self.client.get(
             '/api/v1/repositories/{repo_slug}/'

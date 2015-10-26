@@ -145,9 +145,14 @@ define("lr_exports",
 
       $.ajax({
           type: "POST",
-          url: "/api/v1/repositories/" + this.props.repoSlug +
-          "/learning_resource_export_tasks/",
-          data: JSON.stringify({ids: this.state.exportsSelected}),
+          url: "/api/v1/tasks/",
+          data: JSON.stringify({
+            task_type: "resource_export",
+            task_info: {
+              ids: this.state.exportsSelected,
+              repo_slug: this.props.repoSlug
+            }
+          }),
           contentType: 'application/json'
         }
       ).then(function(result) {
@@ -175,8 +180,7 @@ define("lr_exports",
     updateStatus: function(taskId) {
       var thiz = this;
 
-      $.get("/api/v1/repositories/" + this.props.repoSlug +
-        "/learning_resource_export_tasks/" + taskId + "/")
+      $.get("/api/v1/tasks/" + taskId + "/")
         .done(function (result) {
           if (!thiz.isMounted()) {
             return;
@@ -206,8 +210,8 @@ define("lr_exports",
             });
 
             thiz.setState({
-              url: result.url,
-              collision: result.collision
+              url: result.result.url,
+              collision: result.result.collision
             });
           } else if (result.status === "processing") {
             setTimeout(function() {
