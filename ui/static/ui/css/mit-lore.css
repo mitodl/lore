@@ -264,6 +264,12 @@ a {
     font-size: 12px;
 }
 
+.link-description-more-less {
+    margin: 0;
+    display: inline-block;
+    font-size: 12px;
+}
+
 .tile-content {
     width: 75%;
     display: inline-block;

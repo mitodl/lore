@@ -10,6 +10,7 @@ import os
 
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.core.urlresolvers import resolve
 
 import ui.urls
 from learningresources.models import Repository, StaticAsset
@@ -295,6 +296,10 @@ class TestViews(LoreTestCase):
             settings.DEFAULT_FILE_STORAGE,
             'storages.backends.overwrite.OverwriteStorage'
         )
+        # tests that the media view is available
+        resolver = resolve('/media/assets/foo.txt')
+        self.assertEqual(resolver.view_name, 'media')
+
         # upload a course
         self.upload_test_file()
         self.assertEqual(len(StaticAsset.objects.all()), 5)

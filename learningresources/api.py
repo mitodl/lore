@@ -41,6 +41,15 @@ class NotFound(LearningResourceException):
     pass
 
 
+class MissingTitle(object):
+    """
+    Class to describe the missing title for importer and for
+    the description path
+    """
+    for_title_field = 'Missing Title'
+    for_desc_path_field = '...'
+
+
 def create_course(org, repo_id, course_number, run, user_id):
     """
     Add a course to the database.
@@ -73,7 +82,7 @@ def create_course(org, repo_id, course_number, run, user_id):
         "repository_id": repo_id,
     }
     with transaction.atomic():
-        course, _ = Course.objects.get_or_create(**kwargs)
+        course = Course.objects.create(**kwargs)
     return course
 
 
@@ -352,8 +361,11 @@ def update_description_path(resource, force_parent_update=False):
         None
     """
     description_path = ''
+    title_desc_path = resource.title
+    if title_desc_path == MissingTitle.for_title_field:
+        title_desc_path = MissingTitle.for_desc_path_field
     if resource.parent is None:
-        description_path = join_description_paths(resource.title)
+        description_path = join_description_paths(title_desc_path)
     else:
         # if the parent doesn't have a description_path update first the parent
         if resource.parent.description_path == '' or force_parent_update:
@@ -362,7 +374,7 @@ def update_description_path(resource, force_parent_update=False):
         # the parent's one plus the current title
         description_path = join_description_paths(
             resource.parent.description_path,
-            resource.title
+            title_desc_path
         )
     resource.description_path = description_path
     resource.save()

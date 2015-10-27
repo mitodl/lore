@@ -58,7 +58,7 @@ urlpatterns = [
 ]
 
 if (settings.DEFAULT_FILE_STORAGE ==
-        'django.core.files.storage.FileSystemStorage'):
+        'storages.backends.overwrite.OverwriteStorage'):
     urlpatterns.append(
         url(r'^media/{assets}/(?P<path>.+)$'.format(
             assets=STATIC_ASSET_PREFIX

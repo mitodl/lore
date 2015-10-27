@@ -1,18 +1,18 @@
-define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
-  function (React, _, $, Utils) {
+define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
+    'utils', 'bootstrap'],
+  function (React, _, $, URI, Utils) {
   'use strict';
 
   var StatusBox = Utils.StatusBox;
   var ICheckbox = Utils.ICheckbox;
+  var ReactOverlayLoader = Utils.ReactOverlayLoader;
 
   var TermComponent = React.createClass({
     mixins: [React.addons.LinkedStateMixin],
     getInitialState: function() {
       return {
         formatActionState: 'show',
-        label: this.props.term.label,
-        errorMessage: '',
-        showError: false
+        errorMessage: ''
       };
     },
     render: function () {
@@ -37,20 +37,21 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         deleteButtonClass = 'revert-button disabled';
       } else if (this.state.formatActionState === 'show') {
         label = <label className="term-title"
-          htmlFor="minimal-checkbox-1-11">{this.state.label}</label>;
+          htmlFor="minimal-checkbox-1-11">{this.props.term.label}</label>;
         formatActionClassName = "fa fa-pencil no-select";
       }
 
       var listClassName = "form-group";
-      if (this.state.showError) {
+      if (this.state.errorMessage) {
         listClassName = "form-group has-error";
       }
 
       return <li className={listClassName}>
         <span className="utility-features">
-          <a onClick={this.editTerm} className={editButtonClass}>
+          <a href="#" onClick={this.editTerm} className={editButtonClass}>
             <i className={formatActionClassName}></i>
-          </a> <a className={deleteButtonClass}>
+          </a> <a className={deleteButtonClass} href="#"
+                  onClick={this.deleteTerm}>
             <i className="fa fa-remove"></i>
           </a>
         </span>{label}</li>;
@@ -61,8 +62,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
      */
     editTerm: function() {
       this.setState({
-          formatActionState: 'edit'
-        }, function() {
+        formatActionState: 'edit',
+        label: this.props.term.label
+      }, function () {
         var $editText = $(React.findDOMNode(this.refs.editText));
         $editText.focus();
       });
@@ -78,11 +80,21 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
      * On Close button select reset term UI
     */
     cancelAction : function() {
-      var formatActionState = this.state.formatActionState;
-      if (formatActionState === 'edit') {
-        // user is in edit mode. Cancel edit if user presses cross icon.
-        this.resetUtilityFeatures();
-      }
+      // user is in edit mode. Cancel edit if user presses cross icon.
+      this.resetUtilityFeatures();
+    },
+    deleteTerm: function() {
+      var options = {
+        actionButtonName: "Delete",
+        actionButtonClass: "btn btn-danger btn-ok",
+        title: "Confirm Delete",
+        message: "Are you sure you want to delete term '" +
+         this.props.term.label + "'?",
+        description: "Deleting this term will remove it from all " +
+          "learning resources.",
+        confirmationHandler: this.confirmedDeleteResponse
+      };
+      this.props.renderConfirmationDialog(options);
     },
     /**
      * Reset term edit UI
@@ -95,11 +107,11 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
      */
     updateTermSubmit: function() {
       if (_.isEmpty(this.state.label)) {
-        this.setState({showError: true});
+        this.setState({errorMessage: "Term cannot be empty."});
         return;
       }
       var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
-        '/vocabularies/' + this.props.vocabularySlug + '/terms/' +
+        '/vocabularies/' + this.props.vocabulary.slug + '/terms/' +
         this.props.term.slug + "/";
       var thiz = this;
       var termData = {
@@ -113,14 +125,33 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         contentType: "application/json"
       }).fail(function() {
         thiz.setState({
-          showError: true,
           errorMessage: 'Unable to update term'
         });
       }).done(function(term) {
         thiz.resetUtilityFeatures();
-        thiz.props.updateTerm(thiz.props.vocabularySlug, term);
+        thiz.props.updateTerm(thiz.props.vocabulary.id, term);
         thiz.props.refreshFromAPI();
       });
+    },
+    confirmedDeleteResponse: function(success) {
+      var thiz = this;
+      if (success) {
+        var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/' + this.props.vocabulary.slug + '/terms/' +
+        this.props.term.slug + "/";
+        $.ajax({
+          type: 'DELETE',
+          url: API_ROOT_VOCAB_URL,
+          contentType: "application/json"
+        }).fail(function() {
+          thiz.setState({
+            errorMessage: 'Unable to delete term.'
+          });
+        }).done(function() {
+          thiz.props.deleteTerm(thiz.props.vocabulary.id, thiz.props.term);
+          thiz.props.refreshFromAPI();
+        });
+      }
     }
   });
 
@@ -130,11 +161,13 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       var thiz = this;
       var items = _.map(this.props.terms, function (term) {
         return <TermComponent
+          deleteTerm={thiz.props.deleteTerm}
           updateTerm={thiz.props.updateTerm}
-          vocabularySlug={thiz.props.vocabulary.slug}
+          vocabulary={thiz.props.vocabulary}
           repoSlug={thiz.props.repoSlug}
           term={term}
-          key={term.slug}
+          key={term.id}
+          renderConfirmationDialog={thiz.props.renderConfirmationDialog}
           refreshFromAPI={thiz.props.refreshFromAPI}
           />;
       });
@@ -143,21 +176,22 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           <div className="panel-heading">
             <h4 className="panel-title">
               <span className="utility-features">
-                <a href="#">
+                <a href="#" onClick={this.onEdit}>
                   <i className="fa fa-pencil"></i>
-                </a> <a data-toggle="modal" data-target="#confirm-delete"
+                </a> <a href="#"
+                        data-toggle="modal" data-target="#confirm-delete"
                   onClick={this.onDeleteHandler} className="delete-vocabulary">
                   <i className="fa fa-remove"></i>
                 </a>
               </span> <a className="accordion-toggle vocab-title"
                          data-toggle="collapse"
                          data-parent="#accordion"
-                         href={'#collapse-' + this.props.vocabulary.slug}>
+                         href={'#collapse-vocab-' + this.props.vocabulary.id}>
                 {this.props.vocabulary.name}
               </a>
             </h4>
           </div>
-          <div id={'collapse-' + this.props.vocabulary.slug}
+          <div id={'collapse-vocab-' + this.props.vocabulary.id}
                className="panel-collapse collapse in">
             <div className="panel-body">
               <ul className="icheck-list with-utility-features">
@@ -170,7 +204,7 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
                       placeholder="Add new term..."
                       />
                       <span className="input-group-btn">
-                        <a className="btn btn-white"
+                        <a href="#" className="btn btn-white"
                           type="button" onClick={this.handleAddTermClick}><i
                           className="fa fa-plus-circle"
                         ></i></a>
@@ -208,18 +242,27 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           var message = "Unable to delete vocabulary '" + vocab.name + "'";
           thiz.props.reportMessage({error: message});
         }).then(function () {
-          thiz.props.deleteVocabulary(vocab.slug);
+          thiz.props.deleteVocabulary(vocab.id);
 
           thiz.props.refreshFromAPI();
         });
       }
     },
+    onEdit: function(e) {
+      e.preventDefault();
+      this.props.editVocabulary(this.props.vocabulary.id);
+    },
     onKeyUp: function(e) {
       if (e.key === "Enter") {
-        this.handleAddTermClick();
+        e.preventDefault();
+        this.handleAddTerm();
       }
     },
-    handleAddTermClick: function() {
+    handleAddTermClick: function(e) {
+      e.preventDefault();
+      this.handleAddTerm();
+    },
+    handleAddTerm: function() {
       var thiz = this;
       var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
         '/vocabularies/';
@@ -237,8 +280,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
             error: "Error occurred while adding new term."
           });
         })
-      .done(function(newTerm) {
-          thiz.props.addTerm(thiz.props.vocabulary.slug, newTerm);
+      .then(function(newTerm) {
+          thiz.props.addTerm(thiz.props.vocabulary.id, newTerm);
           thiz.setState({
             newTermLabel: null
           });
@@ -261,11 +304,13 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       var thiz = this;
       var items = _.map(this.props.vocabularies, function (obj) {
         return <VocabularyComponent
+          deleteTerm={thiz.props.deleteTerm}
           updateTerm={thiz.props.updateTerm}
           vocabulary={obj.vocabulary}
           deleteVocabulary={thiz.props.deleteVocabulary}
+          editVocabulary={thiz.props.editVocabulary}
           terms={obj.terms}
-          key={obj.vocabulary.slug}
+          key={obj.vocabulary.id}
           repoSlug={repoSlug}
           reportMessage={thiz.reportMessage}
           addTerm={thiz.props.addTerm}
@@ -276,13 +321,13 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       return <div className="panel-group lore-panel-group">
         <div className="panel panel-default">
         </div>
-        <StatusBox message={this.state.message} />
+        <StatusBox message={this.props.message} />
         {items}
       </div>;
 
     },
     reportMessage: function(message) {
-      this.setState({message: message});
+      this.props.reportMessage(message);
     },
     getInitialState: function() {
       return {
@@ -294,17 +339,10 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
   var AddVocabulary = React.createClass({
     mixins: [React.addons.LinkedStateMixin],
     getInitialState: function() {
-      return {
-        name: '',
-        description: '',
-        vocabularyType: 'm',
-        learningResourceTypes: [],
-        multiTerms: false,
-      };
+      return this.makeState(this.props.vocabularyInEdit);
     },
     updateLearningResourceType: function(e) {
       var checkedType = e.target.value;
-
       var newTypes;
       if (e.target.checked) {
         if (!_.includes(this.state.learningResourceTypes, checkedType)) {
@@ -323,15 +361,34 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     },
     updateVocabularyType: function(e) {
       this.setState({vocabularyType: e.target.value});
-      e.target.isChecked = true;
     },
     updateMultiTerms: function(e) {
       this.setState({multiTerms: e.target.checked});
     },
     submitForm: function(e) {
-      var API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
-        '/vocabularies/';
       e.preventDefault();
+      if (_.isEmpty(this.state.name)) {
+        this.props.reportMessage({error: 'Please enter vocabulary name.'});
+        return;
+      }
+
+      if (_.isEmpty(this.state.description)) {
+        this.props.reportMessage({
+          error: 'Please enter vocabulary description.'
+        });
+        return;
+      }
+
+      var API_ROOT_VOCAB_URL;
+      var method = "POST";
+      if (this.isEditModeOpen()) {
+        API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/' + this.props.vocabularyInEdit.slug + "/";
+        method = "PATCH";
+      } else {
+        API_ROOT_VOCAB_URL = '/api/v1/repositories/' + this.props.repoSlug +
+        '/vocabularies/';
+      }
       var thiz = this;
       var vocabularyData = {
         name: this.state.name,
@@ -343,53 +400,159 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
         multi_terms: this.state.multiTerms
       };
 
-      $.ajax({
-        type: "POST",
-        url: API_ROOT_VOCAB_URL,
-        data: JSON.stringify(vocabularyData),
-        contentType: "application/json"
-      }).fail(function(data) {
-        var jsonData = data.responseJSON;
+      // User wants to submit the form. First we need to see if any
+      // resource term links would be deleted by this action. If so we need
+      // a confirmation dialog to move forward. This uses a promise (deferred)
+      // which will fail to indicate a cancellation and success to say we should
+      // move forward.
+      var confirmationPromise;
+      if (method === 'PATCH') {
+        var removedTypes = _.difference(
+          this.props.vocabularyInEdit.learning_resource_types,
+          this.state.learningResourceTypes
+        );
+
+        // Check if there are any learning resources which may get deleted
+        if (removedTypes.length === 0) {
+          // No need for confirmation dialog
+          confirmationPromise = $.Deferred().resolve();
+        } else {
+          var uri = URI("/api/v1/repositories/" + this.props.repoSlug +
+            "/learning_resources/").search({
+            vocab_slug: this.props.vocabularyInEdit.slug,
+            type_name: removedTypes
+          }).toString();
+
+          // Get list of resources with links to a term that would be deleted.
+          // If this count is > 0 require a confirmation to make the promise
+          // resolved.
+          confirmationPromise = $.get(uri).then(function (collection) {
+            var result = $.Deferred();
+
+            if (collection.count !== 0) {
+              var resourcesWord = "resources";
+              if (collection.count === 1) {
+                resourcesWord = "resource";
+              }
+              var options = {
+                actionButtonName: "Delete",
+                actionButtonClass: "btn btn-danger btn-ok",
+                title: "Confirm Update",
+                message: "Do you want to proceed with the resource update?",
+                description: "After this update " + collection.count + " " +
+                resourcesWord + " will not be linked to this vocabulary's" +
+                " terms anymore due to some resource types being unselected. ",
+                confirmationHandler: function (success) {
+                  // continue with the next promise in the chain
+                  if (success) {
+                    result.resolve();
+                  }
+                }
+              };
+              thiz.props.renderConfirmationDialog(options);
+            } else {
+              result.resolve();
+            }
+
+            // The next promise in line will be executed when if we resolve
+            // `result`.
+            return result;
+          });
+        }
+      } else {
+        // No need for confirmation, proceed.
+        confirmationPromise = $.Deferred().resolve();
+      }
+
+      confirmationPromise.then(function () {
+        return $.ajax({
+          type: method,
+          url: API_ROOT_VOCAB_URL,
+          data: JSON.stringify(vocabularyData),
+          contentType: "application/json"
+        });
+      }).then(function (data) {
+        // Reset state (and eventually update the vocab tab
+        thiz.props.updateParent(data);
+        thiz.resetForm();
+        if (!thiz.isEditModeOpen()) {
+          var scrollableDiv = $(
+            ".cd-panel-2 .cd-panel-container .cd-panel-content"
+          );
+          scrollableDiv.animate(
+            {scrollTop: scrollableDiv.prop('scrollHeight')},
+            500
+          );
+        }
+        return thiz.props.refreshFromAPI();
+      }).fail(function (data) {
+        var jsonData = data && data.responseJSON;
         var i = 0;
         if (jsonData && jsonData.non_field_errors) {
-          for (i = 0; i < jsonData.non_field_errors.length ; i++) {
+          for (i = 0; i < jsonData.non_field_errors.length; i++) {
             if (jsonData.non_field_errors[i] ===
               'The fields repository, name must make a unique set.') {
-              thiz.setState({
-                message: {
-                  error: 'A Vocabulary named "' + vocabularyData.name +
-                  '" already exists. Please choose a different name.'
-                }
+              thiz.props.reportMessage({
+                error: 'A Vocabulary named "' + vocabularyData.name +
+                '" already exists. Please choose a different name.'
               });
               break;
             }
           }
         } else {
-          thiz.setState({
-            message: {
-              error: 'There was a problem adding the Vocabulary.'
-            }
-          });
+          var error = 'There was a problem adding the Vocabulary.';
+          if (thiz.isEditModeOpen()) {
+            error = 'There was a problem with updating the Vocabulary.';
+          }
+          thiz.props.reportMessage({error: error});
         }
-      }).done(function(data) {
-        // Reset state (and eventually update the vocab tab
-        thiz.props.updateParent(data);
-        thiz.replaceState(thiz.getInitialState());
-        // Switch to taxonomy panel and scroll to new vocab (bottom)
-        $('[href=#tab-taxonomies]').tab('show');
-        var scrollableDiv = $(
-          ".cd-panel-2 .cd-panel-container .cd-panel-content"
-        );
-        scrollableDiv.animate(
-          {scrollTop: scrollableDiv.prop('scrollHeight')},
-          500
-        );
-        thiz.props.refreshFromAPI();
       });
+    },
+    isEditModeOpen: function() {
+      return !!this.props.vocabularyInEdit;
+    },
+    onReset: function(e) {
+      e.preventDefault();
+      this.resetForm();
+    },
+    resetForm: function() {
+      this.replaceState(this.makeState(undefined));
+      this.props.editVocabulary(undefined); //reset vocabulary in edit mode
+    },
+    componentWillReceiveProps: function(nextProps) {
+      // Note that this is only triggered on prop updates which will send
+      // new values that we need to store in the state.
+      this.replaceState(this.makeState(nextProps.vocabularyInEdit));
+    },
+    makeState: function(newVocab) {
+      if (newVocab !== undefined) {
+        return {
+          name: newVocab.name,
+          description: newVocab.description,
+          vocabularyType: newVocab.vocabulary_type,
+          learningResourceTypes: newVocab.learning_resource_types,
+          multiTerms: newVocab.multi_terms
+        };
+      } else {
+        return {
+          name: '',
+          description: '',
+          vocabularyType: 'm',
+          learningResourceTypes: [],
+          multiTerms: false
+        };
+      }
     },
     render: function() {
       var thiz = this;
+      var cancelButton = null;
+      var submitButtonText = "Save";
 
+      if (this.props.vocabularyInEdit !== undefined) {
+        cancelButton = <button className="btn btn-lg btn-primary"
+                               onClick={this.onReset}>Cancel</button>;
+        submitButtonText = "Update";
+      }
       var checkboxes = _.map(this.props.learningResourceTypes, function(type) {
         var checked = _.includes(thiz.state.learningResourceTypes, type);
         return (
@@ -407,8 +570,8 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       });
 
       return (
-        <form className="form-horizontal" onSubmit={this.submitForm}>
-          <StatusBox message={this.state.message} />
+        <form className="form-horizontal">
+          <StatusBox message={this.props.message} />
           <p>
             <input type="text" valueLink={this.linkState('name')}
               className="form-control"
@@ -455,7 +618,9 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
             </div>
           </p>
           <p>
-            <button className="btn btn-lg btn-primary">Save</button>
+            <button className="btn btn-lg btn-primary"
+                    onClick={this.submitForm}>{submitButtonText}
+            </button>  {cancelButton}
           </p>
         </form>
       );
@@ -466,21 +631,52 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     getInitialState: function() {
       return {
         vocabularies: [],
-        learningResourceTypes: []
+        learningResourceTypes: [],
+        editVocabId: undefined,
+        vocabMessage: undefined,
+        termsMessage: undefined
       };
     },
-    addVocabulary: function(vocab) {
-      // Wrap vocab in expected structure
-      var newVocab = {
-        terms: [],
-        vocabulary: vocab
-      };
-      var vocabularies = this.state.vocabularies;
-      this.setState({vocabularies: vocabularies.concat([newVocab])});
+    editVocabulary: function(vocabId) {
+      if (vocabId !== undefined) {
+        this.props.setTabName('tab-vocab', 'Edit Vocabulary');
+        this.props.showTab('tab-vocab');
+      } else {
+        this.props.setTabName('tab-vocab', 'Add Vocabulary');
+        this.props.showTab('tab-taxonomies');
+      }
+      this.setState({
+        editVocabId: vocabId,
+        vocabMessage: undefined,
+        termsMessage: undefined
+      });
     },
-    addTerm: function(vocabSlug, newTerm) {
+    addOrUpdateVocabulary: function(newOrUpdatedVocab) {
+      var found = false;
       var vocabularies = _.map(this.state.vocabularies, function(tuple) {
-        if (tuple.vocabulary.slug === vocabSlug) {
+        if (tuple.vocabulary.id === newOrUpdatedVocab.id) {
+          found = true;
+
+          var copy = $.extend({}, tuple);
+          copy.vocabulary = newOrUpdatedVocab;
+          return copy;
+        } else {
+          return tuple;
+        }
+      });
+
+      if (!found) {
+        var newVocab = {
+          terms: [],
+          vocabulary: newOrUpdatedVocab
+        };
+        vocabularies = vocabularies.concat([newVocab]);
+      }
+      this.setState({vocabularies: vocabularies});
+    },
+    addTerm: function(vocabId, newTerm) {
+      var vocabularies = _.map(this.state.vocabularies, function(tuple) {
+        if (tuple.vocabulary.id === vocabId) {
           return {
             terms: tuple.terms.concat(newTerm),
             vocabulary: tuple.vocabulary
@@ -490,15 +686,18 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       });
       this.setState({vocabularies: vocabularies});
     },
-    deleteVocabulary: function(vocabSlug) {
+    deleteVocabulary: function(vocabId) {
       var vocabularies = _.filter(this.state.vocabularies, function (tuple) {
-        return tuple.vocabulary.slug !== vocabSlug;
+        return tuple.vocabulary.id !== vocabId;
       });
-      this.setState({vocabularies: vocabularies});
+      this.setState({
+        vocabularies: vocabularies
+      });
+      this.editVocabulary(undefined);
     },
-    updateTerm: function(vocabSlug, term) {
+    updateTerm: function(vocabId, term) {
       var vocabularies = _.map(this.state.vocabularies, function(tuple) {
-        if (tuple.vocabulary.slug === vocabSlug) {
+        if (tuple.vocabulary.id === vocabId) {
           var terms = _.map(tuple.terms, function (tupleTerm) {
             if (tupleTerm.id === term.id) {
               return term;
@@ -514,34 +713,95 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
       });
       this.setState({vocabularies: vocabularies});
     },
+    deleteTerm: function(vocabId, term) {
+      var vocabularies = _.map(this.state.vocabularies, function(tuple) {
+        if (tuple.vocabulary.id === vocabId) {
+          var terms = _.filter(tuple.terms, function (tupleTerm) {
+            return tupleTerm.id !== term.id;
+          });
+          return {
+            terms: terms,
+            vocabulary: tuple.vocabulary
+          };
+        } else {
+          return tuple;
+        }
+      });
+      this.setState({vocabularies: vocabularies});
+    },
     render: function() {
+      var editVocabulary;
+      var thiz = this;
+      if (this.state.editVocabId !== undefined) {
+        editVocabulary = _.find(this.state.vocabularies, function (vocab) {
+          return vocab.vocabulary.id === thiz.state.editVocabId;
+        }).vocabulary;
+      }
       return (
+        <div>
+        <ul className="nav nav-tabs drawer-tabs nav-tabs-justified">
+          <li className="tab-long active">
+            <a href="#tab-taxonomies" data-toggle="tab" aria-expanded="true">
+              <span className="hidden-xs">Vocabularies</span>
+            </a>
+          </li>
+          <li className="tab-long">
+            <a href="#tab-vocab" data-toggle="tab" aria-expanded="false">
+              <span className="hidden-xs add-edit-vocabulary-tab">
+                Add Vocabulary
+              </span>
+            </a>
+          </li>
+        </ul>
         <div className="tab-content drawer-tab-content">
           <div className="tab-pane active" id="tab-taxonomies">
+            <ReactOverlayLoader loaded={this.state.loaded}
+                                hideChildrenOnLoad={true}>
             <AddTermsComponent
+              deleteTerm={this.deleteTerm}
               updateTerm={this.updateTerm}
+              editVocabulary={this.editVocabulary}
               vocabularies={this.state.vocabularies}
               repoSlug={this.props.repoSlug}
-              renderConfirmationDialog={this.props.renderConfirmationDialog}
               deleteVocabulary={this.deleteVocabulary}
               refreshFromAPI={this.props.refreshFromAPI}
+              renderConfirmationDialog={this.props.renderConfirmationDialog}
               addTerm={this.addTerm}
+              message={this.state.termsMessage}
+              reportMessage={this.termsReport}
               />
+            </ReactOverlayLoader>
           </div>
           <div className="tab-pane drawer-tab-content" id="tab-vocab">
+            <ReactOverlayLoader loaded={this.state.loaded}
+              hideChildrenOnLoad={true}>
             <AddVocabulary
-              updateParent={this.addVocabulary}
+              editVocabulary={this.editVocabulary}
+              updateParent={this.addOrUpdateVocabulary}
+              vocabularyInEdit={editVocabulary}
               learningResourceTypes={this.state.learningResourceTypes}
+              renderConfirmationDialog={this.props.renderConfirmationDialog}
               repoSlug={this.props.repoSlug}
               refreshFromAPI={this.props.refreshFromAPI}
+              message={this.state.vocabMessage}
+              reportMessage={this.vocabReport}
               />
+              </ReactOverlayLoader>
           </div>
         </div>
+      </div>
       );
+    },
+    vocabReport: function(message) {
+      this.setState({vocabMessage: message});
+    },
+    termsReport: function(message) {
+      this.setState({termsMessage: message});
     },
     componentDidMount: function() {
       var thiz = this;
 
+      this.setState({loaded: false});
       Utils.getCollection("/api/v1/learning_resource_types/").then(
         function(learningResourceTypes) {
         if (!thiz.isMounted()) {
@@ -552,15 +812,20 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
           return type.name;
         });
         thiz.setState({learningResourceTypes: types});
-        Utils.getVocabulariesAndTerms(thiz.props.repoSlug).then(
+        return Utils.getVocabulariesAndTerms(thiz.props.repoSlug).then(
           function(vocabularies) {
             if (!thiz.isMounted()) {
               return;
             }
 
-            thiz.setState({vocabularies: vocabularies});
+            thiz.setState({
+              vocabularies: vocabularies,
+              loaded: true
+            });
           }
         );
+      }).fail(function() {
+        thiz.setState({loaded: true});
       });
     }
   });
@@ -571,13 +836,21 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'utils', 'bootstrap'],
     'AddTermsComponent': AddTermsComponent,
     'AddVocabulary': AddVocabulary,
     'TaxonomyComponent': TaxonomyComponent,
-    'loader': function (repoSlug, refreshFromAPI, showConfirmationDialog,
-                        container) {
+    'loader': function (repoSlug, container, showConfirmationDialog,
+                        showTab, setTabName, refreshFromAPI
+    ) {
+      // Unmount and remount the component to ensure that its state
+      // is always up to date with the rest of the app.
+      React.unmountComponentAtNode(container);
+
       React.render(
         <TaxonomyComponent
           repoSlug={repoSlug}
           refreshFromAPI={refreshFromAPI}
-          renderConfirmationDialog={showConfirmationDialog}/>,
+          renderConfirmationDialog={showConfirmationDialog}
+          showTab={showTab}
+          setTabName={setTabName}
+          />,
         container
       );
     }

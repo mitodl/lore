@@ -25,6 +25,9 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     "xa_histogram_grade": 0.0,
     "terms": ["required"]
   };
+  var learningResourceResponseMinusContentXml = $.extend(
+    {}, learningResourceResponse);
+  delete learningResourceResponseMinusContentXml.content_xml;
   var termResponseEasy = {
     "id": 1,
     "slug": "easy",
@@ -111,6 +114,12 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
         url: '/api/v1/repositories/repo/learning_resources/1/',
         type: 'GET',
         responseText: learningResourceResponse
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/repo/learning_resources/' +
+          '1/?remove_content_xml=true',
+        type: 'GET',
+        responseText: learningResourceResponseMinusContentXml
       });
       TestUtils.initMockjax({
         url: '/api/v1/repositories/repo/learning_resources/1/',
@@ -434,7 +443,8 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
       var done = assert.async();
       var closeLearningResourcePanel = function() {};
       TestUtils.replaceMockjax({
-        url: '/api/v1/repositories/repo/learning_resources/1/',
+        url: '/api/v1/repositories/repo/learning_resources/1/' +
+        '?remove_content_xml=true',
         type: 'GET',
         status: 400
       });
@@ -488,13 +498,74 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     }
   );
 
+  QUnit.test('If terms or description are changed, clear error messages',
+    function (assert) {
+      var done = assert.async();
+
+      var afterMount = function (component) {
+        waitForAjax(3, function () {
+          // Set component message then type into description to clear it.
+          component.setState({message: "Hello, world!"}, function () {
+            var textarea = React.addons.TestUtils.
+              findRenderedDOMComponentWithTag(
+              component,
+              'textarea'
+            );
+
+            React.addons.TestUtils.Simulate.change(textarea, {value: "x"});
+            component.forceUpdate(function () {
+              assert.equal(component.state.message, undefined);
+
+              // Reset component message then adjust vocabs list to clear it.
+              component.setState({message: "Hello, world!"}, function () {
+                var selects = _.map(React.addons.TestUtils.
+                  scryRenderedDOMComponentsWithTag(
+                  component,
+                  'select'
+                ), function(piece) {
+                  return React.findDOMNode(piece);
+                });
+
+                // First is vocab, second is terms
+                assert.equal(selects.length, 2);
+                $(selects[0]).val('difficulty').trigger('change');
+                component.forceUpdate(function () {
+                  assert.equal(component.state.message, undefined);
+
+                  // Reset component message then adjust term list to clear it.
+                  component.setState({message: {error: "Error!"}}, function () {
+                    $(selects[1]).val('required').trigger('change');
+
+                    component.forceUpdate(function () {
+                      assert.equal(component.state.message, undefined);
+
+                      done();
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        <LearningResourcePanel
+          repoSlug="repo"
+          closeLearningResourcePanel={function() {}}
+          learningResourceId="1"
+          ref={afterMount}/>
+      );
+    }
+  );
+
   QUnit.test(
     "LearningResourcePanel.loader should populate its stuff",
     function(assert) {
       var div = document.createElement("div");
-      assert.equal(0, $(div).find("textarea").size());
+      assert.ok($(div).html().length === 0);
       LearningResources.loader("repo", "1", function() {}, function() {}, div);
-      assert.equal(1, $(div).find("textarea").size());
+      assert.ok($(div).html().length > 0);
     }
   );
 });

@@ -139,16 +139,14 @@ class TestImportToy(LoreTestCase):
                 'importer.api.import_static_assets'
             ):
                 with mock.patch('importer.api.XBundle') as mock_bundle:
-                    with mock.patch('importer.api.isdir') as mock_is_dir:
-                        mock_import.return_value = True
-                        mock_is_dir.return_value = True
-                        import_course_from_path(
-                            test_path, test_repo_id, test_user_id
-                        )
-                        mock_import.assert_called_with(
-                            mock_bundle(), test_repo_id,
-                            test_user_id, os.path.join(test_path, "static"),
-                        )
+                    mock_import.return_value = True
+                    import_course_from_path(
+                        test_path, test_repo_id, test_user_id
+                    )
+                    mock_import.assert_called_with(
+                        mock_bundle(), test_repo_id,
+                        test_user_id, os.path.join(test_path, "static"),
+                    )
 
     def test_import_static_assets(self):
         """

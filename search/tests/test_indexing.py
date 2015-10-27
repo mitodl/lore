@@ -59,16 +59,14 @@ class TestIndexing(SearchTestCase):
         Test that LearningResource indexes are updated when a
         a term is added or removed.
         """
+        vocab_key = self.vocabulary.index_key
         set_cache_timeout(0)
         term = self.terms[0]
-        self.assertEqual(self.count_faceted_results(
-            self.vocabulary.id, term.id), 0)
+        self.assertEqual(self.count_faceted_results(vocab_key, term.slug), 0)
         self.resource.terms.add(term)
-        self.assertEqual(self.count_faceted_results(
-            self.vocabulary.id, term.id), 1)
+        self.assertEqual(self.count_faceted_results(vocab_key, term.slug), 1)
         self.resource.terms.remove(term)
-        self.assertEqual(self.count_faceted_results(
-            self.vocabulary.id, term.id), 0)
+        self.assertEqual(self.count_faceted_results(vocab_key, term.slug), 0)
 
     def test_strip_xml(self):
         """Indexed content_xml should have XML stripped."""
@@ -76,7 +74,7 @@ class TestIndexing(SearchTestCase):
         self.resource.content_xml = xml
         self.resource.save()
         self.assertTrue(self.count_results("you're it") == 1)
-        self.assertTrue(self.count_results(xml) == 0)
+        self.assertTrue(self.count_results("tag") == 0)
 
     def test_sorting(self):
         """Test sorting for search"""
@@ -129,11 +127,11 @@ class TestIndexing(SearchTestCase):
         top_res = results[0]
         sec_res = results[1]
         self.assertEqual(
-            top_res.lid,
+            top_res.id,
             res2.id
         )
         self.assertEqual(
-            sec_res.lid,
+            sec_res.id,
             res4.id
         )
         # sorting by number of attempts
@@ -145,11 +143,11 @@ class TestIndexing(SearchTestCase):
         top_res = results[0]
         sec_res = results[1]
         self.assertEqual(
-            top_res.lid,
+            top_res.id,
             res3.id
         )
         self.assertEqual(
-            sec_res.lid,
+            sec_res.id,
             res4.id
         )
         # sorting by average grade
@@ -161,11 +159,11 @@ class TestIndexing(SearchTestCase):
         top_res = results[0]
         sec_res = results[1]
         self.assertEqual(
-            top_res.lid,
+            top_res.id,
             res1.id
         )
         self.assertEqual(
-            sec_res.lid,
+            sec_res.id,
             res4.id
         )
 
@@ -205,11 +203,11 @@ class TestIndexing(SearchTestCase):
             return count
 
         set_cache_timeout(0)
-        with self.assertNumQueries(26):
+        with self.assertNumQueries(22):
             self.assertEqual(get_count(), 0)
 
         set_cache_timeout(60)
-        with self.assertNumQueries(12):
+        with self.assertNumQueries(20):
             self.assertEqual(get_count(), 1)
 
     def test_course_cache(self):

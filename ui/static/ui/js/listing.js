@@ -12,6 +12,11 @@ define('listing',
       var repoSlug = listingOptions.repoSlug;
       var loggedInUsername = listingOptions.loggedInUsername;
 
+      // empty results and facetCounts to start with
+      listingOptions = $.extend({}, listingOptions);
+      listingOptions.resources = [];
+      listingOptions.facetCounts = {};
+
       CSRF.setupCSRF();
 
       var EMAIL_EXTENSION = '@mit.edu';
@@ -88,13 +93,36 @@ define('listing',
         $('.cd-panel').removeClass('is-visible');
       }
 
+      var hideTaxonomyPanel = function() {
+        $('.cd-panel-2').removeClass('is-visible');
+      };
+
+      var showTab = function(tabId) {
+        $("a[href='#" + tabId + "'").tab('show');
+      };
+
+      var setTabName = function(tabId, newTabName) {
+        $("a[href='#" + tabId + "']").find("span").text(newTabName);
+      };
+
+      var loadManageTaxonomies = function () {
+        ManageTaxonomies.loader(
+          repoSlug,
+          $('#taxonomy-component')[0],
+          showConfirmationDialog,
+          showTab,
+          setTabName,
+          refreshFromAPI
+        );
+      };
+
       $('[data-toggle=popover]').popover();
       //Close panels on escape keypress
       $(document).keyup(function(event) {
         if (event.keyCode === 27) { // escape key maps to keycode `27`
           closeLearningResourcePanel();
           if ($('.cd-panel-2').hasClass('is-visible')) {
-            $('.cd-panel-2').removeClass('is-visible');
+            hideTaxonomyPanel();
           }
           if ($('.cd-panel-exports').hasClass('is-visible')) {
             $('.cd-panel-exports').removeClass('is-visible');
@@ -118,6 +146,7 @@ define('listing',
       //open the lateral panel
       $('.btn-taxonomies').on('click', function (event) {
         event.preventDefault();
+        loadManageTaxonomies();
         $('.cd-panel-2').addClass('is-visible');
       });
 
@@ -125,7 +154,7 @@ define('listing',
       $('.cd-panel-2').on('click', function (event) {
         if ($(event.target).is('.cd-panel-2') ||
           $(event.target).is('.cd-panel-close')) {
-          $('.cd-panel-2').removeClass('is-visible');
+          hideTaxonomyPanel();
           event.preventDefault();
         }
       });
@@ -136,17 +165,15 @@ define('listing',
        * @returns {ReactElement} The rendered resource items
        */
       var renderListingResources;
-      /**
-       * Render pagination in the UI
-       *
-       * @returns {ReactElement} The rendered pagination
-       */
-      var renderPagination;
 
       // queryMap is the canonical place to manage query parameters for the UI.
       // The URL in the browser will be updated with these changes in
       // refreshFromAPI.
       var queryMap = {};
+
+      // Controls the loader on the listing page.
+      var pageLoaded = false;
+
       // Populate queryMap with query string key value pairs.
       _.each(URI(window.location).query(true), function(v, k) {
         if (!Array.isArray(v)) {
@@ -213,18 +240,23 @@ define('listing',
       };
 
       refreshFromAPI = function() {
+        pageLoaded = false;
+
         var newQuery = "?" + URI().search(queryMap).query();
-        History.replaceState(null, document.title, newQuery);
+        if (newQuery === "?") {
+          // Don't put ? in URL if empty
+          History.replaceState(null, document.title, ".");
+          newQuery = "";
+        } else {
+          History.replaceState(null, document.title, newQuery);
+        }
 
         var url = "/api/v1/repositories/" +
           listingOptions.repoSlug + "/search/" + newQuery;
 
-        var setOpacity = function(opacity) {
-          $("#listing").css({opacity: opacity});
-        };
-
-        setOpacity(0.6);
+        renderListingResources();
         return $.get(url).then(function(collection) {
+          pageLoaded = true;
           listingOptions = $.extend({}, listingOptions);
           listingOptions.resources = collection.results;
           listingOptions.facetCounts = collection.facet_counts;
@@ -240,11 +272,8 @@ define('listing',
           }
 
           renderListingResources();
-          renderPagination();
-
-          setOpacity(1);
         }).fail(function(error) {
-          setOpacity(1);
+          pageLoaded = true;
 
           // Propagate error
           return $.Deferred().reject(error);
@@ -328,9 +357,11 @@ define('listing',
        */
       renderListingResources = function() {
         return ListingResources.loader(listingOptions,
-        container, openExportsPanel, openResourcePanel,
-        updateFacets, updateMissingFacets,
-          selectedFacets, selectedMissingFacets, updateSort);
+          container, openExportsPanel, openResourcePanel,
+          updateFacets, updateMissingFacets,
+          selectedFacets, selectedMissingFacets, updateSort, pageNum, numPages,
+          updatePage, pageLoaded
+        );
       };
 
       /**
@@ -487,11 +518,6 @@ define('listing',
         return refreshFromAPI();
       };
 
-      renderPagination = function() {
-        return Pagination.loader(
-          pageNum, numPages, updatePage, $("#lore-pagination")[0]);
-      };
-
       var showConfirmationDialog = function(options) {
         var container = $("#confirmation-container")[0];
         Utils.showConfirmationDialog(
@@ -502,11 +528,6 @@ define('listing',
 
       // Initial refresh to populate page.
       refreshFromAPI();
-      ManageTaxonomies.loader(
-        repoSlug,
-        refreshFromAPI,
-        showConfirmationDialog,
-        $('#taxonomy-component')[0]);
     };
 
     return {

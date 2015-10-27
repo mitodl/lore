@@ -8,15 +8,31 @@ the Elasticsearch and Elasticsearch-DSL libraries instead of Haystack.
 
 from __future__ import unicode_literals
 
+import json
 import logging
 
+from django.contrib.auth.models import User
+from django.test.testcases import call_command
+from rest_framework.status import HTTP_200_OK
+
+from learningresources.api import create_repo
 from learningresources.tests.base import LoreTestCase
 from learningresources.models import LearningResource
 from importer.api import import_course_from_file
+from rest.tests.base import API_BASE
+from search.exceptions import ReindexException
 from search.search_indexes import cache
 from search.sorting import LoreSortingFields
 from search.tests.base_es import SearchTestCase
-from search.utils import index_resources, search_index, refresh_index
+from search.utils import (
+    INDEX_NAME,
+    create_mapping,
+    get_conn,
+    index_resources,
+    search_index,
+    refresh_index,
+    remove_index,
+)
 
 log = logging.getLogger(__name__)
 
@@ -204,13 +220,13 @@ class TestIndexing(SearchTestCase):
             xa_nr_attempts=101,
             xa_avg_grade=9.9
         ))
-        index_resources([res1, res2, res3, res4])
+        index_resources([res1.id, res2.id, res3.id, res4.id])
         refresh_index()
         self.assertEqual(self.count_results(), 4)
         # sorting by number of views
         results = self.search(
             query=None,
-            sorting=LoreSortingFields.SORT_BY_NR_VIEWS[0]
+            sorting="-{0}".format(LoreSortingFields.SORT_BY_NR_VIEWS[0])
         )
         # expected position res2, res4
         top_res = results[0]
@@ -226,7 +242,7 @@ class TestIndexing(SearchTestCase):
         # sorting by number of attempts
         results = self.search(
             query=None,
-            sorting=LoreSortingFields.SORT_BY_NR_ATTEMPTS[0]
+            sorting="-{0}".format(LoreSortingFields.SORT_BY_NR_ATTEMPTS[0])
         )
         # expected position res3, res4
         top_res = results[0]
@@ -242,7 +258,7 @@ class TestIndexing(SearchTestCase):
         # sorting by average grade
         results = self.search(
             query=None,
-            sorting=LoreSortingFields.SORT_BY_AVG_GRADE[0]
+            sorting="-{0}".format(LoreSortingFields.SORT_BY_AVG_GRADE[0])
         )
         # expected position res1, res4
         top_res = results[0]
@@ -255,3 +271,133 @@ class TestIndexing(SearchTestCase):
             sec_res.id,
             res4.id
         )
+
+    def test_index_exception(self):
+        """
+        Ensure that an exception is thrown if we have not indexed properly.
+        """
+        # Delete the index
+        remove_index()
+
+        search_url = "/api/v1/repositories/{repo}/search/".format(
+            repo=self.repo.slug
+        )
+        with self.assertRaises(ReindexException):
+            self.client.get(search_url)
+
+        # Create a mapping
+        with self.assertRaises(ReindexException):
+            # Mapping doesn't exist yet
+            get_conn()
+
+        conn = get_conn(verify=False)
+        conn.indices.create(INDEX_NAME)
+        conn.indices.refresh()
+        create_mapping()
+
+        resp = self.client.get(search_url)
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        self.assertEqual(json.loads(resp.content.decode('utf-8'))['count'], 0)
+
+        # Reindex all resources
+        resource_ids = LearningResource.objects.values_list("id", flat=True)
+        index_resources(resource_ids)
+
+        resp = self.client.get(search_url)
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        self.assertEqual(
+            json.loads(resp.content.decode('utf-8'))['count'],
+            len(resource_ids)
+        )
+
+
+class TestIndexFromScratch(LoreTestCase):
+    """
+    Test behavior of indexing on first run of application.
+    """
+    def setUp(self):
+        """Override to only remove index."""
+        username = 'user'
+        password = 'pass'
+        self.user = User.objects.create_user(
+            username=username, password=password
+        )
+        self.client.login(username=username, password=password)
+        remove_index()
+
+    def tearDown(self):
+        """Override to only remove index."""
+        remove_index()
+
+    def test_create_repo_without_reindex(self):
+        """
+        Test that user gets an error message if they have never reindexed.
+        """
+        repo = create_repo("new repo", "new repo", self.user.id)
+        search_url = "{api_base}repositories/{repo_slug}/search/".format(
+            api_base=API_BASE,
+            repo_slug=repo.slug
+        )
+
+        # When user installs LORE they must call refresh_index to create the
+        # index, else they get this error message.
+        with self.assertRaises(ReindexException):
+            self.client.get(search_url)
+
+    def test_create_repo_with_refresh_index(self):
+        """
+        Test that we can create a new repo and that the refresh_index command
+        indexes appropriately. Note that this test has custom setUp
+        and tearDown code.
+        """
+        # When user installs LORE they must call refresh_index
+        # or recreate_index to create the index.
+        call_command("refresh_index")
+
+        repo = create_repo("new repo", "new repo", self.user.id)
+        search_url = "{api_base}repositories/{repo_slug}/search/".format(
+            api_base=API_BASE,
+            repo_slug=repo.slug
+        )
+
+        resp = self.client.get(search_url)
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        result = json.loads(resp.content.decode('utf-8'))
+        self.assertEqual(0, result['count'])
+
+        # Import. This should index the resources automatically.
+        import_course_from_file(self.get_course_zip(), repo.id, self.user.id)
+
+        resp = self.client.get(search_url)
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        result = json.loads(resp.content.decode('utf-8'))
+        self.assertTrue(result['count'] > 0)
+
+    def test_create_repo_with_recreate_index(self):
+        """
+        Test that we can create a new repo and that the refresh_index command
+        indexes appropriately. Note that this test has custom setUp
+        and tearDown code.
+        """
+        # When user installs LORE they must call refresh_index
+        # or recreate_index to create the index.
+        call_command("recreate_index")
+
+        repo = create_repo("new repo", "new repo", self.user.id)
+        search_url = "{api_base}repositories/{repo_slug}/search/".format(
+            api_base=API_BASE,
+            repo_slug=repo.slug
+        )
+
+        resp = self.client.get(search_url)
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        result = json.loads(resp.content.decode('utf-8'))
+        self.assertEqual(0, result['count'])
+
+        # Import. This should index the resources automatically.
+        import_course_from_file(self.get_course_zip(), repo.id, self.user.id)
+
+        resp = self.client.get(search_url)
+        self.assertEqual(resp.status_code, HTTP_200_OK)
+        result = json.loads(resp.content.decode('utf-8'))
+        self.assertTrue(result['count'] > 0)

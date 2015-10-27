@@ -8,6 +8,8 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
     var Listing = ListingResources.Listing;
     var ListingResource = ListingResources.ListingResource;
     var SortingDropdown = ListingResources.SortingDropdown;
+    var DescriptionListingResource = ListingResources.
+      DescriptionListingResource;
     var loader = ListingResources.loader;
     var getImageFile = ListingResources.getImageFile;
 
@@ -39,7 +41,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       "description": "Description A",
       "course": "0.001",
       "xa_avg_grade": 68.0,
-      "lid": 23,
+      "id": 23,
       "title": "Circuit Schematic Builder",
       "description_path": "Ops / Content/problem tests / Sample problems" +
       " / Circuit schematic builder / Circuit Schematic Builder",
@@ -53,7 +55,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       "description": "Description B",
       "course": "0.001",
       "xa_avg_grade": 75.0,
-      "lid": 45,
+      "id": 45,
       "title": "LTI",
       "description_path": "Ops / LTI",
       "xa_nr_views": 8185,
@@ -178,8 +180,8 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       };
 
       var openResourcePanelCalled = {};
-      var openResourcePanel = function(lid) {
-        openResourcePanelCalled[lid] = true;
+      var openResourcePanel = function(id) {
+        openResourcePanelCalled[id] = true;
       };
 
       var afterMount = function(component) {
@@ -248,30 +250,27 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
 
         var resource = sampleResources[1];
         var openResourcePanelCount = {};
-        var openResourcePanel = function(lid) {
-          openResourcePanelCount[lid] = true;
+        var openResourcePanel = function(id) {
+          openResourcePanelCount[id] = true;
         };
 
         var updateExportLinkClickCount = {};
-        var updateExportLinkClick = function(lid, selected) {
-          updateExportLinkClickCount[lid] = selected;
+        var updateExportLinkClick = function(id, selected) {
+          updateExportLinkClickCount[id] = selected;
         };
 
         var afterMount = function(component) {
-          // ListingResource has no state
-          assert.equal(null, component.state);
-
           // Assert link behavior
           var node = React.findDOMNode(component);
           assert.deepEqual(openResourcePanelCount, {});
           var resourceLink = $(node).find("h2 a")[0];
           React.addons.TestUtils.Simulate.click(resourceLink);
-          assert.equal(openResourcePanelCount[resource.lid], true);
+          assert.equal(openResourcePanelCount[resource.id], true);
 
           assert.deepEqual(updateExportLinkClickCount, {});
           var exportLink = $(node).find(".link-export")[0];
           React.addons.TestUtils.Simulate.click(exportLink);
-          assert.equal(updateExportLinkClickCount[resource.lid], false);
+          assert.equal(updateExportLinkClickCount[resource.id], false);
 
           var $firstRow = $(node).find("h2");
           var $secondRow = $(node).find(".tile-meta").first();
@@ -280,7 +279,7 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
 
           // Title link
           assert.equal(resource.title, $firstRow.find("a").text());
-          assert.equal(resource.lid,
+          assert.equal(resource.id,
             $firstRow.find("a").data("learningresource-id"));
 
           // Description path
@@ -313,11 +312,273 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
         React.addons.TestUtils.renderIntoDocument(
           <ListingResource
             resource={resource}
+            exportSelected={_.includes(listingOptions.allExports, resource.id)}
+            imageDir={listingOptions.imageDir}
+            repoSlug={listingOptions.repoSlug}
+            openResourcePanel={openResourcePanel}
+            updateExportLinkClick={updateExportLinkClick}
+            ref={afterMount}
+            />
+        );
+      }
+    );
+
+    /*
+     Listing resource description tests
+     */
+    QUnit.test('Assert description expands and collapse' +
+      ' in ListingResource',
+      function(assert) {
+        var done = assert.async();
+
+        var resource = {
+          "run": "2015_Summer",
+          "description": "Lorem Ipsum is simply dummy text of the printing" +
+          "  and typesetting industry. Lorem Ipsum has been the industry's " +
+          " standard dummy text ever since the 1500s, when an unknown " +
+          " took a galley of type and scrambled it to make a type specimen" +
+          " book. It has survived not only five centuries, but also the" +
+          " leap into electronic typesetting, remaining essentially" +
+          " unchanged. It was popularised in the 1960s with the release " +
+          " of Letraset sheets containing Lorem Ipsum passages, and more " +
+          " recently with desktop publishing software like Aldus PageMaker" +
+          " including versions of",
+          "course": "0.001",
+          "xa_avg_grade": 68.0,
+          "lid": 23,
+          "title": "Circuit Schematic Builder",
+          "description_path": "Ops / Content/problem tests / Sample problems" +
+          " / Circuit schematic builder / Circuit Schematic Builder",
+          "xa_nr_views": 9755,
+          "preview_url": "https://www.sandbox.edx.org/courses/DevOps/0.001/" +
+          "2015_Summer/jump_to_id/71101093d5234c8a87488ed9a27db531",
+          "xa_nr_attempts": 717,
+          "resource_type": "problem"
+        };
+        var openResourcePanel = function() {};
+        var updateExportLinkClick = function() {};
+
+        var afterMount = function(component) {
+          // Assert link behavior
+          var node = React.findDOMNode(component);
+
+          // Description
+          var descriptionDiv = $(node).find(".tile-blurb")[0];
+          var text = $(descriptionDiv).text();
+          assert.equal(text.length, 122);
+
+          var expandLink = $(descriptionDiv).find('a')[0];
+          assert.ok(expandLink, "Expand link exist"); // assert link exist
+
+          // Test description expands on ReadMore link click
+          React.addons.TestUtils.Simulate.click(expandLink);
+          component.forceUpdate(function() {
+            assert.equal(component.state.showDescInDetail, true);
+            node = React.findDOMNode(component);
+            descriptionDiv = $(node).find(".tile-blurb")[0];
+            text = $(descriptionDiv).text();
+
+            assert.ok(text.length > 120, "Description size is greater the 120");
+            var collapseLink = $(descriptionDiv).find('a')[0];
+            assert.ok(collapseLink, "Collapse link exist"); // assert link exist
+            React.addons.TestUtils.Simulate.click(collapseLink);
+            // Test description collapse on ReadLess link click
+            component.forceUpdate(function() {
+              assert.equal(component.state.showDescInDetail, false);
+              node = React.findDOMNode(component);
+              descriptionDiv = $(node).find(".tile-blurb")[0];
+              text = $(descriptionDiv).text();
+              assert.equal(text.length, 122);
+              done();
+            });
+          });
+        };
+
+        React.addons.TestUtils.renderIntoDocument(
+          <ListingResource
+            resource={resource}
             exportSelected={_.includes(listingOptions.allExports, resource.lid)}
             imageDir={listingOptions.imageDir}
             repoSlug={listingOptions.repoSlug}
             openResourcePanel={openResourcePanel}
             updateExportLinkClick={updateExportLinkClick}
+            ref={afterMount}
+            />
+        );
+      }
+    );
+
+    QUnit.test('Assert description expands in ListingResource',
+      function(assert) {
+        var done = assert.async();
+        var showDetail;
+
+        var showDescInDetailHandler = function(showDetailFlag) {
+          showDetail = showDetailFlag;
+        };
+
+        var resource = {
+          "run": "2015_Summer",
+          "description": "Lorem Ipsum is simply dummy text of the printing" +
+          "  and typesetting industry. Lorem Ipsum has been the industry's " +
+          " standard dummy text ever since the 1500s, when an unknown " +
+          " took a galley of type and scrambled it to make a type specimen" +
+          " book. It has survived not only five centuries, but also the" +
+          " leap into electronic typesetting, remaining essentially" +
+          " unchanged. It was popularised in the 1960s with the release " +
+          " of Letraset sheets containing Lorem Ipsum passages, and more " +
+          " recently with desktop publishing software like Aldus PageMaker" +
+          " including versions of",
+          "course": "0.001",
+          "xa_avg_grade": 68.0,
+          "lid": 23,
+          "title": "Circuit Schematic Builder",
+          "description_path": "Ops / Content/problem tests / Sample problems" +
+          " / Circuit schematic builder / Circuit Schematic Builder",
+          "xa_nr_views": 9755,
+          "preview_url": "https://www.sandbox.edx.org/courses/DevOps/0.001/" +
+          "2015_Summer/jump_to_id/71101093d5234c8a87488ed9a27db531",
+          "xa_nr_attempts": 717,
+          "resource_type": "problem"
+        };
+
+        var afterMount = function(component) {
+          // Assert link behavior
+          var descriptionDiv = React.findDOMNode(component);
+          var text = $(descriptionDiv).text();
+          assert.equal(text.length, 122);
+
+          var expandLink = $(descriptionDiv).find('a')[0];
+          assert.ok(expandLink, "Expand link exist"); // assert link exist
+
+          React.addons.TestUtils.Simulate.click(expandLink);
+          component.forceUpdate(function() {
+            assert.equal(showDetail,  true, "Description is expanded");
+            done();
+          });
+        };
+
+        React.addons.TestUtils.renderIntoDocument(
+          <DescriptionListingResource
+            resource={resource}
+            showDetail={false}
+            showDescInDetailHandler={showDescInDetailHandler}
+            ref={afterMount}
+            />
+        );
+      }
+    );
+
+    QUnit.test('Assert description collapse in ListingResource',
+      function(assert) {
+        var done = assert.async();
+        var showDetail;
+
+        var showDescInDetailHandler = function(showDetailFlag) {
+          showDetail = showDetailFlag;
+        };
+
+        var resource = {
+          "run": "2015_Summer",
+          "description": "Lorem Ipsum is simply dummy text of the printing" +
+          "  and typesetting industry. Lorem Ipsum has been the industry's " +
+          " standard dummy text ever since the 1500s, when an unknown " +
+          " took a galley of type and scrambled it to make a type specimen" +
+          " book. It has survived not only five centuries, but also the" +
+          " leap into electronic typesetting, remaining essentially" +
+          " unchanged. It was popularised in the 1960s with the release " +
+          " of Letraset sheets containing Lorem Ipsum passages, and more " +
+          " recently with desktop publishing software like Aldus PageMaker" +
+          " including versions of",
+          "course": "0.001",
+          "xa_avg_grade": 68.0,
+          "lid": 23,
+          "title": "Circuit Schematic Builder",
+          "description_path": "Ops / Content/problem tests / Sample problems" +
+          " / Circuit schematic builder / Circuit Schematic Builder",
+          "xa_nr_views": 9755,
+          "preview_url": "https://www.sandbox.edx.org/courses/DevOps/0.001/" +
+          "2015_Summer/jump_to_id/71101093d5234c8a87488ed9a27db531",
+          "xa_nr_attempts": 717,
+          "resource_type": "problem"
+        };
+
+        var afterMount = function(component) {
+          // Assert link behavior
+          var descriptionDiv = React.findDOMNode(component);
+          var text = $(descriptionDiv).text();
+          assert.ok(text.length > 120, "Description size is greater the 120");
+
+          var collapseLink = $(descriptionDiv).find('a')[0];
+          assert.ok(collapseLink, "Collapse link exist"); // assert link exist
+          React.addons.TestUtils.Simulate.click(collapseLink);
+          component.forceUpdate(function() {
+            assert.equal(showDetail,  false, "Description is collapsed");
+            done();
+          });
+        };
+
+        React.addons.TestUtils.renderIntoDocument(
+          <DescriptionListingResource
+            resource={resource}
+            showDetail={true}
+            showDescInDetailHandler={showDescInDetailHandler}
+            ref={afterMount}
+            />
+        );
+      }
+    );
+
+    QUnit.test('Assert description collapse in ListingResource' +
+      '(continue characters description)',
+      function(assert) {
+        var done = assert.async();
+        var showDetail;
+
+        var showDescInDetailHandler = function(showDetailFlag) {
+          showDetail = showDetailFlag;
+        };
+
+        var resource = {
+          "run": "2015_Summer",
+          "description": "LoremIpsumissimplydummytextoftheprinting" +
+          "andtypesettingindustry.LoremIpsumhasbeentheindustry's " +
+          "standarddummytexteversincethe1500s,whenanunknown" +
+          "tookagalleyoftypeandscrambledittomakeatypespecimen" +
+          "includingversionsof",
+          "course": "0.001",
+          "xa_avg_grade": 68.0,
+          "lid": 23,
+          "title": "Circuit Schematic Builder",
+          "description_path": "Ops / Content/problem tests / Sample problems" +
+          " / Circuit schematic builder / Circuit Schematic Builder",
+          "xa_nr_views": 9755,
+          "preview_url": "https://www.sandbox.edx.org/courses/DevOps/0.001/" +
+          "2015_Summer/jump_to_id/71101093d5234c8a87488ed9a27db531",
+          "xa_nr_attempts": 717,
+          "resource_type": "problem"
+        };
+
+        var afterMount = function(component) {
+          // Assert link behavior
+          var descriptionDiv = React.findDOMNode(component);
+          var text = $(descriptionDiv).text();
+          assert.ok(text.length > 120, "Description size is greater the 120");
+
+          var collapseLink = $(descriptionDiv).find('a')[0];
+          assert.ok(collapseLink, "Collapse link exist"); // assert link exist
+          React.addons.TestUtils.Simulate.click(collapseLink);
+          component.forceUpdate(function() {
+            assert.equal(showDetail,  false, "Description is collapsed");
+            done();
+          });
+        };
+
+        React.addons.TestUtils.renderIntoDocument(
+          <DescriptionListingResource
+            resource={resource}
+            showDetail={true}
+            showDescInDetailHandler={showDescInDetailHandler}
             ref={afterMount}
             />
         );

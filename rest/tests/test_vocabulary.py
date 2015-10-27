@@ -25,11 +25,12 @@ from rest.serializers import (
     TermSerializer,
 )
 from taxonomy.models import Vocabulary, Term
-from learningresources.models import LearningResourceType
+from learningresources.models import LearningResourceType, LearningResource
 
 log = logging.getLogger(__name__)
 
 
+# pylint: disable=too-many-lines
 class TestVocabulary(RESTTestCase):
     """
     REST tests relating to vocabularies and terms
@@ -631,6 +632,269 @@ class TestVocabulary(RESTTestCase):
             ['example'],
             self.get_vocabulary(
                 self.repo.slug, vocab_slug)['learning_resource_types'])
+
+    def test_index_updates_on_create(self):
+        """
+        Test that creating vocabulary will automatically update the index.
+        """
+        self.import_course_tarball(self.repo)
+
+        # No vocabs.
+        self.assertEqual(
+            sorted(["course", "run", "resource_type"]),
+            sorted(self.get_results()['facet_counts'].keys())
+        )
+
+        vocab_dict = dict(self.DEFAULT_VOCAB_DICT)
+        vocab_dict['learning_resource_types'] = [
+            resource_type.name for resource_type in
+            LearningResourceType.objects.all()
+        ]
+        vocab_result = self.create_vocabulary(self.repo.slug, vocab_dict)
+        vocab = Vocabulary.objects.get(id=vocab_result['id'])
+        vocab_key = vocab.index_key
+
+        self.assertEqual(
+            sorted(["course", "run", "resource_type", vocab_key]),
+            sorted(self.get_results()['facet_counts'].keys())
+        )
+
+        term1 = Term.objects.create(vocabulary=vocab, label="term1", weight=1)
+        term2 = Term.objects.create(vocabulary=vocab, label="term2", weight=2)
+
+        # No terms assigned yet.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    self.get_results()['facet_counts'][vocab_key]['values']]),
+            []
+        )
+        self.assert_results([], vocab_key, term1.slug)
+        self.assert_results([], vocab_key, term2.slug)
+
+        resource1 = LearningResource.objects.all()[0]
+        resource2 = LearningResource.objects.all()[1]
+        self.patch_learning_resource(self.repo.slug, resource1.id, {
+            "terms": [term1.slug]
+        })
+        self.patch_learning_resource(self.repo.slug, resource2.id, {
+            "terms": [term2.slug]
+        })
+
+        # Vocab shows up because there are slugs here.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    self.get_results()['facet_counts'][vocab_key]['values']]),
+            sorted([term1.slug, term2.slug])
+        )
+
+        self.assert_results([resource1], vocab_key, term1.slug)
+        self.assert_results([resource2], vocab_key, term2.slug)
+
+    def test_index_updates_on_edit(self):
+        """
+        Test that editing vocabulary will automatically update the index.
+        """
+        self.import_course_tarball(self.repo)
+
+        # No vocabs.
+        self.assertEqual(
+            sorted(["course", "run", "resource_type"]),
+            sorted(self.get_results()['facet_counts'].keys())
+        )
+
+        vocab = Vocabulary.objects.create(
+            repository=self.repo,
+            weight=1,
+            required=False,
+            vocabulary_type="m",
+            name="vocab1",
+            description="vocab1"
+        )
+        vocab_key = vocab.index_key
+
+        self.assertEqual(
+            sorted(["course", "run", "resource_type", vocab_key]),
+            sorted(self.get_results()['facet_counts'].keys())
+        )
+
+        term1 = Term.objects.create(vocabulary=vocab, label="term1", weight=1)
+        term2 = Term.objects.create(vocabulary=vocab, label="term2", weight=2)
+
+        # Assign all types to vocab.
+        type_names = [t.name for t in LearningResourceType.objects.all()]
+        self.patch_vocabulary(self.repo.slug, vocab.slug, {
+            "learning_resource_types": type_names
+        }, skip_assert=True)  # Skip assert due to different order of types
+
+        # No terms yet.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    self.get_results()['facet_counts'][vocab_key]['values']]),
+            []
+        )
+        self.assert_results([], vocab_key, term1.slug)
+        self.assert_results([], vocab_key, term2.slug)
+
+        resource1 = LearningResource.objects.all()[0]
+        resource2 = LearningResource.objects.all()[1]
+        self.patch_learning_resource(self.repo.slug, resource1.id, {
+            "terms": [term1.slug]
+        })
+        self.patch_learning_resource(self.repo.slug, resource2.id, {
+            "terms": [term2.slug]
+        })
+
+        # Vocab shows up because there are slugs here.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    self.get_results()['facet_counts'][vocab_key]['values']]),
+            sorted([term1.slug, term2.slug])
+        )
+        self.assert_results([resource1], vocab_key, term1.slug)
+        self.assert_results([resource2], vocab_key, term2.slug)
+
+        # Vocab is edited to remove all learning resource types which will also
+        # remove all links to terms.
+        self.patch_vocabulary(self.repo.slug, vocab.slug, {
+            "learning_resource_types": []
+        })
+
+        # No terms assigned anymore.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    self.get_results()['facet_counts'][vocab_key]['values']]),
+            []
+        )
+        self.assert_results([], vocab_key, term1.slug)
+        self.assert_results([], vocab_key, term2.slug)
+
+    def test_index_updates_on_delete(self):
+        """
+        Test that deleting vocabulary and terms will automatically update the
+        index.
+        """
+        self.import_course_tarball(self.repo)
+
+        # No vocabs.
+        self.assertEqual(
+            sorted(["course", "run", "resource_type"]),
+            sorted(self.get_results()['facet_counts'].keys())
+        )
+
+        vocab = Vocabulary.objects.create(
+            repository=self.repo,
+            weight=1,
+            required=False,
+            vocabulary_type="m",
+            name="vocab1",
+            description="vocab1"
+        )
+        vocab_key = vocab.index_key
+
+        self.assertEqual(
+            sorted(["course", "run", "resource_type", vocab_key]),
+            sorted(self.get_results()['facet_counts'].keys())
+        )
+
+        term1 = Term.objects.create(vocabulary=vocab, label="term1", weight=1)
+        term2 = Term.objects.create(vocabulary=vocab, label="term2", weight=2)
+
+        # Assign all types to vocab.
+        type_names = [t.name for t in LearningResourceType.objects.all()]
+        self.patch_vocabulary(self.repo.slug, vocab.slug, {
+            "learning_resource_types": type_names
+        }, skip_assert=True)  # Skip assert due to different order of types
+
+        # No terms yet.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    self.get_results()['facet_counts'][vocab_key]['values']]),
+            []
+        )
+
+        resource1 = LearningResource.objects.all()[0]
+        resource2 = LearningResource.objects.all()[1]
+        self.patch_learning_resource(self.repo.slug, resource1.id, {
+            "terms": [term1.slug]
+        })
+        self.patch_learning_resource(self.repo.slug, resource2.id, {
+            "terms": [term2.slug]
+        })
+
+        # Vocab shows up because there are slugs here.
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    self.get_results()['facet_counts'][vocab_key]['values']]),
+            sorted([term1.slug, term2.slug])
+        )
+        self.assert_results([resource1], vocab_key, term1.slug)
+        self.assert_results([resource2], vocab_key, term2.slug)
+
+        # Term is removed from facet list.
+        self.delete_term(self.repo.slug, vocab.slug, term1.slug)
+        self.assertEqual(
+            sorted([t['key'] for t in
+                    self.get_results()['facet_counts'][vocab_key]['values']]),
+            sorted([term2.slug])
+        )
+        self.assert_results([], vocab_key, term1.slug)
+        self.assert_results([resource2], vocab_key, term2.slug)
+
+        self.delete_vocabulary(self.repo.slug, vocab.slug)
+        # No vocabs left.
+        self.assertEqual(
+            sorted(["course", "run", "resource_type"]),
+            sorted(self.get_results()['facet_counts'].keys())
+        )
+        self.assert_results([], vocab_key, term1.slug)
+        self.assert_results([], vocab_key, term2.slug)
+
+    def test_vocab_num_queries(self):
+        """Make sure number of queries is reasonable for vocab and term."""
+        self.import_course_tarball(self.repo)
+        vocab_dict = dict(self.DEFAULT_VOCAB_DICT)
+        vocab_dict['learning_resource_types'] = [
+            self.resource.learning_resource_type.name
+        ]
+        with self.assertNumQueries(25):
+            vocab_slug = self.create_vocabulary(
+                self.repo.slug, vocab_dict)['slug']
+
+        with self.assertNumQueries(20):
+            term_slug = self.create_term(
+                self.repo.slug, vocab_slug
+            )['slug']
+
+        self.patch_learning_resource(self.repo.slug, self.resource.id, {
+            "terms": [term_slug]
+        })
+
+        with self.assertNumQueries(39):
+            # Remove the types which will require a reindex.
+            self.patch_vocabulary(self.repo.slug, vocab_slug, {
+                "learning_resource_types": []
+            })
+
+        # Put back the type, reassign the term, then delete the term.
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": [
+                self.resource.learning_resource_type.name
+            ]
+        })
+        self.patch_learning_resource(self.repo.slug, self.resource.id, {
+            "terms": [term_slug]
+        })
+
+        with self.assertNumQueries(31):
+            self.delete_term(self.repo.slug, vocab_slug, term_slug)
+
+        # Add back term, reassign the term, then delete the vocabulary.
+        term_slug = self.create_term(self.repo.slug, vocab_slug)['slug']
+        self.patch_learning_resource(self.repo.slug, self.resource.id, {
+            "terms": [term_slug]
+        })
+        with self.assertNumQueries(30):
+            self.delete_vocabulary(self.repo.slug, vocab_slug)
 
 
 class TestVocabularyAuthorization(RESTAuthTestCase):

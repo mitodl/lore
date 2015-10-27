@@ -15,11 +15,9 @@ import uuid
 from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.core.files.storage import default_storage
-from django.core.management import call_command
 from django.test import Client
 from django.test.testcases import TestCase
 from django.test.utils import override_settings
-import haystack
 
 from learningresources.api import (
     create_repo,
@@ -28,7 +26,7 @@ from learningresources.api import (
     update_description_path
 )
 from learningresources.models import Repository, StaticAsset
-from search.utils import clear_index, refresh_index
+from search.utils import recreate_index, refresh_index, remove_index
 
 log = logging.getLogger(__name__)
 # Using the md5 hasher speeds up tests.
@@ -87,7 +85,7 @@ class LoreTestCase(TestCase):
     def setUp(self):
         """set up"""
         super(LoreTestCase, self).setUp()
-        clear_index()
+        recreate_index()
         self.user = User.objects.create_user(
             username=self.USERNAME, password=self.PASSWORD
         )
@@ -131,11 +129,7 @@ class LoreTestCase(TestCase):
         """Clean up Elasticsearch and static assets between tests."""
         for static_asset in StaticAsset.objects.all():
             default_storage.delete(static_asset.asset)
-        for key, _ in haystack.connections.connections_info.items():
-            haystack.connections.reload(key)
-        call_command('clear_index', interactive=False, verbosity=0)
-        clear_index()
-        refresh_index()
+        remove_index()
 
     def _make_archive(self, path, make_zip=False, ext=None):
         """
