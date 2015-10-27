@@ -341,6 +341,33 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
         }
       ]
     };
+    var learningResourceResponse = {
+      "id": 1,
+      "learning_resource_type": "course",
+      "static_assets": [],
+      "title": "title",
+      "materialized_path": "/course",
+      "content_xml": "<course />",
+      "url_path": "",
+      "parent": null,
+      "copyright": "",
+      "xa_nr_views": 0,
+      "xa_nr_attempts": 0,
+      "xa_avg_grade": 0.0,
+      "xa_histogram_grade": 0.0,
+      "terms": ["required"]
+    };
+    var learningResourceResponseMinusContentXml = $.extend(
+      {}, learningResourceResponse);
+
+    // Substituted in for window.location
+    var queryString;
+    var updateQueryString = function (query) {
+      queryString = query;
+    };
+    var getQueryString = function () {
+      return queryString;
+    };
 
     QUnit.module('Tests for listing page', {
       beforeEach: function() {
@@ -384,6 +411,7 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
             "<div id='exports_content' />" +
             "<div id='exports_heading' />" +
             "<div id='tab-1' />" +
+            "<div id='tab-2' />" +
             "<div id='tab-3' />" +
             "<div id='lore-pagination' />" +
             "<div id='taxonomy-component' />" +
@@ -392,10 +420,21 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
             "<button class='btn-members' />" +
             "<div class='cd-panel' />" +
             "<div class='cd-panel-2' />" +
-            "<div class='cd-panel-exports' />" +
+            "<div class='cd-panel-exports'>" +
+            "<a href='#' class='cd-panel-close' />" +
+            "</div>" +
             "<div class='cd-panel-members' " +
             "data-members-url='/api/v1/repositories/test/members/' />" +
+            "<button id='search_button' />" +
+            "<a href='#tab-1' />" +
+            "<a href='#tab-2' />" +
+            "<a href='#tab-3' />" +
+            "<a href='#tab-vocab' />" +
+            "<a href='#tab-taxonomies' />" +
+            "<input type='text' id='id_q' />" +
           "</div>"));
+
+        queryString = "";
       },
       afterEach: function() {
         TestUtils.cleanup();
@@ -506,34 +545,431 @@ define(['QUnit', 'jquery', 'react', 'test_utils', 'utils', 'listing'],
       });
     });
 
-    QUnit.test("Assert that lone query strings don't have a question mark",
+    QUnit.test("Assert facet checkboxes",
       function(assert) {
         var done = assert.async();
 
-        var oldLocation = window.location.toString();
-        var container = $("#listing")[0];
-        Listing.loader(listingOptions, container);
-
-        waitForAjax(1, function() {
-          assert.equal(window.location.toString(), oldLocation);
-
-          // Select course facet
-          $(container).find("ins").first().click();
+        var afterMount = function(component) {
+          var container = React.findDOMNode(component);
           waitForAjax(1, function() {
+            assert.equal(queryString, "");
             assert.equal(
-              window.location.toString(),
-              oldLocation + "?selected_facets=course_exact%3A8.01"
+              component.state.resources.length,
+              searchResponseAll.count
             );
 
+            // Select course facet
             $(container).find("ins").first().click();
             waitForAjax(1, function() {
+              assert.equal(
+                queryString,
+                "?selected_facets=course_exact%3A8.01"
+              );
+              assert.equal(
+                component.state.resources.length,
+                searchResponseCourseFacet.count
+              );
+
+              $(container).find("ins").first().click();
+              waitForAjax(1, function() {
+                // Note lack of '?'
+                assert.equal(queryString, "");
+                assert.equal(
+                  component.state.resources.length,
+                  searchResponseAll.count
+                );
+                done();
+              });
+            });
+          });
+
+        };
+
+        var options = {
+          allExports: listingOptions.allExports,
+          sortingOptions: listingOptions.sortingOptions,
+          imageDir: listingOptions.imageDir,
+          pageSize: 25,
+          repoSlug: listingOptions.repoSlug,
+          loggedInUsername: listingOptions.loggedInUsername,
+          updateQueryString: updateQueryString,
+          getQueryString: getQueryString,
+          ref: afterMount
+        };
+
+        React.addons.TestUtils.renderIntoDocument(
+          React.createElement(Listing.ListingContainer, options)
+        );
+      }
+    );
+
+    QUnit.test("Check sorting options", function(assert) {
+      var done = assert.async();
+
+      // Note that results here are not meaningful
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/search/' +
+          '?selected_facets=course_exact%3A8.01&' +
+          'selected_facets=run_exact%3A2014_Fall',
+        type: 'GET',
+        responseText: searchResponseAll
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/search/' +
+          '?selected_facets=course_exact%3A8.01&' +
+          'selected_facets=run_exact%3A2014_Fall&' +
+          'sortby=avg_grade',
+        type: 'GET',
+        responseText: searchResponseAll
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/search/?sortby=avg_grade&q=text',
+        type: 'GET',
+        responseText: searchResponseAll
+      });
+
+      var afterMount = function (component) {
+        var node = React.findDOMNode(component);
+
+        waitForAjax(1, function () {
+          // Select course facet
+          $(node).find("ins").first().click();
+          waitForAjax(1, function () {
+            assert.equal(queryString, "?selected_facets=course_exact%3A8.01");
+
+            // Select second course facet.
+            // Checkboxes change between refreshes but that won't matter here.
+            // This will make sure we can handle two checkboxes.
+            $($(node).find("ins")[1]).click();
+            waitForAjax(1, function() {
+              assert.equal(
+                queryString,
+                "?selected_facets=course_exact%3A8.01&" +
+                "selected_facets=run_exact%3A2014_Fall"
+              );
+
+              // Sort by title
+              React.addons.TestUtils.Simulate.click(
+                $(node).find("a:contains('Average')")[0]
+              );
+              waitForAjax(1, function() {
+                assert.equal(
+                  queryString,
+                  "?selected_facets=course_exact%3A8.01&" +
+                  "selected_facets=run_exact%3A2014_Fall&" +
+                  "sortby=avg_grade"
+                );
+
+                // Filter by text
+                $("#id_q").val("text");
+                $("#search_button").click();
+                waitForAjax(1, function() {
+                  // Sort was kept but facets were lost
+                  assert.equal(queryString, "?sortby=avg_grade&q=text");
+
+                  done();
+                });
+              });
+            });
+          });
+        });
+      };
+
+      var options = {
+        allExports: listingOptions.allExports,
+        sortingOptions: listingOptions.sortingOptions,
+        imageDir: listingOptions.imageDir,
+        pageSize: 25,
+        repoSlug: listingOptions.repoSlug,
+        loggedInUsername: listingOptions.loggedInUsername,
+        updateQueryString: updateQueryString,
+        getQueryString: getQueryString,
+        ref: afterMount
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        React.createElement(Listing.ListingContainer, options)
+      );
+    });
+
+    QUnit.test("Test pagination", function(assert) {
+      var done = assert.async();
+      var pageSize = 2;
+
+      var afterMount = function(component) {
+        // Initial state
+        assert.equal(
+          component.state.numPages,
+          0
+        );
+        waitForAjax(1, function() {
+          assert.equal(
+            component.state.numPages,
+            Math.ceil(searchResponseAll.count / pageSize)
+          );
+          done();
+        });
+      };
+
+      var options = {
+        allExports: listingOptions.allExports,
+        sortingOptions: listingOptions.sortingOptions,
+        imageDir: listingOptions.imageDir,
+        pageSize: pageSize,
+        repoSlug: listingOptions.repoSlug,
+        loggedInUsername: listingOptions.loggedInUsername,
+        updateQueryString: updateQueryString,
+        getQueryString: getQueryString,
+        ref: afterMount
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        React.createElement(Listing.ListingContainer, options)
+      );
+
+    });
+
+    QUnit.test("Assert search textbox", function (assert) {
+      var done = assert.async();
+
+      // This is a failure but shouldn't affect changing of query string
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/search/?q=text+with+spaces',
+        type: 'GET',
+        responseText: searchResponseCourseFacet,
+        status: 400
+      });
+
+      var afterMount = function (component) {
+        waitForAjax(1, function () {
+          assert.equal(queryString, "");
+          assert.equal(
+            component.state.resources.length,
+            searchResponseAll.count
+          );
+
+          // Set search text
+          $("#id_q").val("text with spaces");
+          $("#search_button").click();
+          waitForAjax(1, function () {
+            assert.equal(queryString, "?q=text+with+spaces");
+            assert.equal(
+              component.state.resources.length,
+              searchResponseAll.count
+            );
+
+            $("#id_q").val("");
+            $("#search_button").click();
+            waitForAjax(1, function () {
               // Note lack of '?'
-              assert.equal(window.location.toString(), oldLocation);
+              assert.equal(queryString, "");
+              assert.equal(
+                component.state.resources.length,
+                searchResponseAll.count
+              );
               done();
             });
           });
         });
-      }
-    );
+      };
+
+      var options = {
+        allExports: listingOptions.allExports,
+        sortingOptions: listingOptions.sortingOptions,
+        imageDir: listingOptions.imageDir,
+        pageSize: 25,
+        repoSlug: listingOptions.repoSlug,
+        loggedInUsername: listingOptions.loggedInUsername,
+        updateQueryString: updateQueryString,
+        getQueryString: getQueryString,
+        ref: afterMount
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        React.createElement(Listing.ListingContainer, options)
+      );
+    });
+
+    QUnit.test('Assert loader behavior', function(assert) {
+      var done = assert.async();
+
+      // Success on initial load but fail after clicking checkbox
+      TestUtils.replaceMockjax({
+        url: '/api/v1/repositories/test/search/' +
+        '?selected_facets=course_exact%3A8.01',
+        type: 'GET',
+        responseText: searchResponseCourseFacet,
+        status: 400
+      });
+
+      var afterMount = function (component) {
+        var container = React.findDOMNode(component);
+        assert.equal(component.state.pageLoaded, false);
+        waitForAjax(1, function () {
+          assert.equal(component.state.pageLoaded, true);
+
+          // Select course facet
+          $(container).find("ins").first().click();
+          component.forceUpdate(function() {
+            assert.equal(component.state.pageLoaded, false);
+            waitForAjax(1, function () {
+              assert.equal(component.state.pageLoaded, true);
+              done();
+            });
+          });
+        });
+
+      };
+
+      var options = {
+        allExports: listingOptions.allExports,
+        sortingOptions: listingOptions.sortingOptions,
+        imageDir: listingOptions.imageDir,
+        pageSize: 25,
+        repoSlug: listingOptions.repoSlug,
+        loggedInUsername: listingOptions.loggedInUsername,
+        updateQueryString: updateQueryString,
+        getQueryString: getQueryString,
+        ref: afterMount
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        React.createElement(Listing.ListingContainer, options)
+      );
+    });
+
+    QUnit.test('Check isEmail', function(assert) {
+      assert.ok(Listing.isEmail("staff@edx.org"));
+      assert.ok(Listing.isEmail("staff@mit.edu"));
+      assert.ok(!Listing.isEmail("@mit.edu"));
+      assert.ok(!Listing.isEmail("other"));
+    });
+
+    QUnit.test('Assert resource tab lazy loading', function(assert) {
+      var done = assert.async();
+
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/learning_resources/' +
+          '1/?remove_content_xml=true',
+        type: 'GET',
+        responseText: learningResourceResponseMinusContentXml
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/learning_resources/1/',
+        type: 'GET',
+        responseText: learningResourceResponse
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/vocabularies/?type_name=course',
+        type: 'GET',
+        responseText: vocabularyResponse
+      });
+      var afterMount = function(component) {
+        var node = React.findDOMNode(component);
+        waitForAjax(1, function() {
+          React.addons.TestUtils.Simulate.click(
+            $(node).find("h2 .cd-btn")[0]
+          );
+
+          waitForAjax(2, function() {
+            assert.equal(component.state.currentResourceId, 1);
+            assert.deepEqual(
+              component.state.loadedPanels,
+              {"tab-1": true}
+            );
+
+            $("a[href='#tab-2']").click();
+            waitForAjax(1, function() {
+              assert.deepEqual(
+                component.state.loadedPanels,
+                {
+                  "tab-1": true,
+                  "tab-2": true
+                }
+              );
+              done();
+            });
+          });
+        });
+      };
+
+      var options = {
+        allExports: listingOptions.allExports,
+        sortingOptions: listingOptions.sortingOptions,
+        imageDir: listingOptions.imageDir,
+        pageSize: 25,
+        repoSlug: listingOptions.repoSlug,
+        loggedInUsername: listingOptions.loggedInUsername,
+        updateQueryString: updateQueryString,
+        getQueryString: getQueryString,
+        ref: afterMount
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        React.createElement(Listing.ListingContainer, options)
+      );
+    });
+
+    QUnit.test('Open and close exports panel', function(assert) {
+      var done = assert.async();
+
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/learning_resource_exports/test/',
+        type: 'GET',
+        responseText: {
+          "count": 1,
+          "next": null,
+          "previous": null,
+          "results": [{"id": 123}]
+        }
+      });
+      TestUtils.initMockjax({
+        url: '/api/v1/repositories/test/learning_resources/?id=123',
+        type: 'GET',
+        responseText: {
+          "count": 1,
+          "next": null,
+          "previous": null,
+          "results": [
+            learningResourceResponse
+          ]
+        }
+      });
+      var afterMount = function(component) {
+        var node = React.findDOMNode(component);
+        waitForAjax(1, function() {
+          assert.ok(!$('.cd-panel-exports').hasClass("is-visible"));
+          React.addons.TestUtils.Simulate.click(
+            $(node).find("button:contains('Export')")[0]
+          );
+          waitForAjax(2, function() {
+
+            assert.ok($('.cd-panel-exports').hasClass("is-visible"));
+
+            $(".cd-panel-exports .cd-panel-close").click();
+            assert.ok(!$('.cd-panel-exports').hasClass("is-visible"));
+
+            done();
+          });
+        });
+      };
+
+      var options = {
+        allExports: listingOptions.allExports,
+        sortingOptions: listingOptions.sortingOptions,
+        imageDir: listingOptions.imageDir,
+        pageSize: 25,
+        repoSlug: listingOptions.repoSlug,
+        loggedInUsername: listingOptions.loggedInUsername,
+        updateQueryString: updateQueryString,
+        getQueryString: getQueryString,
+        ref: afterMount
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        React.createElement(Listing.ListingContainer, options)
+      );
+
+    });
   }
 );
