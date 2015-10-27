@@ -1,8 +1,11 @@
-define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
-  function (React, $, _, Utils) {
+define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
+    'pagination'],
+  function (React, $, _, Utils, PaginationModule) {
     'use strict';
 
     var ICheckbox = Utils.ICheckbox;
+    var ReactOverlayLoader = Utils.ReactOverlayLoader;
+    var Pagination = PaginationModule.Pagination;
 
     var getImageFile = function(resourceType) {
       if (resourceType === 'chapter') {
@@ -104,7 +107,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
             />;
         }
 
-        var collapseId = "collapse-" + this.props.id;
+        var collapseId = "collapse-facetgroup-" + this.props.facet.key;
 
         return <div className="panel panel-default">
           <div className="panel-heading">
@@ -136,8 +139,8 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
         var facets = [];
 
         var makeFacetGroup = function(values) {
-          if (!values.values.length &&
-              !values.facet.missing_count) {
+          if (!values || (!values.values.length &&
+              !values.facet.missing_count)) {
             return null;
           }
           var selectedFacets = {};
@@ -158,7 +161,9 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
         };
 
         _.each(["course", "run", "resource_type"], function(key) {
-          facets.push(makeFacetGroup(thiz.props.facetCounts[key]));
+          if (_.has(thiz.props.facetCounts, key)) {
+            facets.push(makeFacetGroup(thiz.props.facetCounts[key]));
+          }
         });
 
         _.each(this.props.facetCounts, function(values) {
@@ -239,7 +244,66 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       }
     });
 
+    var DescriptionListingResource = React.createClass({
+      render: function() {
+        if (this.props.showDetail) {
+          return <div className="tile-blurb">{this.expandDescription()}</div>;
+        }
+
+        return <div className="tile-blurb">{this.wrapDescription()}</div>;
+      },
+      wrapDescription: function() {
+        var resource = this.props.resource;
+        var description = "No description provided.";
+        if (resource.description !== "") {
+          if (resource.description.length > 120) {
+            var wrapDesc ;
+            var positionOfSpace = resource.description.indexOf(" ",  110);
+
+            if (positionOfSpace > 0) {
+              wrapDesc = resource.description.substring(0, positionOfSpace);
+            } else {
+              wrapDesc = resource.description.substring(0, 120);
+            }
+
+            description = <span>
+              {wrapDesc} <a onClick={this.expandLinkClick} href="#"
+              className="link-description-more-less">
+               Read more <i className="fa fa-chevron-down"></i>
+              </a>
+            </span>;
+          } else {
+            description = resource.description;
+          }
+        }
+        return description;
+      },
+      expandDescription: function() {
+        var resource = this.props.resource;
+        var expandDesc = <span>
+          {resource.description} <a onClick={this.collapseLinkClick} href="#"
+           className="link-description-more-less">
+           Read less <i className="fa fa-chevron-up"></i>
+          </a>
+        </span>;
+        return expandDesc;
+      },
+      collapseLinkClick: function(event) {
+        event.preventDefault();
+        this.props.showDescInDetailHandler(false);
+      },
+      expandLinkClick: function(event) {
+        event.preventDefault();
+        this.props.showDescInDetailHandler(true);
+      }
+    });
+
     var ListingResource = React.createClass({
+      getInitialState: function() {
+        return {
+          showDescInDetail: false
+        };
+      },
       render: function() {
         // Select image based on type.
         var resource = this.props.resource;
@@ -252,11 +316,6 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
           title = resource.title;
         }
 
-        var description = "No description provided.";
-        if (resource.description !== "") {
-          description = resource.description;
-        }
-
         return <div className="row">
           <div className="col-md-10">
             <div className="tile">
@@ -266,7 +325,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
               <div className="tile-content">
                 <h2>
                   <a href="#" className="cd-btn"
-                     data-learningresource-id={resource.lid}
+                     data-learningresource-id={resource.id}
                     onClick={this.handleResourceClick}>{title}</a>
                 </h2>
 
@@ -274,7 +333,10 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
                   <span className="meta-item">{resource.description_path}</span>
                 </div>
 
-                <div className="tile-blurb">{description}</div>
+                <DescriptionListingResource resource={this.props.resource}
+                   showDetail={this.state.showDescInDetail}
+                   showDescInDetailHandler={this.showDescInDetailHandler}
+                />
                 <div className="tile-meta">
                   <span className="meta-item">{resource.course}</span>
                   <span className="meta-item">{resource.run}</span>
@@ -307,12 +369,15 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       handleExportLinkClick: function(e) {
         e.preventDefault();
         this.props.updateExportLinkClick(
-          this.props.resource.lid, !this.props.exportSelected
+          this.props.resource.id, !this.props.exportSelected
         );
       },
       handleResourceClick: function(e) {
         e.preventDefault();
-        this.props.openResourcePanel(this.props.resource.lid);
+        this.props.openResourcePanel(this.props.resource.id);
+      },
+      showDescInDetailHandler: function(showDescInDetail) {
+        this.setState({showDescInDetail: showDescInDetail});
       }
     });
 
@@ -320,7 +385,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       getInitialState: function() {
         var exportSelection = {};
         _.each(this.props.resources, function(resource) {
-          exportSelection[resource.lid] = false;
+          exportSelection[resource.id] = false;
         });
 
         _.each(this.props.allExports, function(resourceId) {
@@ -339,10 +404,10 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
       render: function() {
         var thiz = this;
         var resources = _.map(this.props.resources, function(resource) {
-          var exportSelected = thiz.state.exportSelection[resource.lid];
+          var exportSelected = thiz.state.exportSelection[resource.id];
           return <ListingResource
             resource={resource}
-            key={resource.lid}
+            key={resource.id}
             exportSelected={exportSelected}
             imageDir={thiz.props.imageDir}
             repoSlug={thiz.props.repoSlug}
@@ -430,6 +495,7 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
     var ListingPage = React.createClass({
       render: function() {
         return <div>
+          <ReactOverlayLoader loaded={this.props.loaded}>
           <div className="col-md-3">
             <div className="panel-group lore-panel-group">
               <Facets facetCounts={this.props.facetCounts}
@@ -443,6 +509,18 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
           <div className="col-md-9 col-results">
             <Listing {...this.props} ref="listing" />
           </div>
+          <div className="row">
+            <div className="col-md-12">
+              <div className="lore-pagination">
+              <Pagination
+                pageNum={this.props.pageNum}
+                numPages={this.props.numPages}
+                updatePage={this.props.updatePage}
+                />
+              </div>
+            </div>
+          </div>
+            </ReactOverlayLoader>
         </div>;
       },
       clearSelectedExports: function() {
@@ -453,7 +531,8 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
     return {
       loader: function(listingOptions, container, openExportsPanel,
                        openResourcePanel, updateFacets, updateMissingFacets,
-                       selectedFacets, selectedMissingFacets, updateSort) {
+                       selectedFacets, selectedMissingFacets, updateSort,
+                       pageNum, numPages, updatePage, loaded) {
         return React.render(
           <ListingPage {...listingOptions}
                    openExportsPanel={openExportsPanel}
@@ -463,11 +542,16 @@ define('listing_resources', ['react', 'jquery', 'lodash', 'utils'],
                    selectedFacets={selectedFacets}
                    selectedMissingFacets={selectedMissingFacets}
                    updateSort={updateSort}
+                   pageNum={pageNum}
+                   numPages={numPages}
+                   updatePage={updatePage}
+                   loaded={loaded}
             />,
           container
         );
       },
       getImageFile: getImageFile,
+      DescriptionListingResource: DescriptionListingResource,
       ExportButton: ExportButton,
       ExportLink: ExportLink,
       SortingDropdown: SortingDropdown,

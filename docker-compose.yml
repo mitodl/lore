@@ -17,8 +17,10 @@ stats:
     - "8071:80"
 web:
   build: .
+  mem_limit: 384m
   command: >
     /bin/bash -c '
+    export HOST_IP=$(netstat -nr | grep ^0\.0\.0\.0 | awk "{print \$2}") &&
     sleep 3 &&
     npm install --production --no-bin-links &&
     python manage.py migrate &&
@@ -52,6 +54,7 @@ web:
     - stats
 celery:
   image: lore_web
+  mem_limit: 384m
   command: >
     /bin/bash -c '
     sleep 3;

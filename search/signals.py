@@ -10,27 +10,9 @@ import logging
 
 from django.db.models.signals import m2m_changed, post_save, post_delete
 from django.dispatch import receiver
-from haystack.signals import RealtimeSignalProcessor
 from statsd.defaults.django import statsd
 
 log = logging.getLogger(__name__)
-
-
-class LoreRealTimeSignalProcessor(RealtimeSignalProcessor):
-    """
-    Add timers for Haystack signal processing.
-    """
-    @statsd.timer('lore.haystack.save_signal')
-    def handle_save(self, sender, instance, **kwargs):
-        super(LoreRealTimeSignalProcessor, self).handle_save(
-            sender, instance, **kwargs
-        )
-
-    @statsd.timer('lore.haystack.delete_signal')
-    def handle_delete(self, sender, instance, **kwargs):
-        super(LoreRealTimeSignalProcessor, self).handle_delete(
-            sender, instance, **kwargs
-        )
 
 
 # pylint: disable=unused-argument
@@ -38,16 +20,15 @@ class LoreRealTimeSignalProcessor(RealtimeSignalProcessor):
 @receiver(m2m_changed)
 def handle_m2m_save(sender, **kwargs):
     """Update index when taxonomies are updated."""
-    from search.search_indexes import LearningResourceIndex, get_vocabs
-    instance = kwargs.pop("instance", None)
+    from search.search_indexes import get_vocabs
+    instance = kwargs.pop("instance")
     if instance.__class__.__name__ != "LearningResource":
         return
     # Update cache for the LearningResource if it's already set.
     get_vocabs(instance.id)
-    LearningResourceIndex().update_object(instance)
     # Update Elasticsearch index:
     from search.utils import index_resources
-    index_resources([instance])
+    index_resources([instance.id])
 
 
 @statsd.timer('lore.elasticsearch.taxonomy_update')
@@ -55,21 +36,24 @@ def handle_m2m_save(sender, **kwargs):
 def handle_resource_update(sender, **kwargs):
     """Update index when a LearningResource is updated."""
     if kwargs["created"]:
-        # Don't index upon create; update only.
+        # Don't index upon create because we handle this in bulk
+        # in the importer, the only place we allow creation to happen.
         return
-    instance = kwargs.pop("instance", None)
+    instance = kwargs.pop("instance")
     if instance.__class__.__name__ != "LearningResource":
         return
     from search.utils import index_resources
-    index_resources([instance])
+    index_resources([instance.id])
 
 
 @statsd.timer('lore.elasticsearch.taxonomy_delete')
 @receiver(post_delete)
 def handle_resource_deletion(sender, **kwargs):
     """Delete index when instance is deleted."""
-    instance = kwargs.pop("instance", None)
+    # We currently only use this in tests, the user cannot delete resources
+    # at the moment.
+    instance = kwargs.pop("instance")
     if instance.__class__.__name__ != "LearningResource":
         return
-    from search.utils import delete_index
-    delete_index(instance)
+    from search.utils import delete_resource_from_index
+    delete_resource_from_index(instance)

@@ -18,7 +18,7 @@ class LoreSortingFields(object):
     DEFAULT_SORTING_FIELD = SORT_BY_NR_VIEWS[0]
 
     # base sorting field in case the applied sorting is working on equal values
-    BASE_SORTING_FIELD = 'lid'
+    BASE_SORTING_FIELD = 'id'
 
     @classmethod
     def all_sorting_options(cls):

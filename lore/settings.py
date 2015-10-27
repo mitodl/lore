@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.11.0'
+VERSION = '0.12.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -81,6 +81,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
+    'elastic_panel',
     'storages',
     'compressor',
     'bootstrap3',
@@ -93,7 +95,6 @@ INSTALLED_APPS = (
     'taxonomy',
     'rest',
     'rest_framework',
-    'haystack',
     'search',
     'roles',
     'xanalytics',
@@ -343,6 +344,22 @@ LOGGING = {
     },
 }
 
+DEBUG_TOOLBAR_PANELS = [
+    'debug_toolbar.panels.versions.VersionsPanel',
+    'debug_toolbar.panels.timer.TimerPanel',
+    'debug_toolbar.panels.settings.SettingsPanel',
+    'debug_toolbar.panels.headers.HeadersPanel',
+    'debug_toolbar.panels.request.RequestPanel',
+    'debug_toolbar.panels.sql.SQLPanel',
+    'debug_toolbar.panels.staticfiles.StaticFilesPanel',
+    'debug_toolbar.panels.templates.TemplatesPanel',
+    'debug_toolbar.panels.cache.CachePanel',
+    'debug_toolbar.panels.signals.SignalsPanel',
+    'debug_toolbar.panels.logging.LoggingPanel',
+    'debug_toolbar.panels.redirects.RedirectsPanel',
+    'elastic_panel.panel.ElasticDebugPanel'
+]
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
@@ -367,15 +384,10 @@ GUARDIAN_RAISE_403 = True
 # Haystack
 HAYSTACK_CONNECTIONS = {
     'default': {
-        'ENGINE': (
-            'haystack.backends.elasticsearch_backend'
-            '.ElasticsearchSearchEngine'
-        ),
         'URL': get_var('HAYSTACK_URL', 'http://127.0.0.1:9200'),
         'INDEX_NAME': get_var('HAYSTACK_INDEX', 'haystack'),
     }
 }
-HAYSTACK_SIGNAL_PROCESSOR = 'search.signals.LoreRealTimeSignalProcessor'
 
 XANALYTICS_URL = get_var('XANALYTICS_URL', "")
 
@@ -391,5 +403,12 @@ STATSD_PORT = get_var('LORE_STATSD_PORT', 8125)
 STATSD_PREFIX = get_var('LORE_STATSD_PREFIX', None)
 STATSD_MAXUDPSIZE = get_var('LORE_STATSD_MAXUDPSIZE', 512)
 
+# Required for Django Debug Toolbar
+INTERNAL_IPS = (get_var('HOST_IP', '127.0.0.1'), )
+
 # Google analytics code
 GOOGLE_ANALYTICS_ID = get_var('LORE_GOOGLE_ANALYTICS_ID', None)
+
+# This is needed to connect the signals properly.
+# pylint: disable=unused-import
+import search.signals  # noqa

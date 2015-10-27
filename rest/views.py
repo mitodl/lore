@@ -8,6 +8,7 @@ from django.http.response import Http404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.core.files.storage import default_storage
+from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
@@ -63,7 +64,8 @@ from rest.permissions import (
     ViewVocabularyPermission,
 )
 from rest.util import CheckValidMemberParamMixin
-from search.api import construct_queryset, make_facet_counts
+from search.api import construct_queryset
+from search.tasks import index_resources
 from taxonomy.models import Vocabulary
 from learningresources.models import (
     Repository,
@@ -212,6 +214,48 @@ class VocabularyDetail(RetrieveUpdateDestroyAPIView):
             slug=self.kwargs['vocab_slug']
         )
 
+    def update(self, request, *args, **kwargs):
+        """
+        Override to remove resource term links if resource type is
+        removed. Note that partial_update will call this function too.
+        """
+        vocab = self.get_object()
+        new_types = self.request.data.get('learning_resource_types', None)
+        if new_types is not None:
+            # Since LearningResourceTypes indicate which relationships
+            # are valid between Terms and LearningResources, we need to
+            # remove the newly invalid relationships caused by this update.
+            old_types = set(
+                t.name for t in vocab.learning_resource_types.all()
+            )
+            removed_types = old_types - set(new_types)
+
+            resource_ids_to_reindex = []
+            with transaction.atomic():
+                for term in vocab.term_set.all():
+                    for resource in term.learning_resources.all():
+                        if (resource.learning_resource_type.name in
+                                removed_types):
+                            resource_ids_to_reindex.append(resource.id)
+                            term.learning_resources.remove(resource)
+            if len(resource_ids_to_reindex) > 0:
+                index_resources.delay(resource_ids_to_reindex)
+
+        return super(VocabularyDetail, self).update(
+            request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Override delete to also update index for deleted vocabulary.
+        """
+        vocab = self.get_object()
+        resource_ids = list(LearningResource.objects.filter(
+            terms__vocabulary__id=vocab.id
+        ).values_list("id", flat=True))
+        ret = super(VocabularyDetail, self).delete(request, *args, **kwargs)
+        index_resources.delay(resource_ids)
+        return ret
+
 
 class TermList(ListCreateAPIView):
     """REST list view for Term."""
@@ -267,6 +311,18 @@ class TermDetail(RetrieveUpdateDestroyAPIView):
         return vocabs.first().term_set.filter(
             slug=self.kwargs['term_slug']
         )
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Override delete to also update index for deleted term.
+        """
+        term = self.get_object()
+        resource_ids = list(LearningResource.objects.filter(
+            terms__id=term.id
+        ).values_list("id", flat=True))
+        ret = super(TermDetail, self).delete(request, *args, **kwargs)
+        index_resources.delay(resource_ids)
+        return ret
 
 
 class RepoMemberList(ListAPIView):
@@ -477,6 +533,16 @@ class LearningResourceList(ListAPIView):
             except ValueError:
                 raise ValidationError("id is not a number")
             queryset = queryset.filter(id__in=id_list)
+
+        vocab_slug = self.request.query_params.get('vocab_slug', None)
+        if vocab_slug is not None:
+            queryset = queryset.filter(terms__vocabulary__slug=vocab_slug)
+
+        type_names = self.request.query_params.getlist('type_name')
+        if type_names:
+            queryset = queryset.filter(
+                learning_resource_type__name__in=type_names
+            )
         return queryset
 
 
@@ -495,6 +561,19 @@ class LearningResourceDetail(RetrieveUpdateAPIView):
         """Get queryset for a LearningResource."""
         return LearningResource.objects.filter(
             id=self.kwargs['lr_id'])
+
+    def get(self, request, *args, **kwargs):
+        """Override get to filter on content_xml."""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+
+        remove_content_xml = request.GET.get("remove_content_xml")
+        if remove_content_xml == "true":
+            data = dict(serializer.data)
+            del data['content_xml']
+        else:
+            data = serializer.data
+        return Response(data)
 
     def update(self, request, *args, **kwargs):
         """Override update to remove response."""
@@ -876,8 +955,7 @@ class RepositorySearchList(GenericViewSet):
         an extra value for facet_counts.
         """
         queryset = self.filter_queryset(self.get_queryset())
-        repo_slug = self.kwargs['repo_slug']
-        facet_counts = make_facet_counts(repo_slug, queryset)
+        facet_counts = queryset.aggregations()
 
         page = self.paginate_queryset(queryset)
         if page is not None:

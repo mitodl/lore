@@ -24,14 +24,6 @@
   </div>
 </div>
 <div id="listing">
-
-</div>
-
-<div class="row">
-  <div class="col-md-12">
-    <div class="lore-pagination" id="lore-pagination">
-    </div>
-  </div>
 </div>
 {% include "includes/resource_panel.html" %}
 {% include "includes/taxonomy_panel.html" %}
@@ -49,6 +41,7 @@
 {% block postcontent %}
 {{ block.super }}
 {% compress js %}
+<script type="text/javascript" src="{% static "ui/js/listing.js" %}"></script>
 <script type="text/jsx"
         src="{% static "ui/js/manage_taxonomies.jsx" %}">
 </script>

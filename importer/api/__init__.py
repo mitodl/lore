@@ -8,12 +8,12 @@ from bs4 import BeautifulSoup
 from shutil import rmtree
 import logging
 from tempfile import mkdtemp
-from os.path import join, exists, isdir
+from os.path import join, exists
 from os import listdir
 
 from archive import Archive, ArchiveException
-from django.core.files import File
 from django.core.files.storage import default_storage
+from django.db import transaction
 from lxml import etree
 from xbundle import XBundle, DESCRIPTOR_TAGS
 
@@ -21,13 +21,17 @@ from importer.tasks import populate_xanalytics_fields
 from learningresources.api import (
     create_course,
     create_resource,
-    import_static_assets,
-    create_static_asset,
-    get_video_sub,
-    join_description_paths,
     get_resources,
+    get_video_sub,
+    import_static_assets,
+    join_description_paths,
+    MissingTitle,
 )
-from learningresources.models import StaticAsset, course_asset_basepath
+from learningresources.models import (
+    LearningResource,
+    StaticAsset,
+    course_asset_basepath
+)
 from search.utils import index_resources
 
 log = logging.getLogger(__name__)
@@ -104,7 +108,8 @@ def import_course_from_path(path, repo_id, user_id):
     )
     bundle.import_from_directory(path)
     static_dir = join(path, 'static')
-    course = import_course(bundle, repo_id, user_id, static_dir)
+    with transaction.atomic():
+        course = import_course(bundle, repo_id, user_id, static_dir)
     return course
 
 
@@ -134,7 +139,8 @@ def import_course(bundle, repo_id, user_id, static_dir):
     # This triggers a bulk indexing of all LearningResource instances
     # for the course at once.
     index_resources(
-        get_resources(repo_id).filter(course__id=course.id))
+        get_resources(repo_id).filter(
+            course__id=course.id).values_list("id", flat=True))
     return course
 
 
@@ -153,9 +159,13 @@ def import_children(course, element, parent, parent_dpath):
         None
     """
     # pylint: disable=too-many-locals
-    title = element.attrib.get("display_name", "MISSING")
+    title = element.attrib.get(
+        "display_name", MissingTitle.for_title_field)
+    desc_path = title
+    if desc_path == MissingTitle.for_title_field:
+        desc_path = MissingTitle.for_desc_path_field
     mpath = etree.ElementTree(element).getpath(element)
-    dpath = join_description_paths(parent_dpath, title)
+    dpath = join_description_paths(parent_dpath, desc_path)
     resource = create_resource(
         course=course, parent=parent, resource_type=element.tag,
         title=title,
@@ -164,6 +174,8 @@ def import_children(course, element, parent, parent_dpath):
         url_name=element.attrib.get("url_name", None),
         dpath=dpath,
     )
+    # temp variable to store static assets for bulk insert
+    static_assets_to_save = set()
     target = "/static/"
     if element.tag == "video":
         subname = get_video_sub(element)
@@ -173,7 +185,7 @@ def import_children(course, element, parent, parent_dpath):
                 asset=course_asset_basepath(course, subname),
             )
             for asset in assets:
-                resource.static_assets.add(asset)
+                static_assets_to_save.add((resource, asset))
     else:
         # Recursively find all sub-elements, looking for anything which
         # refers to /static/. Then make the association between the
@@ -193,11 +205,26 @@ def import_children(course, element, parent, parent_dpath):
                                 course__id=resource.course_id,
                                 asset=course_asset_basepath(course, path),
                             )
-                            resource.static_assets.add(asset)
+                            static_assets_to_save.add((resource, asset))
                         except StaticAsset.DoesNotExist:
                             continue
                 except AttributeError:
                     continue  # not a string
+    # Bulk insert of static assets
+    # Using this approach to avoid signals during the learning resource .save()
+    # Each signal triggers a reindex of the learning resource that is useless
+    # during import because all the learning resources are indexed in bulk at
+    # the end of the import anyway
+    ThroughModel = LearningResource.static_assets.through
+    ThroughModel.objects.bulk_create(
+        [
+            ThroughModel(
+                learningresource_id=resource.id,
+                staticasset_id=asset.id
+            )
+            for resource, asset in static_assets_to_save
+        ]
+    )
 
     for child in element.getchildren():
         if child.tag in DESCRIPTOR_TAGS:
