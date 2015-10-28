@@ -1,11 +1,11 @@
 define('listing',
   ['csrf', 'react', 'jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
     'learning_resources', 'static_assets', 'utils',
-    'lr_exports', 'listing_resources', 'xml_panel',
+    'lr_exports', 'listing_resources', 'xml_panel', 'import_status',
     'bootstrap', 'icheck'],
   function (CSRF, React, $, _, URI, History,
             ManageTaxonomies, LearningResources, StaticAssets,
-            Utils, Exports, ListingResources, XmlPanel) {
+            Utils, Exports, ListingResources, XmlPanel, ImportStatus) {
     'use strict';
 
     var EMAIL_EXTENSION = '@mit.edu';
@@ -184,7 +184,13 @@ define('listing',
           facetCounts: this.state.facetCounts,
           ref: "listingResources"
         };
-        return React.createElement(ListingResources.ListingPage, options);
+        return React.DOM.div(null,
+          React.createElement(ImportStatus, {
+            repoSlug: this.props.repoSlug,
+            refreshFromAPI: this.refreshFromAPI
+          }),
+          React.createElement(ListingResources.ListingPage, options)
+        );
       },
       /**
        * Clears exports on page. Assumes DELETE to clear on server already
