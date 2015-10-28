@@ -36,7 +36,7 @@ class TestUploadForm(LoreTestCase):
             {"course_file": self.get_upload_file(".zip")},
         )
         self.assertTrue(form.is_valid())
-        form.save(self.user.id, self.repo.id)
+        form.save(self.user.id, self.repo.id, self.client.session)
 
     def test_extensions(self):
         """Only certain extensions are valid."""

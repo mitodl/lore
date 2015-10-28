@@ -16,6 +16,7 @@ from django.db import transaction
 
 from importer.tasks import import_file
 from learningresources.models import Repository
+from rest.tasks import track_task, IMPORT_TASK_TYPE
 
 log = logging.getLogger(__name__)
 
@@ -45,13 +46,14 @@ class UploadForm(Form):
         log.debug("got to end, so the file is bad")
         raise ValidationError("Unsupported file type.")
 
-    def save(self, user_id, repo_id):
+    def save(self, user_id, repo_id, session):
         """
         Receives the request.FILES from the view.
 
         Args:
             user_id (int): primary key of the user uploading the course.
-            repo_id (int): primary key of repository we're uploading to
+            repo_id (int): primary key of repository we're uploading to.
+            session (SessionStore): User's session to store task data.
         """
         # Assumes a single file, because we only accept
         # one at a time.
@@ -66,7 +68,14 @@ class UploadForm(Form):
             ),
             uploaded_file
         )
-        import_file.delay(path, repo_id, user_id)
+        task = import_file.delay(path, repo_id, user_id)
+
+        repo_slug = Repository.objects.get(id=repo_id).slug
+        # Save task data in session so we can keep track of it.
+        track_task(session, task, IMPORT_TASK_TYPE, {
+            "repo_slug": repo_slug,
+            "path": path
+        })
 
 
 class RepositoryForm(ModelForm):
