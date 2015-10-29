@@ -14,6 +14,8 @@ from .views import (
     LearningResourceExportList,
     LearningResourceExportTaskDetail,
     LearningResourceExportTaskList,
+    TaskDetail,
+    TaskList,
     LearningResourceList,
     LearningResourceTypeList,
     RepoMemberGroupList,
@@ -43,6 +45,7 @@ REPOSITORY_EXPORTS_URL = (
 REPOSITORY_EXPORT_TASK_URL = (
     r'^repositories/(?P<repo_slug>[-\w]+)/learning_resource_export_tasks/'
 )
+TASK_URL = r'^tasks/'
 REPOSITORY_SEARCH_URL = r'^repositories/(?P<repo_slug>[-\w]+)/search/'
 
 urlpatterns = [
@@ -127,7 +130,13 @@ urlpatterns = [
         name='learning-resource-export-task-list'),
     url(REPOSITORY_EXPORT_TASK_URL + r'(?P<task_id>[-\w]+)/$',
         LearningResourceExportTaskDetail.as_view(),
-        name='learning-resource-export-task-list'),
+        name='learning-resource-export-task-detail'),
+    url(TASK_URL + r'$',
+        TaskList.as_view(),
+        name='task-list'),
+    url(TASK_URL + r'(?P<task_id>[-\w]+)/$',
+        TaskDetail.as_view(),
+        name='task-detail'),
     url("^learning_resource_types/$", LearningResourceTypeList.as_view(),
         name='learning-resource-type-list'),
     url(REPOSITORY_SEARCH_URL, RepositorySearchList.as_view({'get': 'list'}),

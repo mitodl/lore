@@ -25,6 +25,10 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
   QUnit.module('Test exports panel', {
     beforeEach: function () {
       TestUtils.setup();
+
+      // The mocked AJAX omits task_info and task_type but currently they aren't
+      // used in the javascript.
+
       TestUtils.initMockjax({
         url: '/api/v1/repositories/repo/learning_resource_exports/user/',
         type: 'GET',
@@ -48,7 +52,7 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
         }
       });
       TestUtils.initMockjax({
-        url: '/api/v1/repositories/repo/learning_resource_export_tasks/',
+        url: '/api/v1/tasks/',
         type: 'GET',
         responseText: {
           "count": 1,
@@ -58,27 +62,28 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
             {
               "id": "task1",
               "status": "successful",
-              "url": "/media/resource_exports/export_task1.tar.gz",
-              "collision": false
+              "result": {
+                "url": "/media/resource_exports/export_task1.tar.gz",
+                "collision": false
+              }
             }
           ]
         }
       });
       TestUtils.initMockjax({
-        url: '/api/v1/repositories/repo/learning_resource_export_tasks/',
+        url: '/api/v1/tasks/',
         type: 'POST',
         responseText: {
           "id": "task2"
         }
       });
       TestUtils.initMockjax({
-        url: '/api/v1/repositories/repo/learning_resource_export_tasks/task2/',
+        url: '/api/v1/tasks/task2/',
         type: 'GET',
         responseText: {
           "id": "task2",
           "status": "processing",
-          "url": "",
-          "collision": false
+          "result": null
         }
       });
       TestUtils.initMockjax({
@@ -147,14 +152,12 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
           );
 
           TestUtils.replaceMockjax({
-            url: '/api/v1/repositories/repo/' +
-              'learning_resource_export_tasks/task2/',
+            url: '/api/v1/tasks/task2/',
             type: 'GET',
             responseText: {
               "id": "task2",
               "status": "processing",
-              "url": "",
-              "collision": false
+              "result": null
             }
           });
 
@@ -171,14 +174,15 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
             );
 
             TestUtils.replaceMockjax({
-              url: '/api/v1/repositories/repo/' +
-              'learning_resource_export_tasks/task2/',
+              url: '/api/v1/tasks/task2/',
               type: 'GET',
               responseText: {
                 "id": "task2",
                 "status": "success",
-                "url": "/media/resource_exports/export_task2.tar.gz",
-                "collision": false
+                "result": {
+                  "url": "/media/resource_exports/export_task2.tar.gz",
+                  "collision": false
+                }
               }
             });
 
@@ -300,8 +304,7 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
 
         // The task fails!
         TestUtils.replaceMockjax({
-          url: '/api/v1/repositories/repo/' +
-          'learning_resource_export_tasks/',
+          url: '/api/v1/tasks/',
           type: 'POST',
           status: 400
         });
@@ -369,8 +372,7 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
         var button = $node.find("button")[0];
 
         TestUtils.replaceMockjax({
-          url: '/api/v1/repositories/repo/' +
-          'learning_resource_export_tasks/task2/',
+          url: '/api/v1/tasks/task2/',
           type: 'GET',
           status: 400
         });
@@ -455,8 +457,7 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
           );
 
           TestUtils.replaceMockjax({
-            url: '/api/v1/repositories/repo/' +
-            'learning_resource_export_tasks/task2/',
+            url: '/api/v1/tasks/task2/',
             type: 'GET',
             status: 400
           });
@@ -541,14 +542,12 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
           );
 
           TestUtils.replaceMockjax({
-            url: '/api/v1/repositories/repo/' +
-            'learning_resource_export_tasks/task2/',
+            url: '/api/v1/tasks/task2/',
             type: 'GET',
             responseText: {
               "id": "task2",
               "status": "processing",
-              "url": "",
-              "collision": false
+              "result": null
             }
           });
 
@@ -566,14 +565,12 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
             );
 
             TestUtils.replaceMockjax({
-              url: '/api/v1/repositories/repo/' +
-              'learning_resource_export_tasks/task2/',
+              url: '/api/v1/tasks/task2/',
               type: 'GET',
               responseText: {
                 "id": "task2",
                 "status": "failure",
-                "url": "",
-                "collision": false
+                "result": null
               }
             });
 
@@ -655,14 +652,12 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
           );
 
           TestUtils.replaceMockjax({
-            url: '/api/v1/repositories/repo/' +
-            'learning_resource_export_tasks/task2/',
+            url: '/api/v1/tasks/task2/',
             type: 'GET',
             responseText: {
               "id": "task2",
               "status": "processing",
-              "url": "",
-              "collision": false
+              "result": null
             }
           });
 
@@ -680,8 +675,7 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
             );
 
             TestUtils.replaceMockjax({
-              url: '/api/v1/repositories/repo/' +
-              'learning_resource_export_tasks/task2/',
+              url: '/api/v1/tasks/task2/',
               type: 'GET',
               status: 500
             });
@@ -768,14 +762,15 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
           );
 
           TestUtils.replaceMockjax({
-            url: '/api/v1/repositories/repo/' +
-            'learning_resource_export_tasks/task2/',
+            url: '/api/v1/tasks/task2/',
             type: 'GET',
             responseText: {
               "id": "task2",
               "status": "success",
-              "url": "/media/resource_exports/export_task2.tar.gz",
-              "collision": true
+              "result": {
+                "url": "/media/resource_exports/export_task2.tar.gz",
+                "collision": true
+              }
             }
           });
           TestUtils.replaceMockjax({
@@ -867,14 +862,17 @@ define(['QUnit', 'jquery', 'lr_exports', 'react',
         // This matches against an empty set of ids which verifies that
         // exportsSelected affects what's sent to the server.
         TestUtils.replaceMockjax({
-          url: '/api/v1/repositories/repo/' +
-          'learning_resource_export_tasks/',
+          url: '/api/v1/tasks/',
           type: 'POST',
           responseText: {
             id: "task2"
           },
           data: JSON.stringify({
-            ids: []
+            task_type: "resource_export",
+            task_info: {
+              ids: [],
+              repo_slug: "repo"
+            }
           })
         });
 

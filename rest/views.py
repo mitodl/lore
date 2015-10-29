@@ -6,8 +6,7 @@ from __future__ import unicode_literals
 
 from django.http.response import Http404
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
-from django.core.files.storage import default_storage
+from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
@@ -23,11 +22,12 @@ from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
-from celery.states import FAILURE, SUCCESS, REVOKED
-from celery.result import AsyncResult
 from statsd.defaults.django import statsd
 
-from exporter.tasks import export_resources
+from learningresources.api import (
+    PermissionDenied,
+    NotFound,
+)
 from roles.permissions import GroupTypes, BaseGroupTypes
 from roles.api import (
     assign_user_to_repo_group,
@@ -40,6 +40,7 @@ from rest.serializers import (
     GroupSerializer,
     LearningResourceExportSerializer,
     LearningResourceExportTaskSerializer,
+    TaskSerializer,
     LearningResourceSerializer,
     LearningResourceTypeSerializer,
     RepositorySearchSerializer,
@@ -63,6 +64,15 @@ from rest.permissions import (
     ViewTermPermission,
     ViewVocabularyPermission,
 )
+from rest.tasks import (
+    create_task,
+    create_task_result_dict,
+    get_task,
+    get_tasks,
+    remove_task,
+    EXPORTS_KEY,
+    EXPORT_TASK_TYPE,
+)
 from rest.util import CheckValidMemberParamMixin
 from search.api import construct_queryset
 from search.tasks import index_resources
@@ -79,10 +89,8 @@ from learningresources.api import (
     get_resource,
 )
 
-EXPORTS_KEY = 'learning_resource_exports'
-EXPORT_TASK_KEY = 'learning_resource_export_tasks'
 
-
+# pylint: disable=too-many-lines
 class RepositoryList(ListCreateAPIView):
     """REST list view for Repository."""
     serializer_class = RepositorySerializer
@@ -655,7 +663,7 @@ class LearningResourceExportList(ListCreateAPIView):
 
         learning_resource = get_resource(lr_id, self.request.user.id)
         if learning_resource.course.repository.slug != repo_slug:
-            raise PermissionDenied()
+            raise DjangoPermissionDenied()
 
         if EXPORTS_KEY not in self.request.session:
             self.request.session[EXPORTS_KEY] = {}
@@ -741,53 +749,9 @@ class LearningResourceExportDetail(RetrieveDestroyAPIView):
             raise Http404
 
 
-def create_task_result_dict(task):
-    """
-    Convert initial data we put in session to dict for REST API.
-    This will use the id to look up current data about task to return
-    to user.
-
-    Args:
-        task (dict): Initial data about task stored in session.
-    Returns:
-        dict: Current data about task.
-    """
-    initial_state = task['initial_state']
-    task_id = task['id']
-
-    state = "processing"
-    url = ""
-    collision = False
-    # initial_state is a workaround for EagerResult used in testing.
-    # In production initial_state should usually be pending.
-    if initial_state == SUCCESS:
-        state = "success"
-        url = task['url']
-    elif initial_state in (FAILURE, REVOKED):
-        state = "failure"
-    else:
-        result = AsyncResult(task_id)
-
-        if result.successful():
-            state = "success"
-        elif result.failed():
-            state = "failure"
-
-        if result.successful():
-            name, collision = result.get()
-            url = default_storage.url(name)
-
-    return {
-        "id": task_id,
-        "status": state,
-        "url": url,
-        "collision": collision
-    }
-
-
 class LearningResourceExportTaskList(ListCreateAPIView):
     """
-    View for export tasks for a user.
+    View for export tasks for a user. Deprecated! Use /api/v1/tasks/ instead.
     """
     serializer_class = LearningResourceExportTaskSerializer
     permission_classes = (
@@ -796,14 +760,24 @@ class LearningResourceExportTaskList(ListCreateAPIView):
     )
 
     def get_queryset(self):
-        """Get tasks for this user."""
+        """Get export tasks for this user."""
         repo_slug = self.kwargs['repo_slug']
-        try:
-            tasks = self.request.session[EXPORT_TASK_KEY][repo_slug]
-        except KeyError:
-            tasks = {}
+        export_tasks = [
+            task for task in get_tasks(self.request.session).values()
+            if task['task_type'] == EXPORT_TASK_TYPE and
+            task['task_info']['repo_slug'] == repo_slug
+        ]
 
-        return [create_task_result_dict(task) for task in tasks.values()]
+        task_results = [create_task_result_dict(task) for task in export_tasks]
+
+        return [
+            {
+                "id": result['id'],
+                "status": result['status'],
+                "url": result['result']['url'],
+                "collision": result['result']['collision']
+            } for result in task_results
+        ]
 
     def post(self, request, *args, **kwargs):
         """
@@ -815,54 +789,34 @@ class LearningResourceExportTaskList(ListCreateAPIView):
         The export list will be left alone. Once the list is exported
         the client may DELETE the export list as a separate REST call.
         """
-
         repo_slug = self.kwargs['repo_slug']
-        try:
-            exports = set(self.request.session[EXPORTS_KEY][repo_slug])
-        except KeyError:
-            exports = set()
-
-        ids = self.request.data['ids']
-        for resource_id in ids:
-            if resource_id not in exports:
-                raise ValidationError("id {id} is not in export list".format(
-                    id=resource_id
-                ))
+        export_tasks = [
+            task for task in get_tasks(self.request.session).values()
+            if task['task_type'] == EXPORT_TASK_TYPE and
+            task['task_info']['repo_slug'] == repo_slug
+        ]
 
         # Cancel any old tasks.
-        old_tasks = self.request.session.get(
-            EXPORT_TASK_KEY, {}).get(repo_slug, {})
-        for task_id in old_tasks.keys():
-            AsyncResult(task_id).revoke()
+        for task in export_tasks:
+            remove_task(self.request.session, task['id'])
 
-        # Clear task list.
-        if EXPORT_TASK_KEY not in self.request.session:
-            self.request.session[EXPORT_TASK_KEY] = {}
-        self.request.session[EXPORT_TASK_KEY][repo_slug] = {}
+        try:
+            ids = self.request.data['ids']
+        except KeyError:
+            raise ValidationError("Missing ids")
 
-        learning_resources = LearningResource.objects.filter(
-            id__in=ids).all()
-        result = export_resources.delay(
-            learning_resources, self.request.user.username)
-
-        if result.successful():
-            name, collision = result.get()
-            url = default_storage.url(name)
-        else:
-            collision = False
-            url = ""
-
-        # Put new task in session.
-        self.request.session[EXPORT_TASK_KEY][repo_slug][result.id] = {
-            "id": result.id,
-            "initial_state": result.state,
-            "url": url,
-            "collision": collision
-        }
-        self.request.session.modified = True
+        task = create_task(
+            self.request.session,
+            self.request.user.id,
+            EXPORT_TASK_TYPE,
+            {
+                'repo_slug': repo_slug,
+                'ids': ids
+            }
+        )
 
         return Response(
-            {"id": result.id},
+            {"id": task['id']},
             status=status.HTTP_201_CREATED
         )
 
@@ -881,18 +835,93 @@ class LearningResourceExportTaskDetail(RetrieveAPIView):
         """
         Retrieve current information about an export task.
         """
-        try:
-            task_id = self.kwargs['task_id']
-        except ValueError:
+        task_id = self.kwargs['task_id']
+        initial_dict = get_task(self.request.session, task_id)
+        if initial_dict is None:
             raise Http404
 
+        result = create_task_result_dict(initial_dict)
+        return {
+            "id": result['id'],
+            "status": result['status'],
+            "url": result['result']['url'],
+            "collision": result['result']['collision']
+        }
+
+
+class TaskList(ListCreateAPIView):
+    """
+    View for tasks for a user.
+    """
+    serializer_class = TaskSerializer
+    permission_classes = (
+        IsAuthenticated,
+    )
+
+    def get_queryset(self):
+        """Get tasks for this user."""
+        tasks = get_tasks(self.request.session)
+
+        return [create_task_result_dict(task) for task in tasks.values()]
+
+    def post(self, request, *args, **kwargs):
+        """
+        Create a new task for this user.
+
+        Note that this also cancels and clears any old tasks for the user,
+        so there should be only one task in the list at any time.
+        """
+
+        if 'task_type' not in self.request.data:
+            raise ValidationError("Missing task_type.")
+        if 'task_info' not in self.request.data:
+            raise ValidationError("Missing task_info.")
+
         try:
-            initial_dict = self.request.session[
-                EXPORT_TASK_KEY][self.kwargs['repo_slug']][task_id]
-        except KeyError:
+            result = create_task(
+                self.request.session,
+                self.request.user.id,
+                self.request.data['task_type'],
+                self.request.data['task_info']
+            )
+        except PermissionDenied:
+            raise DjangoPermissionDenied
+        except NotFound:
+            raise Http404
+
+        return Response(
+            {"id": result['id']},
+            status=status.HTTP_201_CREATED
+        )
+
+
+class TaskDetail(RetrieveDestroyAPIView):
+    """
+    Detail view for a user's tasks.
+    """
+    serializer_class = TaskSerializer
+    permission_classes = (
+        IsAuthenticated,
+    )
+
+    def get_object(self):
+        """
+        Retrieve current information about a task.
+        """
+        task_id = self.kwargs['task_id']
+        initial_dict = get_task(self.request.session, task_id)
+        if initial_dict is None:
             raise Http404
 
         return create_task_result_dict(initial_dict)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Remove task from list, revoke if necessary.
+        """
+        task_id = self.kwargs['task_id']
+        remove_task(self.request.session, task_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 def calculate_selected_facets(selected_facet_params, facet_counts):

@@ -89,6 +89,86 @@ Page numbering is 1-based. Omitting the `?page` parameter will return the first 
             ]
         }
 
+## Group Tasks
+
+## Tasks Collection [/tasks/]
+
+### List All Tasks [GET]
+
+List all recent tasks for a user.
+
++ Response 200 (application/json)
+
+        {
+            "count": 1,
+            "next": null,
+            "previous": null,
+            "results": [
+                {
+                    "id": "45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3",
+                    "status": "processing",
+                    "result": {
+                        "url": "/media/resource_exports/sarah_exports.tar.gz",
+                        "collision": false
+                    },
+                    "task_type": "resource_export",
+                    "task_info": {
+                        "repo_slug": "repo",
+                        "ids": [
+                            23517,
+                            23518
+                        ]
+                    }
+                }
+            ]
+        }
+
+### Create a New Task [POST]
+
+Queue a new task.
+
++ Request (application/json)
+
+        {
+            "task_info": {
+                "repo_slug": "repo",
+                "ids": [1]
+            },
+            "task_type": "resource_export"
+        }
+
++ Response 200 (application/json)
+
+        {
+            "id": "45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3"
+        }
+
+## Task [/tasks/{task_id}/]
+
++ Parameters
+    + task_id: `45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3` (string, required) - task identifier
+
+### Retrieve a Task [GET]
+
++ Response 200 (application/json)
+
+        {
+            "id": "45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3",
+            "status": "processing",
+            "result": {
+                "url": "/media/resource_exports/sarah_exports.tar.gz",
+                "collision": false
+            },
+            "task_type": "resource_export",
+            "task_info": {
+                "repo_slug": "repo",
+                "ids": [
+                    23517,
+                    23518
+                ]
+            }
+        }
+
 ## Group Repositories
 
 ## Repository Collection [/repositories/]
@@ -477,6 +557,8 @@ Clears the export list for this repository.
 
 ## LearningResourceExportTasks Collection [/repositories/{repo_slug}/learning_resource_export_tasks/]
 
+Deprecated. Use /api/v1/tasks/ instead.
+
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository
 
@@ -515,7 +597,9 @@ Queue a new LearningResourceExportTask task for the given LearningResource ids.
             "id": "45e3c830-0ff8-4d84-85b4-c0a6e3ce81b3"
         }
 
-## LearningResourceExportTask [/repositories/{repo_slug}/learning_resource_export_tasks/{task_id}/
+## LearningResourceExportTask [/repositories/{repo_slug}/learning_resource_export_tasks/{task_id}/]
+
+Deprecated. Use /api/v1/tasks/ instead.
 
 + Parameters
     + repo_slug: `physics-1` (string, required) - slug for the repository

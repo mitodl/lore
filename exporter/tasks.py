@@ -4,6 +4,8 @@ Exporter tasks for LORE
 
 from __future__ import unicode_literals
 
+from django.core.files.storage import default_storage
+
 from lore.celery import async
 from exporter.api import export_resources_to_tarball
 
@@ -18,8 +20,14 @@ def export_resources(learning_resources, username):
             LearningResources to export in tarball
         username (unicode): Name of user
     Returns:
-        (unicode, bool):
-            First item is newly created temp directory with files inside of it.
-            Second item is True if a static asset collision was detected.
+        dict:
+            name is path of tarball.
+            url is URL of tarball using django-storage.
+            collision is True if a static asset collision was detected.
     """
-    return export_resources_to_tarball(learning_resources, username)
+    name, collision = export_resources_to_tarball(learning_resources, username)
+    return {
+        "name": name,
+        "url": default_storage.url(name),
+        "collision": collision
+    }
