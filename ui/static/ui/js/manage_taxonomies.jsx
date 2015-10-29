@@ -167,7 +167,10 @@ define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
     mixins: [React.addons.LinkedStateMixin],
     render: function () {
       var thiz = this;
-      var items = _.map(this.props.terms, function (term) {
+      var sortedTerms = _.sortBy(this.props.terms, function(term) {
+        return term.label.trim().toLowerCase();
+      });
+      var items = _.map(sortedTerms, function (term) {
         return <TermComponent
           deleteTerm={thiz.props.deleteTerm}
           updateTerm={thiz.props.updateTerm}
