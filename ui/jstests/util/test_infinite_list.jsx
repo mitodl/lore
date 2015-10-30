@@ -1,8 +1,7 @@
-define(['QUnit', 'jquery', 'react', 'test_utils', 'utils'],
-  function(QUnit, $, React, TestUtils, Utils) {
+define(['QUnit', 'jquery', 'react', 'test_utils', 'infinite_list'],
+  function(QUnit, $, React, TestUtils, InfiniteList) {
     "use strict";
 
-    var InfiniteList = Utils.InfiniteList;
     var waitForAjax = TestUtils.waitForAjax;
     var page1 = {
       "count": 4,

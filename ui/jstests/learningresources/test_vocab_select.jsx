@@ -1,8 +1,6 @@
-define(["QUnit", "react", "test_utils", "jquery", "learning_resources"],
-  function (QUnit, React, TestUtils, $, LearningResources) {
+define(["QUnit", "react", "test_utils", "jquery", "vocab_select"],
+  function (QUnit, React, TestUtils, $, VocabSelect) {
     'use strict';
-
-    var VocabSelect = LearningResources.VocabSelect;
 
     var learningResourceResponse = {
       "id": 1,

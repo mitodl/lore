@@ -1,8 +1,6 @@
-define(["QUnit", "react", "test_utils", "jquery", "learning_resources"],
-  function (QUnit, React, TestUtils, $, LearningResources) {
+define(["QUnit", "react", "test_utils", "jquery", "term_list"],
+  function (QUnit, React, TestUtils, $, TermList) {
     'use strict';
-
-    var TermList = LearningResources.TermList;
 
     var learningResourceResponse = {
       "id": 1,

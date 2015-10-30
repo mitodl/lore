@@ -1,10 +1,7 @@
 define('static_assets', [
-  'react', 'jquery', 'lodash', 'utils'
-  ], function (React, $, _, Utils) {
+  'react', 'jquery', 'lodash', 'status_box', 'infinite_list'],
+  function (React, $, _, StatusBox, InfiniteList) {
   'use strict';
-
-  var StatusBox = Utils.StatusBox;
-  var InfiniteList = Utils.InfiniteList;
 
   // Guess at a good value for the height of each element. Infinite requires
   // an elementHeight for each item. If we wanted to do a per item elementHeight

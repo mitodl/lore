@@ -1,9 +1,8 @@
-define(['QUnit', 'jquery', 'lr_exports', 'test_utils', 'react'],
-  function (QUnit, $, Exports, TestUtils, React) {
+define(['QUnit', 'jquery', 'exports_component', 'test_utils', 'react'],
+  function (QUnit, $, ExportsComponent, TestUtils, React) {
     'use strict';
 
     var waitForAjax = TestUtils.waitForAjax;
-    var ExportsComponent = Exports.ExportsComponent;
 
     var learningResourceResponse = {
       "id": 123,

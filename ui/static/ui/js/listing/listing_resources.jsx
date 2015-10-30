@@ -1,10 +1,8 @@
-define('listing_resources', ['react', 'jquery', 'lodash', 'utils',
-    'pagination'],
-  function (React, $, _, Utils, PaginationModule) {
+define('listing_resources', ['react', 'jquery', 'lodash',
+    'icheckbox', 'react_overlay_loader', 'pagination'],
+  function (React, $, _, ICheckbox, ReactOverlayLoader, PaginationModule) {
     'use strict';
 
-    var ICheckbox = Utils.ICheckbox;
-    var ReactOverlayLoader = Utils.ReactOverlayLoader;
     var Pagination = PaginationModule.Pagination;
 
     var getImageFile = function(resourceType) {

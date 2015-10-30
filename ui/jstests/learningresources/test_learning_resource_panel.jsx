@@ -1,10 +1,9 @@
 define(["QUnit", "react", "test_utils", "jquery", "lodash",
-    "learning_resources"],
-  function (QUnit, React, TestUtils, $, _, LearningResources) {
+    "learning_resource_panel"],
+  function (QUnit, React, TestUtils, $, _, LearningResourcePanel) {
     'use strict';
 
     var waitForAjax = TestUtils.waitForAjax;
-    var LearningResourcePanel = LearningResources.LearningResourcePanel;
 
     var learningResourceResponse = {
       "id": 1,

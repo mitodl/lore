@@ -1,24 +1,14 @@
-define("lr_exports",
-  ['react', 'jquery', 'lodash', 'utils', 'icheck'],
-  function (React, $, _, Utils) {
+define("exports_component",
+  ['react', 'jquery', 'lodash', 'utils',
+    'status_box', 'icheckbox'],
+  function (React, $, _, Utils, StatusBox, ICheckbox) {
   'use strict';
 
-  var StatusBox = Utils.StatusBox;
-  var ICheckbox = Utils.ICheckbox;
-
-  var ExportsHeader = React.createClass({
-    render: function() {
-      if (this.props.exportCount > 0) {
-        return <h1>Export ({this.props.exportCount}) </h1>;
-      }
-      return <h1>Export</h1>;
-    }
-  });
   /**
    * A React component which shows the list of exports
    * and provides a way to export these learning resources in bulk.
    */
-  var ExportsComponent = React.createClass({
+  return React.createClass({
     componentDidMount: function() {
 
       var thiz = this;
@@ -237,27 +227,6 @@ define("lr_exports",
             }
           });
         });
-    },
-  });
-
-  return {
-    ExportsComponent: ExportsComponent,
-    loader: function(repoSlug, loggedInUser, clearExports, container) {
-      React.unmountComponentAtNode(container);
-      React.render(
-        <ExportsComponent repoSlug={repoSlug} loggedInUser={loggedInUser}
-                          interval={1000}
-          clearExports={clearExports}
-          />,
-        container
-      );
-    },
-    loadExportsHeader: function(exportCount, container) {
-      React.unmountComponentAtNode(container);
-      React.render(
-        <ExportsHeader exportCount={exportCount} />,
-        container
-      );
     }
-  };
+  });
 });

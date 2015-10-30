@@ -1,11 +1,7 @@
 define('manage_taxonomies', ['react', 'lodash', 'jquery', 'uri',
-    'utils', 'bootstrap'],
-  function (React, _, $, URI, Utils) {
+    'utils', 'status_box', 'icheckbox', 'react_overlay_loader', 'bootstrap'],
+  function (React, _, $, URI, Utils, StatusBox, ICheckbox, ReactOverlayLoader) {
   'use strict';
-
-  var StatusBox = Utils.StatusBox;
-  var ICheckbox = Utils.ICheckbox;
-  var ReactOverlayLoader = Utils.ReactOverlayLoader;
 
   var TermComponent = React.createClass({
     mixins: [React.addons.LinkedStateMixin],

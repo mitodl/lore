@@ -1,8 +1,6 @@
-define(['QUnit', 'test_utils', 'react', 'jquery', 'utils'],
-  function (QUnit, TestUtils, React, $, Utils) {
+define(['QUnit', 'test_utils', 'react', 'jquery', 'confirmation_dialog'],
+  function (QUnit, TestUtils, React, $, ConfirmationDialog) {
     'use strict';
-
-    var ConfirmationDialog = Utils.ConfirmationDialog;
 
     QUnit.module('Tests for ConfirmationDialog', {
       beforeEach: function () {

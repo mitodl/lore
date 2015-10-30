@@ -23,16 +23,34 @@
 {{ block.super }}
 {% compress js %}
 <script type="text/jsx"
-        src="{% static "ui/js/learning_resources.jsx" %}">
+        src="{% static "ui/js/learningresources/learning_resources.jsx" %}">
 </script>
 <script type="text/jsx"
-        src="{% static "ui/js/static_assets.jsx" %}">
+        src="{% static "ui/js/learningresources/static_assets.jsx" %}">
 </script>
 <script type="text/jsx"
-        src="{% static "ui/js/utils.jsx" %}">
+        src="{% static "ui/js/util/confirmation_dialog.jsx" %}">
 </script>
 <script type="text/jsx"
-        src="{% static "ui/js/lore_data_table.jsx" %}">
+        src="{% static "ui/js/util/icheckbox.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/util/infinite_list.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/util/react_overlay_loader.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/util/select2_component.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/util/status_box.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/util/utils.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/listing/lore_data_table.jsx" %}">
 </script>
 {% endcompress %}
 <script type="text/javascript">
