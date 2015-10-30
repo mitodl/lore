@@ -18,7 +18,7 @@ var REQUIRE_PATHS = {
   historyadapter: "history.js/scripts/compressed/history.adapter.jquery",
   spin: "spin.js/spin.min",
   csrf: "../ui/js/csrf",
-  listing: "../ui/js/listing",
+  listing: "../ui/js/listing.jsx?noext",
   manage_taxonomies: "../ui/js/manage_taxonomies.jsx?noext",
   xml_panel: "../ui/js/xml_panel.jsx?noext",
   learning_resources: "../ui/js/learning_resources.jsx?noext",
