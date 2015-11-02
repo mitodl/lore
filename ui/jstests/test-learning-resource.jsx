@@ -176,17 +176,128 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
     function (assert) {
       var done = assert.async();
 
+      var vocab = $.extend({}, selectedVocabulary);
+      var appendTermSelectedVocabulary = function(term) {
+        vocab.terms = vocab.terms.concat(term);
+      };
+
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
+      };
+
       var afterMount = function(component) {
         var $node = $(React.findDOMNode(component));
 
         var $termSelect = $node.find("select");
         assert.equal($termSelect.size(), 1);
 
-        done();
+        var $options = $termSelect.find("option");
+        var values = _.map($options, function(option) {
+          return $(option).val();
+        });
+        assert.deepEqual(values, ["easy", "hard"]);
+        // Add a term via free tagging
+
+        $termSelect
+          .append($('<option />', {value: 'medium'}))
+          .val(["hard", "easy", "medium"])
+          .trigger('change');
+
+        component.forceUpdate(function() {
+          assert.equal(loadedState, false);
+          waitForAjax(1, function() {
+            assert.equal(loadedState, true);
+            // term successfully added
+            assert.equal(vocab.terms.length, 3);
+            done();
+          });
+        });
       };
 
       React.addons.TestUtils.renderIntoDocument(
         <TermSelect
+          setValues={function() {}}
+          appendTermSelectedVocabulary={appendTermSelectedVocabulary}
+          repoSlug="repo"
+          setLoadedState={setLoadedState}
+          reportMessage={function() {}}
+          vocabs={vocabulariesAndTerms}
+          selectedVocabulary={selectedVocabulary}
+          ref={afterMount}
+        />
+      );
+    }
+  );
+
+  QUnit.test(
+    'Assert that TermSelect handles failure to add term gracefully',
+    function (assert) {
+      var done = assert.async();
+
+      TestUtils.replaceMockjax({
+        url: '/api/v1/repositories/repo/vocabularies/difficulty/terms/',
+        type: 'POST',
+        responseText: termResponseMedium,
+        status: 400
+      });
+
+      var vocab = $.extend({}, selectedVocabulary);
+      var appendTermSelectedVocabulary = function(term) {
+        vocab.terms = vocab.terms.concat(term);
+      };
+
+      var loadedState;
+      var setLoadedState = function(loaded) {
+        loadedState = loaded;
+      };
+
+      var message;
+      var reportMessage = function(m) {
+        message = m;
+      };
+
+      var afterMount = function(component) {
+        var $node = $(React.findDOMNode(component));
+
+        var $termSelect = $node.find("select");
+        assert.equal($termSelect.size(), 1);
+
+        var $options = $termSelect.find("option");
+        var values = _.map($options, function(option) {
+          return $(option).val();
+        });
+        assert.deepEqual(values, ["easy", "hard"]);
+        // Add a term via free tagging
+
+        $termSelect
+          .append($('<option />', {value: 'medium'}))
+          .val(["hard", "easy", "medium"])
+          .trigger('change');
+
+        component.forceUpdate(function() {
+          assert.equal(loadedState, false);
+          waitForAjax(1, function() {
+            assert.equal(loadedState, true);
+
+            // Didn't change
+            assert.equal(vocab.terms.length, 2);
+            assert.deepEqual(
+              message,
+              {error: 'Error occurred while adding new term "medium".'}
+            );
+            done();
+          });
+        });
+      };
+
+      React.addons.TestUtils.renderIntoDocument(
+        <TermSelect
+          setValues={function() {}}
+          appendTermSelectedVocabulary={appendTermSelectedVocabulary}
+          repoSlug="repo"
+          setLoadedState={setLoadedState}
+          reportMessage={reportMessage}
           vocabs={vocabulariesAndTerms}
           selectedVocabulary={selectedVocabulary}
           ref={afterMount}
@@ -364,7 +475,9 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
             assert.equal(closeLearningResourcePanelCount, 0);
             React.addons.TestUtils.Simulate.click(saveAndCloseButton);
             component.forceUpdate(function() {
+              assert.equal(component.state.loaded, false);
               waitForAjax(1, function() {
+                assert.equal(component.state.loaded, true);
                 assert.equal(component.state.message,
                   "Form saved successfully!");
                 assert.equal(refreshCount, 2);
@@ -413,16 +526,20 @@ define(['QUnit', 'jquery', 'react', 'lodash', 'learning_resources',
           });
           var saveButton = $node.find("button")[0];
           React.addons.TestUtils.Simulate.click(saveButton);
-          waitForAjax(1, function() {
-            assert.deepEqual(
-              component.state.message,
-              {error: "Unable to save form"}
-            );
+          component.forceUpdate(function() {
+            assert.equal(component.state.loaded, false);
+            waitForAjax(1, function () {
+              assert.equal(component.state.loaded, true);
+              assert.deepEqual(
+                component.state.message,
+                {error: "Unable to save form"}
+              );
 
-            assert.equal(0, refreshCount);
-            //assert that panel does not close on ajax fail
-            assert.equal(closeLearningResourcePanelCount, 0);
-            done();
+              assert.equal(0, refreshCount);
+              //assert that panel does not close on ajax fail
+              assert.equal(closeLearningResourcePanelCount, 0);
+              done();
+            });
           });
         });
       };

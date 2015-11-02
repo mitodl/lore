@@ -1,6 +1,19 @@
 Release Notes
 -------------
 
+Version 0.13.0
+==============
+
+- Refactored listing code for testing.
+- Implemented lazy loading for resource tab.
+- Added custom slugify function to allow any name for Repo, Vocab, Term.
+- Fixed index mapping of terms and vocabularies.
+- Set Elasticsearch log level higher during testing.
+- Set Spinner `zIndex` to 0 to not have it float above everything else.
+- Added loader on save.
+- Removed unused functions.
+- Fixed link click behavior for term edit and delete.
+
 Version 0.12.0
 ==============
 

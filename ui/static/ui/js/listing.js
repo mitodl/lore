@@ -1,218 +1,229 @@
 define('listing',
-  ['csrf', 'jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
+  ['csrf', 'react', 'jquery', 'lodash', 'uri', 'history', 'manage_taxonomies',
     'learning_resources', 'static_assets', 'utils',
-    'lr_exports', 'listing_resources', 'pagination', 'xml_panel',
+    'lr_exports', 'listing_resources', 'xml_panel',
     'bootstrap', 'icheck'],
-  function (CSRF, $, _, URI, History,
+  function (CSRF, React, $, _, URI, History,
             ManageTaxonomies, LearningResources, StaticAssets,
-            Utils, Exports, ListingResources, Pagination, XmlPanel) {
+            Utils, Exports, ListingResources, XmlPanel) {
     'use strict';
 
-    var loader = function (listingOptions, container) {
-      var repoSlug = listingOptions.repoSlug;
-      var loggedInUsername = listingOptions.loggedInUsername;
+    var EMAIL_EXTENSION = '@mit.edu';
 
-      // empty results and facetCounts to start with
-      listingOptions = $.extend({}, listingOptions);
-      listingOptions.resources = [];
-      listingOptions.facetCounts = {};
+    function formatGroupName(string) {
+      string = string.charAt(0).toUpperCase() + string.slice(1);
+      return string.substring(0, string.length - 1);
+    }
 
-      CSRF.setupCSRF();
+    /* This is going to grow up to check whether
+     * the name is a valid Kerberos account
+     */
+    function isEmail(email) {
+      var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i;
+      return regex.test(email);
+    }
 
-      var EMAIL_EXTENSION = '@mit.edu';
-
-      function formatGroupName(string) {
-        string = string.charAt(0).toUpperCase() + string.slice(1);
-        return string.substring(0, string.length - 1);
+    function formatUserGroups(userList, dest) {
+      var $dest = $(dest);
+      for (var i = 0; i < userList.length; i++) {
+        $dest.append(
+          '<div class="row">' +
+          '<div class="col-sm-7">' +
+          '<div class="cd-panel-members-list-username">' +
+          userList[i].username + EMAIL_EXTENSION + '</div>' +
+          '</div>\n' +
+          '<div class="col-sm-3">' +
+          '<div class="cd-panel-members-list-group_type">' +
+          formatGroupName(userList[i].group_type) + '</div>' +
+          '</div>\n' +
+          '<div class="col-sm-2">' +
+          '<button ' +
+          'class="btn btn-default cd-panel-members-remove" ' +
+          'data-username="' + userList[i].username + '" ' +
+          'data-group_type="' + userList[i].group_type + '">' +
+          '<i class="fa fa-minus"></i>' +
+          '</button>' +
+          '</div>' +
+          '</div>\n');
       }
+    }
 
-      /* This is going to grow up to check whether
-       * the name is a valid Kerberos account
-       */
-      function isEmail(email) {
-        var regex = /^[-a-z0-9~!$%^&*_=+}{\'?]+(\.[-a-z0-9~!$%^&*_=+}{\'?]+)*@([a-z0-9_][-a-z0-9_]*(\.[-a-z0-9_]+)*\.(aero|arpa|biz|com|coop|edu|gov|info|int|mil|museum|name|net|org|pro|travel|mobi|[a-z][a-z])|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?$/i;
-        return regex.test(email);
-      }
+    function resetUserGroupForm() {
+      $('input[name=\'members-username\']').val('');
+      $('select[name=\'members-group_type\']').prop('selectedIndex', 0);
+    }
 
-      function formatUserGroups(userList, dest) {
-        var $dest = $(dest);
-        for (var i = 0; i < userList.length; i++) {
-          $dest.append(
-            '<div class="row">' +
-            '<div class="col-sm-7">' +
-            '<div class="cd-panel-members-list-username">' +
-            userList[i].username + EMAIL_EXTENSION + '</div>' +
-            '</div>\n' +
-            '<div class="col-sm-3">' +
-            '<div class="cd-panel-members-list-group_type">' +
-            formatGroupName(userList[i].group_type) + '</div>' +
-            '</div>\n' +
-            '<div class="col-sm-2">' +
-            '<button ' +
-            'class="btn btn-default cd-panel-members-remove" ' +
-            'data-username="' + userList[i].username + '" ' +
-            'data-group_type="' + userList[i].group_type + '">' +
-            '<i class="fa fa-minus"></i>' +
-            '</button>' +
-            '</div>' +
-            '</div>\n');
-        }
-      }
+    function showMembersAlert(message, mtype) {
+      //default value for mtype
+      mtype = typeof mtype !== 'undefined' ? mtype : 'success';
+      //reset all the classes
+      $('#members-alert').html(
+        '<div class="alert alert-' + mtype +
+        ' fade in out" data-alert="alert">' +
+        '<a href="#" class="close" data-dismiss="alert" ' +
+        'aria-label="close">&times;</a>\n' + message +
+        '</div>');
+    }
 
-      function resetUserGroupForm() {
-        $('input[name=\'members-username\']').val('');
-        $('select[name=\'members-group_type\']').prop('selectedIndex', 0);
-      }
+    function showUpdateAllMembers() {
+      //retrieve all the members
+      var url = $('.cd-panel-members').data('members-url');
+      return Utils.getCollection(url)
+        .then(function (results) {
+          $('#cd-panel-members-list').empty();
+          formatUserGroups(results, '#cd-panel-members-list');
+        })
+        .fail(function () {
+          var message = 'Unable to retrieve list of members.';
+          showMembersAlert(message, 'danger');
+        });
+    }
+    function closeLearningResourcePanel() {
+      $('.cd-panel').removeClass('is-visible');
+    }
 
-      function showMembersAlert(message, mtype) {
-        //default value for mtype
-        mtype = typeof mtype !== 'undefined' ? mtype : 'success';
-        //reset all the classes
-        $('#members-alert').html(
-          '<div class="alert alert-' + mtype +
-          ' fade in out" data-alert="alert">' +
-          '<a href="#" class="close" data-dismiss="alert" ' +
-          'aria-label="close">&times;</a>\n' + message +
-          '</div>');
-      }
+    var hideTaxonomyPanel = function () {
+      $('.cd-panel-2').removeClass('is-visible');
+    };
 
-      function showUpdateAllMembers() {
-        //retrieve all the members
-        var url = $('.cd-panel-members').data('members-url');
-        return Utils.getCollection(url)
-          .then(function (results) {
-            $('#cd-panel-members-list').empty();
-            formatUserGroups(results, '#cd-panel-members-list');
-          })
-          .fail(function () {
-            var message = 'Unable to retrieve list of members.';
-            showMembersAlert(message, 'danger');
-          });
-      }
-      function closeLearningResourcePanel() {
-        $('.cd-panel').removeClass('is-visible');
-      }
+    var showTab = function (tabId) {
+      $("a[href='#" + tabId + "']").tab('show');
+    };
 
-      var hideTaxonomyPanel = function() {
-        $('.cd-panel-2').removeClass('is-visible');
-      };
+    var setTabName = function (tabId, newTabName) {
+      $("a[href='#" + tabId + "']").find("span").text(newTabName);
+    };
 
-      var showTab = function(tabId) {
-        $("a[href='#" + tabId + "'").tab('show');
-      };
+    var showConfirmationDialog = function (options) {
+      var container = $("#confirmation-container")[0];
+      Utils.showConfirmationDialog(
+        options,
+        container
+      );
+    };
 
-      var setTabName = function(tabId, newTabName) {
-        $("a[href='#" + tabId + "']").find("span").text(newTabName);
-      };
-
-      var loadManageTaxonomies = function () {
-        ManageTaxonomies.loader(
-          repoSlug,
-          $('#taxonomy-component')[0],
-          showConfirmationDialog,
-          showTab,
-          setTabName,
-          refreshFromAPI
-        );
-      };
-
-      $('[data-toggle=popover]').popover();
-      //Close panels on escape keypress
-      $(document).keyup(function(event) {
-        if (event.keyCode === 27) { // escape key maps to keycode `27`
-          closeLearningResourcePanel();
-          if ($('.cd-panel-2').hasClass('is-visible')) {
-            hideTaxonomyPanel();
+    var ListingContainer = React.createClass({
+      displayName: 'ListingContainer',
+      // make data structure to store query parameters
+      makeQueryMap: function() {
+        var queryMap = {};
+        // Populate queryMap with query string key value pairs.
+        _.each(URI(this.props.getQueryString()).query(true), function (v, k) {
+          if (!Array.isArray(v)) {
+            // URI().query(true) will put two or more values with the same
+            // key in an array and not use an array for single values.
+            // Put everything into arrays for consistency's sake.
+            queryMap[k] = [v];
+          } else {
+            queryMap[k] = v;
           }
-          if ($('.cd-panel-exports').hasClass('is-visible')) {
-            $('.cd-panel-exports').removeClass('is-visible');
-          }
-          if ($('.cd-panel-members').hasClass('is-visible')) {
-            $('.cd-panel-members').removeClass('is-visible');
-          }
-          event.preventDefault();
+        });
+        return queryMap;
+      },
+      // Return query portion of URL
+      makeQueryString: function(queryMap) {
+        var newQuery = "?" + URI().search(queryMap).query();
+        if (newQuery === "?") {
+          newQuery = "";
         }
-      });
-
-      //close the lateral panel
-      $('.cd-panel').on('click', function (event) {
-        if ($(event.target).is('.cd-panel') ||
-          $(event.target).is('.cd-panel-close')) {
-          closeLearningResourcePanel();
-          event.preventDefault();
+        return newQuery;
+      },
+      // Update URL in browser
+      updateQuery: function(queryMap) {
+        var newQuery = this.makeQueryString(queryMap);
+        this.props.updateQueryString(newQuery);
+      },
+      getPageNum: function() {
+        var queryMap = this.makeQueryMap();
+        var pageNum = 1;
+        if (queryMap.page !== undefined) {
+          pageNum = parseInt(queryMap.page[0]);
         }
-      });
-
-      //open the lateral panel
-      $('.btn-taxonomies').on('click', function (event) {
-        event.preventDefault();
-        loadManageTaxonomies();
-        $('.cd-panel-2').addClass('is-visible');
-      });
-
-      //close the lateral panel
-      $('.cd-panel-2').on('click', function (event) {
-        if ($(event.target).is('.cd-panel-2') ||
-          $(event.target).is('.cd-panel-close')) {
-          hideTaxonomyPanel();
-          event.preventDefault();
-        }
-      });
-
-      /**
-       * Render resource items in the UI
-       *
-       * @returns {ReactElement} The rendered resource items
-       */
-      var renderListingResources;
-
-      // queryMap is the canonical place to manage query parameters for the UI.
-      // The URL in the browser will be updated with these changes in
-      // refreshFromAPI.
-      var queryMap = {};
-
-      // Controls the loader on the listing page.
-      var pageLoaded = false;
-
-      // Populate queryMap with query string key value pairs.
-      _.each(URI(window.location).query(true), function(v, k) {
-        if (!Array.isArray(v)) {
-          // URI().query(true) will put two or more values with the same
-          // key in an array and not use an array for single values.
-          // Put everything into arrays for consistency's sake.
-          queryMap[k] = [v];
-        } else {
-          queryMap[k] = v;
-        }
-      });
-
-      // This should get updated after the first API call
-      var numPages = 0;
-      var pageNum = 1;
-      if (queryMap.page !== undefined) {
-        pageNum = parseInt(queryMap.page[0]);
-      }
-
+        return pageNum;
+      },
+      getInitialState: function () {
+        return {
+          // empty resources and facetCounts to start with
+          resources: [],
+          facetCounts: {},
+          // Controls the loader on the listing page.
+          pageLoaded: false,
+          allExports: this.props.allExports,
+          sortingOptions: this.props.sortingOptions,
+          // This should get updated after the first API call
+          numPages: 0,
+          // Will be set on refresh
+          selectedFacets: {},
+          selectedMissingFacets: {},
+          // Keep track of resource id so we can lazy load panels.
+          currentResourceId: undefined,
+          // What panels are already loaded
+          loadedPanels: {}
+        };
+      },
+      render: function () {
+        var options = {
+          repoSlug: this.props.repoSlug,
+          allExports: this.state.allExports,
+          sortingOptions: this.state.sortingOptions,
+          loggedInUsername: this.props.loggedInUsername,
+          imageDir: this.props.imageDir,
+          pageSize: this.props.pageSize,
+          openExportsPanel: this.openExportsPanel,
+          openResourcePanel: this.openResourcePanel,
+          updateFacets: this.updateFacets,
+          updateMissingFacets: this.updateMissingFacets,
+          selectedFacets: this.state.selectedFacets,
+          selectedMissingFacets: this.state.selectedMissingFacets,
+          updateSort: this.updateSort,
+          pageNum: this.getPageNum(),
+          numPages: this.state.numPages,
+          updatePage: this.updatePage,
+          loaded: this.state.pageLoaded,
+          resources: this.state.resources,
+          facetCounts: this.state.facetCounts,
+          ref: "listingResources"
+        };
+        return React.createElement(ListingResources.ListingPage, options);
+      },
       /**
        * Clears exports on page. Assumes DELETE to clear on server already
        * happened.
        */
-      var clearExports = function () {
+      clearExports: function () {
         // Clear export links.
-        listingOptions = $.extend({}, listingOptions);
-        listingOptions.allExports = [];
+        this.setState({allExports: []});
 
-        var listingResources = renderListingResources();
-        listingResources.clearSelectedExports();
-      };
-
-      var openExportsPanel = function(exportCount) {
+        // TODO: we shouldn't need a ref here, state should be moved up here
+        this.refs.listingResources.clearSelectedExports();
+      },
+      loadManageTaxonomies: function () {
+        ManageTaxonomies.loader(
+          this.props.repoSlug,
+          $('#taxonomy-component')[0],
+          showConfirmationDialog,
+          showTab,
+          setTabName,
+          this.refreshFromAPI
+        );
+      },
+      openExportsPanel: function (exportCount) {
         $('.cd-panel-exports').addClass('is-visible');
-        Exports.loader(repoSlug, loggedInUsername, clearExports,
-          $("#exports_content")[0]);
+        Exports.loader(
+          this.props.repoSlug,
+          this.props.loggedInUsername,
+          this.clearExports,
+          $("#exports_content")[0]
+        );
         Exports.loadExportsHeader(exportCount, $("#exports_heading")[0]);
-      };
-
+      },
+      getPanelLoaders: function() {
+        return {
+          "tab-1": this.loadResourceTab,
+          "tab-2": this.loadXmlTab,
+          "tab-3": this.loadStaticAssetsTab
+        };
+      },
       /**
        * When called, query search API using query parameters of this URL
        * and update listing with updated resources.
@@ -220,68 +231,79 @@ define('listing',
        * @returns {jQuery.Deferred} A promise that's resolved or rejected when
        * the AJAX call completes and the rerender is triggered.
        */
-      var refreshFromAPI;
+      refreshFromAPI: function() {
+        this.setState({pageLoaded: false});
 
-      // Will be set in refreshFromAPI
-      var selectedFacets;
-      var selectedMissingFacets;
+        var queryMap = this.makeQueryMap();
+        var newQuery = this.makeQueryString(queryMap);
 
-      var openResourcePanel = function(resourceId) {
-        LearningResources.loader(
-          repoSlug,
-          resourceId,
-          refreshFromAPI,
-          closeLearningResourcePanel,
-          $("#tab-1")[0]
-        );
-        $('.cd-panel').addClass('is-visible');
-        StaticAssets.loader(repoSlug, resourceId, $("#tab-3")[0]);
-        XmlPanel.loader(repoSlug, resourceId, $("#tab-2")[0]);
-      };
-
-      refreshFromAPI = function() {
-        pageLoaded = false;
-
-        var newQuery = "?" + URI().search(queryMap).query();
-        if (newQuery === "?") {
-          // Don't put ? in URL if empty
-          History.replaceState(null, document.title, ".");
-          newQuery = "";
-        } else {
-          History.replaceState(null, document.title, newQuery);
-        }
-
+        // Query string for repository page is the same used for the search API
         var url = "/api/v1/repositories/" +
-          listingOptions.repoSlug + "/search/" + newQuery;
+          this.props.repoSlug + "/search/" + newQuery;
 
-        renderListingResources();
-        return $.get(url).then(function(collection) {
-          pageLoaded = true;
-          listingOptions = $.extend({}, listingOptions);
-          listingOptions.resources = collection.results;
-          listingOptions.facetCounts = collection.facet_counts;
-          selectedFacets = collection.selected_facets;
-          selectedMissingFacets = collection.selected_missing_facets;
+        var thiz = this;
+        return $.get(url).then(function (collection) {
+          thiz.setState({
+            resources: collection.results,
+            facetCounts: collection.facet_counts,
+            selectedFacets: collection.selected_facets,
+            selectedMissingFacets: collection.selected_missing_facets
+          });
 
-          numPages = Math.ceil(collection.count / listingOptions.pageSize);
+          var numPages = Math.ceil(collection.count / thiz.props.pageSize);
+          var oldPageNum = thiz.getPageNum();
+          var pageNum = oldPageNum;
           if (pageNum > numPages) {
             pageNum = numPages - 1;
             if (pageNum < 1) {
               pageNum = 1;
             }
           }
-
-          renderListingResources();
-        }).fail(function(error) {
-          pageLoaded = true;
-
+          thiz.setState({
+            numPages: numPages
+          });
+          if (pageNum !== oldPageNum) {
+            queryMap.page = pageNum;
+            // Update URL string again for different pageNum
+            thiz.updateQuery(queryMap);
+          }
+        }).fail(function (error) {
           // Propagate error
           return $.Deferred().reject(error);
+        }).always(function() {
+          thiz.setState({pageLoaded: true});
         });
-      };
+      },
+      loadResourceTab: function (resourceId) {
+        LearningResources.loader(
+          this.props.repoSlug,
+          resourceId,
+          this.refreshFromAPI,
+          closeLearningResourcePanel,
+          $("#tab-1")[0]
+        );
+      },
+      loadXmlTab: function (resourceId) {
+        XmlPanel.loader(this.props.repoSlug, resourceId, $("#tab-2")[0]);
+      },
+      loadStaticAssetsTab: function (resourceId) {
+        StaticAssets.loader(this.props.repoSlug, resourceId, $("#tab-3")[0]);
+      },
+      openResourcePanel: function (resourceId) {
+        // Reset loaded panels
+        var loadedPanels = {};
+        this.setState({currentResourceId: resourceId});
 
-      var updateFacetParam = function(param, selected) {
-        queryMap = $.extend({}, queryMap);
+        // Load the resource tab
+        showTab("tab-1");
+        this.loadResourceTab(resourceId);
+        loadedPanels["tab-1"] = true;
+        this.setState({loadedPanels: loadedPanels});
+
+        $('.cd-panel').addClass('is-visible');
+      },
+      updateFacetParam: function (param, selected) {
+        var queryMap = this.makeQueryMap();
         queryMap.page = undefined;
 
         if (!queryMap.selected_facets) {
@@ -290,18 +312,18 @@ define('listing',
 
         // Remove facet. If selected we'll add it back again with a push().
         queryMap.selected_facets = _.filter(
-          queryMap.selected_facets, function(facet) {
+          queryMap.selected_facets, function (facet) {
             return facet !== param;
           }
         );
 
         if (selected) {
-          queryMap.selected_facets.push(param);
+          queryMap.selected_facets = queryMap.selected_facets.concat(param);
         }
 
-        return refreshFromAPI();
-      };
-
+        this.updateQuery(queryMap);
+        return this.refreshFromAPI();
+      },
       /**
        * Update queryMap with updated facet information, then refresh from API.
        *
@@ -312,18 +334,16 @@ define('listing',
        * @returns {jQuery.Deferred} Promise which is resolved or rejected after
        * refresh occurs.
        */
-      var updateFacets = function(facetId, valueId, selected) {
+      updateFacets: function (facetId, valueId, selected) {
         var param = facetId + "_exact:" + valueId;
 
-        return updateFacetParam(param, selected);
-      };
-
-      var updateMissingFacets = function(facetId, selected) {
+        return this.updateFacetParam(param, selected);
+      },
+      updateMissingFacets: function (facetId, selected) {
         var param = "_missing_:" + facetId + "_exact";
 
-        return updateFacetParam(param, selected);
-      };
-
+        return this.updateFacetParam(param, selected);
+      },
       /**
        * Update sorting and refresh from API.
        *
@@ -331,46 +351,38 @@ define('listing',
        * @return {jQuery.Deferred} A promise which is resolved or rejected after
        * refresh has occurred.
        */
-      var updateSort = function(value) {
-        queryMap = $.extend({}, queryMap);
+      updateSort: function (value) {
+        var queryMap = this.makeQueryMap();
         queryMap.sortby = value;
 
-        listingOptions = $.extend({}, listingOptions);
-        var allOptions = listingOptions.sortingOptions.all.concat([
-          listingOptions.sortingOptions.current
+        var sortingOptions = this.state.sortingOptions;
+        var allOptions = sortingOptions.all.concat([
+          sortingOptions.current
         ]);
-        var current = _.filter(allOptions, function(pair) {
+        var current = _.filter(allOptions, function (pair) {
           return pair[0] === value;
         });
-        var all = _.filter(allOptions, function(pair) {
+        var all = _.filter(allOptions, function (pair) {
           return pair[0] !== value;
         });
-        listingOptions.sortingOptions.all = all;
-        listingOptions.sortingOptions.current = current[0];
+        this.setState({
+          sortingOptions: {
+            all: all,
+            current: current[0]
+          }
+        });
 
-        refreshFromAPI();
-      };
-
-      /**
-       * Rerender listing resources
-       * @returns {ReactComponent}
-       */
-      renderListingResources = function() {
-        return ListingResources.loader(listingOptions,
-          container, openExportsPanel, openResourcePanel,
-          updateFacets, updateMissingFacets,
-          selectedFacets, selectedMissingFacets, updateSort, pageNum, numPages,
-          updatePage, pageLoaded
-        );
-      };
-
+        this.updateQuery(queryMap);
+        return this.refreshFromAPI();
+      },
       /**
        * Update search parameter then refresh from API.
        *
        * @param search {String} The search phrase
        * @returns {jQuery.Deferred} Promise which evalutes after refresh occurs.
        */
-      var updateSearch = function (search) {
+      updateSearch: function (search) {
+        var queryMap = this.makeQueryMap();
         queryMap.page = undefined;
         if (search !== '') {
           queryMap.q = [search];
@@ -381,156 +393,247 @@ define('listing',
         // clear facets
         queryMap.selected_facets = undefined;
 
-        return refreshFromAPI();
-      };
-
-      // If search is executed update query parameter and refresh from API.
-      $("#search_button").click(function(e) {
-        e.preventDefault();
-
-        var search = $("#id_q").val();
-        updateSearch(search);
-      });
-
-      // Close exports panel.
-      $('.cd-panel-exports').on('click', function (event) {
-        if ($(event.target).is('.cd-panel-exports') ||
-          $(event.target).is('.cd-panel-close')) {
-          $('.cd-panel-exports').removeClass('is-visible');
-          event.preventDefault();
-        }
-      });
-
-      //open the lateral panel for members
-      $('.btn-members').on('click', function (event) {
-        event.preventDefault();
-        //remove any alert
-        $('#members-alert').empty();
-        //reset the form values
-        resetUserGroupForm();
-        //make panel visible
-        $('.cd-panel-members').addClass('is-visible');
-        //retrieve all the members
-        showUpdateAllMembers();
-        //
-      });
-      //close the lateral panel for members
-      $('.cd-panel-members').on('click', function (event) {
-        if ($(event.target).is('.cd-panel-members') ||
-          $(event.target).is('.cd-panel-close')) {
-          $('.cd-panel-members').removeClass('is-visible');
-          event.preventDefault();
-        }
-      });
-      //add button for the members
-      $(document).on('click', '.cd-panel-members-add', function () {
-        var url = $('.cd-panel-members').data('members-url');
-        var username = $('input[name=\'members-username\']').val();
-        var groupType = $('select[name=\'members-group_type\']').val();
-        // /api/v1/repositories/my-rep/members/groups/<group_type>/users/
-        url += 'groups/' + groupType + '/users/';
-        //test that username is not an email
-        if (isEmail(username)) {
-          var message = 'Please type only your username before the @';
-          showMembersAlert(message, 'warning');
-          return;
-        }
-        var email = username + EMAIL_EXTENSION;
-        if (!isEmail(email)) {
-          var emailMessage = '<strong>' + email +
-            '</strong> does not seem to be a valid email';
-          showMembersAlert(emailMessage, 'danger');
-          return;
-        }
-        $.ajax({
-          url: url,
-          type: 'POST',
-          data: {username: username}
-        })
-        .then(function() {
-          //retrieve the members lists
-          return showUpdateAllMembers();
-        })
-        .then(function () {
-          //reset the values
-          resetUserGroupForm();
-          //show alert
-          var message = '<strong>' + email +
-            '</strong> added to group <strong>' +
-            formatGroupName(groupType) + '</strong>';
-          showMembersAlert(message);
-        })
-        .fail(function (data) {
-          //show alert
-          var message = 'Error adding user ' + email +
-            ' to group ' + formatGroupName(groupType);
-          if (data && data.responseJSON && data.responseJSON.username) {
-            message = message + '<br>' + data.responseJSON.username[0];
-          }
-          showMembersAlert(message, 'danger');
-        });
-      });
-      //remove button for the members
-      $(document).on('click', '.cd-panel-members-remove', function () {
-        var url = $('.cd-panel-members').data('members-url');
-        var username = $(this).data('username');
-        var groupType = $(this).data('group_type');
-        var email = username + EMAIL_EXTENSION;
-        // /api/v1/repositories/my-rep/members/groups/<group_type>/users/<username>/
-        url += 'groups/' + groupType + '/users/' + username + '/';
-        $.ajax({
-          url: url,
-          type: 'DELETE'
-        })
-        .then(function() {
-          //retrieve the members lists
-          return showUpdateAllMembers();
-        })
-        .then(function () {
-          //show alert
-          var message = '<strong>' + email +
-            '</strong> deleted from group <strong>' +
-            formatGroupName(groupType) + '</strong>';
-          showMembersAlert(message);
-        })
-        .fail(function (data) {
-          //show alert
-          var message = 'Error deleting user <strong>' +
-            email + '</strong> from group <strong>' +
-            formatGroupName(groupType) + '</strong>';
-          if (data && data.responseJSON && data.responseJSON.detail) {
-            message += '<br>' + data.responseJSON.detail;
-          }
-          showMembersAlert(message, 'danger');
-        });
-      });
-
+        this.updateQuery(queryMap);
+        return this.refreshFromAPI();
+      },
       /**
        * Update page number and refresh from API.
        * @param newPageNum {Number} New page number
        * @return {jQuery.Deferred} Promise which resolves or rejects after
        * refresh has occurred.
        */
-      var updatePage = function(newPageNum) {
+      updatePage: function (newPageNum) {
+        var queryMap = this.makeQueryMap();
         queryMap.page = [newPageNum.toString()];
-        pageNum = parseInt(newPageNum);
 
-        return refreshFromAPI();
+        this.updateQuery(queryMap);
+        return this.refreshFromAPI();
+      },
+
+      componentDidMount: function () {
+        CSRF.setupCSRF();
+
+        var thiz = this;
+
+        $('[data-toggle=popover]').popover();
+        //Close panels on escape keypress
+        $(document).keyup(function (event) {
+          if (event.keyCode === 27) { // escape key maps to keycode `27`
+            closeLearningResourcePanel();
+            if ($('.cd-panel-2').hasClass('is-visible')) {
+              hideTaxonomyPanel();
+            }
+            if ($('.cd-panel-exports').hasClass('is-visible')) {
+              $('.cd-panel-exports').removeClass('is-visible');
+            }
+            if ($('.cd-panel-members').hasClass('is-visible')) {
+              $('.cd-panel-members').removeClass('is-visible');
+            }
+            event.preventDefault();
+          }
+        });
+
+        //close the lateral panel
+        $('.cd-panel').on('click', function (event) {
+          if ($(event.target).is('.cd-panel') ||
+            $(event.target).is('.cd-panel-close')) {
+            closeLearningResourcePanel();
+            event.preventDefault();
+          }
+        });
+
+        //open the lateral panel
+        $('.btn-taxonomies').on('click', function (event) {
+          event.preventDefault();
+          thiz.loadManageTaxonomies();
+          $('.cd-panel-2').addClass('is-visible');
+        });
+
+        //close the lateral panel
+        $('.cd-panel-2').on('click', function (event) {
+          if ($(event.target).is('.cd-panel-2') ||
+            $(event.target).is('.cd-panel-close')) {
+            hideTaxonomyPanel();
+            event.preventDefault();
+          }
+        });
+
+        _.each(this.getPanelLoaders(), function (loader, tag) {
+          $("a[href='#" + tag + "']").click(function () {
+            // If tab not already loaded, load it now
+            if (!thiz.state.loadedPanels[tag]) {
+              loader(thiz.state.currentResourceId);
+              var loadedPanels = $.extend({}, thiz.state.loadedPanels);
+              loadedPanels[tag] = true;
+              thiz.setState({
+                loadedPanels: loadedPanels
+              });
+            }
+          });
+        });
+
+        // If search is executed update query parameter and refresh from API.
+        $("#search_button").click(function (e) {
+          e.preventDefault();
+
+          var search = $("#id_q").val();
+          thiz.updateSearch(search);
+        });
+
+        // Close exports panel.
+        $('.cd-panel-exports').on('click', function (event) {
+          if ($(event.target).is('.cd-panel-exports') ||
+            $(event.target).is('.cd-panel-close')) {
+            $('.cd-panel-exports').removeClass('is-visible');
+            event.preventDefault();
+          }
+        });
+
+        //open the lateral panel for members
+        $('.btn-members').on('click', function (event) {
+          event.preventDefault();
+          //remove any alert
+          $('#members-alert').empty();
+          //reset the form values
+          resetUserGroupForm();
+          //make panel visible
+          $('.cd-panel-members').addClass('is-visible');
+          //retrieve all the members
+          showUpdateAllMembers();
+        });
+
+        //close the lateral panel for members
+        $('.cd-panel-members').on('click', function (event) {
+          if ($(event.target).is('.cd-panel-members') ||
+            $(event.target).is('.cd-panel-close')) {
+            $('.cd-panel-members').removeClass('is-visible');
+            event.preventDefault();
+          }
+        });
+
+        //add button for the members
+        $(document).on('click', '.cd-panel-members-add', function () {
+          var url = $('.cd-panel-members').data('members-url');
+          var username = $('input[name=\'members-username\']').val();
+          var groupType = $('select[name=\'members-group_type\']').val();
+          // /api/v1/repositories/my-rep/members/groups/<group_type>/users/
+          url += 'groups/' + groupType + '/users/';
+          //test that username is not an email
+          if (isEmail(username)) {
+            var message = 'Please type only your username before the @';
+            showMembersAlert(message, 'warning');
+            return;
+          }
+          var email = username + EMAIL_EXTENSION;
+          if (!isEmail(email)) {
+            var emailMessage = '<strong>' + email +
+              '</strong> does not seem to be a valid email';
+            showMembersAlert(emailMessage, 'danger');
+            return;
+          }
+          $.ajax({
+            url: url,
+            type: 'POST',
+            data: {username: username}
+          })
+            .then(function () {
+              //retrieve the members lists
+              return showUpdateAllMembers();
+            })
+            .then(function () {
+              //reset the values
+              resetUserGroupForm();
+              //show alert
+              var message = '<strong>' + email +
+                '</strong> added to group <strong>' +
+                formatGroupName(groupType) + '</strong>';
+              showMembersAlert(message);
+            })
+            .fail(function (data) {
+              //show alert
+              var message = 'Error adding user ' + email +
+                ' to group ' + formatGroupName(groupType);
+              if (data && data.responseJSON && data.responseJSON.username) {
+                message = message + '<br>' + data.responseJSON.username[0];
+              }
+              showMembersAlert(message, 'danger');
+            });
+        });
+
+        //remove button for the members
+        $(document).on('click', '.cd-panel-members-remove', function () {
+          var url = $('.cd-panel-members').data('members-url');
+          var username = $(this).data('username');
+          var groupType = $(this).data('group_type');
+          var email = username + EMAIL_EXTENSION;
+          // /api/v1/repositories/my-rep/members/groups/<group_type>/users/<username>/
+          url += 'groups/' + groupType + '/users/' + username + '/';
+          $.ajax({
+            url: url,
+            type: 'DELETE'
+          })
+            .then(function () {
+              //retrieve the members lists
+              return showUpdateAllMembers();
+            })
+            .then(function () {
+              //show alert
+              var message = '<strong>' + email +
+                '</strong> deleted from group <strong>' +
+                formatGroupName(groupType) + '</strong>';
+              showMembersAlert(message);
+            })
+            .fail(function (data) {
+              //show alert
+              var message = 'Error deleting user <strong>' +
+                email + '</strong> from group <strong>' +
+                formatGroupName(groupType) + '</strong>';
+              if (data && data.responseJSON && data.responseJSON.detail) {
+                message += '<br>' + data.responseJSON.detail;
+              }
+              showMembersAlert(message, 'danger');
+            });
+        });
+
+        // Initial refresh to populate page.
+        thiz.refreshFromAPI();
+      }
+    });
+
+    var updateQueryString = function(newQuery) {
+      if (newQuery.length === 0) {
+        History.replaceState(null, document.title, ".");
+      } else {
+        History.replaceState(null, document.title, newQuery);
+      }
+    };
+
+    var getQueryString = function() {
+      return URI(window.location).search();
+    };
+
+    var loader = function (listingOptions, container) {
+      var options = {
+        allExports: listingOptions.allExports,
+        sortingOptions: listingOptions.sortingOptions,
+        imageDir: listingOptions.imageDir,
+        pageSize: listingOptions.pageSize,
+        repoSlug: listingOptions.repoSlug,
+        loggedInUsername: listingOptions.loggedInUsername,
+        updateQueryString: updateQueryString,
+        getQueryString: getQueryString
       };
 
-      var showConfirmationDialog = function(options) {
-        var container = $("#confirmation-container")[0];
-        Utils.showConfirmationDialog(
-          options,
-          container
-        );
-      };
-
-      // Initial refresh to populate page.
-      refreshFromAPI();
+      React.render(
+        React.createElement(ListingContainer, options),
+        container
+      );
     };
 
     return {
+      ListingContainer: ListingContainer,
+      isEmail: isEmail,
+      formatGroupName: formatGroupName,
       loader: loader
     };
   });

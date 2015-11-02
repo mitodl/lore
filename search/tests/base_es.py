@@ -46,9 +46,9 @@ class SearchTestCase(LoreTestCase):
         """Return count of matching indexed records."""
         return self.search(query).count()
 
-    def count_faceted_results(self, vocab, term):
+    def count_faceted_results(self, vocab_id, term_id):
         """Return count of matching indexed records by facet."""
         return search_index(
             repo_slug=self.repo.slug,
-            terms={make_vocab_key(vocab): term}
+            terms={make_vocab_key(vocab_id): term_id}
         ).count()

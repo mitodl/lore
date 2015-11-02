@@ -34,13 +34,13 @@ _CONN_VERIFIED = False
 PAGE_LENGTH = 10
 
 
-def get_vocab_slugs(repo_slug=None):
+def get_vocab_ids(repo_slug=None):
     """Get all vocabulary names in the database."""
     if repo_slug is not None:
         return Vocabulary.objects.filter(
-            repository__slug=repo_slug).values_list('slug', flat=True)
+            repository__slug=repo_slug).values_list('id', flat=True)
     else:
-        return Vocabulary.objects.all().values_list('slug', flat=True)
+        return Vocabulary.objects.all().values_list('id', flat=True)
 
 
 def get_conn(verify=True):
@@ -99,23 +99,23 @@ def get_resource_terms(resource_ids):
     Args:
         resource_ids (iterable of int): Primary keys of LearningResources
     Returns:
-        data (dict): Vocab/term data for course.
+        data (dict): Vocab/term ids for course.
     """
-    vocab_slugs = get_vocab_slugs()
+    vocab_ids = get_vocab_ids()
     resource_data = defaultdict(lambda: defaultdict(list))
     rels = LearningResource.terms.related.through.objects.select_related(
         "term__vocabulary").filter(learningresource__id__in=resource_ids)
     for rel in rels.iterator():
         obj = resource_data[rel.learningresource_id]
-        obj[rel.term.vocabulary.slug].append(rel.term.slug)
+        obj[rel.term.vocabulary.id].append(rel.term.id)
     # Replace the defaultdicts with dicts.
     info = {k: dict(v) for k, v in resource_data.items()}
     for resource_id in resource_ids:
         if resource_id not in info.keys():
             info[resource_id] = {}
-        for vocab_slug in vocab_slugs:
-            if vocab_slug not in info[resource_id].keys():
-                info[resource_id][vocab_slug] = []
+        for vocab_id in vocab_ids:
+            if vocab_id not in info[resource_id].keys():
+                info[resource_id][vocab_id] = []
     return info
 
 
@@ -183,9 +183,9 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
         # Always sort by ID to preserve ordering.
         search = search.sort(sort_by, "id")
 
-    vocabs = set(get_vocab_slugs(repo_slug=repo_slug))
-    for vocab in vocabs:
-        vocab_key = make_vocab_key(vocab)
+    vocab_ids = set(get_vocab_ids(repo_slug=repo_slug))
+    for vocab_id in vocab_ids:
+        vocab_key = make_vocab_key(vocab_id)
         search.aggs.bucket(
             "{key}_missing".format(key=vocab_key),
             "missing", field=vocab_key
@@ -309,8 +309,8 @@ def resource_to_dict(resource, term_info):
 
     # Index term info. Since these fields all use the "not_analyzed"
     # index, they must all be exact matches.
-    for vocab_slug, term_slugs in term_info.items():
-        rec[make_vocab_key(vocab_slug)] = term_slugs
+    for vocab_id, term_ids in term_info.items():
+        rec[make_vocab_key(vocab_id)] = term_ids
 
     # If the title is empty, sort it to the bottom. See above.
     if rec["titlesort"] == "0":
@@ -506,14 +506,14 @@ def ensure_vocabulary_mappings(term_info):
     existing_vocabs = set(mapping.to_dict()["learningresource"]["properties"])
 
     # Get all the taxonomy names from the data.
-    vocab_slugs = set()
-    for result in term_info.values():
-        for key in result.keys():
-            vocab_slugs.add(key)
+    vocab_ids = set()
+    for vocab_terms in term_info.values():
+        for vocab_id in vocab_terms.keys():
+            vocab_ids.add(vocab_id)
     updated = False
     # Add vocabulary to mapping if necessary.
-    for slug in vocab_slugs:
-        vocab_key = make_vocab_key(slug)
+    for vocab_id in vocab_ids:
+        vocab_key = make_vocab_key(vocab_id)
         if vocab_key in existing_vocabs:
             continue
         mapping.field(vocab_key, "string", index="not_analyzed")
@@ -566,22 +566,19 @@ def convert_aggregate(agg):
 
     vocab_lookup = {}
     term_lookup = {}
-    for term in Term.objects.select_related("vocabulary").all():
-        vocab = term.vocabulary
+    for term in Term.objects.all():
+        term_lookup[term.id] = term.label
 
-        for term in vocab.term_set.all():
-            term_lookup[term.slug] = term.label
-        vocab_lookup[vocab.slug] = vocab.name
+    for vocab in Vocabulary.objects.all():
+        vocab_lookup[make_vocab_key(vocab.id)] = vocab.name
 
     def get_vocab_label(vocab_key):
         """Get label for vocab."""
-        if vocab_key.startswith("vocab_"):
-            vocab_key = vocab_key[len("vocab_"):]
         return vocab_lookup.get(vocab_key, vocab_key)
 
-    def get_term_label(term_slug):
+    def get_term_label(term_id):
         """Get label for term."""
-        return term_lookup.get(term_slug, term_slug)
+        return term_lookup.get(int(term_id), str(term_id))
 
     def get_builtin_label(key):
         """Get label for special types."""
