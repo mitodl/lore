@@ -1,6 +1,6 @@
 define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
-  'test_utils', 'utils'],
-  function(QUnit, $, _, ManageTaxonomies, React, TestUtils, Utils) {
+  'test_utils'],
+  function(QUnit, $, _, ManageTaxonomies, React, TestUtils) {
   'use strict';
 
   var VocabularyComponent = ManageTaxonomies.VocabularyComponent;
@@ -9,7 +9,7 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
   var AddTermsComponent = ManageTaxonomies.AddTermsComponent;
   var AddVocabulary = ManageTaxonomies.AddVocabulary;
   var TaxonomyComponent = ManageTaxonomies.TaxonomyComponent;
-  var showConfirmationDialog = Utils.showConfirmationDialog;
+
   var vocabulary = {
     "id": 1,
     "slug": "difficulty",
@@ -2647,25 +2647,6 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
         function() {}
       );
       assert.ok($(container).html().length > 0);
-    }
-  );
-
-  QUnit.test("Assert that ConfirmationDialog  renders " +
-    "proper props",
-    function(assert) {
-      var container = document.createElement("div");
-      assert.equal(0, $(container).find(".modal").size());
-      var options = {
-        actionButtonName: "Delete",
-        actionButtonClass: "btn btn-danger btn-ok",
-        title: "Delete ?",
-        message: "Are you sure you want to delete vocabulary ?",
-        description: "Deleting this vocabulary will remove it from all " +
-          "learning resources.",
-        confirmationHandler: function() {}
-      };
-      showConfirmationDialog(options, container);
-      assert.equal(1, $(container).find(".modal").size());
     }
   );
 });

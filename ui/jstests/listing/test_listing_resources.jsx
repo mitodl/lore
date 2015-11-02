@@ -84,9 +84,6 @@ define(['QUnit', 'jquery', 'listing_resources', 'react',
       facetCounts: emptyFacetCounts
     };
 
-    // NOTE: these tests will show 404 for /images/*.png due to these
-    // files not being served. We can't mock them since they aren't
-    // jQuery AJAX calls so we have to just ignore it for now.
     QUnit.module('Test listing resources', {
       beforeEach: function () {
         TestUtils.setup();
