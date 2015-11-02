@@ -5,6 +5,7 @@ REST tests relating to vocabularies and terms
 from __future__ import unicode_literals
 
 import logging
+from copy import deepcopy
 
 from rest_framework.status import (
     HTTP_200_OK,
@@ -24,7 +25,7 @@ from rest.serializers import (
     VocabularySerializer,
     TermSerializer,
 )
-from taxonomy.models import Vocabulary, Term
+from taxonomy.models import Vocabulary, Term, make_vocab_key
 from learningresources.models import LearningResourceType, LearningResource
 
 log = logging.getLogger(__name__)
@@ -229,6 +230,29 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(resp.status_code, HTTP_200_OK)
         self.assertEqual(0, as_json(resp)['count'])
 
+    def test_vocabulary_slug(self):
+        """
+        Special test for the creation of vocabularies with name that can result
+        in empty slugs
+        """
+        vocab_dict = deepcopy(self.DEFAULT_VOCAB_DICT)
+        # normal name to verify the default behavior
+        vocab_dict.update({'name': 'foo-test-one'})
+        res_dict = self.create_vocabulary(self.repo.slug, vocab_dict)
+        self.assertEqual(res_dict['slug'], 'foo-test-one')
+        # weird name #1
+        vocab_dict.update({'name': '%$#@'})
+        res_dict = self.create_vocabulary(self.repo.slug, vocab_dict)
+        self.assertEqual(res_dict['slug'], 'vocabulary-slug')
+        # weird name #2
+        vocab_dict.update({'name': '((**))'})
+        res_dict = self.create_vocabulary(self.repo.slug, vocab_dict)
+        self.assertEqual(res_dict['slug'], 'vocabulary-slug1')
+        # weird name #3
+        vocab_dict.update({'name': '!@#$%^&'})
+        res_dict = self.create_vocabulary(self.repo.slug, vocab_dict)
+        self.assertEqual(res_dict['slug'], 'vocabulary-slug2')
+
     def test_term(self):
         """Test REST access for term"""
         vocab1_slug = self.create_vocabulary(self.repo.slug)['slug']
@@ -355,6 +379,35 @@ class TestVocabulary(RESTTestCase):
                       expected_status=HTTP_403_FORBIDDEN)
         self.get_term(self.repo.slug, vocab2_slug, term2['slug'],
                       expected_status=HTTP_403_FORBIDDEN)
+
+    def test_term_slug(self):
+        """
+        Special test for the creation of terms with name that can result
+        in empty slugs
+        """
+        # create a vocabulary
+        vocab_res = self.create_vocabulary(self.repo.slug)
+        term_dict = deepcopy(self.DEFAULT_TERM_DICT)
+        # normal name to verify the default behavior
+        term_dict.update({'label': 'foo-term-one'})
+        res_dict = self.create_term(
+            self.repo.slug, vocab_res['slug'], term_dict)
+        self.assertEqual(res_dict['slug'], 'foo-term-one')
+        # weird name #1
+        term_dict.update({'label': '%$#@'})
+        res_dict = self.create_term(
+            self.repo.slug, vocab_res['slug'], term_dict)
+        self.assertEqual(res_dict['slug'], 'term-slug')
+        # weird name #2
+        term_dict.update({'label': '((**))'})
+        res_dict = self.create_term(
+            self.repo.slug, vocab_res['slug'], term_dict)
+        self.assertEqual(res_dict['slug'], 'term-slug1')
+        # weird name #3
+        term_dict.update({'label': '!@#$%^&'})
+        res_dict = self.create_term(
+            self.repo.slug, vocab_res['slug'], term_dict)
+        self.assertEqual(res_dict['slug'], 'term-slug2')
 
     def test_delete_propagation(self):
         """Test delete propagation"""
@@ -668,8 +721,8 @@ class TestVocabulary(RESTTestCase):
                     self.get_results()['facet_counts'][vocab_key]['values']]),
             []
         )
-        self.assert_results([], vocab_key, term1.slug)
-        self.assert_results([], vocab_key, term2.slug)
+        self.assert_results([], vocab_key, term1.id)
+        self.assert_results([], vocab_key, term2.id)
 
         resource1 = LearningResource.objects.all()[0]
         resource2 = LearningResource.objects.all()[1]
@@ -684,11 +737,11 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(
             sorted([t['key'] for t in
                     self.get_results()['facet_counts'][vocab_key]['values']]),
-            sorted([term1.slug, term2.slug])
+            sorted([str(term1.id), str(term2.id)])
         )
 
-        self.assert_results([resource1], vocab_key, term1.slug)
-        self.assert_results([resource2], vocab_key, term2.slug)
+        self.assert_results([resource1], vocab_key, term1.id)
+        self.assert_results([resource2], vocab_key, term2.id)
 
     def test_index_updates_on_edit(self):
         """
@@ -732,8 +785,8 @@ class TestVocabulary(RESTTestCase):
                     self.get_results()['facet_counts'][vocab_key]['values']]),
             []
         )
-        self.assert_results([], vocab_key, term1.slug)
-        self.assert_results([], vocab_key, term2.slug)
+        self.assert_results([], vocab_key, term1.id)
+        self.assert_results([], vocab_key, term2.id)
 
         resource1 = LearningResource.objects.all()[0]
         resource2 = LearningResource.objects.all()[1]
@@ -748,10 +801,10 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(
             sorted([t['key'] for t in
                     self.get_results()['facet_counts'][vocab_key]['values']]),
-            sorted([term1.slug, term2.slug])
+            sorted([str(term1.id), str(term2.id)])
         )
-        self.assert_results([resource1], vocab_key, term1.slug)
-        self.assert_results([resource2], vocab_key, term2.slug)
+        self.assert_results([resource1], vocab_key, term1.id)
+        self.assert_results([resource2], vocab_key, term2.id)
 
         # Vocab is edited to remove all learning resource types which will also
         # remove all links to terms.
@@ -765,8 +818,8 @@ class TestVocabulary(RESTTestCase):
                     self.get_results()['facet_counts'][vocab_key]['values']]),
             []
         )
-        self.assert_results([], vocab_key, term1.slug)
-        self.assert_results([], vocab_key, term2.slug)
+        self.assert_results([], vocab_key, term1.id)
+        self.assert_results([], vocab_key, term2.id)
 
     def test_index_updates_on_delete(self):
         """
@@ -825,20 +878,20 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(
             sorted([t['key'] for t in
                     self.get_results()['facet_counts'][vocab_key]['values']]),
-            sorted([term1.slug, term2.slug])
+            sorted([str(term1.id), str(term2.id)])
         )
-        self.assert_results([resource1], vocab_key, term1.slug)
-        self.assert_results([resource2], vocab_key, term2.slug)
+        self.assert_results([resource1], vocab_key, term1.id)
+        self.assert_results([resource2], vocab_key, term2.id)
 
         # Term is removed from facet list.
         self.delete_term(self.repo.slug, vocab.slug, term1.slug)
         self.assertEqual(
             sorted([t['key'] for t in
                     self.get_results()['facet_counts'][vocab_key]['values']]),
-            sorted([term2.slug])
+            sorted([str(term2.id)])
         )
-        self.assert_results([], vocab_key, term1.slug)
-        self.assert_results([resource2], vocab_key, term2.slug)
+        self.assert_results([], vocab_key, term1.id)
+        self.assert_results([resource2], vocab_key, term2.id)
 
         self.delete_vocabulary(self.repo.slug, vocab.slug)
         # No vocabs left.
@@ -846,8 +899,8 @@ class TestVocabulary(RESTTestCase):
             sorted(["course", "run", "resource_type"]),
             sorted(self.get_results()['facet_counts'].keys())
         )
-        self.assert_results([], vocab_key, term1.slug)
-        self.assert_results([], vocab_key, term2.slug)
+        self.assert_results([], vocab_key, term1.id)
+        self.assert_results([], vocab_key, term2.id)
 
     def test_vocab_num_queries(self):
         """Make sure number of queries is reasonable for vocab and term."""
@@ -895,6 +948,133 @@ class TestVocabulary(RESTTestCase):
         })
         with self.assertNumQueries(30):
             self.delete_vocabulary(self.repo.slug, vocab_slug)
+
+    def test_vocabulary_rename(self):
+        """Test that index updates properly after a vocabulary rename."""
+        vocab_result = self.create_vocabulary(self.repo.slug)
+        vocab_id = vocab_result['id']
+        vocab_key = make_vocab_key(vocab_id)
+        vocab_slug = vocab_result['slug']
+        term_result = self.create_term(self.repo.slug, vocab_slug)
+        term_id = term_result['id']
+        term_slug = term_result['slug']
+        term_label = term_result['label']
+
+        # Update vocabulary for resource type, assign term
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": [
+                self.resource.learning_resource_type.name
+            ]
+        })
+        self.patch_learning_resource(self.repo.slug, self.resource.id, {
+            "terms": [term_slug]
+        })
+
+        self.assertEqual(
+            self.get_results()['facet_counts'][vocab_key]['facet']['label'],
+            vocab_result['name']
+        )
+        self.assertEqual(
+            self.get_results()['facet_counts'][vocab_key]['values'],
+            [{'count': 1, 'key': str(term_id), 'label': term_label}]
+        )
+        self.assertEqual(
+            self.get_results(selected_facets=["{v}_exact:{t}".format(
+                v=vocab_key,
+                t=term_id
+            )])['count'],
+            1
+        )
+
+        # Rename vocabulary
+        name = "brand new name"
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "name": name
+        })
+
+        # Facet counts should not change
+        self.assertEqual(
+            self.get_results()['facet_counts'][vocab_key]['facet']['label'],
+            name
+        )
+        self.assertEqual(
+            self.get_results()['facet_counts'][vocab_key]['values'],
+            [{'count': 1, 'key': str(term_id), 'label': term_label}]
+        )
+        self.assertEqual(
+            self.get_results(selected_facets=["{v}_exact:{t}".format(
+                v=vocab_key,
+                t=term_id
+            )])['count'],
+            1
+        )
+
+    def test_term_rename(self):
+        """Test that index updates properly after a term rename."""
+        vocab_result = self.create_vocabulary(self.repo.slug)
+        vocab_key = make_vocab_key(vocab_result['id'])
+        vocab_slug = vocab_result['slug']
+        term_result = self.create_term(self.repo.slug, vocab_slug)
+        term_id = term_result['id']
+        term_slug = term_result['slug']
+
+        # Update vocabulary for resource type, assign term
+        self.patch_vocabulary(self.repo.slug, vocab_slug, {
+            "learning_resource_types": [
+                self.resource.learning_resource_type.name
+            ]
+        })
+        self.patch_learning_resource(self.repo.slug, self.resource.id, {
+            "terms": [term_slug]
+        })
+
+        self.assertEqual(
+            self.get_results()['facet_counts'][vocab_key]['values'],
+            [{'count': 1, 'key': str(term_id), 'label': term_result['label']}]
+        )
+        self.assertEqual(
+            self.get_results(selected_facets=["{v}_exact:{t}".format(
+                v=vocab_key,
+                t=term_id
+            )])['count'],
+            1
+        )
+
+        # Rename term
+        label = "brand new label"
+        self.patch_term(self.repo.slug, vocab_slug, term_slug, {
+            "label": label
+        })
+
+        # Facet counts should not change
+        self.assertEqual(
+            self.get_results()['facet_counts'][vocab_key]['values'],
+            [{'count': 1, 'key': str(term_id), 'label': label}]
+        )
+        self.assertEqual(
+            self.get_results(selected_facets=["{v}_exact:{t}".format(
+                v=vocab_key,
+                t=term_id
+            )])['count'],
+            1
+        )
+
+    def test_empty_vocab_facet_count(self):
+        """
+        Test that we get vocabulary label and not something else for
+        an empty vocabulary.
+        """
+        vocab_dict = dict(self.DEFAULT_VOCAB_DICT)
+        name = 'name with spaces'
+        vocab_dict['name'] = name
+        vocab_result = self.create_vocabulary(self.repo.slug, vocab_dict)
+        vocab_id = vocab_result['id']
+        vocab_key = make_vocab_key(vocab_id)
+
+        self.assertEqual(
+            self.get_results()['facet_counts'][vocab_key]['facet']['label'],
+            name
+        )
 
 
 class TestVocabularyAuthorization(RESTAuthTestCase):

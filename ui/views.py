@@ -36,7 +36,6 @@ from learningresources.models import (
 from rest.pagination import LorePagination
 from roles.permissions import RepoPermission
 from search.sorting import LoreSortingFields
-from taxonomy.models import Vocabulary, Term
 from ui.forms import UploadForm, RepositoryForm
 
 log = logging.getLogger(__name__)
@@ -121,60 +120,6 @@ def create_repo(request):
         "create_repo.html",
         {"form": form},
     )
-
-
-def get_vocabularies(facets):
-    """
-    Parse facet information for the template.
-    It will return a dictionary that looks like this:
-
-    {
-        (u'13', u'difficulty'): [(38, u'medium', 23), (17, u'hard', 19)],
-        (u'15', u'prerequisite'): [(44, u'yes', 23)]
-    }
-
-    The keys are tuples with Vocabulary ID and name for the key,
-    and a list of tuples containing id, label, and count for the terms.
-
-    This is for ease-of-use in the template, where the integer primary keys
-    are used for search links and the names/labels are used for display.
-
-    Args:
-        facets (dict): facet ID with terms & term counts
-    Returns:
-        vocabularies (dict): dict of vocab info to term info
-    """
-
-    if "fields" not in facets:
-        return {}
-    vocab_ids = []
-    term_ids = []
-    for vocab_id, counts in facets["fields"].items():
-        if not vocab_id.isdigit():
-            continue
-        vocab_ids.append(int(vocab_id))
-        for term_id, count in counts:
-            term_ids.append(term_id)
-
-    vocabs = {
-        x: y for x, y in Vocabulary.objects.filter(
-            id__in=vocab_ids).values_list('id', 'name')
-    }
-    terms = {
-        x: y for x, y in Term.objects.filter(
-            id__in=term_ids).values_list('id', 'label')
-    }
-    vocabularies = {}
-    for vocabulary_id, term_data in facets["fields"].items():
-        if not vocabulary_id.isdigit():
-            continue
-        vocab = (vocabulary_id, vocabs[int(vocabulary_id)])
-        vocabularies[vocab] = []
-        for t_id, count in term_data:
-            vocabularies[vocab].append((t_id, terms[int(t_id)], count))
-        # By default, sort alphabetically.
-        vocabularies[vocab].sort(key=lambda x: x[1])
-    return vocabularies
 
 
 @statsd.timer('lore.repository_view')

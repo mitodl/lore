@@ -11,11 +11,11 @@ import six.moves.urllib.parse as urllib_parse  # pylint: disable=import-error
 from django.db import models
 from django.db import transaction
 from django.contrib.auth.models import User
-from django.utils.text import slugify
 from django.utils.encoding import python_2_unicode_compatible
 from django.shortcuts import get_object_or_404
 
 from audit.models import BaseModel
+from rest.util import default_slugify
 from roles.api import roles_update_repo
 from roles.permissions import RepoPermission
 from lore.settings import LORE_PREVIEW_BASE_URL
@@ -171,12 +171,11 @@ class Repository(BaseModel):
             if self.id is not None:
                 is_update = True
                 old_slug = get_object_or_404(Repository, id=self.id).slug
-            slug = slugify(self.name)
-            count = 1
-            while Repository.objects.filter(slug=slug).exists():
-                slug = "{0}{1}".format(slugify(self.name), count)
-                count += 1
-            self.slug = slug
+            self.slug = default_slugify(
+                self.name,
+                Repository._meta.model_name,
+                lambda slug: Repository.objects.filter(slug=slug).exists()
+            )
             # check if it's necessary to initialize the permissions
         new_repository = super(Repository, self).save(*args, **kwargs)
         if is_update:

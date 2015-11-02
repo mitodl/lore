@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.12.0'
+VERSION = '0.13.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -277,6 +277,7 @@ LOGIN_URL = "/admin/"
 # Logging configuration
 LOG_LEVEL = get_var('LORE_LOG_LEVEL', 'DEBUG')
 DJANGO_LOG_LEVEL = get_var('DJANGO_LOG_LEVEL', 'DEBUG')
+ES_LOG_LEVEL = get_var('ES_LOG_LEVEL', 'INFO')
 
 # For logging to a remote syslog host
 LOG_HOST = get_var('LORE_LOG_HOST', 'localhost')
@@ -339,7 +340,7 @@ LOGGING = {
             'level': 'INFO',
         },
         'elasticsearch': {
-            'level': 'INFO',
+            'level': ES_LOG_LEVEL,
         },
     },
 }
