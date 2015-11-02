@@ -42,8 +42,15 @@
 {{ block.super }}
 {% compress js %}
 <script type="text/jsx"
-        src="{% static "ui/js/taxonomy/manage_taxonomies.jsx" %}">
+        src="{% static "ui/js/exports/lr_exports.jsx" %}">
 </script>
+<script type="text/jsx"
+        src="{% static "ui/js/exports/exports_component.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/exports/exports_header.jsx" %}">
+</script>
+
 <script type="text/jsx"
         src="{% static "ui/js/learningresources/learning_resource_panel.jsx" %}">
 </script>
@@ -68,15 +75,7 @@
 <script type="text/jsx"
         src="{% static "ui/js/learningresources/xml_panel.jsx" %}">
 </script>
-<script type="text/jsx"
-        src="{% static "ui/js/exports/lr_exports.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/exports/exports_component.jsx" %}">
-</script>
-<script type="text/jsx"
-        src="{% static "ui/js/exports/exports_header.jsx" %}">
-</script>
+
 <script type="text/jsx"
         src="{% static "ui/js/listing/listing_resources.jsx" %}">
 </script>
@@ -86,6 +85,26 @@
 <script type="text/jsx"
         src="{% static "ui/js/listing/pagination.jsx" %}">
 </script>
+
+<script type="text/jsx"
+        src="{% static "ui/js/taxonomy/add_terms_component.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/taxonomy/add_vocabulary.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/taxonomy/manage_taxonomies.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/taxonomy/taxonomy_component.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/taxonomy/term_component.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/taxonomy/vocabulary_component.jsx" %}">
+</script>
+
 <script type="text/jsx"
         src="{% static "ui/js/util/utils.jsx" %}">
 </script>

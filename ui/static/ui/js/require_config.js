@@ -23,7 +23,12 @@ var REQUIRE_PATHS = {
   listing_resources: "../ui/js/listing/listing_resources.jsx?noext",
   pagination: "../ui/js/listing/pagination.jsx?noext",
 
+  add_terms_component: "../ui/js/taxonomy/add_terms_component.jsx?noext",
+  add_vocabulary: "../ui/js/taxonomy/add_vocabulary.jsx?noext",
   manage_taxonomies: "../ui/js/taxonomy/manage_taxonomies.jsx?noext",
+  taxonomy_component: "../ui/js/taxonomy/taxonomy_component.jsx?noext",
+  term_component: "../ui/js/taxonomy/term_component.jsx?noext",
+  vocabulary_component: "../ui/js/taxonomy/vocabulary_component.jsx?noext",
 
   learning_resources: "../ui/js/learningresources/learning_resources.jsx?noext",
   learning_resource_panel: "../ui/js/learningresources/" +

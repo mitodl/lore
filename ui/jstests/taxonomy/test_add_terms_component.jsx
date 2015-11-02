@@ -1,10 +1,9 @@
-define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
+define(['QUnit', 'jquery', 'lodash', 'add_terms_component', 'react',
     'test_utils'],
-  function (QUnit, $, _, ManageTaxonomies, React, TestUtils) {
+  function (QUnit, $, _, AddTermsComponent, React, TestUtils) {
     'use strict';
 
     var waitForAjax = TestUtils.waitForAjax;
-    var AddTermsComponent = ManageTaxonomies.AddTermsComponent;
 
     var vocabulary = {
       "id": 1,
