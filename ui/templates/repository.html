@@ -41,7 +41,6 @@
 {% block postcontent %}
 {{ block.super }}
 {% compress js %}
-<script type="text/javascript" src="{% static "ui/js/listing.js" %}"></script>
 <script type="text/jsx"
         src="{% static "ui/js/manage_taxonomies.jsx" %}">
 </script>
@@ -65,6 +64,9 @@
 </script>
 <script type="text/jsx"
         src="{% static "ui/js/utils.jsx" %}">
+</script>
+<script type="text/jsx"
+        src="{% static "ui/js/listing.jsx" %}">
 </script>
 {% endcompress %}
 <script type="text/javascript">
