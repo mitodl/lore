@@ -247,7 +247,11 @@ class RESTTestCase(LoreTestCase):
             result_dict = as_json(resp)
             if not skip_assert:
                 for key, value in vocab_dict.items():
-                    self.assertEqual(value, result_dict[key])
+                    if key == "learning_resource_types":
+                        self.assertEqual(
+                            sorted(value), sorted(result_dict[key]))
+                    else:
+                        self.assertEqual(value, result_dict[key])
 
             self.assertIn(reverse(
                 'vocabulary-detail', kwargs={
@@ -276,7 +280,11 @@ class RESTTestCase(LoreTestCase):
             result_dict = as_json(resp)
             if not skip_assert:
                 for key, value in vocab_dict.items():
-                    self.assertEqual(value, result_dict[key])
+                    if key == "learning_resource_types":
+                        self.assertEqual(
+                            sorted(value), sorted(result_dict[key]))
+                    else:
+                        self.assertEqual(value, result_dict[key])
             return result_dict
 
     def put_vocabulary(self, repo_slug, vocab_slug, vocab_dict,
@@ -297,7 +305,11 @@ class RESTTestCase(LoreTestCase):
             result_dict = as_json(resp)
             if not skip_assert:
                 for key, value in vocab_dict.items():
-                    self.assertEqual(value, result_dict[key])
+                    if key == "learning_resource_types":
+                        self.assertEqual(
+                            sorted(value), sorted(result_dict[key]))
+                    else:
+                        self.assertEqual(value, result_dict[key])
             return result_dict
 
     def get_vocabulary(self, repo_slug, vocab_slug,
