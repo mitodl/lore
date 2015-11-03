@@ -173,7 +173,10 @@ CACHES = {
     "lore_indexing": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "TIMEOUT": get_var("LORE_INDEXING_CACHE_TIMEOUT", "60"),
-    }
+    },
+    "compressor": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    },
 }
 
 # Internationalization
@@ -215,6 +218,8 @@ COMPRESS_PRECOMPILERS = (
 )
 COMPRESS_OFFLINE = get_var('LORE_COMPRESS_OFFLINE', False)
 COMPRESS_ENABLED = get_var('LORE_COMPRESS_ENABLED', not DEBUG)
+COMPRESS_CACHEABLE_PRECOMPILERS = ('text/jsx',)
+COMPRESS_CACHE_BACKEND = 'compressor'
 
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')
