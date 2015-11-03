@@ -125,6 +125,7 @@ class TestCourse(RESTTestCase):
         self.assertEqual(StaticAsset.objects.count(), static_assetts)
         self.assertEqual(Term.objects.count(), terms)
         self.assertEqual(Vocabulary.objects.count(), vocabularies)
+        self.assertEqual(self.get_results()['count'], learning_resources)
 
     def test_delete_course(self):
         """
