@@ -2359,22 +2359,21 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
       });
 
       var afterMount = function(component) {
-        assert.equal(
-          component.state.vocabularies.length,
-          0
-        );
+        assert.equal(component.state.vocabularies.length, 0);
         waitForAjax(2, function() {
-          assert.equal(
-            component.state.vocabularies.length,
-            2
+          assert.equal(component.state.vocabularies.length, 2);
+          var difficultyVocab = _.find(
+            component.state.vocabularies, function(vocab) {
+              return vocab.vocabulary.name === "difficulty";
+            }
           );
-          assert.equal(
-            component.state.vocabularies[0].terms.length,
-            2
-          );
+          assert.equal(difficultyVocab.terms.length, 2);
+          var difficultTerm = _.find(difficultyVocab.terms, function(term) {
+            return term.label === 'difficult';
+          });
           var updateTermUrl = "/api/v1/repositories/demo/vocabularies/" +
-              component.state.vocabularies[0].vocabulary.slug + "/terms/" +
-              component.state.vocabularies[0].terms[0].slug + "/";
+              difficultyVocab.vocabulary.slug + "/terms/" +
+              difficultTerm.slug + "/";
           TestUtils.initMockjax({
             url: updateTermUrl,
             responseText: term,
@@ -2419,13 +2418,19 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
                     component.state.vocabularies.length,
                     2
                   );
-                  assert.equal(
-                    component.state.vocabularies[0].terms.length,
-                    2
+                  var difficultyVocab = _.find(
+                    component.state.vocabularies, function(vocab) {
+                      return vocab.vocabulary.name === "difficulty";
+                    }
                   );
                   assert.equal(
-                    component.state.vocabularies[0].terms[0].label,
-                    "TestB"
+                    difficultyVocab.terms.length,
+                    2
+                  );
+                  assert.ok(
+                    _.some(difficultyVocab.terms, function(term) {
+                      return term.label === "TestB";
+                    })
                   );
                   done();
                 });
@@ -2573,22 +2578,22 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
       };
 
       var afterMount = function(component) {
-        assert.equal(
-          component.state.vocabularies.length,
-          0
-        );
+        assert.equal(component.state.vocabularies.length, 0);
         waitForAjax(2, function() {
-          assert.equal(
-            component.state.vocabularies.length,
-            1
+          assert.equal(component.state.vocabularies.length, 1);
+          var difficultyVocab = _.find(component.state.vocabularies,
+            function(vocab) {
+              return vocab.vocabulary.name === 'difficulty';
+            }
           );
-          assert.equal(
-            component.state.vocabularies[0].terms.length,
-            2
-          );
+          assert.equal(difficultyVocab.terms.length, 2);
+          var difficultTerm = _.find(difficultyVocab.terms, function(term) {
+            return term.label === 'difficult';
+          });
+
           var updateTermUrl = "/api/v1/repositories/repo/vocabularies/" +
-              component.state.vocabularies[0].vocabulary.slug + "/terms/" +
-              component.state.vocabularies[0].terms[0].slug + "/";
+              difficultyVocab.vocabulary.slug + "/terms/" +
+              difficultTerm.slug + "/";
           TestUtils.initMockjax({
             url: updateTermUrl,
             type: "DELETE"
@@ -2605,12 +2610,15 @@ define(['QUnit', 'jquery', 'lodash', 'manage_taxonomies', 'react',
             waitForAjax(1, function () {
               assert.equal(refreshCount, 1);
               //assert term update
-              assert.equal(
-                component.state.vocabularies.length,
-                1
+              assert.equal(component.state.vocabularies.length, 1);
+              var difficultyVocab = _.find(component.state.vocabularies,
+                function(vocab) {
+                  return vocab.vocabulary.name === 'difficulty';
+                }
               );
+
               assert.equal(
-                component.state.vocabularies[0].terms.length,
+                difficultyVocab.terms.length,
                 1
               );
               done();
