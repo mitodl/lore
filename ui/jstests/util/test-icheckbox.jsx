@@ -1,8 +1,6 @@
-define(['QUnit', 'jquery', 'utils', 'test_utils', 'react', 'icheck'],
-  function(QUnit, $, Utils, TestUtils, React) {
+define(['QUnit', 'jquery', 'icheckbox', 'test_utils', 'react'],
+  function(QUnit, $, ICheckbox, TestUtils, React) {
   'use strict';
-
-  var ICheckbox = Utils.ICheckbox;
 
   QUnit.module("Test ICheckbox class", {
     beforeEach: function() {

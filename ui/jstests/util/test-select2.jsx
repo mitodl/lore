@@ -1,9 +1,7 @@
-define(['QUnit', 'jquery', 'utils', 'react',
-  'test_utils'], function(
-  QUnit, $, Utils, React, TestUtils) {
+define(['QUnit', 'jquery', 'select2_component', 'react', 'test_utils'],
+  function(QUnit, $, Select2, React, TestUtils) {
     'use strict';
 
-    var Select2 = Utils.Select2;
     var options = [
       {id: 'one', text: 'One'},
       {id: 'two', text: 'Two'},
