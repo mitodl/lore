@@ -1,0 +1,8 @@
+<vertical>
+    <problem display_name="problem_1">
+        <problem display_name="inner_problem">
+            <p>Problem #1</p>
+        </problem>
+    </problem>
+    <problem url_name="problem_2"/>
+</vertical>

@@ -166,12 +166,16 @@ def import_children(course, element, parent, parent_dpath):
         desc_path = MissingTitle.for_desc_path_field
     mpath = etree.ElementTree(element).getpath(element)
     dpath = join_description_paths(parent_dpath, desc_path)
+    url_name = element.attrib.get(
+        "url_name",
+        element.attrib.get("display_name", None)
+    )
     resource = create_resource(
         course=course, parent=parent, resource_type=element.tag,
         title=title,
         content_xml=etree.tostring(element),
         mpath=mpath,
-        url_name=element.attrib.get("url_name", None),
+        url_name=url_name,
         dpath=dpath,
     )
     # temp variable to store static assets for bulk insert
