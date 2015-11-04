@@ -16,6 +16,7 @@ Contents:
    api
    release
    release_process
+   test_plan
 
 Indices and tables
 ==================
