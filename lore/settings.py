@@ -210,7 +210,6 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'ui', 'static'),
 )
 COMPRESS_PRECOMPILERS = (
-    ('text/requirejs', 'requirejs.RequireJSCompiler'),
     (
         'text/jsx',
         'node node_modules/react-tools/bin/jsx < {infile} > {outfile}'
