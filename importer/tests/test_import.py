@@ -291,3 +291,25 @@ class TestImportToy(LoreTestCase):
                 "assets/edX/toy/TT_2012_Fall/webGLDemo.css",
             ])
         )
+
+    def test_display_name_as_url_name(self):
+        """
+        Test that we use display_name if url_name does not exist.
+        """
+
+        path = os.path.join(
+            os.path.abspath(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+            "learningresources", "tests",
+            "testdata", "courses", "nested_problem"
+        )
+        zip_path = self._make_archive(path, True)
+
+        import_course_from_file(zip_path, self.repo.id, self.user.id)
+        self.assertEqual(
+            sorted([resource.url_name for resource in
+                    LearningResource.objects.filter(
+                        learning_resource_type__name="problem"
+                    ).all()]),
+            sorted(["problem_1", "problem_2", "inner_problem"])
+        )
