@@ -17,6 +17,7 @@ from learningresources.models import LearningResource
 TASK_KEY = 'tasks'
 EXPORT_TASK_TYPE = 'resource_export'
 EXPORTS_KEY = 'learning_resource_exports'
+IMPORT_TASK_TYPE = 'import_course'
 
 
 def create_initial_task_dict(task, task_type, task_info):
