@@ -10,22 +10,30 @@ from shutil import rmtree
 from tempfile import mkstemp, mkdtemp
 import zipfile
 import logging
+from lxml import etree
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import mock
+from xbundle import XBundle
 
 from importer.api import (
     import_course_from_file,
     import_course_from_path,
     import_static_assets,
+    import_course,
 )
 from importer.tasks import import_file
-from learningresources.api import get_resources
+from learningresources.api import get_resources, create_repo
 from learningresources.models import (
-    Course, StaticAsset, static_asset_basepath, LearningResource,
+    Course,
+    StaticAsset,
+    static_asset_basepath,
+    LearningResource,
+    get_preview_url,
 )
 from learningresources.tests.base import LoreTestCase
+from lore import settings
 
 log = logging.getLogger(__name__)
 
@@ -312,4 +320,88 @@ class TestImportToy(LoreTestCase):
                         learning_resource_type__name="problem"
                     ).all()]),
             sorted(["problem_1", "problem_2", "inner_problem"])
+        )
+
+    def test_parent_preview_link(self):
+        """
+        Test that if url_name is blank we import the parent's url_name when
+        viewing the preview link.
+        """
+        xml = """
+<course org="DevOps" course="0.001" url_name="2015_Summer"
+    semester="2015_Summer">
+  <chapter>
+    <sequential>
+      <vertical>
+        <html></html>
+      </vertical>
+    </sequential>
+  </chapter>
+</course>
+"""
+
+        repo = create_repo("html_repo", "...", self.user.id)
+        xml = etree.fromstring(xml)
+        bundle = XBundle(
+            keep_urls=True, keep_studio_urls=True, preserve_url_name=True
+        )
+        bundle.set_course(xml)
+
+        import_course(bundle, repo.id, self.user.id, "")
+
+        html_resources = LearningResource.objects.filter(
+            learning_resource_type__name="html"
+        )
+        self.assertEqual(html_resources.count(), 1)
+        html_resource = html_resources.first()
+        self.assertEqual(
+            get_preview_url(html_resource),
+            "{base}courses/{org}/{course}/{run}/jump_to_id/{url_path}".format(
+                base=settings.LORE_PREVIEW_BASE_URL,
+                org=html_resource.course.org,
+                course=html_resource.course.course_number,
+                run=html_resource.course.run,
+                url_path="2015_Summer"
+            )
+        )
+
+    def test_missing_preview_link(self):
+        """
+        Test that if url_name is blank we try importing each parent
+        url_name, or use the default 'courseware'.
+        """
+        xml = """
+<course org="DevOps" course="0.001" semester="2015_Summer">
+  <chapter>
+    <sequential>
+      <vertical>
+        <html></html>
+      </vertical>
+    </sequential>
+  </chapter>
+</course>
+"""
+
+        repo = create_repo("html_repo", "...", self.user.id)
+        xml = etree.fromstring(xml)
+        bundle = XBundle(
+            keep_urls=True, keep_studio_urls=True, preserve_url_name=True
+        )
+        bundle.set_course(xml)
+
+        import_course(bundle, repo.id, self.user.id, "")
+
+        html_resources = LearningResource.objects.filter(
+            learning_resource_type__name="html"
+        )
+        self.assertEqual(html_resources.count(), 1)
+        html_resource = html_resources.first()
+        self.assertEqual(
+            get_preview_url(html_resource),
+            "{base}courses/{org}/{course}/{run}/courseware".format(
+                base=settings.LORE_PREVIEW_BASE_URL,
+                org=html_resource.course.org,
+                course=html_resource.course.course_number,
+                run=html_resource.course.run,
+            )
         )

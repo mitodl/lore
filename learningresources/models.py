@@ -216,12 +216,23 @@ def get_preview_url(resource, org=None, course_number=None, run=None):
         run=run,
     )
 
-    if resource.url_name is None:
+    url_name = resource.url_name
+    if url_name is None:
+        # The parent query can be expensive if done repeatedly
+        # but this is hopefully a rare case.
+        current = resource.parent
+        while current is not None:
+            url_name = current.url_name
+            if url_name is not None:
+                break
+            current = current.parent
+
+    if url_name is None:
         path = "courseware"
         preview_id = ""
     else:
         path = "jump_to_id"
-        preview_id = "/{0}".format(resource.url_name)
+        preview_id = "/{0}".format(url_name)
 
     url_format = '{base_url}courses/{key}/{path}{preview_id}'
     return url_format.format(
