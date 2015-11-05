@@ -10,12 +10,11 @@ from shutil import rmtree
 from tempfile import mkstemp, mkdtemp
 import zipfile
 import logging
-from lxml import etree
 
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import mock
-from xbundle import XBundle
+from lxml import etree
 
 from importer.api import (
     import_course_from_file,
@@ -34,6 +33,7 @@ from learningresources.models import (
 )
 from learningresources.tests.base import LoreTestCase
 from lore import settings
+from xbundle import XBundle
 
 log = logging.getLogger(__name__)
 
@@ -319,7 +319,7 @@ class TestImportToy(LoreTestCase):
                     LearningResource.objects.filter(
                         learning_resource_type__name="problem"
                     ).all()]),
-            sorted(["problem_1", "problem_2", "inner_problem"])
+            sorted(["problem_1", "problem_2"])
         )
 
     def test_parent_preview_link(self):
@@ -405,3 +405,38 @@ class TestImportToy(LoreTestCase):
                 run=html_resource.course.run,
             )
         )
+
+    def test_nested_leaves(self):
+        """
+        Test that nested leaves are not imported.
+        """
+        template = """
+<course org="DevOps" course="0.001" url_name="2015_Summer"
+    semester="2015_Summer">
+  <chapter>
+    <sequential>
+      <vertical>
+        <{tag}><{tag}></{tag}></{tag}>
+      </vertical>
+    </sequential>
+  </chapter>
+</course>
+"""
+
+        for tag in ("html", "problem", "discussion", "video"):
+            repo = create_repo(
+                "{tag}_repo".format(tag=tag), "...", self.user.id)
+            xml = etree.fromstring(template.format(tag=tag))
+            bundle = XBundle(
+                keep_urls=True, keep_studio_urls=True, preserve_url_name=True
+            )
+            bundle.set_course(xml)
+
+            import_course(bundle, repo.id, self.user.id, "")
+
+            self.assertEqual(
+                LearningResource.objects.filter(
+                    learning_resource_type__name=tag
+                ).count(),
+                1
+            )
