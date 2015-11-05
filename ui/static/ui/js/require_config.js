@@ -5,7 +5,7 @@ var REQUIRE_PATHS = {
   bootstrap: "bootstrap/dist/js/bootstrap.min",
   icheck: "icheck/icheck.min",
   retina: "retina.js/dist/retina.min",
-  React: "react/react-with-addons.min",
+  React: "react/react-with-addons",
   react_infinite: "react-infinite/dist/react-infinite.min",
   react_datagrid: "../lib/js/react-datagrid.min",
   lodash: "lodash/lodash.min",
@@ -49,6 +49,7 @@ var REQUIRE_PATHS = {
   icheckbox: "../ui/js/util/icheckbox.jsx?noext",
   infinite_list: "../ui/js/util/infinite_list.jsx?noext",
   react_overlay_loader: "../ui/js/util/react_overlay_loader.jsx?noext",
+  react_spinner: "../ui/js/util/react_spinner.jsx?noext",
   select2_component: "../ui/js/util/select2_component.jsx?noext",
   status_box: "../ui/js/util/status_box.jsx?noext",
 };

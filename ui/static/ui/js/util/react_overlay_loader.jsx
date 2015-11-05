@@ -1,5 +1,5 @@
-define("react_overlay_loader", ["react", "spin"],
-  function (React, Spinner) {
+define("react_overlay_loader", ["react", "react_spinner"],
+  function (React, ReactSpinner) {
     'use strict';
 
     /**
@@ -7,26 +7,12 @@ define("react_overlay_loader", ["react", "spin"],
      * https://github.com/quickleft/react-loader
      */
     return React.createClass({
-      componentDidUpdate: function () {
-        this.spin();
-      },
-      componentDidMount: function () {
-        this.spin();
-      },
-      spin: function () {
-        if (this.isMounted() && !this.props.loaded) {
-          var target = React.findDOMNode(this.refs.loader);
-
-          var spinner = new Spinner({zIndex: 0});
-          spinner.spin(target);
-        }
-      },
       render: function () {
         var loader;
         var opacity = 1;
 
         if (!this.props.loaded) {
-          loader = <div ref="loader"/>;
+          loader = <ReactSpinner />;
           opacity = 0.6;
         }
         var children;
