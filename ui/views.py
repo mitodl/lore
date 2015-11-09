@@ -63,7 +63,7 @@ def upload(request, repo_slug):
             data=request.POST, files=request.FILES)
         if form.is_valid():
             try:
-                form.save(request.user.id, repo.id)
+                form.save(request.user.id, repo.id, request.session)
                 return redirect("/repositories/{0}/".format(repo_slug))
             except ValueError as ex:
                 # Coverage exception reasoning: After successful upload,

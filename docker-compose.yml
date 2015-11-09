@@ -8,6 +8,7 @@ redis:
     - "6379"
 elastic:
   image: elasticsearch
+  command: elasticsearch -Des.network.host=0.0.0.0
   ports:
     - "9200"
 stats:

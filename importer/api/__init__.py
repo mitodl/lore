@@ -144,6 +144,19 @@ def import_course(bundle, repo_id, user_id, static_dir):
     return course
 
 
+def is_leaf_tag(tag):
+    """
+    Should we look for resources within elements with this tag?
+
+    Args:
+        tag (unicode): Element tag
+    Returns:
+        bool: Whether tag is leaf tag
+    """
+    return tag in {'video', 'html', 'problem', 'discussion'}
+
+
+# pylint: disable=too-many-branches
 def import_children(course, element, parent, parent_dpath):
     """
     Create LearningResource instances for each element
@@ -166,12 +179,16 @@ def import_children(course, element, parent, parent_dpath):
         desc_path = MissingTitle.for_desc_path_field
     mpath = etree.ElementTree(element).getpath(element)
     dpath = join_description_paths(parent_dpath, desc_path)
+    url_name = element.attrib.get(
+        "url_name",
+        element.attrib.get("display_name", None)
+    )
     resource = create_resource(
         course=course, parent=parent, resource_type=element.tag,
         title=title,
         content_xml=etree.tostring(element),
         mpath=mpath,
-        url_name=element.attrib.get("url_name", None),
+        url_name=url_name,
         dpath=dpath,
     )
     # temp variable to store static assets for bulk insert
@@ -226,6 +243,10 @@ def import_children(course, element, parent, parent_dpath):
         ]
     )
 
-    for child in element.getchildren():
-        if child.tag in DESCRIPTOR_TAGS:
-            import_children(course, child, resource, dpath)
+    # Try to protect against bad data, specifically <problem><problem>...
+    # imports. The two tags will still appear in content_xml but there will
+    # be only one resource for the outer one.
+    if not is_leaf_tag(element.tag):
+        for child in element.getchildren():
+            if child.tag in DESCRIPTOR_TAGS:
+                import_children(course, child, resource, dpath)

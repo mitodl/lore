@@ -21,6 +21,8 @@ from rest_framework.serializers import (
     SerializerMethodField,
     IntegerField,
     FloatField,
+    DictField,
+    BooleanField,
 )
 
 from rest.util import LambdaDefault, RequiredBooleanField
@@ -308,6 +310,16 @@ class LearningResourceExportTaskSerializer(Serializer):
     id = CharField()
     status = CharField()
     url = CharField()
+    collision = BooleanField()
+
+
+class TaskSerializer(Serializer):
+    """Serializer for tasks."""
+    id = CharField()
+    status = CharField()
+    result = DictField()
+    task_type = CharField()
+    task_info = DictField()
 
 
 class RepositorySearchSerializer(Serializer):

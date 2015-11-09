@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.13.0'
+VERSION = '0.14.0'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -173,7 +173,10 @@ CACHES = {
     "lore_indexing": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "TIMEOUT": get_var("LORE_INDEXING_CACHE_TIMEOUT", "60"),
-    }
+    },
+    "compressor": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    },
 }
 
 # Internationalization
@@ -207,7 +210,6 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'ui', 'static'),
 )
 COMPRESS_PRECOMPILERS = (
-    ('text/requirejs', 'requirejs.RequireJSCompiler'),
     (
         'text/jsx',
         'node node_modules/react-tools/bin/jsx < {infile} > {outfile}'
@@ -215,6 +217,8 @@ COMPRESS_PRECOMPILERS = (
 )
 COMPRESS_OFFLINE = get_var('LORE_COMPRESS_OFFLINE', False)
 COMPRESS_ENABLED = get_var('LORE_COMPRESS_ENABLED', not DEBUG)
+COMPRESS_CACHEABLE_PRECOMPILERS = ('text/jsx',)
+COMPRESS_CACHE_BACKEND = 'compressor'
 
 # Media and storage settings
 IMPORT_PATH_PREFIX = get_var('LORE_IMPORT_PATH_PREFIX', 'course_archives/')

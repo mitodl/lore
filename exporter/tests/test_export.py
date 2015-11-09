@@ -175,8 +175,10 @@ class TestExport(LoreTestCase):
         """Test exporting resources task."""
         resources = LearningResource.objects.all()
 
-        path, collision = export_resources.delay(
+        result = export_resources.delay(
             resources, self.user.username).get()
+        path = result['name']
+        collision = result['collision']
         tempdir = mkdtemp()
 
         self.assertTrue(collision)
