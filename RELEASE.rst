@@ -1,6 +1,28 @@
 Release Notes
 -------------
 
+Version 0.14.0
+==============
+
+- Moved spinner into separate React class.
+- Fixed double resource import bug.
+- Fixed preview link to use parent resource link if child has none.
+- Fixed Elasticsearch in docker-compose.
+- Implemented tracking import tasks.
+- Added parsing for ``display_name`` so we can use it if ``url_name`` isn't present.
+- Removed ``django-compressor-requirejs`` requirement.
+- Moved taxonomy React components to separate files.
+- Moved manage taxonomy tests into separate files.
+- Moved React components to separate files in new directories.
+- Moved tests into separate files.
+- Added tests to verify index on course delete.
+- Fixed intermittent test failures.
+- Added compressor cache.
+- Bound demo branch to lore-demo app deployment.
+- Sorted terms in taxonomy panel.
+- Renamed ``listing.js`` to JSX.
+- Added tasks API.
+
 Version 0.13.0
 ==============
 
@@ -9,7 +31,7 @@ Version 0.13.0
 - Added custom slugify function to allow any name for Repo, Vocab, Term.
 - Fixed index mapping of terms and vocabularies.
 - Set Elasticsearch log level higher during testing.
-- Set Spinner `zIndex` to 0 to not have it float above everything else.
+- Set Spinner ``zIndex`` to 0 to not have it float above everything else.
 - Added loader on save.
 - Removed unused functions.
 - Fixed link click behavior for term edit and delete.
@@ -78,8 +100,8 @@ Version 0.11.0
 Version 0.10.1
 ==============
 
-- Fixed exact repository search bug
-- Fixed clear export bug
+- Fixed exact repository search bug.
+- Fixed clear export bug.
 
 Version 0.10.0
 ==============
