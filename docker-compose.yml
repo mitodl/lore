@@ -21,28 +21,27 @@ web:
   mem_limit: 384m
   command: >
     /bin/bash -c '
-    export HOST_IP=$(netstat -nr | grep ^0\.0\.0\.0 | awk "{print \$2}") &&
     sleep 3 &&
     npm install --production --no-bin-links &&
     python manage.py migrate &&
-    python manage.py runserver 0.0.0.0:$PORT'
+    python manage.py runserver 0.0.0.0:8070'
   volumes:
     - .:/src
     - /tmp
   environment:
-    DEBUG: True
+    DEBUG: 'True'
     LORE_LOG_LEVEL: DEBUG
     DJANGO_LOG_LEVEL: INFO
     PORT: 8070
     DATABASE_URL: postgres://postgres@db:5432/postgres
-    LORE_DB_DISABLE_SSL: True
+    LORE_DB_DISABLE_SSL: 'True'
     ALLOWED_HOSTS:
     LORE_USE_CAS:
     LORE_ADMIN_EMAIL:
     LORE_CAS_URL:
     LORE_GOOGLE_ANALYTICS_ID:
     LORE_STATSD_HOST: stats
-    CELERY_ALWAYS_EAGER: False
+    CELERY_ALWAYS_EAGER: 'False'
     CELERY_RESULT_BACKEND: redis://redis:6379/4
     BROKER_URL: redis://redis:6379/4
     HAYSTACK_URL: elastic:9200
@@ -63,9 +62,9 @@ celery:
   volumes_from:
     - web
   environment:
-    DEBUG: True
+    DEBUG: 'True'
     LORE_LOG_LEVEL: DEBUG
-    LORE_DB_DISABLE_SSL: True
+    LORE_DB_DISABLE_SSL: 'True'
     LORE_STATSD_HOST: stats
     DJANGO_LOG_LEVEL: INFO
     DATABASE_URL: postgres://postgres@db:5432/postgres
