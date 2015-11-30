@@ -24,10 +24,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.viewsets import GenericViewSet
 from statsd.defaults.django import statsd
 
-from learningresources.api import (
-    PermissionDenied,
-    NotFound,
-)
 from roles.permissions import GroupTypes, BaseGroupTypes
 from roles.api import (
     assign_user_to_repo_group,
@@ -77,6 +73,11 @@ from rest.util import CheckValidMemberParamMixin
 from search.api import construct_queryset
 from search.tasks import index_resources
 from taxonomy.models import Vocabulary
+
+from learningresources.api import (
+    PermissionDenied,
+    NotFound,
+)
 from learningresources.models import (
     Repository,
     Course,
@@ -654,7 +655,7 @@ class LearningResourceExportList(ListCreateAPIView):
             exports = []
         return [{"id": lr_id} for lr_id in exports]
 
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):  # noqa pylint: disable=unused-argument
         try:
             lr_id = int(request.data['id'])
         except ValueError:

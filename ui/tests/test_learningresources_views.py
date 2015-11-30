@@ -12,14 +12,15 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.urlresolvers import resolve
 
+from six.moves import reload_module  # pylint: disable=import-error
+
 import ui.urls
+from learningresources.tests.base import LoreTestCase
 from learningresources.models import Repository, StaticAsset
 from roles.api import assign_user_to_repo_group, remove_user_from_repo_group
 from roles.permissions import GroupTypes
 from search.sorting import LoreSortingFields
-from six.moves import reload_module  # pylint: disable=import-error
 
-from learningresources.tests.base import LoreTestCase
 
 HTTP_OK = 200
 UNAUTHORIZED = 403

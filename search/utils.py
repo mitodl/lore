@@ -5,9 +5,10 @@ Search functions.
 from __future__ import unicode_literals
 
 from collections import defaultdict
-from lxml import etree
 import logging
 from itertools import islice
+
+from lxml import etree
 
 from django.conf import settings
 from elasticsearch.helpers import bulk

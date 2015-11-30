@@ -3,9 +3,9 @@ Tests for repository views
 """
 from __future__ import unicode_literals
 
-from learningresources.tests.base import LoreTestCase
-
 from django.test.utils import override_settings
+
+from learningresources.tests.base import LoreTestCase
 
 
 class TestGoogleAnalytics(LoreTestCase):

@@ -4,12 +4,13 @@ Import OLX data into LORE.
 
 from __future__ import unicode_literals
 
-from bs4 import BeautifulSoup
 from shutil import rmtree
 import logging
 from tempfile import mkdtemp
 from os.path import join, exists
 from os import listdir
+
+from bs4 import BeautifulSoup
 
 from archive import Archive, ArchiveException
 from django.core.files.storage import default_storage
@@ -194,7 +195,7 @@ def import_children(course, element, parent, parent_dpath):
     # temp variable to store static assets for bulk insert
     static_assets_to_save = set()
     target = "/static/"
-    if element.tag == "video":
+    if element.tag == "video":  # pylint: disable=too-many-nested-blocks
         subname = get_video_sub(element)
         if subname != "":
             assets = StaticAsset.objects.filter(
