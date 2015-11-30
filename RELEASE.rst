@@ -1,6 +1,13 @@
 Release Notes
 -------------
 
+Version 0.14.1
+==============
+
+- Made ``[requires.io]`` dependency update.
+- Added manual test plan.
+- Made changes to accommodate Docker 1.9.0.
+
 Version 0.14.0
 ==============
 
