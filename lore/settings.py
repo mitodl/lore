@@ -415,5 +415,5 @@ INTERNAL_IPS = (get_var('HOST_IP', '127.0.0.1'), )
 GOOGLE_ANALYTICS_ID = get_var('LORE_GOOGLE_ANALYTICS_ID', None)
 
 # This is needed to connect the signals properly.
-# pylint: disable=unused-import
+# pylint: disable=unused-import,wrong-import-position
 import search.signals  # noqa

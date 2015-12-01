@@ -5,12 +5,14 @@ Test api functions.
 from __future__ import unicode_literals
 
 import logging
+import tempfile
 
 from django.core.files import File
 from django.core.files.storage import default_storage
 from django.core.management import call_command
 from django.db.utils import IntegrityError
-import tempfile
+
+from mock import patch
 
 from importer.api import import_course_from_file
 from learningresources import api
@@ -19,7 +21,6 @@ from learningresources.models import (
     LearningResource,
     static_asset_basepath,
 )
-from mock import patch
 from .base import LoreTestCase
 
 log = logging.getLogger(__name__)

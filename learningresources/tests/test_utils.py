@@ -33,7 +33,7 @@ class TestUtils(TestCase):
             ("de", "de_subs_CCxmtcICYNc.srt.sjson"),
         )
         for lang, sub in values:
-            self.assertEquals(sub, _subs_filename("CCxmtcICYNc", lang))
+            self.assertEqual(sub, _subs_filename("CCxmtcICYNc", lang))
 
     def test_get_sub_name(self):
         """Test getting subtitle names."""

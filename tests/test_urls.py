@@ -3,16 +3,15 @@ Testing of project level URLs.
 """
 
 from __future__ import unicode_literals
+import ssl
+from urltools import compare  # noqa
 
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-import ssl
 
 if hasattr(ssl, '_create_unverified_context'):
     ssl._create_default_https_context = ssl._create_unverified_context  # noqa pylint: disable=protected-access
-
-from urltools import compare  # noqa
 
 
 class TestURLs(TestCase):

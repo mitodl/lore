@@ -88,7 +88,7 @@ class TestModels(LoreTestCase):
             name="first"
         )
 
-        self.assertEquals("first", str(first))
+        self.assertEqual("first", str(first))
 
     def test_repo_slug(self):
         """Test behavior saving a repository slug"""
