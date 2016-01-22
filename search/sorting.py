@@ -14,8 +14,9 @@ class LoreSortingFields(object):
     SORT_BY_NR_ATTEMPTS = ('nr_attempts', 'Number of Attempts (desc)', '-')
     SORT_BY_AVG_GRADE = ('avg_grade', 'Average Grade (desc)', '-')
     SORT_BY_TITLE = ('titlesort', 'Title (asc)', '')
+    SORT_BY_RELEVANCE = ('_score', 'Relevance', '')
 
-    DEFAULT_SORTING_FIELD = SORT_BY_NR_VIEWS[0]
+    DEFAULT_SORTING_FIELD = SORT_BY_RELEVANCE[0]
 
     # base sorting field in case the applied sorting is working on equal values
     BASE_SORTING_FIELD = 'id'
@@ -29,7 +30,8 @@ class LoreSortingFields(object):
             cls.SORT_BY_NR_VIEWS,
             cls.SORT_BY_NR_ATTEMPTS,
             cls.SORT_BY_AVG_GRADE,
-            cls.SORT_BY_TITLE
+            cls.SORT_BY_TITLE,
+            cls.SORT_BY_RELEVANCE,
         ]
 
     @classmethod

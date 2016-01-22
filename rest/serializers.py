@@ -335,3 +335,4 @@ class RepositorySearchSerializer(Serializer):
     description = CharField()
     description_path = CharField()
     preview_url = CharField()
+    score = FloatField()
