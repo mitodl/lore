@@ -20,6 +20,8 @@ from search.sorting import LoreSortingFields
 from search.utils import recreate_index
 from taxonomy.models import Term, Vocabulary, make_vocab_key
 
+# pylint: disable=too-many-statements
+
 
 class TestSearch(RESTTestCase):
     """
@@ -29,6 +31,9 @@ class TestSearch(RESTTestCase):
     def assert_result_equal(self, result, resource):
         """Helper method to assert result == resource."""
 
+        # remove the score from the result because
+        # it is meaningless for the tests
+        del result['score']
         self.assertEqual(
             {
                 'course': resource.course.course_number,
@@ -166,30 +171,42 @@ class TestSearch(RESTTestCase):
         resource1.xa_avg_grade = 2.0
         resource1.xa_nr_attempts = 4
         resource1.xa_nr_views = 1000
-        resource1.title = '22222'
+        resource1.title = '22222 aaaa bbbb'
         resource1.save()
 
         resource2.xa_avg_grade = 4.0
         resource2.xa_nr_attempts = 1
         resource2.xa_nr_views = 100
-        resource2.title = '11111'
+        resource2.title = '11111 aaaa'
         resource2.save()
 
         resource3.xa_avg_grade = 2.0
         resource3.xa_nr_attempts = 4
         resource3.xa_nr_views = 1000
-        resource3.title = '00000'
+        resource3.title = '00000 bbbb'
         resource3.save()
 
-        # Default sorting should be by nr_views, descending, then id ascending.
+        # Default sorting should be by relevance and score
+        # is null without an actual search
         default_results = self.get_results()['results']
-        self.assertEqual(default_results[0]['id'], resource1.id)
-        self.assertEqual(default_results[1]['id'], resource3.id)
-        self.assertEqual(default_results[2]['id'], resource2.id)
+        for default_result in default_results:
+            self.assertIsNone(default_result['score'])
 
-        nr_views_results = self.get_results(
-            sortby=LoreSortingFields.SORT_BY_NR_VIEWS[0])['results']
-        self.assertEqual(default_results, nr_views_results)
+        # same thing if the sort by relevance is specified
+        relevance_results = self.get_results(
+            sortby=LoreSortingFields.SORT_BY_RELEVANCE[0])['results']
+        for relevance_result in relevance_results:
+            self.assertIsNone(relevance_result['score'])
+
+        # make a specific search
+        relevance_results = self.get_results('aaaa')['results']
+        for relevance_result in relevance_results:
+            self.assertIsNotNone(relevance_result['score'])
+        self.assertEqual(len(relevance_results), 2)
+        self.assertGreaterEqual(
+            relevance_results[0]['score'],
+            relevance_results[1]['score']
+        )
 
         avg_grade_results = self.get_results(
             sortby=LoreSortingFields.SORT_BY_AVG_GRADE[0])['results']
