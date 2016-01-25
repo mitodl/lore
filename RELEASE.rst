@@ -1,6 +1,11 @@
 Release Notes
 -------------
 
+Version 0.15.1
+==============
+
+- Version locked ``doc_requirements`` packages.
+  
 Version 0.15.0
 ==============
 
