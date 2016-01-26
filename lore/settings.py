@@ -15,7 +15,7 @@ import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 import yaml
 
-VERSION = '0.14.1'
+VERSION = '0.15.1'
 
 CONFIG_PATHS = [
     os.environ.get('LORE_CONFIG', ''),
@@ -415,5 +415,5 @@ INTERNAL_IPS = (get_var('HOST_IP', '127.0.0.1'), )
 GOOGLE_ANALYTICS_ID = get_var('LORE_GOOGLE_ANALYTICS_ID', None)
 
 # This is needed to connect the signals properly.
-# pylint: disable=unused-import
+# pylint: disable=unused-import,wrong-import-position
 import search.signals  # noqa

@@ -49,8 +49,8 @@ class TestRoleUtils(TestCase):
             def __init__(self, foo_var):
                 self.foo_var = foo_var
 
-        user_group2 = FooObject('bar')
-        self.assertFalse(user_group1.__eq__(user_group2))
+        foo_object = FooObject('bar')
+        self.assertFalse(user_group1.__eq__(foo_object))
 
     def test_user_group_hash(self):
         """Test for UserGroup __hash__"""

@@ -10,19 +10,19 @@ from learningresources.api import (
     NotFound,
     PermissionDenied,
 )
-
-from taxonomy.models import (
-    Vocabulary,
-    Term,
-)
 from learningresources.models import (
     LearningResource,
     LearningResourceType,
     Course,
 )
+
 from taxonomy.api import (
     get_term,
     get_vocabulary,
+)
+from taxonomy.models import (
+    Vocabulary,
+    Term,
 )
 
 
@@ -69,7 +69,7 @@ class TestApi(LoreTestCase):
             self.vocabulary.slug,
             self.term.slug
         )
-        self.assertEquals(self.term, actual_term)
+        self.assertEqual(self.term, actual_term)
         with self.assertRaises(NotFound):
             get_term('missing', self.user.id,
                      self.vocabulary.slug, self.term.slug)
@@ -90,7 +90,7 @@ class TestApi(LoreTestCase):
 
         actual_vocabulary = get_vocabulary(
             self.repo.slug, self.user.id, self.vocabulary.slug)
-        self.assertEquals(self.vocabulary, actual_vocabulary)
+        self.assertEqual(self.vocabulary, actual_vocabulary)
 
         with self.assertRaises(NotFound):
             get_vocabulary("missing", self.user.id, self.vocabulary.slug)

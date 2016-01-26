@@ -16,6 +16,7 @@ from django.core.files.base import ContentFile
 import mock
 from lxml import etree
 
+from xbundle import XBundle
 from importer.api import (
     import_course_from_file,
     import_course_from_path,
@@ -33,7 +34,6 @@ from learningresources.models import (
 )
 from learningresources.tests.base import LoreTestCase
 from lore import settings
-from xbundle import XBundle
 
 log = logging.getLogger(__name__)
 

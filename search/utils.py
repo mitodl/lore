@@ -5,9 +5,10 @@ Search functions.
 from __future__ import unicode_literals
 
 from collections import defaultdict
-from lxml import etree
 import logging
-from itertools import islice
+from itertools import islice  # pylint: disable=no-name-in-module
+
+from lxml import etree
 
 from django.conf import settings
 from elasticsearch.helpers import bulk
@@ -21,6 +22,7 @@ from learningresources.models import get_preview_url, LearningResource
 from rest.serializers import RepositorySearchSerializer
 from search.exceptions import ReindexException
 from search.search_indexes import get_course_metadata
+from search.sorting import LoreSortingFields
 from search.tasks import refresh_index as _refresh_index
 from taxonomy.models import Vocabulary, Term, make_vocab_key
 
@@ -32,6 +34,7 @@ URL = settings.HAYSTACK_CONNECTIONS["default"]["URL"]
 _CONN = None
 _CONN_VERIFIED = False
 PAGE_LENGTH = 10
+META_FIELDS_IN_RESULT = ('score',)
 
 
 def get_vocab_ids(repo_slug=None):
@@ -167,21 +170,33 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
         search = search.query("match", repository=repo_slug)
     if sort_by is None:
         # Always sort by ID to preserve ordering.
-        search = search.sort("id")
+        search = search.sort(LoreSortingFields.BASE_SORTING_FIELD)
+    # Temporary workaround; the values in sorting.py should be updated,
+    # but for now Haystack is still using them. Also, the hyphen is
+    # required because we sort the numeric values high to low.
+    elif sort_by in (
+            LoreSortingFields.SORT_BY_RELEVANCE[0],
+            LoreSortingFields.SORT_BY_TITLE[0]
+    ):
+        # special case when the sorting is by score with an empty search:
+        # in this case the score does not make any sense
+        if (sort_by == LoreSortingFields.SORT_BY_RELEVANCE[0] and
+                tokens is None):
+            search = search.sort(LoreSortingFields.BASE_SORTING_FIELD)
+        else:
+            search = search.sort(
+                sort_by, LoreSortingFields.BASE_SORTING_FIELD)
     else:
-        # Temporary workaround; the values in sorting.py should be updated,
-        # but for now Haystack is still using them. Also, the hyphen is
-        # required because we sort the numeric values high to low.
-        if "title" not in sort_by:
-            reverse = sort_by.startswith("-")
-            if reverse:
-                sort_by = sort_by[1:]
-            if "xa" not in sort_by:
-                sort_by = "xa_{0}".format(sort_by)
-            if reverse:
-                sort_by = "-{0}".format(sort_by)
+
+        reverse = sort_by.startswith("-")
+        if reverse:
+            sort_by = sort_by[1:]
+        if "xa" not in sort_by:
+            sort_by = "xa_{0}".format(sort_by)
+        if reverse:
+            sort_by = "-{0}".format(sort_by)
         # Always sort by ID to preserve ordering.
-        search = search.sort(sort_by, "id")
+        search = search.sort(sort_by, LoreSortingFields.BASE_SORTING_FIELD)
 
     vocab_ids = set(get_vocab_ids(repo_slug=repo_slug))
     for vocab_id in vocab_ids:
@@ -198,7 +213,6 @@ def search_index(tokens=None, repo_slug=None, sort_by=None, terms=None):
         search.aggs.bucket(
             '{key}_builtins'.format(key=key), "terms", field=key
         )
-
     return SearchResults(search)
 
 
@@ -412,7 +426,10 @@ class SearchResults(object):
 
         for hit in hits:
             for field_name in _get_field_names():
-                setattr(hit, field_name, getattr(hit, field_name)[0])
+                if field_name not in META_FIELDS_IN_RESULT:
+                    setattr(hit, field_name, getattr(hit, field_name)[0])
+                else:
+                    setattr(hit, field_name, getattr(hit.meta, field_name))
 
         if isinstance(i, slice):
             return hits

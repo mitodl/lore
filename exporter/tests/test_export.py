@@ -21,16 +21,14 @@ from learningresources.models import (
 from learningresources.api import (
     update_description_path,
     create_static_asset,
+    create_resource,
+    create_course,
 )
 from exporter.api import (
     export_resources_to_directory,
     export_resources_to_tarball,
 )
 from exporter.tasks import export_resources
-from learningresources.api import (
-    create_resource,
-    create_course,
-)
 from importer.tasks import import_file
 
 
