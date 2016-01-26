@@ -70,7 +70,7 @@ asset compression, along with `django-compressor-requirejs
 creating requirejs packages.  What this means to you is that you need
 to do static asset additions in your templates with something like:
 
-.. code-block:: html
+.. code-block:: django
 
   {% load compress %}
 
