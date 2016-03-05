@@ -1,6 +1,6 @@
 # Core project/common requirements
 celery==3.1.21
-Django==1.9.3
+Django==1.9.4
 django-appconf==1.0.1
 django-bootstrap3==7.0.0
 
