@@ -22,7 +22,7 @@ static3==0.6.1
 tox>=2.0.2,<3.0.0
 uwsgi==2.0.12
 six==1.10.0
-sqlparse==0.1.18
+sqlparse==0.1.19
 statsd==3.2.1
 git+https://github.com/mitodl/django-settings-export@feature/py3_readme#egg=django-settings-export==1.0.5-odl
 
