@@ -8,6 +8,7 @@ from django.http.response import Http404
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.db import transaction
+from django.db.models.functions import Lower
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import (
@@ -194,7 +195,7 @@ class VocabularyList(ListCreateAPIView):
         if learning_resource_type is not None:
             queryset = queryset.filter(
                 learning_resource_types__name=learning_resource_type)
-        return queryset.order_by('id')
+        return queryset.order_by(Lower('name'))
 
     def get_success_headers(self, data):
         """Add Location header for model create."""

@@ -147,15 +147,6 @@ define('add_vocabulary', ['react', 'lodash', 'jquery', 'uri',
           // Reset state (and eventually update the vocab tab
           thiz.props.updateParent(data);
           thiz.resetForm();
-          if (!thiz.isEditModeOpen()) {
-            var scrollableDiv = $(
-              ".cd-panel-2 .cd-panel-container .cd-panel-content"
-            );
-            scrollableDiv.animate(
-              {scrollTop: scrollableDiv.prop('scrollHeight')},
-              500
-            );
-          }
           return thiz.props.refreshFromAPI();
         }).fail(function (data) {
           var jsonData = data && data.responseJSON;

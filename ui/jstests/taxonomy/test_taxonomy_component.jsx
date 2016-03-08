@@ -247,12 +247,12 @@ define(['QUnit', 'jquery', 'lodash', 'taxonomy_component', 'react',
         assert.ok(TaxonomyComponent, "class object not found");
         var vocabularyWithoutTerms = {
           "id": 3,
-          "slug": "difficulty2",
-          "name": "difficulty2",
-          "description": "easy",
+          "slug": "apple",
+          "name": "Apple",
+          "description": "fruit",
           "vocabulary_type": "f",
           "required": false,
-          "weight": 2147483647,
+          "weight": 2147483640,
         };
         var refreshCount = 0;
         var refreshFromAPI = function () {
@@ -330,10 +330,35 @@ define(['QUnit', 'jquery', 'lodash', 'taxonomy_component', 'react',
                 component.state.vocabularies.length,
                 2
               );
+
+              // Assert that the vocabularies are sorted by case insensitive names
+              assert.equal(
+                component.state.vocabularies[0].vocabulary.name,
+                "difficulty"
+              );
+              assert.equal(
+                component.state.vocabularies[1].vocabulary.name,
+                "TestA"
+              );
               assert.equal(refreshCount, 1);
+
               component.addOrUpdateVocabulary(vocabularyWithoutTerms);
               component.forceUpdate(function () {
                 assert.equal(component.state.vocabularies.length, 3);
+
+                // Assert that the vocabularies are sorted by case insensitive names
+                assert.equal(
+                  component.state.vocabularies[0].vocabulary.name,
+                  "Apple"
+                );
+                assert.equal(
+                  component.state.vocabularies[1].vocabulary.name,
+                  "difficulty"
+                );
+                assert.equal(
+                  component.state.vocabularies[2].vocabulary.name,
+                  "TestA"
+                );
 
                 // If the vocabulary already exists the count should not change.
                 component.addOrUpdateVocabulary(vocabularyWithoutTerms);
