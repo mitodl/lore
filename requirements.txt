@@ -42,3 +42,4 @@ beautifulsoup4==4.4.1
 
 # Application monitoring requirements
 newrelic==2.58.1.44
+django-server-status==0.3
