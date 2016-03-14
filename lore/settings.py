@@ -98,6 +98,7 @@ INSTALLED_APPS = (
     'search',
     'roles',
     'xanalytics',
+    'server_status',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -374,6 +375,7 @@ REST_FRAMEWORK = {
 }
 
 # Celery
+USE_CELERY = True
 BROKER_URL = get_var("BROKER_URL", get_var("REDISCLOUD_URL", None))
 CELERY_RESULT_BACKEND = get_var(
     "CELERY_RESULT_BACKEND", get_var("REDISCLOUD_URL", None)
@@ -396,7 +398,8 @@ HAYSTACK_CONNECTIONS = {
 
 XANALYTICS_URL = get_var('XANALYTICS_URL', "")
 
-# Token required to access the status page.
+# server-status
+HEALTH_CHECK = ['CELERY', 'REDIS', 'POSTGRES', 'ELASTIC_SEARCH']
 STATUS_TOKEN = get_var(
     "STATUS_TOKEN",
     "7E17C32A63B2810F0053DE454FC8395CA3262CCB8392D2307887C5E67F132550"

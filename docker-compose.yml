@@ -2,20 +2,24 @@ db:
   image: postgres
   ports:
     - "5432"
+
 redis:
   image: redis
   ports:
     - "6379"
+
 elastic:
   image: elasticsearch
   command: elasticsearch -Des.network.host=0.0.0.0
   ports:
     - "9200"
+
 stats:
   image: kamon/grafana_graphite
   ports:
     - "8125/udp:8125/udp"
     - "8071:80"
+
 web:
   build: .
   mem_limit: 384m
@@ -45,6 +49,7 @@ web:
     CELERY_RESULT_BACKEND: redis://redis:6379/4
     BROKER_URL: redis://redis:6379/4
     HAYSTACK_URL: elastic:9200
+  env_file: .env
   ports:
     - "8070:8070"
   links:
@@ -52,6 +57,7 @@ web:
     - redis
     - elastic
     - stats
+
 celery:
   image: lore_web
   mem_limit: 384m

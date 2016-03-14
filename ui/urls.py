@@ -20,7 +20,6 @@ from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
 
-from status.views import status
 from ui.views import (
     welcome,
     create_repo,
@@ -54,7 +53,7 @@ urlpatterns = [
     ),
     url(r'^repositories/(?P<repo_slug>[-\w]+)/import/$',
         upload, name='upload'),
-    url(r'^status/$', status, name='status'),
+    url(r'^status/', include('server_status.urls')),
 ]
 
 if (settings.DEFAULT_FILE_STORAGE ==
