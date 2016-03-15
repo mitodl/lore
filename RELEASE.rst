@@ -1,6 +1,18 @@
 Release Notes
 -------------
 
+Version 0.15.1
+==============
+
+- Version locked ``doc_requirements`` packages.
+  
+Version 0.15.0
+==============
+
+- Added sorting by relevance ``(_score)``.
+- Fixed requests installation.
+- Fixed new pylint 1.5.0 violations.
+
 Version 0.14.1
 ==============
 
