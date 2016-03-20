@@ -482,7 +482,7 @@ class TestVocabulary(RESTTestCase):
                 weight=1000,
             )).data for i in range(40)]
 
-        expected.sort(key=lambda x: x["id"])
+        expected.sort(key=lambda x: x["name"])
 
         resp = self.client.get(
             '{repo_base}{repo_slug}/vocabularies/'.format(
@@ -494,8 +494,8 @@ class TestVocabulary(RESTTestCase):
         self.assertEqual(40, vocabularies['count'])
 
         # Sort both lists in preparation for comparisons.
-        expected.sort(key=lambda x: x["id"])
-        from_api = sorted(vocabularies['results'], key=lambda x: x["id"])
+        expected.sort(key=lambda x: x["name"])
+        from_api = sorted(vocabularies['results'], key=lambda x: x["name"])
 
         expected_count = 20
         self.assertEqual(expected_count, len(from_api))
@@ -511,7 +511,7 @@ class TestVocabulary(RESTTestCase):
             ))
         self.assertEqual(HTTP_200_OK, resp.status_code)
         vocabularies = as_json(resp)
-        from_api = sorted(vocabularies['results'], key=lambda x: x["id"])
+        from_api = sorted(vocabularies['results'], key=lambda x: x["name"])
         self.assertEqual(expected_count, len(from_api))
         self.assertEqual(40, vocabularies['count'])
         self.assertEqual(
