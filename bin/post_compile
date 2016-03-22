@@ -39,4 +39,8 @@ ln -s -f ../../vendor/node/bin/npm .heroku/python/bin/npm
 echo "-----> Compressing static files"
 python $MANAGE_FILE compress -f 2>&1 | indent
 
+echo "-----> Running django migrations"
+python $MANAGE_FILE migrate --list 2>&1 | indent
+python $MANAGE_FILE migrate --noinput 2>&1 | indent
+
 echo
