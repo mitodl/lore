@@ -78,9 +78,6 @@ define('listing',
           showMembersAlert(message, 'danger');
         });
     }
-    function closeLearningResourcePanel() {
-      $('.cd-panel').removeClass('is-visible');
-    }
 
     var hideTaxonomyPanel = function () {
       $('.cd-panel-2').removeClass('is-visible');
@@ -158,7 +155,8 @@ define('listing',
           // Keep track of resource id so we can lazy load panels.
           currentResourceId: undefined,
           // What panels are already loaded
-          loadedPanels: {}
+          loadedPanels: {},
+          isLearningResourcePanelDirty: false
         };
       },
       render: function () {
@@ -187,6 +185,37 @@ define('listing',
         return React.createElement(ListingResources.ListingPage, options);
       },
       /**
+       * Use by close learning resource confirmation popup.
+       */
+      resetAndHideLearningResourcePanel: function() {
+        $('.cd-panel').removeClass('is-visible');
+        this.setState({
+          currentResourceId: undefined,
+          isLearningResourcePanelDirty: false
+        });
+      },
+      confirmCloseLearningResourcePanel: function(status) {
+        if (status) {
+          this.resetAndHideLearningResourcePanel();
+        }
+      },
+      closeLearningResourcePanel: function() {
+        if (!this.state.isLearningResourcePanelDirty) {
+          this.resetAndHideLearningResourcePanel();
+        } else {
+          var options = {
+            actionButtonName: "Close",
+            actionButtonClass: "btn btn-danger btn-ok",
+            title: "Confirm Exit",
+            message: "Are you sure you want to close this panel?",
+            description: "You have unsaved changes once you click close " +
+            "all changes will be lost.",
+            confirmationHandler: this.confirmCloseLearningResourcePanel
+          };
+          this.props.showConfirmationDialog(options);
+        }
+      },
+      /**
        * Clears exports on page. Assumes DELETE to clear on server already
        * happened.
        */
@@ -201,7 +230,7 @@ define('listing',
         ManageTaxonomies.loader(
           this.props.repoSlug,
           $('#taxonomy-component')[0],
-          showConfirmationDialog,
+          this.props.showConfirmationDialog,
           showTab,
           setTabName,
           this.refreshFromAPI
@@ -274,12 +303,19 @@ define('listing',
           thiz.setState({pageLoaded: true});
         });
       },
+      markDirtyLearningResourcePanel: function (isDirty) {
+        this.setState({isLearningResourcePanelDirty: isDirty});
+      },
       loadResourceTab: function (resourceId) {
+        var options = {
+          "repoSlug": this.props.repoSlug,
+          "learningResourceId": resourceId,
+          "refreshFromAPI": this.refreshFromAPI,
+          "markDirty": this.markDirtyLearningResourcePanel,
+          "closeLearningResourcePanel": this.closeLearningResourcePanel
+        };
         LearningResources.loader(
-          this.props.repoSlug,
-          resourceId,
-          this.refreshFromAPI,
-          closeLearningResourcePanel,
+          options,
           $("#tab-1")[0]
         );
       },
@@ -299,7 +335,6 @@ define('listing',
         this.loadResourceTab(resourceId);
         loadedPanels["tab-1"] = true;
         this.setState({loadedPanels: loadedPanels});
-
         $('.cd-panel').addClass('is-visible');
       },
       updateFacetParam: function (param, selected) {
@@ -419,7 +454,9 @@ define('listing',
         //Close panels on escape keypress
         $(document).keyup(function (event) {
           if (event.keyCode === 27) { // escape key maps to keycode `27`
-            closeLearningResourcePanel();
+            if (!_.isUndefined(thiz.state.currentResourceId)) {
+              thiz.closeLearningResourcePanel();
+            }
             if ($('.cd-panel-2').hasClass('is-visible')) {
               hideTaxonomyPanel();
             }
@@ -437,7 +474,9 @@ define('listing',
         $('.cd-panel').on('click', function (event) {
           if ($(event.target).is('.cd-panel') ||
             $(event.target).is('.cd-panel-close')) {
-            closeLearningResourcePanel();
+            if (!_.isUndefined(thiz.state.currentResourceId)) {
+              thiz.closeLearningResourcePanel();
+            }
             event.preventDefault();
           }
         });
@@ -621,7 +660,9 @@ define('listing',
         repoSlug: listingOptions.repoSlug,
         loggedInUsername: listingOptions.loggedInUsername,
         updateQueryString: updateQueryString,
-        getQueryString: getQueryString
+        getQueryString: getQueryString,
+        showConfirmationDialog: showConfirmationDialog
+
       };
 
       React.render(

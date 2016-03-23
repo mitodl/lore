@@ -48,6 +48,11 @@ define('taxonomy_component', ['react', 'lodash', 'jquery',
           };
           vocabularies = vocabularies.concat([newVocab]);
         }
+        // sort vocabularies
+        vocabularies.sort(function (vocabLeft, vocabRight) {
+          return vocabLeft.vocabulary.name.toLowerCase().
+              localeCompare(vocabRight.vocabulary.name.toLowerCase());
+        });
         this.setState({vocabularies: vocabularies});
       },
       addTerm: function (vocabId, newTerm) {

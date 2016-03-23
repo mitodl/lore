@@ -35,6 +35,8 @@ define("learning_resource_panel", ['react', 'jquery', 'lodash',
 
         this.setState({
           vocabulariesAndTerms: newVocabulariesAndTerms
+        }, function () {
+          this.updateDirty();
         });
       },
 
@@ -115,8 +117,7 @@ define("learning_resource_panel", ['react', 'jquery', 'lodash',
                 <button className="btn btn-lg btn-primary"
                         onClick={this.saveLearningResourcePanel}>
                   Save
-                </button>
-                <button className="btn btn-lg btn-success"
+                </button> <button className="btn btn-lg btn-success"
                         onClick={this.saveAndCloseLearningResourcePanel}>
                   Save and Close
                 </button>
@@ -133,7 +134,13 @@ define("learning_resource_panel", ['react', 'jquery', 'lodash',
         this.setState({
           description: event.target.value,
           message: undefined
+        }, function() {
+          this.updateDirty();
         });
+      },
+      closeLearningResourcePanel: function(event) {
+        event.preventDefault();
+        this.props.closeLearningResourcePanel();
       },
       saveLearningResourcePanel: function (event) {
         event.preventDefault();
@@ -165,8 +172,12 @@ define("learning_resource_panel", ['react', 'jquery', 'lodash',
           data: JSON.stringify(data)
         }).then(function () {
           thiz.setState({
-            message: "Form saved successfully!"
+            message: "Form saved successfully!",
+            descriptionOriginal: thiz.state.description,
+            vocabulariesAndTermsOriginal: thiz.state.vocabulariesAndTerms
           });
+          // user can close panel
+          thiz.updateDirty();
           if (closePanel) {
             thiz.props.closeLearningResourcePanel();
           }
@@ -178,6 +189,16 @@ define("learning_resource_panel", ['react', 'jquery', 'lodash',
         }).always(function () {
           thiz.setState({loaded: true});
         });
+      },
+      updateDirty: function() {
+        // When use change description or terms the mark panel dirty
+        var isDirty = !_.eq(
+          this.state.description, this.state.descriptionOriginal
+        ) || !_.eq(
+          this.state.vocabulariesAndTerms,
+          this.state.vocabulariesAndTermsOriginal
+        );
+        this.props.markDirty(isDirty);
       },
       componentDidMount: function () {
         var thiz = this;
@@ -204,6 +225,7 @@ define("learning_resource_panel", ['react', 'jquery', 'lodash',
               message: undefined,
               description: description,
               previewUrl: previewUrl,
+              descriptionOriginal: description,
             });
             return Utils.getVocabulariesAndTerms(
               thiz.props.repoSlug, learningResourceType)
@@ -230,6 +252,9 @@ define("learning_resource_panel", ['react', 'jquery', 'lodash',
 
                 thiz.setState({
                   vocabulariesAndTerms: vocabulariesAndTerms,
+                  vocabulariesAndTermsOriginal: _.cloneDeep(
+                    vocabulariesAndTerms
+                  )
                 });
 
                 if (vocabulariesAndTerms.length) {
@@ -255,7 +280,9 @@ define("learning_resource_panel", ['react', 'jquery', 'lodash',
         return {
           description: "",
           vocabulariesAndTerms: [],
-          selectedVocabulary: {}
+          selectedVocabulary: {},
+          descriptionOriginal: "",
+          vocabulariesAndTermsOriginal: []
         };
       }
     });

@@ -1,6 +1,6 @@
 # Core project/common requirements
 celery==3.1.19
-Django==1.8.7
+Django==1.8.11
 django-appconf==1.0.1
 django-bootstrap3==6.2.2
 
@@ -42,3 +42,4 @@ beautifulsoup4==4.4.1
 
 # Application monitoring requirements
 newrelic==2.58.1.44
+django-server-status==0.3
