@@ -1,8 +1,8 @@
 Release Notes
--------------
+=============
 
 Version 0.16.0
-==============
+--------------
 
 - Sorted vocabularies in api as well as taxonomy panel
 - Replaced the status app with django-server-status
@@ -11,26 +11,26 @@ Version 0.16.0
 - ISSUE #876 Fixed doc build failure
 
 Version 0.15.1
-==============
+--------------
 
 - Version locked ``doc_requirements`` packages.
   
 Version 0.15.0
-==============
+--------------
 
 - Added sorting by relevance ``(_score)``.
 - Fixed requests installation.
 - Fixed new pylint 1.5.0 violations.
 
 Version 0.14.1
-==============
+--------------
 
 - Made ``[requires.io]`` dependency update.
 - Added manual test plan.
 - Made changes to accommodate Docker 1.9.0.
 
 Version 0.14.0
-==============
+--------------
 
 - Moved spinner into separate React class.
 - Fixed double resource import bug.
@@ -52,7 +52,7 @@ Version 0.14.0
 - Added tasks API.
 
 Version 0.13.0
-==============
+--------------
 
 - Refactored listing code for testing.
 - Implemented lazy loading for resource tab.
@@ -65,7 +65,7 @@ Version 0.13.0
 - Fixed link click behavior for term edit and delete.
 
 Version 0.12.0
-==============
+--------------
 
 - Added task to index resources via Celery.
 - Wrapped course imports in transaction.
@@ -102,7 +102,7 @@ Version 0.12.0
 - Added documentation for LORE release workflow.
 
 Version 0.11.0
-==============
+--------------
 
 - Reorganized Learning Resource panel to use three tabs.
 - Added datatable proof-of-concept.
@@ -126,13 +126,13 @@ Version 0.11.0
 - Increased requirejs timeout.
 
 Version 0.10.1
-==============
+--------------
 
 - Fixed exact repository search bug.
 - Fixed clear export bug.
 
 Version 0.10.0
-==============
+--------------
 
 - Added listing refresh after taxonomy changes.
 - Added React component for not tagged count.
@@ -172,7 +172,7 @@ Version 0.10.0
 
 
 Version 0.9.0
-=============
+-------------
 
 - Stripped caching out of vocabularies during indexing.
 - Changed password hashing during tests.
@@ -184,7 +184,7 @@ Version 0.9.0
 - Added icon for logout previously reverted.
 
 Version 0.8.0
-=============
+-------------
 - Changed how vocabulary terms are applied to Learning Resources
   to use two dropdowns instead of a growing list of fields.
 - Added deployment for release candidates.
@@ -210,7 +210,7 @@ Version 0.8.0
 
 
 Version 0.7.0
-=============
+-------------
 
 - Implemented ``Select2`` element to refactor ``select2`` widgets.
 - Added checkboxes to allow user to uncheck items in export panel.
@@ -221,7 +221,7 @@ Version 0.7.0
 - Fixed user menu display on LORE welcome page.
 
 Version 0.6.0
-=============
+-------------
 
 - Modified learningresource panel to include multi select.
 - Fixed export button not appearing in certain situations.
@@ -262,7 +262,7 @@ Version 0.6.0
   web application.
 
 Version 0.5.0
-=============
+-------------
 
 - Fixed display of vocabulary terms containing spaces.
 - Fixed comparison of FileFields to strings.
@@ -281,7 +281,7 @@ Version 0.5.0
 - Added link to request create repository permission.
 
 Version 0.4.0
-=============
+-------------
 
 - Added view to serve static assets and modified REST API.
 - Added fix and test for handling deleted Elasticsearch index.
@@ -332,7 +332,7 @@ Version 0.4.0
 - Added ability to filter vocabularies by learning resource type.
 
 Version 0.3.0
-=============
+-------------
 
 - Added UI to add and remove repository members.
 - Added form for adding new vocabularies.
@@ -348,7 +348,7 @@ Version 0.3.0
 - Added CSRF jQuery initialization code.
 
 Version 0.2.0
-=============
+-------------
 
 - The search bar performs full-text search over the learning resources
   in the repository, the search results replace the contents of the
@@ -373,7 +373,7 @@ Other Changes
 - Added JavaScript infrastructure to run unit tests.
 
 Version 0.1.0
-=============
+-------------
 
 - Added taxonomy app with models.
 - Added learning resources app.
