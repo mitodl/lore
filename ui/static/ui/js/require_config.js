@@ -22,6 +22,7 @@ var REQUIRE_PATHS = {
   listing: "../ui/js/listing/listing.jsx?noext",
   listing_resources: "../ui/js/listing/listing_resources.jsx?noext",
   pagination: "../ui/js/listing/pagination.jsx?noext",
+  import_status: "../ui/js/listing/import_status.jsx?noext",
 
   add_terms_component: "../ui/js/taxonomy/add_terms_component.jsx?noext",
   add_vocabulary: "../ui/js/taxonomy/add_vocabulary.jsx?noext",
