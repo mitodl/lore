@@ -41,5 +41,5 @@ boto>=2.38.0,<3.0.0
 beautifulsoup4==4.4.1
 
 # Application monitoring requirements
-newrelic==2.66.0.49
+newrelic==2.68.0.50
 django-server-status==0.3.2
