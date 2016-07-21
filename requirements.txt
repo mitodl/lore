@@ -7,7 +7,7 @@ django-bootstrap3==7.0.1
 # Pin to develop branch for cache feature
 git+https://github.com/django-compressor/django-compressor@5086fddb60d00ccb71a8883d4d0b40c6630d38e7#egg=django-compressor-dev==1.5-odl
 
-django-debug-toolbar==1.4
+django-debug-toolbar==1.5
 django-elasticsearch-debug-toolbar==1.0.4
 djangorestframework==3.4.0
 dj-database-url==0.4.1
