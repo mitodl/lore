@@ -9,7 +9,7 @@ git+https://github.com/django-compressor/django-compressor@5086fddb60d00ccb71a88
 
 django-debug-toolbar==1.5
 django-elasticsearch-debug-toolbar==1.0.4
-djangorestframework==3.4.1
+djangorestframework==3.4.3
 dj-database-url==0.4.1
 dj-static==0.0.6
 elasticsearch==2.3.0
