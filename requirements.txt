@@ -17,7 +17,7 @@ elasticsearch-dsl==2.1.0
 psycopg2==2.6.2
 PyYAML==3.11
 redis==2.10.5
-requests==2.10.0
+requests==2.11.0
 static3==0.7.0
 tox>=2.0.2,<3.0.0
 uwsgi==2.0.13.1
