@@ -1,5 +1,14 @@
 Release Notes
--------------
+=============
+
+Version 0.16.0
+--------------
+
+- Sorted vocabularies in api as well as taxonomy panel
+- Replaced the status app with django-server-status
+- Added warning message when user try to close learning resource panel without saving
+- Updated Django requirement to latest security release
+- ISSUE #876 Fixed doc build failure
 
 Version 0.16.0
 ==============
