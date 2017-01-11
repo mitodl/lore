@@ -16,7 +16,8 @@ from django.db import transaction
 from guardian.shortcuts import get_objects_for_user, get_perms
 
 from learningresources.models import (
-    Course, Repository, LearningResource, LearningResourceType, StaticAsset
+    Course, Repository, LearningResource,
+    LearningResourceContentXml, LearningResourceType, StaticAsset
 )
 from roles.permissions import RepoPermission
 
@@ -109,18 +110,21 @@ def create_resource(
         resource (learningresources.models.LearningResource):
             New LearningResource
     """
-    params = {
-        "course": course,
-        "learning_resource_type_id": type_id_by_name(resource_type),
-        "title": title,
-        "content_xml": content_xml,
-        "materialized_path": mpath,
-        "url_name": url_name,
-        "description_path": dpath,
-    }
-    if parent is not None:
-        params["parent_id"] = parent.id
     with transaction.atomic():
+        content_xml_obj = LearningResourceContentXml.objects.create(
+            content_xml=content_xml
+        )
+        params = {
+            "course": course,
+            "learning_resource_type_id": type_id_by_name(resource_type),
+            "title": title,
+            "content_xml_model": content_xml_obj,
+            "materialized_path": mpath,
+            "url_name": url_name,
+            "description_path": dpath,
+        }
+        if parent is not None:
+            params["parent_id"] = parent.id
         return LearningResource.objects.create(**params)
 
 
